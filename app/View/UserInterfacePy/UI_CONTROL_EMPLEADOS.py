@@ -147,35 +147,43 @@ class Ui_Control_empleados(object):
 "    padding-right: 5px ;\n"
 "}\n"
 "/*TABLA*/\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"border:none;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
-"[objectName*=\"tabla_\"] QHeaderVie"
-                        "w::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color"
+                        ": #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"/* Encabezados */\n"
+"[objectName*=\"tabla_\"] QHeaderView::section {\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}")
+"background-color: #023375;\n"
+"color: white;\n"
+"}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"")
         self.gridLayout = QGridLayout(Control_empleados)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -265,6 +273,7 @@ class Ui_Control_empleados(object):
         self.tabla_listaempleados.setFrameShape(QFrame.Shape.WinPanel)
         self.tabla_listaempleados.setFrameShadow(QFrame.Shadow.Plain)
         self.tabla_listaempleados.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_listaempleados.setAlternatingRowColors(True)
         self.tabla_listaempleados.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_listaempleados.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_listaempleados.setShowGrid(True)

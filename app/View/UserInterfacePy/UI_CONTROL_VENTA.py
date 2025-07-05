@@ -15,10 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QColumnView, QDateEdit,
-    QDoubleSpinBox, QFormLayout, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QToolButton, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QColumnView,
+    QDateEdit, QDoubleSpinBox, QFormLayout, QFrame,
+    QGridLayout, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QToolButton,
+    QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconosSVG_rc
 
@@ -102,35 +103,43 @@ class Ui_Venta(object):
 "}\n"
 "\n"
 "/*------TABLA-----*/\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"border:none;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: "
+                        "16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::hori"
-                        "zontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}\n"
-"\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "\n"
 "\n"
 "[objectName*=\"fecha_\"]{\n"
@@ -157,14 +166,14 @@ class Ui_Venta(object):
 "height: 17%;\n"
 "padding-left:5px;\n"
 "padding-right:5px;\n"
-"background: #F5F5F5;\n"
+"background"
+                        ": #F5F5F5;\n"
 "}\n"
 "*[objectName*=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
-""
-                        "    background-color: #00668c;\n"
+"    background-color: #00668c;\n"
 "    color: white;\n"
 "    border-top-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
@@ -195,7 +204,8 @@ class Ui_Venta(object):
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
 "    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
-"    selection-color: white;\n"
+"    selection-color: "
+                        "white;\n"
 "}\n"
 "\n"
 "/* D\u00cdAS DE OTROS MESES */\n"
@@ -203,8 +213,7 @@ class Ui_Venta(object):
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
-"/* EFECTO HOVER SO"
-                        "BRE D\u00cdAS */\n"
+"/* EFECTO HOVER SOBRE D\u00cdAS */\n"
 "QCalendarWidget QAbstractItemView::item:hover {\n"
 "    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
@@ -346,6 +355,9 @@ class Ui_Venta(object):
 
         self.tabla_productos = QColumnView(self.contenedor_controlcentral)
         self.tabla_productos.setObjectName(u"tabla_productos")
+        self.tabla_productos.setAlternatingRowColors(True)
+        self.tabla_productos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_productos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_4.addWidget(self.tabla_productos, 3, 0, 1, 4)
 

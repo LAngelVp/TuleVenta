@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QComboBox,
-    QDoubleSpinBox, QFrame, QGridLayout, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPlainTextEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QTableView,
-    QTimeEdit, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QCheckBox,
+    QComboBox, QDoubleSpinBox, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPlainTextEdit, QPushButton, QSizePolicy, QSpacerItem,
+    QTableView, QTimeEdit, QWidget)
 import iconsdvg_rc
 import iconosSVG_rc
 import ibootstrap_rc
@@ -28,7 +28,7 @@ class Ui_Formulario_puestos(object):
     def setupUi(self, Formulario_puestos):
         if not Formulario_puestos.objectName():
             Formulario_puestos.setObjectName(u"Formulario_puestos")
-        Formulario_puestos.resize(895, 600)
+        Formulario_puestos.resize(921, 600)
         Formulario_puestos.setMinimumSize(QSize(0, 0))
         Formulario_puestos.setMaximumSize(QSize(16777215, 16777215))
         Formulario_puestos.setStyleSheet(u"*{color: #1d1c1c;}\n"
@@ -181,34 +181,43 @@ class Ui_Formulario_puestos(object):
 "\n"
 "/*TABLA*/\n"
 "\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
-"background: #F5F5F5;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
+"background: #E3E3E3;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"[objectName*=\"tabla_\"] QHeaderView::"
+                        "horizontal,\n"
+"[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
 "\n"
-"/* Encabezado vertical */\n"
-"[objectName"
-                        "*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}	")
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"")
         self.gridLayout_7 = QGridLayout(Formulario_puestos)
         self.gridLayout_7.setSpacing(0)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
@@ -266,6 +275,9 @@ class Ui_Formulario_puestos(object):
         self.tabla_listapuestos = QTableView(self.contenedor_frame)
         self.tabla_listapuestos.setObjectName(u"tabla_listapuestos")
         self.tabla_listapuestos.setMinimumSize(QSize(420, 0))
+        self.tabla_listapuestos.setAlternatingRowColors(True)
+        self.tabla_listapuestos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_listapuestos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_listapuestos.horizontalHeader().setMinimumSectionSize(200)
         self.tabla_listapuestos.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_listapuestos.horizontalHeader().setStretchLastSection(False)

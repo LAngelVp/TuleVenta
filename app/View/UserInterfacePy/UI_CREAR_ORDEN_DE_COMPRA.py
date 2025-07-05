@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QTableView, QToolButton,
-    QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QTableView,
+    QToolButton, QWidget)
 from ...Source import ibootstrap_rc
 
 class Ui_Orden_compra(object):
@@ -111,35 +111,43 @@ class Ui_Orden_compra(object):
 "}\n"
 "/*TABLA*/\n"
 "\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"border:none;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
-"[objectName*=\"tabla_\"] QHeade"
-                        "rView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-c"
+                        "olor: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"/* Encabezados */\n"
+"[objectName*=\"tabla_\"] QHeaderView::section {\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "")
         self.gridLayout = QGridLayout(Orden_compra)
         self.gridLayout.setSpacing(0)
@@ -272,6 +280,9 @@ class Ui_Orden_compra(object):
 
         self.tabla_ordencompra = QTableView(self.contenedor_frame)
         self.tabla_ordencompra.setObjectName(u"tabla_ordencompra")
+        self.tabla_ordencompra.setAlternatingRowColors(True)
+        self.tabla_ordencompra.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_ordencompra.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_4.addWidget(self.tabla_ordencompra, 5, 0, 1, 1)
 

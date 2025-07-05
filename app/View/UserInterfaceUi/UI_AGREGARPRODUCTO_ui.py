@@ -15,12 +15,13 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QComboBox,
-    QDateEdit, QDoubleSpinBox, QFrame, QGridLayout,
-    QHBoxLayout, QHeaderView, QLabel, QLayout,
-    QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit,
-    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
-    QSpinBox, QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QCheckBox,
+    QComboBox, QDateEdit, QDoubleSpinBox, QFrame,
+    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
+    QLayout, QLineEdit, QListWidget, QListWidgetItem,
+    QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
+    QSpacerItem, QSpinBox, QTableView, QVBoxLayout,
+    QWidget)
 import ibootstrap_rc
 import iconosSVG_rc
 import iconsdvg_rc
@@ -126,8 +127,9 @@ class Ui_contenedor_agregar_productos(object):
 "font-family: \"Arial\";\n"
 "}\n"
 "[objectName*=\"lista\"]{\n"
-"background: #F5F5F5;\n"
+"background: #E3E3E3;\n"
 "min-height: 150px;\n"
+"border:none;\n"
 "}\n"
 "[objectName*=\"cajaOpciones\"] {\n"
 "    border: none;\n"
@@ -159,9 +161,9 @@ class Ui_contenedor_agregar_productos(object):
 "    subcontrol-position: top right ;\n"
 "    padding-right: 5px ;\n"
 "    width: 20% ;\n"
-"    border-left-width: 1px ;\n"
-""
-                        "    border-radius: 3px ;\n"
+"    border-left-"
+                        "width: 1px ;\n"
+"    border-radius: 3px ;\n"
 "    background-color: #F5F5F5 ;\n"
 "}\n"
 "/* FLECHA DESPLEGABLE */\n"
@@ -201,8 +203,8 @@ class Ui_contenedor_agregar_productos(object):
 "/* FECHA */\n"
 "[objectName*=\"fecha_\"]{\n"
 "border: none;\n"
-"border-bottom: 1px solid #3"
-                        "b3c3d;\n"
+"border-bot"
+                        "tom: 1px solid #3b3c3d;\n"
 "border-radius: 5px;\n"
 "padding: 2px;\n"
 "background-color: #f5f4f1;\n"
@@ -240,9 +242,9 @@ class Ui_contenedor_agregar_productos(object):
 "QCalendarWidget QToolButton {\n"
 "    background-color: transparent;\n"
 "    color: white;\n"
-"    font-weight: bold;\n"
-"    paddin"
-                        "g: 5px;\n"
+"    font-weight: bol"
+                        "d;\n"
+"    padding: 5px;\n"
 "}\n"
 "\n"
 "/* DESPLEGABLE DE MESES */\n"
@@ -281,37 +283,43 @@ class Ui_contenedor_agregar_productos(object):
 "}\n"
 "/*TABLA*/\n"
 "\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14"
-                        "px;\n"
-"background: #F5F5F5;\n"
+"font-family: Arial;\n"
+""
+                        "font-size: 14px;\n"
+"background: #E3E3E3;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}\n"
-"\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
-"#tabla_productos{\n"
-"min-height: 350px;\n"
-"}")
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"")
         self.gridLayout = QGridLayout(contenedor_agregar_productos)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -367,7 +375,7 @@ class Ui_contenedor_agregar_productos(object):
         self.contenedor_formulario_izquierda.setWidgetResizable(True)
         self.contenedor_scroll_formulario = QWidget()
         self.contenedor_scroll_formulario.setObjectName(u"contenedor_scroll_formulario")
-        self.contenedor_scroll_formulario.setGeometry(QRect(0, 0, 1361, 1212))
+        self.contenedor_scroll_formulario.setGeometry(QRect(0, -235, 1302, 780))
         self.gridLayout_13 = QGridLayout(self.contenedor_scroll_formulario)
         self.gridLayout_13.setObjectName(u"gridLayout_13")
         self.horizontalLayout_10 = QHBoxLayout()
@@ -431,7 +439,7 @@ class Ui_contenedor_agregar_productos(object):
         self.gridLayout_4 = QGridLayout(self.contenedor_FechasCaducidades)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.gridLayout_4.setHorizontalSpacing(0)
-        self.gridLayout_4.setVerticalSpacing(-1)
+        self.gridLayout_4.setVerticalSpacing(6)
         self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
         self.contenedor_contenedorFechaCaducidad = QFrame(self.contenedor_FechasCaducidades)
         self.contenedor_contenedorFechaCaducidad.setObjectName(u"contenedor_contenedorFechaCaducidad")
@@ -992,6 +1000,9 @@ class Ui_contenedor_agregar_productos(object):
 
         self.tabla_productos = QTableView(self.contenedor_scroll_formulario)
         self.tabla_productos.setObjectName(u"tabla_productos")
+        self.tabla_productos.setAlternatingRowColors(True)
+        self.tabla_productos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_productos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_13.addWidget(self.tabla_productos, 12, 0, 1, 3)
 

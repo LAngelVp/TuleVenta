@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QDateEdit, QFrame,
-    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QLayout, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QTabWidget, QTableView, QToolButton,
-    QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDateEdit,
+    QFrame, QGridLayout, QHBoxLayout, QHeaderView,
+    QLabel, QLayout, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QTabWidget, QTableView,
+    QToolButton, QWidget)
 import ibootstrap_rc
 import iconosSVG_rc
 import iconsdvg_rc
@@ -190,33 +190,41 @@ class Ui_control_compras(object):
 "\n"
 "\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
-"background: #F5F5F5;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
+"background: #E3E3E3;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #"
+                        "023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*="
-                        "\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}\n"
-"\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "\n"
 "/*-----------FECHA--------------*/\n"
 "[objectName*=\"fecha_\"]{\n"
@@ -240,15 +248,15 @@ class Ui_control_compras(object):
 "*[objectName*=\"fecha_\"]::down-arrow{\n"
 "image: url(:/Icons/Bootstrap/calendar2-date.svg);\n"
 "width: 17%;\n"
-"height: 17%;\n"
+""
+                        "height: 17%;\n"
 "padding-left:5px;\n"
 "padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
 "*[objectName*=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
-""
-                        "}\n"
+"}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
 "    color: white;\n"
@@ -280,13 +288,13 @@ class Ui_control_compras(object):
 "QCalendarWidget QAbstractItemView:enabled {\n"
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
-"    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
+"    selection-background-col"
+                        "or: #00668c;  /* Color al seleccionar fecha */\n"
 "    selection-color: white;\n"
 "}\n"
 "\n"
 "/* D\u00cdAS DE OTROS MESES */\n"
-"QCalendarWidget QAbstractItemView:disabl"
-                        "ed {\n"
+"QCalendarWidget QAbstractItemView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
@@ -317,14 +325,14 @@ class Ui_control_compras(object):
 "\n"
 "/* ESTILO DE LOS \u00cdTEMS */\n"
 "[objectName*=\"cajaOpciones\"] QListView::item {\n"
-"    padding: 6px 10px ;\n"
+"    padding: 6px 1"
+                        "0px ;\n"
 "    margin: 2px ;\n"
 "}\n"
 "/* BOT\u00d3N DESPLEGABLE */\n"
 "[objectName*=\"cajaOpciones\"]::drop-down {\n"
 "    subcontrol-origin: padding ;\n"
-"    subcontro"
-                        "l-position: top right ;\n"
+"    subcontrol-position: top right ;\n"
 "    padding-right: 5px ;\n"
 "    width: 20% ;\n"
 "    border-left-width: 1px ;\n"
@@ -460,6 +468,9 @@ class Ui_control_compras(object):
 
         self.tabla_comprasrealizadas = QTableView(self.contenedor_widget)
         self.tabla_comprasrealizadas.setObjectName(u"tabla_comprasrealizadas")
+        self.tabla_comprasrealizadas.setAlternatingRowColors(True)
+        self.tabla_comprasrealizadas.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_comprasrealizadas.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_2.addWidget(self.tabla_comprasrealizadas, 1, 0, 1, 1)
 
@@ -547,6 +558,9 @@ class Ui_control_compras(object):
 
         self.tabla_compraspendientes = QTableView(self.contenedor_widget_2)
         self.tabla_compraspendientes.setObjectName(u"tabla_compraspendientes")
+        self.tabla_compraspendientes.setAlternatingRowColors(True)
+        self.tabla_compraspendientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_compraspendientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_7.addWidget(self.tabla_compraspendientes, 1, 0, 1, 1)
 
@@ -624,7 +638,7 @@ class Ui_control_compras(object):
 
         self.retranslateUi(control_compras)
 
-        self.contenedortabglobal.setCurrentIndex(1)
+        self.contenedortabglobal.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(control_compras)

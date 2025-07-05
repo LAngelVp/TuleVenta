@@ -172,33 +172,40 @@ background: #b6ccd8 ;
 
 
 [objectName*=&quot;tabla_&quot;] {
-    font-family: Arial;
-    font-size: 14px;
+font-family: Arial;
+font-size: 14px;
 background: #E3E3E3;
-border:none;
+border: 1px solid #4791F5;
 }
 
-/* Encabezados de la tabla */
+[objectName*=&quot;tabla_&quot;] QTableView {
+background-color: #ffffff;
+alternate-background-color: #f0f0f0;
+selection-background-color: #cce4ff;
+selection-color: black;
+}
+
+/* Encabezados */
 [objectName*=&quot;tabla_&quot;] QHeaderView::section {
-    background-color: #023375;
-    color: white;
-    font-family: &quot;Arial&quot;;
-    font-size: 16px;
-    padding: 5px;
-    border: 1px solid gray;
+background-color: #023375;
+color: white;
+font-size: 16px;
+padding: 5px;
+border: 1px solid gray;
 }
 
-/* Encabezado horizontal */
-[objectName*=&quot;tabla_&quot;] QHeaderView::horizontal {
-    background-color: #023375;
-    color: white;
-}
-
-/* Encabezado vertical */
+[objectName*=&quot;tabla_&quot;] QHeaderView::horizontal,
 [objectName*=&quot;tabla_&quot;] QHeaderView::vertical {
-    background-color: #023375;
-    color: white;
+background-color: #023375;
+color: white;
 }
+
+/* Ítems seleccionados */
+[objectName*=&quot;tabla_&quot;] QTableView::item:selected {
+background-color: #cce4ff;
+color: black;
+}
+
 
 /*-----------FECHA--------------*/
 [objectName*=&quot;fecha_&quot;]{
@@ -392,7 +399,7 @@ QCalendarWidget QAbstractItemView::item:hover {
          <string notr="true"/>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <property name="iconSize">
          <size>
@@ -578,7 +585,17 @@ QCalendarWidget QAbstractItemView::item:hover {
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QTableView" name="tabla_comprasrealizadas"/>
+              <widget class="QTableView" name="tabla_comprasrealizadas">
+               <property name="alternatingRowColors">
+                <bool>true</bool>
+               </property>
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -746,7 +763,17 @@ QCalendarWidget QAbstractItemView::item:hover {
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QTableView" name="tabla_compraspendientes"/>
+              <widget class="QTableView" name="tabla_compraspendientes">
+               <property name="alternatingRowColors">
+                <bool>true</bool>
+               </property>
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>

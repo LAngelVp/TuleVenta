@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPushButton,
-    QScrollArea, QSizePolicy, QSpacerItem, QTableView,
-    QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
+    QTableView, QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconsdvg_rc
 
@@ -107,27 +107,43 @@ class Ui_Seleccion_Productos_Proveedor(object):
 "}\n"
 "\n"
 "/* Encabezados de la tabla */\n"
-"[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"\n"
+"[objectName*=\"tabla_\"] {\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
+"background: #E3E3E3;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
 "}\n"
-""
-                        "\n"
-"/* Encabezado vertical */\n"
+"\n"
+"/* Encabezados */\n"
+"[objectName*=\"ta"
+                        "bla_\"] QHeaderView::section {\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
+"}\n"
+"\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}")
+"background-color: #023375;\n"
+"color: white;\n"
+"}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"")
         self.gridLayout = QGridLayout(Seleccion_Productos_Proveedor)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -209,7 +225,7 @@ class Ui_Seleccion_Productos_Proveedor(object):
         self.contenedor_area.setWidgetResizable(True)
         self.contenedor_scrollAreaWidgetContents = QWidget()
         self.contenedor_scrollAreaWidgetContents.setObjectName(u"contenedor_scrollAreaWidgetContents")
-        self.contenedor_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 853, 341))
+        self.contenedor_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 859, 369))
         self.gridLayout_3 = QGridLayout(self.contenedor_scrollAreaWidgetContents)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.etiqueta_tablaproductosproveedor = QLabel(self.contenedor_scrollAreaWidgetContents)
@@ -232,6 +248,9 @@ class Ui_Seleccion_Productos_Proveedor(object):
 
         self.tabla_productosProveedor = QTableView(self.contenedor_scrollAreaWidgetContents)
         self.tabla_productosProveedor.setObjectName(u"tabla_productosProveedor")
+        self.tabla_productosProveedor.setAlternatingRowColors(True)
+        self.tabla_productosProveedor.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_productosProveedor.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_3.addWidget(self.tabla_productosProveedor, 1, 0, 1, 3)
 
@@ -242,6 +261,9 @@ class Ui_Seleccion_Productos_Proveedor(object):
 
         self.tabla_productosParaOrden = QTableView(self.contenedor_scrollAreaWidgetContents)
         self.tabla_productosParaOrden.setObjectName(u"tabla_productosParaOrden")
+        self.tabla_productosParaOrden.setAlternatingRowColors(True)
+        self.tabla_productosParaOrden.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_productosParaOrden.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.gridLayout_3.addWidget(self.tabla_productosParaOrden, 5, 0, 1, 3)
 

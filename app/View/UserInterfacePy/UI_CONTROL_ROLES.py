@@ -108,27 +108,43 @@ class Ui_Control_Roles_Permisos(object):
 "}\n"
 "\n"
 "/* Encabezados de la tabla */\n"
-"[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"\n"
+"[objectName*=\"tabla_\"] {\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
+"background: #E3E3E3;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-""
-                        "}\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
 "\n"
-"/* Encabezado vertical */\n"
+"/* Encabezados */\n"
+"[objectNa"
+                        "me*=\"tabla_\"] QHeaderView::section {\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
+"}\n"
+"\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "\n"
 "QTabWidget::pane {\n"
 "        border: none;\n"
@@ -149,7 +165,8 @@ class Ui_Control_Roles_Permisos(object):
 "        margin-right: 2px;\n"
 "    }\n"
 "    \n"
-"    /* Pesta\u00f1a seleccionada */\n"
+"    /* Pesta\u00f1"
+                        "a seleccionada */\n"
 "    QTabBar::tab:selected {\n"
 "        background: #4791F5;\n"
 "        color: white;\n"
@@ -162,8 +179,7 @@ class Ui_Control_Roles_Permisos(object):
 "    }\n"
 "    \n"
 "    /* Pesta\u00f1a deshabilitada */\n"
-""
-                        "    QTabBar::tab:disabled {\n"
+"    QTabBar::tab:disabled {\n"
 "        background: #EEEEEE;\n"
 "        color: #AAAAAA;\n"
 "    }\n"
@@ -231,6 +247,8 @@ class Ui_Control_Roles_Permisos(object):
         self.tabla_listaroles.setObjectName(u"tabla_listaroles")
         self.tabla_listaroles.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_listaroles.setAlternatingRowColors(True)
+        self.tabla_listaroles.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_listaroles.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_listaroles.setGridStyle(Qt.PenStyle.DashLine)
         self.tabla_listaroles.horizontalHeader().setStretchLastSection(True)
 
@@ -294,7 +312,7 @@ class Ui_Control_Roles_Permisos(object):
         self.contenedor_permisos.setWidgetResizable(True)
         self.contenedor_permisosscroll = QWidget()
         self.contenedor_permisosscroll.setObjectName(u"contenedor_permisosscroll")
-        self.contenedor_permisosscroll.setGeometry(QRect(0, 0, 597, 485))
+        self.contenedor_permisosscroll.setGeometry(QRect(0, 0, 634, 518))
         self.gridLayout_6 = QGridLayout(self.contenedor_permisosscroll)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
         self.etiquetasubtitulo_puestos = QLabel(self.contenedor_permisosscroll)

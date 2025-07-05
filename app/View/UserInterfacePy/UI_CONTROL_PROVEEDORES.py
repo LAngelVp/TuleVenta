@@ -173,34 +173,43 @@ class Ui_Control_Proveedores(object):
 "}\n"
 "\n"
 "/*TABLA*/\n"
+"\n"
 "[objectName*=\"tabla_\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"border:none;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}\n"
-"\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background"
+                        "-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "")
         self.gridLayout = QGridLayout(Control_Proveedores)
         self.gridLayout.setSpacing(0)
@@ -226,7 +235,7 @@ class Ui_Control_Proveedores(object):
         self.contenedor_scrollArea.setWidgetResizable(True)
         self.contenedor_scroll_area_contenido = QWidget()
         self.contenedor_scroll_area_contenido.setObjectName(u"contenedor_scroll_area_contenido")
-        self.contenedor_scroll_area_contenido.setGeometry(QRect(0, 0, 1151, 656))
+        self.contenedor_scroll_area_contenido.setGeometry(QRect(0, 0, 1065, 577))
         self.gridLayout_7 = QGridLayout(self.contenedor_scroll_area_contenido)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.contenedor_todoproveedor = QFrame(self.contenedor_scroll_area_contenido)
@@ -573,6 +582,8 @@ class Ui_Control_Proveedores(object):
         self.tabla_proveedores = QTableView(self.contenedor_tablareproveedores)
         self.tabla_proveedores.setObjectName(u"tabla_proveedores")
         self.tabla_proveedores.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_proveedores.setAlternatingRowColors(True)
+        self.tabla_proveedores.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_proveedores.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_proveedores.setGridStyle(Qt.PenStyle.DashDotDotLine)
         self.tabla_proveedores.horizontalHeader().setCascadingSectionResizes(False)

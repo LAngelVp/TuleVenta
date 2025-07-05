@@ -20,7 +20,7 @@ class Productos_de_proveedorController(QWidget):
     PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL = Signal(object)
     def __init__(self, parent = None, proveedor = None):
         super().__init__(parent)
-        self.ui = Ui_contenedor_productos_proveedores()
+        self.ui = Ui_contenedorModal_productos_proveedores()
         self.ui.setupUi(self)
         
         self.ui.txt_nombre_productodelsistema.returnPressed.connect(self.filtrar_productos_sistema)

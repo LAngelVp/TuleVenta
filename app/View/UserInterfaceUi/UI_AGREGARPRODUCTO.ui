@@ -265,37 +265,42 @@ max-height: 35px;
 }
 /*TABLA*/
 
+
 [objectName*=&quot;tabla_&quot;] {
-    font-family: Arial;
-    font-size: 14px;
+font-family: Arial;
+font-size: 14px;
 background: #E3E3E3;
-border:none;
+border: 1px solid #4791F5;
 }
 
-/* Encabezados de la tabla */
+[objectName*=&quot;tabla_&quot;] QTableView {
+background-color: #ffffff;
+alternate-background-color: #f0f0f0;
+selection-background-color: #cce4ff;
+selection-color: black;
+}
+
+/* Encabezados */
 [objectName*=&quot;tabla_&quot;] QHeaderView::section {
-    background-color: #023375;
-    color: white;
-    font-family: &quot;Arial&quot;;
-    font-size: 16px;
-    padding: 5px;
-    border: 1px solid gray;
+background-color: #023375;
+color: white;
+font-size: 16px;
+padding: 5px;
+border: 1px solid gray;
 }
 
-/* Encabezado horizontal */
-[objectName*=&quot;tabla_&quot;] QHeaderView::horizontal {
-    background-color: #023375;
-    color: white;
-}
-
-/* Encabezado vertical */
+[objectName*=&quot;tabla_&quot;] QHeaderView::horizontal,
 [objectName*=&quot;tabla_&quot;] QHeaderView::vertical {
-    background-color: #023375;
-    color: white;
+background-color: #023375;
+color: white;
 }
-#tabla_productos{
-min-height: 350px;
-}</string>
+
+/* Ítems seleccionados */
+[objectName*=&quot;tabla_&quot;] QTableView::item:selected {
+background-color: #cce4ff;
+color: black;
+}
+</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="sizeConstraint">
@@ -434,9 +439,9 @@ min-height: 350px;
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
-              <width>1361</width>
-              <height>1208</height>
+              <y>-235</y>
+              <width>1302</width>
+              <height>780</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_13">
@@ -526,7 +531,7 @@ min-height: 350px;
                  <number>0</number>
                 </property>
                 <property name="verticalSpacing">
-                 <number>-1</number>
+                 <number>6</number>
                 </property>
                 <item row="3" column="0">
                  <widget class="QFrame" name="contenedor_contenedorFechaCaducidad">
@@ -1362,7 +1367,17 @@ min-height: 350px;
               </widget>
              </item>
              <item row="12" column="0" colspan="3">
-              <widget class="QTableView" name="tabla_productos"/>
+              <widget class="QTableView" name="tabla_productos">
+               <property name="alternatingRowColors">
+                <bool>true</bool>
+               </property>
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+               </property>
+              </widget>
              </item>
              <item row="11" column="0">
               <widget class="QLabel" name="etiqueta_tituloProductos">

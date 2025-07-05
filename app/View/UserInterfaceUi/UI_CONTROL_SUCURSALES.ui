@@ -39,7 +39,7 @@ image: url(:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg);
 min-width: 25px;
 min-height: 25px;
 }
-[objectName*=&quot;contenedor_&quot;]{
+[objectName*=&quot;contenedor&quot;]{
 background: #fffefb;
 border:none;
 }

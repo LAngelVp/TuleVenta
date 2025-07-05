@@ -4,6 +4,7 @@ from app.Controller.InicioDeSesionController import Login
 from app.Controller.VentanaInicialController import *
 from app.Model.BaseDatosModel import Usuarios
 from app.Controller.MensajesAlertasController import Mensaje
+
 class Inicio_sistema:
     def __init__(self):
         super().__init__()
@@ -37,3 +38,4 @@ class Inicio_sistema:
 if __name__ == "__main__":
     sistema = Inicio_sistema()
     sistema.ejecutar()
+    

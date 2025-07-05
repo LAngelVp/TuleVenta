@@ -207,34 +207,40 @@ class Ui_Control_Clientes(object):
 "\n"
 "[objectName*=\"tabla_"
                         "\"] {\n"
-"    font-family: Arial;\n"
-"    font-size: 14px;\n"
+"font-family: Arial;\n"
+"font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"min-height:400px;\n"
-"border:none;\n"
+"border: 1px solid #4791F5;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"[objectName*=\"tabla_\"] QTableView {\n"
+"background-color: #ffffff;\n"
+"alternate-background-color: #f0f0f0;\n"
+"selection-background-color: #cce4ff;\n"
+"selection-color: black;\n"
+"}\n"
+"\n"
+"/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"    font-family: \"Arial\";\n"
-"    font-size: 16px;\n"
-"    padding: 5px;\n"
-"    border: 1px solid gray;\n"
+"background-color: #023375;\n"
+"color: white;\n"
+"font-size: 16px;\n"
+"padding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
-"/* Encabezado horizontal */\n"
-"[objectName*=\"tabla_\"] QHeaderView::horizontal {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
-"}\n"
-"\n"
-"/* Encabezado vertical */\n"
+"[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-"    background-color: #023375;\n"
-"    color: white;\n"
+"background-color: #023375;\n"
+"color: white;\n"
 "}\n"
+"\n"
+"/* \u00cdtems seleccionados */\n"
+"[objectName*=\"tabla_\"] QTableView::item:selected {\n"
+"background-color: #cce4ff;\n"
+"color: black;\n"
+"}\n"
+"\n"
 "\n"
 "[objectName*=\"casillaverificacion_\"]{\n"
 "font-family:Arial;\n"
@@ -243,15 +249,15 @@ class Ui_Control_Clientes(object):
 "font-weight: bold;\n"
 "}\n"
 "#wpc_clientes_contenedordatos{\n"
-"max-width:800px;\n"
+"max-width:800"
+                        "px;\n"
 "background: #fffefb;\n"
 "}\n"
 "#label_wpc_fotocliente{\n"
 "min-height:200px;\n"
 "min-width:200px;\n"
 "background: #F5F5F5;\n"
-""
-                        "border: 1px solid rgb(0, 0, 0);\n"
+"border: 1px solid rgb(0, 0, 0);\n"
 "}\n"
 "#wpc_clientes_autorizacredito{\n"
 "background: #fffefb;\n"
@@ -289,12 +295,12 @@ class Ui_Control_Clientes(object):
 "padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
-"*[objectName*=\"fecha_\"]::focus{\n"
+"*[objectName*=\"fecha_\""
+                        "]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
-"    background-color:"
-                        " #00668c;\n"
+"    background-color: #00668c;\n"
 "    color: white;\n"
 "    border-top-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
@@ -328,14 +334,14 @@ class Ui_Control_Clientes(object):
 "    selection-color: white;\n"
 "}\n"
 "\n"
-"/* D\u00cdAS DE OTROS MESES */\n"
+"/* D\u00cdAS DE OTROS M"
+                        "ESES */\n"
 "QCalendarWidget QAbstractItemView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
 "/* EFECTO HOVER SOBRE D\u00cdAS */\n"
-""
-                        "QCalendarWidget QAbstractItemView::item:hover {\n"
+"QCalendarWidget QAbstractItemView::item:hover {\n"
 "    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
 "}")
@@ -362,7 +368,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, -609, 1385, 1140))
+        self.wpc_scrooll_area.setGeometry(QRect(0, -254, 1388, 758))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -373,6 +379,90 @@ class Ui_Control_Clientes(object):
         self.gridLayout_4.setSpacing(0)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.gridLayout_4.setContentsMargins(5, 10, 5, 0)
+        self.contenedor_opcionesclientes = QWidget(self.wpc_clientes_datos)
+        self.contenedor_opcionesclientes.setObjectName(u"contenedor_opcionesclientes")
+        self.contenedor_opcionesclientes.setMaximumSize(QSize(16777215, 16777215))
+        self.gridLayout_14 = QGridLayout(self.contenedor_opcionesclientes)
+        self.gridLayout_14.setObjectName(u"gridLayout_14")
+        self.etiqueta_wpc_tipo_cliente = QLabel(self.contenedor_opcionesclientes)
+        self.etiqueta_wpc_tipo_cliente.setObjectName(u"etiqueta_wpc_tipo_cliente")
+        self.etiqueta_wpc_tipo_cliente.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_14.addWidget(self.etiqueta_wpc_tipo_cliente, 0, 0, 1, 1)
+
+        self.btnRadio_wpc_clienteFisico = QRadioButton(self.contenedor_opcionesclientes)
+        self.btnRadio_wpc_clienteFisico.setObjectName(u"btnRadio_wpc_clienteFisico")
+        self.btnRadio_wpc_clienteFisico.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_14.addWidget(self.btnRadio_wpc_clienteFisico, 0, 1, 1, 1)
+
+        self.btnRadio_wpc_clienteMoral = QRadioButton(self.contenedor_opcionesclientes)
+        self.btnRadio_wpc_clienteMoral.setObjectName(u"btnRadio_wpc_clienteMoral")
+        self.btnRadio_wpc_clienteMoral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_14.addWidget(self.btnRadio_wpc_clienteMoral, 0, 2, 1, 1)
+
+        self.horizontalSpacer_7 = QSpacerItem(1109, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_14.addItem(self.horizontalSpacer_7, 0, 3, 1, 1)
+
+
+        self.gridLayout_4.addWidget(self.contenedor_opcionesclientes, 0, 0, 1, 1)
+
+        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
+        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
+        self.gridLayout_12 = QGridLayout(self.wpc_buscar_clientes)
+        self.gridLayout_12.setObjectName(u"gridLayout_12")
+        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
+        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
+
+        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
+
+        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
+
+        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
+        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
+        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon = QIcon()
+        icon.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon)
+
+        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
+
+        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
+        self.tabla_clientes.setObjectName(u"tabla_clientes")
+        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientes.setAlternatingRowColors(True)
+        self.tabla_clientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
+
+        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 3)
+
+        self.gridLayout_8 = QGridLayout()
+        self.gridLayout_8.setObjectName(u"gridLayout_8")
+        self.etiqueta_iconobuscar = QLabel(self.wpc_buscar_clientes)
+        self.etiqueta_iconobuscar.setObjectName(u"etiqueta_iconobuscar")
+
+        self.gridLayout_8.addWidget(self.etiqueta_iconobuscar, 0, 0, 1, 1)
+
+        self.txt_buscarcliente = QLineEdit(self.wpc_buscar_clientes)
+        self.txt_buscarcliente.setObjectName(u"txt_buscarcliente")
+        self.txt_buscarcliente.setClearButtonEnabled(True)
+
+        self.gridLayout_8.addWidget(self.txt_buscarcliente, 0, 1, 1, 1)
+
+
+        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 3)
+
+
+        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
+
         self.wpc_contenedor_pila = QStackedWidget(self.wpc_clientes_datos)
         self.wpc_contenedor_pila.setObjectName(u"wpc_contenedor_pila")
         self.wpc_pagina_clientefisico = QWidget()
@@ -421,9 +511,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaFisico = QPushButton(self.wpc_clientes_clienteFisico)
         self.btn_btn_nuevacategoriaFisico.setObjectName(u"btn_btn_nuevacategoriaFisico")
         self.btn_btn_nuevacategoriaFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon = QIcon()
-        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_nuevacategoriaFisico.setIcon(icon)
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_nuevacategoriaFisico.setIcon(icon1)
         self.btn_btn_nuevacategoriaFisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout_2.addWidget(self.btn_btn_nuevacategoriaFisico)
@@ -578,7 +668,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevaareanegocio_fisico.setObjectName(u"btn_btn_nuevaareanegocio_fisico")
         self.btn_btn_nuevaareanegocio_fisico.setMaximumSize(QSize(16777215, 16777215))
         self.btn_btn_nuevaareanegocio_fisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon)
+        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon1)
         self.btn_btn_nuevaareanegocio_fisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_nuevaareanegocio_fisico)
@@ -994,7 +1084,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaMoral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_nuevacategoriaMoral.setObjectName(u"btn_btn_nuevacategoriaMoral")
         self.btn_btn_nuevacategoriaMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevacategoriaMoral.setIcon(icon)
+        self.btn_btn_nuevacategoriaMoral.setIcon(icon1)
         self.btn_btn_nuevacategoriaMoral.setIconSize(QSize(20, 20))
 
         self.gridLayout_13.addWidget(self.btn_btn_nuevacategoriaMoral, 0, 1, 1, 1)
@@ -1023,7 +1113,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_areasnegocio_moral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_areasnegocio_moral.setObjectName(u"btn_btn_areasnegocio_moral")
         self.btn_btn_areasnegocio_moral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_areasnegocio_moral.setIcon(icon)
+        self.btn_btn_areasnegocio_moral.setIcon(icon1)
         self.btn_btn_areasnegocio_moral.setIconSize(QSize(20, 20))
 
         self.gridLayout_2.addWidget(self.btn_btn_areasnegocio_moral, 1, 1, 1, 1)
@@ -1285,86 +1375,6 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_4.addWidget(self.wpc_contenedor_pila, 1, 0, 1, 1)
 
-        self.contenedor_opcionesclientes = QWidget(self.wpc_clientes_datos)
-        self.contenedor_opcionesclientes.setObjectName(u"contenedor_opcionesclientes")
-        self.contenedor_opcionesclientes.setMaximumSize(QSize(16777215, 16777215))
-        self.gridLayout_14 = QGridLayout(self.contenedor_opcionesclientes)
-        self.gridLayout_14.setSpacing(0)
-        self.gridLayout_14.setObjectName(u"gridLayout_14")
-        self.gridLayout_14.setContentsMargins(0, 0, 0, 0)
-        self.btnRadio_wpc_clienteFisico = QRadioButton(self.contenedor_opcionesclientes)
-        self.btnRadio_wpc_clienteFisico.setObjectName(u"btnRadio_wpc_clienteFisico")
-        self.btnRadio_wpc_clienteFisico.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_14.addWidget(self.btnRadio_wpc_clienteFisico, 0, 1, 1, 1)
-
-        self.btnRadio_wpc_clienteMoral = QRadioButton(self.contenedor_opcionesclientes)
-        self.btnRadio_wpc_clienteMoral.setObjectName(u"btnRadio_wpc_clienteMoral")
-        self.btnRadio_wpc_clienteMoral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_14.addWidget(self.btnRadio_wpc_clienteMoral, 0, 2, 1, 1)
-
-        self.etiqueta_wpc_tipo_cliente = QLabel(self.contenedor_opcionesclientes)
-        self.etiqueta_wpc_tipo_cliente.setObjectName(u"etiqueta_wpc_tipo_cliente")
-        self.etiqueta_wpc_tipo_cliente.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_14.addWidget(self.etiqueta_wpc_tipo_cliente, 0, 0, 1, 1)
-
-
-        self.gridLayout_4.addWidget(self.contenedor_opcionesclientes, 0, 0, 1, 1)
-
-        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
-        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
-        self.gridLayout_12 = QGridLayout(self.wpc_buscar_clientes)
-        self.gridLayout_12.setObjectName(u"gridLayout_12")
-        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
-
-        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
-
-        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
-
-        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
-        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
-        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon1)
-
-        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
-
-        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
-        self.tabla_clientes.setObjectName(u"tabla_clientes")
-        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
-        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
-
-        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 3)
-
-        self.gridLayout_8 = QGridLayout()
-        self.gridLayout_8.setObjectName(u"gridLayout_8")
-        self.etiqueta_iconobuscar = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_iconobuscar.setObjectName(u"etiqueta_iconobuscar")
-
-        self.gridLayout_8.addWidget(self.etiqueta_iconobuscar, 0, 0, 1, 1)
-
-        self.txt_buscarcliente = QLineEdit(self.wpc_buscar_clientes)
-        self.txt_buscarcliente.setObjectName(u"txt_buscarcliente")
-        self.txt_buscarcliente.setClearButtonEnabled(True)
-
-        self.gridLayout_8.addWidget(self.txt_buscarcliente, 0, 1, 1, 1)
-
-
-        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 3)
-
-
-        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
-
 
         self.gridLayout_11.addWidget(self.wpc_clientes_datos, 0, 1, 1, 1)
 
@@ -1525,6 +1535,16 @@ class Ui_Control_Clientes(object):
 
     def retranslateUi(self, Control_Clientes):
         Control_Clientes.setWindowTitle(QCoreApplication.translate("Control_Clientes", u"Form", None))
+        self.etiqueta_wpc_tipo_cliente.setText(QCoreApplication.translate("Control_Clientes", u"Tipo de cliente", None))
+        self.btnRadio_wpc_clienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Fisico", None))
+        self.btnRadio_wpc_clienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Moral", None))
+        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setText("")
+        self.etiqueta_iconobuscar.setText("")
+        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
         self.etiqueta_ciudad_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Ciudad", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setSuffix("")
@@ -1672,16 +1692,6 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_avenidas_moral.setText(QCoreApplication.translate("Control_Clientes", u"Avenida o entre avenidas", None))
         self.etiqueta_direccionadicional_moral.setText(QCoreApplication.translate("Control_Clientes", u"Direcci\u00f3 Adicional", None))
         self.etiqueta_wpc_correo_repre_moral.setText(QCoreApplication.translate("Control_Clientes", u"Correo electronico", None))
-        self.btnRadio_wpc_clienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Fisico", None))
-        self.btnRadio_wpc_clienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Moral", None))
-        self.etiqueta_wpc_tipo_cliente.setText(QCoreApplication.translate("Control_Clientes", u"Tipo de cliente", None))
-        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
-#if QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setText("")
-        self.etiqueta_iconobuscar.setText("")
-        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
         self.label_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_limpiarcampos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limpiar campos", None))
