@@ -11,6 +11,33 @@ class Inicio_sistema:
         self.ventana_principal = None
         self.Login = None
         self.app = QApplication(sys.argv)
+        self.app.setStyle("Fusion")
+        palette = QPalette()
+
+        # Fondo general de ventanas
+        palette.setColor(QPalette.Window, QColor("#f5f5f5"))
+
+        # Fondo de widgets como tablas
+        palette.setColor(QPalette.Base, QColor("#ffffff"))  
+        palette.setColor(QPalette.AlternateBase, QColor("#f0f0f0"))
+
+        # Texto general
+        palette.setColor(QPalette.Text, Qt.black)
+        palette.setColor(QPalette.WindowText, Qt.black)
+
+        # Fondo y texto de botones
+        palette.setColor(QPalette.Button, QColor("#d6e4f0"))
+        palette.setColor(QPalette.ButtonText, Qt.black)
+
+        # Color de selección (por ejemplo, para filas en tablas)
+        palette.setColor(QPalette.Highlight, QColor("#4791F5"))  # Azul claro
+        palette.setColor(QPalette.HighlightedText, Qt.black)
+
+        # Bordes y líneas
+        palette.setColor(QPalette.Mid, QColor("#cccccc"))
+
+        # Aplica la paleta global
+        self.app.setPalette(palette)
 
     def comprobar_usuarios(self) -> int:
         try:
