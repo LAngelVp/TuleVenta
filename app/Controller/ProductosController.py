@@ -1176,10 +1176,11 @@ class Productos(QWidget):
         self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
         self.seleccion_conectada_productos = True
 
+        QTimer.singleShot(0, self.cargando_cerrar)
+
     def consultar_productos_db(self):
         self.modal_espera_local()
         self.consultor = Consultas_segundo_plano()
-        self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.listar_productos)
         self.consultor.ejecutar_hilo(funcion=self.obtener_productos_query)
     

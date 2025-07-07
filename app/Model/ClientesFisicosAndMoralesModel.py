@@ -188,11 +188,11 @@ class ClientesFisicosAndMorales:
                 .join(clientes_fisicos_alias, Clientes.id == clientes_fisicos_alias.id)
                 .all())
             if clientes:
-                return clientes
+                return clientes, True
             else:
-                return None
+                return None, False
         except Exception as e:
-            return None
+            return None, False
 
     def mostrar_clientes_morales(self):
         try:
@@ -206,9 +206,9 @@ class ClientesFisicosAndMorales:
                 .join(clientes_morales_alias, Clientes.id == clientes_morales_alias.id)
                 .all()
             )
-            return clientes
+            return clientes, True
         except Exception as e:
-            return None
+            return None, False
 
     def obtener_cliente_fisico_por_id(self, id):
         try:

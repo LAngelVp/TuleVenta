@@ -11,6 +11,8 @@ from .AreaNegocioClientesController import AreaNegocioClientesController
 from ..Model.AreaNegocioClientesModel import AreaNegocioClientesModel
 from ..Model.CategoriasModel import CategoriasModel
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
+from .Ventana_espera import Modal_de_espera
+from .Hilo_consultas import Consultas_segundo_plano
 from ..Model.ClientesFisicosAndMoralesModel import *
 from .MensajesAlertasController import Mensaje
 
@@ -42,6 +44,8 @@ class Clientes(QWidget):
         self.id_cliente = None
         self.id_area_del_cliente = None
         self.id_clasificacion_del_cliente = None
+        self.cargando = None
+        self.consultor = None
         self._translate = QtCore.QCoreApplication.translate
         #------------------------------
 #//: CARGAR FOTO DEL CLIENTE FISICO
@@ -394,19 +398,44 @@ class Clientes(QWidget):
                     Mensaje().mensaje_critico("Error al obtener proveedor por lo siguiente: " + str(e))
 
     def tabla_listar_clientes(self):
-        try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-                        self.clientes = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos()    
-                    else:
-                        self.clientes = ClientesFisicosAndMorales(session).mostrar_clientes_morales()
-                self.llenar_tabla_clientes(self.clientes)
-        except Exception as e:
-            Mensaje().mensaje_critico(f"error al obtener los clientes por lo siguiente: {e}")
-
-    def llenar_tabla_clientes(self, clientes):
+        self.modal_espera_local()
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            self.obtener_clientes_fisicos_hilo()
+        else:
+            self.obtener_clientes_morales_hilo()
+        
+    def cargando_cerrar(self):
+        if self.cargando is not None:
+            self.cargando.close()
+            self.cargando = None
+            
+    def modal_espera_local(self):
+        if self.cargando is None or not self.cargando.isVisible():
+            self.cargando = Modal_de_espera(self)
+            self.cargando.show()
+        else:
+            self.cargando.raise_()
+            self.cargando.activateWindow()
+            
+    def obtener_clientes_fisicos_hilo(self):
+        self.consultor = Consultas_segundo_plano()
+        self.consultor.resultado.connect(self.llenar_tabla_clientes)
+        self.consultor.ejecutar_hilo(funcion=self.clientes_fisicos_query)
+   
+    def obtener_clientes_morales_hilo(self):
+        self.consultor = Consultas_segundo_plano()
+        self.consultor.resultado.connect(self.llenar_tabla_clientes)
+        self.consultor.ejecutar_hilo(funcion=self.clientes_morales_query)
+        
+    def clientes_fisicos_query(self, session):
+        self.clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos() 
+        return self.clientes, estado
+    
+    def clientes_morales_query(self, session):
+        self.clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales()
+        return self.clientes, estado
+    
+    def llenar_tabla_clientes(self, clientes, estado):
         try:
             # Verificar si la tabla está inicializada
             if self.ui.tabla_clientes is None:
@@ -427,6 +456,7 @@ class Clientes(QWidget):
                         "Id", "Nombre", "Apellido Paterno", "Apellido Materno", "RFC", "CURP"
                         ])
                     self.ui.tabla_clientes.setModel(self.model_clientes)
+                    QTimer.singleShot(0, self.cargando_cerrar)
                     return
                 nombre_columnas = [
                     "Id", "Nombre", "Apellido Paterno", "Apellido Materno", "RFC", "CURP"
@@ -441,6 +471,7 @@ class Clientes(QWidget):
                         "Id", "Nombre", "RFC", "RAZON SOCIAL", "NIF"
                         ])
                     self.ui.tabla_clientes.setModel(self.model_clientes)
+                    QTimer.singleShot(0, self.cargando_cerrar)
                     return
                 nombre_columnas = [
                     "Id", "Nombre", "RFC", "RAZON SOCIAL", "NIF"
@@ -477,6 +508,7 @@ class Clientes(QWidget):
             Mensaje().mensaje_critico(f"Error al llenar la tabla de clientes: {e}")
         
         self.clientes = None
+        QTimer.singleShot(0, self.cargando_cerrar)
 
     def obtener_id_elemento_tabla(self, current, previus):
         # Verifica si la celda seleccionada está en la primera columna

@@ -276,7 +276,6 @@ class Control_proveedores(QWidget):
     def obtener_proveedores_tabla_hilo(self):
         self.modal_espera_local()
         self.consultor = Consultas_segundo_plano()
-        self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.llenar_tabla_proveedores)
         self.consultor.ejecutar_hilo(funcion=self.obtener_proveedores_tabla_query)
         
@@ -386,9 +385,10 @@ class Control_proveedores(QWidget):
             # self.ui.tabla_proveedores.selectionModel().currentChanged.connect(self.obtener_proveedor_seleccionado_tabla)
             self.ui.tabla_proveedores.clicked.connect(self.obtener_proveedor_seleccionado_tabla)
             self.seleccion_conectada_proveedores = True  # Marcar como conectada
-
         except Exception as e:
             Mensaje().mensaje_critico(f'No se logro hacer el listado de los proveedores: {e}')
+        
+        QTimer.singleShot(0, self.cargando_cerrar)
 
     def control_actualizar_proveedor(self):
         # Obtén los datos del proveedor y del representante

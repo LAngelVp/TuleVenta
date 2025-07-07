@@ -18,8 +18,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateEdit,
     QFormLayout, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QPlainTextEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout,
-    QWidget)
+    QScrollArea, QSizePolicy, QSpacerItem, QToolButton,
+    QVBoxLayout, QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconsdvg_rc
 from ...Source import iconosSVG_rc
@@ -28,7 +28,7 @@ class Ui_RegistroAdministrador(object):
     def setupUi(self, RegistroAdministrador):
         if not RegistroAdministrador.objectName():
             RegistroAdministrador.setObjectName(u"RegistroAdministrador")
-        RegistroAdministrador.resize(1192, 764)
+        RegistroAdministrador.resize(863, 550)
         RegistroAdministrador.setStyleSheet(u"*{\n"
 "color: black;\n"
 "}\n"
@@ -45,7 +45,7 @@ class Ui_RegistroAdministrador(object):
 "background:#EE1D52;\n"
 "border-radius:5px;\n"
 "}\n"
-"[objectName*=\"contenedor_\"]{\n"
+"[objectName*=\"contenedor\"]{\n"
 "background: #fffefb;\n"
 "}\n"
 "#widget_cabecera_ventana{\n"
@@ -74,8 +74,8 @@ class Ui_RegistroAdministrador(object):
 "	background-color: rgb(214, 214, 214);\n"
 "}\n"
 "#btc_cerrar::hover{\n"
-"	backgr"
-                        "ound-color: rgb(255, 0, 0);\n"
+"	backgro"
+                        "und-color: rgb(255, 0, 0);\n"
 "}\n"
 "\n"
 "#widget_contenedor{\n"
@@ -112,6 +112,7 @@ class Ui_RegistroAdministrador(object):
 "	border-bottom: 1px solid #3b3c3d;\n"
 "	background-color: #F5F5F5;\n"
 "padding: 2px;\n"
+"min-width: 150px;\n"
 "}\n"
 "[objectName^=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
@@ -120,8 +121,8 @@ class Ui_RegistroAdministrador(object):
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
 "border-radius: 4px;\n"
-"background-color: #"
-                        "F5F5F5;\n"
+""
+                        "background-color: #F5F5F5;\n"
 "font-size: 14px;\n"
 "padding: 2px;\n"
 "}\n"
@@ -162,10 +163,10 @@ class Ui_RegistroAdministrador(object):
 "    background: #F5F5F5 ;\n"
 "    border-radius: 3px;\n"
 "    outline: none;\n"
-"}\n"
+""
+                        "}\n"
 "\n"
-"/* ES"
-                        "TILO DE LOS \u00cdTEMS */\n"
+"/* ESTILO DE LOS \u00cdTEMS */\n"
 "[objectName*=\"cajaOpciones\"] QListView::item {\n"
 "    padding: 6px 10px ;\n"
 "    margin: 2px ;\n"
@@ -202,8 +203,8 @@ class Ui_RegistroAdministrador(object):
 "[objectName*=\"fecha_\"]{\n"
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
-"border-radius: 5px"
-                        ";\n"
+"bo"
+                        "rder-radius: 5px;\n"
 "padding: 2px;\n"
 "background-color: #f5f4f1;\n"
 "font-size: 14px;\n"
@@ -243,9 +244,9 @@ class Ui_RegistroAdministrador(object):
 "\n"
 "/* BOTONES DE NAVEGACI\u00d3N */\n"
 "QCalendarWidget QToolButton {\n"
-"    background-color: transparent;\n"
-""
-                        "    color: white;\n"
+"    background-color: t"
+                        "ransparent;\n"
+"    color: white;\n"
 "    font-weight: bold;\n"
 "    padding: 5px;\n"
 "}\n"
@@ -284,9 +285,9 @@ class Ui_RegistroAdministrador(object):
 "[objectName^=\"Button\"]{\n"
 "	font-family: Arial;\n"
 "	font-size: 14px;\n"
-"	font-weight:bold;\n"
-"color: #ff"
-                        "fefb;\n"
+"	font-weight:bold"
+                        ";\n"
+"color: #fffefb;\n"
 "background: #00619a;\n"
 "border:none;\n"
 "border-radius:5px;\n"
@@ -334,9 +335,9 @@ class Ui_RegistroAdministrador(object):
 "}\n"
 "#btn_btn_bajapersona{\n"
 "	border: none;\n"
-"	padding: 2px 5px;\n"
-"	border-ra"
-                        "dius: 5px;	\n"
+"	padding: 2px 5px"
+                        ";\n"
+"	border-radius: 5px;	\n"
 "	background-color: #00619a;	\n"
 "	text-transform: uppercase;\n"
 "	font-size: 14px;\n"
@@ -379,9 +380,9 @@ class Ui_RegistroAdministrador(object):
 "width:87px;\n"
 "}\n"
 "*[objectName^=\"fecha_\"]::drop-down{\n"
-"subcontrol-origin: padding;\n"
-"subcont"
-                        "rol-position: top right;\n"
+"subcontrol-origin: padd"
+                        "ing;\n"
+"subcontrol-position: top right;\n"
 "padding-right:5px;\n"
 "width: 20%;\n"
 "border-left-width: 1px;\n"
@@ -415,37 +416,35 @@ class Ui_RegistroAdministrador(object):
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.widget_contenedor = QWidget(RegistroAdministrador)
-        self.widget_contenedor.setObjectName(u"widget_contenedor")
-        self.widget_contenedor.setStyleSheet(u"")
-        self.verticalLayout_2 = QVBoxLayout(self.widget_contenedor)
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.widget_cabecera_ventana = QWidget(self.widget_contenedor)
+        self.widget_cabecera_ventana = QWidget(RegistroAdministrador)
         self.widget_cabecera_ventana.setObjectName(u"widget_cabecera_ventana")
         self.widget_cabecera_ventana.setMinimumSize(QSize(0, 30))
         self.widget_cabecera_ventana.setMaximumSize(QSize(16777215, 16777215))
         self.widget_cabecera_ventana.setStyleSheet(u"")
-        self.horizontalLayout_2 = QHBoxLayout(self.widget_cabecera_ventana)
-        self.horizontalLayout_2.setSpacing(0)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_12 = QGridLayout(self.widget_cabecera_ventana)
+        self.gridLayout_12.setObjectName(u"gridLayout_12")
+        self.gridLayout_12.setContentsMargins(0, 0, 0, 0)
         self.widget_2 = QWidget(self.widget_cabecera_ventana)
         self.widget_2.setObjectName(u"widget_2")
         self.widget_2.setStyleSheet(u"")
-        self.horizontalLayout = QHBoxLayout(self.widget_2)
-        self.horizontalLayout.setSpacing(3)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(5, 0, 5, 0)
-        self.logotipo_cabecera_ventana = QLabel(self.widget_2)
-        self.logotipo_cabecera_ventana.setObjectName(u"logotipo_cabecera_ventana")
+        self.gridLayout_13 = QGridLayout(self.widget_2)
+        self.gridLayout_13.setObjectName(u"gridLayout_13")
+        self.gridLayout_13.setContentsMargins(5, 0, 5, 0)
+        self.btc_maximizar = QPushButton(self.widget_2)
+        self.btc_maximizar.setObjectName(u"btc_maximizar")
+        self.btc_maximizar.setMinimumSize(QSize(20, 20))
+        self.btc_maximizar.setMaximumSize(QSize(20, 20))
+        self.btc_maximizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon = QIcon()
+        icon.addFile(u":/Icons/Bootstrap/arrows-angle-expand.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btc_maximizar.setIcon(icon)
+        self.btc_maximizar.setIconSize(QSize(20, 15))
 
-        self.horizontalLayout.addWidget(self.logotipo_cabecera_ventana)
+        self.gridLayout_13.addWidget(self.btc_maximizar, 0, 3, 1, 1)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        self.gridLayout_13.addItem(self.horizontalSpacer, 0, 1, 1, 1)
 
         self.btc_minimizar = QPushButton(self.widget_2)
         self.btc_minimizar.setObjectName(u"btc_minimizar")
@@ -453,24 +452,17 @@ class Ui_RegistroAdministrador(object):
         self.btc_minimizar.setMaximumSize(QSize(20, 20))
         self.btc_minimizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btc_minimizar.setStyleSheet(u"")
-        icon = QIcon()
-        icon.addFile(u":/Icons/Bootstrap/arrows-angle-contract.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btc_minimizar.setIcon(icon)
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/Bootstrap/arrows-angle-contract.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btc_minimizar.setIcon(icon1)
         self.btc_minimizar.setIconSize(QSize(20, 15))
 
-        self.horizontalLayout.addWidget(self.btc_minimizar)
+        self.gridLayout_13.addWidget(self.btc_minimizar, 0, 2, 1, 1)
 
-        self.btc_maximizar = QPushButton(self.widget_2)
-        self.btc_maximizar.setObjectName(u"btc_maximizar")
-        self.btc_maximizar.setMinimumSize(QSize(20, 20))
-        self.btc_maximizar.setMaximumSize(QSize(20, 20))
-        self.btc_maximizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/Bootstrap/arrows-angle-expand.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btc_maximizar.setIcon(icon1)
-        self.btc_maximizar.setIconSize(QSize(20, 15))
+        self.logotipo_cabecera_ventana = QLabel(self.widget_2)
+        self.logotipo_cabecera_ventana.setObjectName(u"logotipo_cabecera_ventana")
 
-        self.horizontalLayout.addWidget(self.btc_maximizar)
+        self.gridLayout_13.addWidget(self.logotipo_cabecera_ventana, 0, 0, 1, 1)
 
         self.btc_cerrar = QPushButton(self.widget_2)
         self.btc_cerrar.setObjectName(u"btc_cerrar")
@@ -482,15 +474,25 @@ class Ui_RegistroAdministrador(object):
         self.btc_cerrar.setIcon(icon2)
         self.btc_cerrar.setIconSize(QSize(20, 15))
 
-        self.horizontalLayout.addWidget(self.btc_cerrar)
+        self.gridLayout_13.addWidget(self.btc_cerrar, 0, 4, 1, 1)
 
 
-        self.horizontalLayout_2.addWidget(self.widget_2)
+        self.gridLayout_12.addWidget(self.widget_2, 0, 0, 1, 1)
 
 
-        self.verticalLayout_2.addWidget(self.widget_cabecera_ventana)
+        self.verticalLayout.addWidget(self.widget_cabecera_ventana)
 
-        self.contenedor_general = QWidget(self.widget_contenedor)
+        self.contenedor_scrollArea = QScrollArea(RegistroAdministrador)
+        self.contenedor_scrollArea.setObjectName(u"contenedor_scrollArea")
+        self.contenedor_scrollArea.setWidgetResizable(True)
+        self.contenedor_scroll = QWidget()
+        self.contenedor_scroll.setObjectName(u"contenedor_scroll")
+        self.contenedor_scroll.setGeometry(QRect(0, 0, 1198, 625))
+        self.gridLayout_11 = QGridLayout(self.contenedor_scroll)
+        self.gridLayout_11.setSpacing(0)
+        self.gridLayout_11.setObjectName(u"gridLayout_11")
+        self.gridLayout_11.setContentsMargins(0, 0, 0, 0)
+        self.contenedor_general = QWidget(self.contenedor_scroll)
         self.contenedor_general.setObjectName(u"contenedor_general")
         self.gridLayout_4 = QGridLayout(self.contenedor_general)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
@@ -863,6 +865,7 @@ class Ui_RegistroAdministrador(object):
         self.fecha_fechanacimiento = QDateEdit(self.contenedor_datosizquierda)
         self.fecha_fechanacimiento.setObjectName(u"fecha_fechanacimiento")
         self.fecha_fechanacimiento.setMaximumSize(QSize(16777215, 16777215))
+        self.fecha_fechanacimiento.setStyleSheet(u"")
         self.fecha_fechanacimiento.setProperty(u"showGroupSeparator", False)
         self.fecha_fechanacimiento.setCalendarPopup(True)
 
@@ -1015,10 +1018,11 @@ class Ui_RegistroAdministrador(object):
         self.gridLayout_4.addWidget(self.contenedor_datosizquierda, 2, 0, 1, 7)
 
 
-        self.verticalLayout_2.addWidget(self.contenedor_general)
+        self.gridLayout_11.addWidget(self.contenedor_general, 0, 0, 1, 1)
 
+        self.contenedor_scrollArea.setWidget(self.contenedor_scroll)
 
-        self.verticalLayout.addWidget(self.widget_contenedor)
+        self.verticalLayout.addWidget(self.contenedor_scrollArea)
 
         QWidget.setTabOrder(self.txt_nombre, self.txt_apellidop)
         QWidget.setTabOrder(self.txt_apellidop, self.txt_apellidom)
@@ -1070,9 +1074,9 @@ class Ui_RegistroAdministrador(object):
 
     def retranslateUi(self, RegistroAdministrador):
         RegistroAdministrador.setWindowTitle(QCoreApplication.translate("RegistroAdministrador", u"Form", None))
-        self.logotipo_cabecera_ventana.setText("")
-        self.btc_minimizar.setText("")
         self.btc_maximizar.setText("")
+        self.btc_minimizar.setText("")
+        self.logotipo_cabecera_ventana.setText("")
         self.btc_cerrar.setText("")
         self.btn_btn_bajapersona.setText(QCoreApplication.translate("RegistroAdministrador", u"dar de baja", None))
         self.etiqueta_status_empleado.setText("")

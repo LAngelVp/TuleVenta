@@ -30,6 +30,7 @@ class Ui_Control_Clientes(object):
         if not Control_Clientes.objectName():
             Control_Clientes.setObjectName(u"Control_Clientes")
         Control_Clientes.resize(1400, 590)
+        Control_Clientes.setMinimumSize(QSize(0, 0))
         Control_Clientes.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "#Control_Clientes{\n"
 "background: #fffefb;\n"
@@ -211,6 +212,7 @@ class Ui_Control_Clientes(object):
 "font-size: 14px;\n"
 "background: #E3E3E3;\n"
 "border: 1px solid #4791F5;\n"
+"min-height: 400px;\n"
 "}\n"
 "\n"
 "[objectName*=\"tabla_\"] QTableView {\n"
@@ -248,9 +250,9 @@ class Ui_Control_Clientes(object):
 "color:#1d1c1c;\n"
 "font-weight: bold;\n"
 "}\n"
-"#wpc_clientes_contenedordatos{\n"
-"max-width:800"
-                        "px;\n"
+"#wpc_clientes_contenedord"
+                        "atos{\n"
+"max-width:800px;\n"
 "background: #fffefb;\n"
 "}\n"
 "#label_wpc_fotocliente{\n"
@@ -295,8 +297,8 @@ class Ui_Control_Clientes(object):
 "padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
-"*[objectName*=\"fecha_\""
-                        "]::focus{\n"
+"*"
+                        "[objectName*=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
@@ -334,8 +336,8 @@ class Ui_Control_Clientes(object):
 "    selection-color: white;\n"
 "}\n"
 "\n"
-"/* D\u00cdAS DE OTROS M"
-                        "ESES */\n"
+""
+                        "/* D\u00cdAS DE OTROS MESES */\n"
 "QCalendarWidget QAbstractItemView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
@@ -368,7 +370,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, -254, 1388, 758))
+        self.wpc_scrooll_area.setGeometry(QRect(0, -600, 1388, 1104))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
