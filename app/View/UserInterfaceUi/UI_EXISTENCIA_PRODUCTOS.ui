@@ -26,7 +26,7 @@ font-weight:bold;
 font-family:&quot;Arial&quot;;
 }
 [objectName *=&quot;contenedor&quot;]{
-background:#fffefb;
+background:#ebe7dc;
 }
 [objectName*=&quot;etiqueta_&quot;]{
 color: #1d1c1c;
@@ -226,7 +226,7 @@ QCalendarWidget QAbstractItemView::item:hover {
     <number>0</number>
    </property>
    <item row="0" column="0">
-    <widget class="QFrame" name="contenedor">
+    <widget class="QFrame" name="contenedorModal">
      <property name="frameShape">
       <enum>QFrame::Shape::StyledPanel</enum>
      </property>
@@ -250,7 +250,7 @@ QCalendarWidget QAbstractItemView::item:hover {
        <number>0</number>
       </property>
       <item row="2" column="0" colspan="3">
-       <layout class="QGridLayout" name="contenedor_gridLayout_2">
+       <layout class="QGridLayout" name="contenedorModal_gridLayout_2">
         <property name="leftMargin">
          <number>10</number>
         </property>
@@ -337,7 +337,7 @@ QCalendarWidget QAbstractItemView::item:hover {
        </layout>
       </item>
       <item row="4" column="0" colspan="3">
-       <widget class="QFrame" name="contenedor_frame">
+       <widget class="QFrame" name="contenedorModal_frame">
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>
         </property>
@@ -405,7 +405,7 @@ QCalendarWidget QAbstractItemView::item:hover {
        </widget>
       </item>
       <item row="1" column="0" colspan="3">
-       <layout class="QGridLayout" name="contenedor_gridLayout_3">
+       <layout class="QGridLayout" name="contenedorModal_gridLayout_3">
         <property name="leftMargin">
          <number>10</number>
         </property>

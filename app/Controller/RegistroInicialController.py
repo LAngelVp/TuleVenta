@@ -279,7 +279,22 @@ class Registro_personal_inicial(QDialog):
         self.ui.txt_ninterior.setText(empleado_seleccionado.num_interior)
         self.ui.txt_nexterior.setText(empleado_seleccionado.num_exterior)
         self.ui.txtlargo_direccion_completa.setPlainText(empleado_seleccionado.direccion_adicional)
-        self.ui.foto_usuario.setPixmap(QPixmap(empleado_seleccionado.foto).scaled(self.ui.foto_usuario.size()))
+        if empleado_seleccionado.foto is not None and empleado_seleccionado.foto != "":
+            # Si hay foto, cargarla como QPixmap
+            pixmap = QPixmap(empleado_seleccionado.foto).scaled(self.ui.foto_usuario.size())
+            self.ui.foto_usuario.setPixmap(pixmap)
+        else:
+            # Si no hay foto, establecer el texto HTML
+            self.ui.foto_usuario.setText(QCoreApplication.translate(
+                "RegistroAdministrador", 
+                u"""<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">
+<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">
+p, li { white-space: pre-wrap; }
+</style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">
+<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>
+<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>""", 
+                None
+            ))
         self.file_name = empleado_seleccionado.foto
         
         self.ui.Button_aceptar.hide()

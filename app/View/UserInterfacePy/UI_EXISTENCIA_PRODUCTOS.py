@@ -38,7 +38,7 @@ class Ui_UI_EXISTENCIA_PRODUCTO(object):
 "font-family:\"Arial\";\n"
 "}\n"
 "[objectName *=\"contenedor\"]{\n"
-"background:#fffefb;\n"
+"background:#ebe7dc;\n"
 "}\n"
 "[objectName*=\"etiqueta_\"]{\n"
 "color: #1d1c1c;\n"
@@ -228,84 +228,84 @@ class Ui_UI_EXISTENCIA_PRODUCTO(object):
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.contenedor = QFrame(UI_EXISTENCIA_PRODUCTO)
-        self.contenedor.setObjectName(u"contenedor")
-        self.contenedor.setFrameShape(QFrame.Shape.StyledPanel)
-        self.contenedor.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout_5 = QGridLayout(self.contenedor)
+        self.contenedorModal = QFrame(UI_EXISTENCIA_PRODUCTO)
+        self.contenedorModal.setObjectName(u"contenedorModal")
+        self.contenedorModal.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedorModal.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_5 = QGridLayout(self.contenedorModal)
         self.gridLayout_5.setSpacing(0)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.contenedor_gridLayout_2 = QGridLayout()
-        self.contenedor_gridLayout_2.setObjectName(u"contenedor_gridLayout_2")
-        self.contenedor_gridLayout_2.setVerticalSpacing(10)
-        self.contenedor_gridLayout_2.setContentsMargins(10, 10, 10, -1)
-        self.etiqueta_NotasExistencia = QLabel(self.contenedor)
+        self.contenedorModal_gridLayout_2 = QGridLayout()
+        self.contenedorModal_gridLayout_2.setObjectName(u"contenedorModal_gridLayout_2")
+        self.contenedorModal_gridLayout_2.setVerticalSpacing(10)
+        self.contenedorModal_gridLayout_2.setContentsMargins(10, 10, 10, -1)
+        self.etiqueta_NotasExistencia = QLabel(self.contenedorModal)
         self.etiqueta_NotasExistencia.setObjectName(u"etiqueta_NotasExistencia")
 
-        self.contenedor_gridLayout_2.addWidget(self.etiqueta_NotasExistencia, 3, 0, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.etiqueta_NotasExistencia, 3, 0, 1, 1)
 
-        self.txtlargo_NotasProducto = QPlainTextEdit(self.contenedor)
+        self.txtlargo_NotasProducto = QPlainTextEdit(self.contenedorModal)
         self.txtlargo_NotasProducto.setObjectName(u"txtlargo_NotasProducto")
 
-        self.contenedor_gridLayout_2.addWidget(self.txtlargo_NotasProducto, 4, 0, 1, 2)
+        self.contenedorModal_gridLayout_2.addWidget(self.txtlargo_NotasProducto, 4, 0, 1, 2)
 
-        self.etiqueta_FechaMovimiento = QLabel(self.contenedor)
+        self.etiqueta_FechaMovimiento = QLabel(self.contenedorModal)
         self.etiqueta_FechaMovimiento.setObjectName(u"etiqueta_FechaMovimiento")
 
-        self.contenedor_gridLayout_2.addWidget(self.etiqueta_FechaMovimiento, 2, 0, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.etiqueta_FechaMovimiento, 2, 0, 1, 1)
 
-        self.decimal_CantidadExistencia = QDoubleSpinBox(self.contenedor)
+        self.decimal_CantidadExistencia = QDoubleSpinBox(self.contenedorModal)
         self.decimal_CantidadExistencia.setObjectName(u"decimal_CantidadExistencia")
         self.decimal_CantidadExistencia.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.decimal_CantidadExistencia.setDecimals(3)
         self.decimal_CantidadExistencia.setMaximum(999999999999999929757289024535551219930759168.000000000000000)
 
-        self.contenedor_gridLayout_2.addWidget(self.decimal_CantidadExistencia, 0, 1, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.decimal_CantidadExistencia, 0, 1, 1, 1)
 
-        self.etiqueta_TipoMovimiento = QLabel(self.contenedor)
+        self.etiqueta_TipoMovimiento = QLabel(self.contenedorModal)
         self.etiqueta_TipoMovimiento.setObjectName(u"etiqueta_TipoMovimiento")
 
-        self.contenedor_gridLayout_2.addWidget(self.etiqueta_TipoMovimiento, 1, 0, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.etiqueta_TipoMovimiento, 1, 0, 1, 1)
 
-        self.cajaOpciones_TipoMovimiento = QComboBox(self.contenedor)
+        self.cajaOpciones_TipoMovimiento = QComboBox(self.contenedorModal)
         self.cajaOpciones_TipoMovimiento.addItem("")
         self.cajaOpciones_TipoMovimiento.addItem("")
         self.cajaOpciones_TipoMovimiento.setObjectName(u"cajaOpciones_TipoMovimiento")
         self.cajaOpciones_TipoMovimiento.setFrame(True)
 
-        self.contenedor_gridLayout_2.addWidget(self.cajaOpciones_TipoMovimiento, 1, 1, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.cajaOpciones_TipoMovimiento, 1, 1, 1, 1)
 
-        self.fecha_FechaMovimiento = QDateEdit(self.contenedor)
+        self.fecha_FechaMovimiento = QDateEdit(self.contenedorModal)
         self.fecha_FechaMovimiento.setObjectName(u"fecha_FechaMovimiento")
         self.fecha_FechaMovimiento.setCalendarPopup(True)
 
-        self.contenedor_gridLayout_2.addWidget(self.fecha_FechaMovimiento, 2, 1, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.fecha_FechaMovimiento, 2, 1, 1, 1)
 
-        self.etiqueta_CantidadExistencia = QLabel(self.contenedor)
+        self.etiqueta_CantidadExistencia = QLabel(self.contenedorModal)
         self.etiqueta_CantidadExistencia.setObjectName(u"etiqueta_CantidadExistencia")
 
-        self.contenedor_gridLayout_2.addWidget(self.etiqueta_CantidadExistencia, 0, 0, 1, 1)
+        self.contenedorModal_gridLayout_2.addWidget(self.etiqueta_CantidadExistencia, 0, 0, 1, 1)
 
 
-        self.gridLayout_5.addLayout(self.contenedor_gridLayout_2, 2, 0, 1, 3)
+        self.gridLayout_5.addLayout(self.contenedorModal_gridLayout_2, 2, 0, 1, 3)
 
-        self.contenedor_frame = QFrame(self.contenedor)
-        self.contenedor_frame.setObjectName(u"contenedor_frame")
-        self.contenedor_frame.setFrameShape(QFrame.Shape.StyledPanel)
-        self.contenedor_frame.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout_4 = QGridLayout(self.contenedor_frame)
+        self.contenedorModal_frame = QFrame(self.contenedorModal)
+        self.contenedorModal_frame.setObjectName(u"contenedorModal_frame")
+        self.contenedorModal_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedorModal_frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_4 = QGridLayout(self.contenedorModal_frame)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.btn_existenciaProducto_aceptar = QPushButton(self.contenedor_frame)
+        self.btn_existenciaProducto_aceptar = QPushButton(self.contenedorModal_frame)
         self.btn_existenciaProducto_aceptar.setObjectName(u"btn_existenciaProducto_aceptar")
         self.btn_existenciaProducto_aceptar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.gridLayout_4.addWidget(self.btn_existenciaProducto_aceptar, 1, 0, 1, 1)
 
 
-        self.gridLayout_5.addWidget(self.contenedor_frame, 4, 0, 1, 3)
+        self.gridLayout_5.addWidget(self.contenedorModal_frame, 4, 0, 1, 3)
 
-        self.contenedor_encabezado = QFrame(self.contenedor)
+        self.contenedor_encabezado = QFrame(self.contenedorModal)
         self.contenedor_encabezado.setObjectName(u"contenedor_encabezado")
         self.contenedor_encabezado.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedor_encabezado.setFrameShadow(QFrame.Shadow.Raised)
@@ -332,39 +332,39 @@ class Ui_UI_EXISTENCIA_PRODUCTO(object):
 
         self.gridLayout_5.addWidget(self.contenedor_encabezado, 0, 0, 1, 3)
 
-        self.contenedor_gridLayout_3 = QGridLayout()
-        self.contenedor_gridLayout_3.setObjectName(u"contenedor_gridLayout_3")
-        self.contenedor_gridLayout_3.setVerticalSpacing(10)
-        self.contenedor_gridLayout_3.setContentsMargins(10, 10, 10, -1)
-        self.etiqueta_Usuario = QLabel(self.contenedor)
+        self.contenedorModal_gridLayout_3 = QGridLayout()
+        self.contenedorModal_gridLayout_3.setObjectName(u"contenedorModal_gridLayout_3")
+        self.contenedorModal_gridLayout_3.setVerticalSpacing(10)
+        self.contenedorModal_gridLayout_3.setContentsMargins(10, 10, 10, -1)
+        self.etiqueta_Usuario = QLabel(self.contenedorModal)
         self.etiqueta_Usuario.setObjectName(u"etiqueta_Usuario")
 
-        self.contenedor_gridLayout_3.addWidget(self.etiqueta_Usuario, 0, 0, 1, 1)
+        self.contenedorModal_gridLayout_3.addWidget(self.etiqueta_Usuario, 0, 0, 1, 1)
 
-        self.etiqueta_NombreUsuario = QLabel(self.contenedor)
+        self.etiqueta_NombreUsuario = QLabel(self.contenedorModal)
         self.etiqueta_NombreUsuario.setObjectName(u"etiqueta_NombreUsuario")
 
-        self.contenedor_gridLayout_3.addWidget(self.etiqueta_NombreUsuario, 0, 1, 1, 1)
+        self.contenedorModal_gridLayout_3.addWidget(self.etiqueta_NombreUsuario, 0, 1, 1, 1)
 
-        self.etiqueta_Clave = QLabel(self.contenedor)
+        self.etiqueta_Clave = QLabel(self.contenedorModal)
         self.etiqueta_Clave.setObjectName(u"etiqueta_Clave")
 
-        self.contenedor_gridLayout_3.addWidget(self.etiqueta_Clave, 1, 0, 1, 1)
+        self.contenedorModal_gridLayout_3.addWidget(self.etiqueta_Clave, 1, 0, 1, 1)
 
-        self.etiqueta_ClaveProducto = QLabel(self.contenedor)
+        self.etiqueta_ClaveProducto = QLabel(self.contenedorModal)
         self.etiqueta_ClaveProducto.setObjectName(u"etiqueta_ClaveProducto")
 
-        self.contenedor_gridLayout_3.addWidget(self.etiqueta_ClaveProducto, 1, 1, 1, 1)
+        self.contenedorModal_gridLayout_3.addWidget(self.etiqueta_ClaveProducto, 1, 1, 1, 1)
 
 
-        self.gridLayout_5.addLayout(self.contenedor_gridLayout_3, 1, 0, 1, 3)
+        self.gridLayout_5.addLayout(self.contenedorModal_gridLayout_3, 1, 0, 1, 3)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.gridLayout_5.addItem(self.verticalSpacer, 3, 0, 1, 3)
 
 
-        self.gridLayout.addWidget(self.contenedor, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.contenedorModal, 0, 0, 1, 1)
 
         QWidget.setTabOrder(self.decimal_CantidadExistencia, self.cajaOpciones_TipoMovimiento)
         QWidget.setTabOrder(self.cajaOpciones_TipoMovimiento, self.fecha_FechaMovimiento)

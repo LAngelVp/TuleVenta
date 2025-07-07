@@ -14,7 +14,7 @@ from ..Model.UsuarioModel import UsuarioModel
 from .MensajesAlertasController import Mensaje
 from .CategoriasController import CategoriasController
 from ..View.UserInterfacePy.UI_CONTROL_PRODUCTOS import Ui_Control_Productos
-from ..View.UserInterfacePy.UI_AGREGARPRODUCTO import Ui_contenedor_agregar_productos
+from ..View.UserInterfacePy.UI_AGREGARPRODUCTO import Ui_contenedorModal_agregar_productos
 from ..View.UserInterfacePy.UI_NUEVA_CATEGORIA import Ui_Nueva_categoria
 from ..View.UserInterfacePy.UI_EXISTENCIA_PRODUCTOS import Ui_UI_EXISTENCIA_PRODUCTO
 from .PresentacionProductosController import PresentacionProductos
@@ -123,7 +123,7 @@ class Admin_productosController(QWidget):
         super().__init__(parent)
         # # Asegurar que no hay translucidez
         self.setAttribute(Qt.WA_TranslucentBackground, False)
-        self.ui = Ui_contenedor_agregar_productos()
+        self.ui = Ui_contenedorModal_agregar_productos()
         self.ui.setupUi(self)
         # self.setStyleSheet(self.styleSheet())
         icon = QIcon(':Icons/IconosSVG/productos.png')
@@ -132,11 +132,11 @@ class Admin_productosController(QWidget):
 #// EDICION DE COMPONENTES:
         self.ui.fecha_fabricacionProducto.setDate(QDate.currentDate())
         self.ui.fecha_vencimientoProducto.setDate(QDate.currentDate())
-        self.ui.contenedor_proveedores_vinculados.hide()
+        self.ui.contenedorModal_proveedores_vinculados.hide()
         self.ui.btn_btn_addProduct_actualizar_producto.hide()
-        self.ui.contenedor_proveedores_existentes.hide()
-        self.ui.contenedor_proveedores_a_vincular.hide()
-        self.ui.contenedor_contenedorFechaCaducidad.hide()
+        self.ui.contenedorModal_proveedores_existentes.hide()
+        self.ui.contenedorModal_proveedores_a_vincular.hide()
+        self.ui.contenedorModal_contenedorFechaCaducidad.hide()
         self.ui.txt_codBarras.setFocus()
         
 #// Validaciones:
@@ -252,9 +252,9 @@ class Admin_productosController(QWidget):
 #FUNCIONES-INTERACCION CON EL PRODUCTO
     def mostrar_fechas_caducidad(self, state):
         if state in [1, 2]:
-            self.ui.contenedor_contenedorFechaCaducidad.show()
+            self.ui.contenedorModal_contenedorFechaCaducidad.show()
         else:  # Si está desmarcado
-            self.ui.contenedor_contenedorFechaCaducidad.hide()
+            self.ui.contenedorModal_contenedorFechaCaducidad.hide()
 
     def campos_productos(self):
         # Crear un diccionario para almacenar los widgets
@@ -612,15 +612,15 @@ class Admin_productosController(QWidget):
     def __cargar_datos_en_campos(self, producto):
         self.producto = producto
         self.ui.txt_codBarras.setEnabled(False)
-        self.ui.contenedor_proveedores_vinculados.show()
-        self.ui.contenedor_proveedores_existentes.show()
-        self.ui.contenedor_proveedores_a_vincular.show()
+        self.ui.contenedorModal_proveedores_vinculados.show()
+        self.ui.contenedorModal_proveedores_existentes.show()
+        self.ui.contenedorModal_proveedores_a_vincular.show()
         self.ui.txt_proveedor.hide()
         self.ui.etiqueta_proveedor.hide()
         self.ui.tabla_productos.hide()
+        self.ui.etiqueta_tituloProductos
         self.ui.btn_btn_addProduct_agregar_producto.hide()
         self.ui.btn_btn_addProduct_guardar_producto.hide()
-        self.ui.etiqueta_listaProductos.hide()
         self.ui.btn_btn_addProduct_cargar_CSVProductos.hide()
         self.ui.btn_btn_addProduct_limpiarTablaProductos.hide()
         self.ui.btn_btn_addProduct_actualizar_producto.show()
@@ -1108,8 +1108,6 @@ class Productos(QWidget):
             self.AdminProductos.setParent(self)
             self.AdminProductos.setStyleSheet(self.AdminProductos.styleSheet())
             self.AdminProductos.show()
-            # Si AdminProductos es None, se crea e inicializ
-            # Ahora sí conectar las señales, ya que AdminProductos se ha creado
         else:
             # Si ya existe y está visible, solo elevar la ventana
             self.AdminProductos.raise_()

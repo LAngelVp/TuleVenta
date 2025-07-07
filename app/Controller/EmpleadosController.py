@@ -143,8 +143,8 @@ class EmpleadosController(QWidget):
         self.mostrar_modal_local()
         self.consultor = Consultas_segundo_plano()
         self.consultor.error.connect(self.mostrar_error)
-        self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.llenar_tabla_empleados)
+        # self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.ejecutar_hilo(self.obtener_empleados_query)
         
     def mostrar_error(self, error):
@@ -218,6 +218,8 @@ class EmpleadosController(QWidget):
 
         self.ui.tabla_listaempleados.clicked.connect(self.obtener_id_elemento_tabla_empleados)
         self.seleccion_conectada_empleados = True
+        
+        QTimer.singleShot(0, self.cargando_cerrar)
 
     def obtener_id_elemento_tabla_empleados(self, current, previus = None):
         if current.isValid():

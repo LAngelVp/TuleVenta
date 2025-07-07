@@ -60,7 +60,7 @@ class Inicio_sistema:
             self.ventana_principal = Inicio_principal()
             self.ventana_principal.show()
 
-        sys.exit(self.app.exec_())
+        sys.exit(self.app.exec())
 
 if __name__ == "__main__":
     sistema = Inicio_sistema()
