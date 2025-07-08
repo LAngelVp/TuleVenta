@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="logos">
+    <file>Icons/logos/cuadrado_fondo.png</file>
+  </qresource>
+</RCC>
