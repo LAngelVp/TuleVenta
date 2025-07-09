@@ -200,7 +200,6 @@ class EmpleadosModel:
             self.session.rollback()
             return None, False
         
-
     def eliminar_credenciales(self, id):
         empleado = self.session.query(Empleados).filter(Empleados.id == id).first()
         if empleado is not None:
@@ -213,3 +212,23 @@ class EmpleadosModel:
             return None, True
         return None, False
         
+    def obtener_empleado_detallado_porId(self, id_empleado):
+        try:
+            empleado = (
+                self.session.query(Empleados).options(
+                    joinedload(Empleados.puesto)
+                        .joinedload(Puestos.departamento)
+                        .joinedload(Departamentos.sucursales),
+                    joinedload(Empleados.departamento),
+                    joinedload(Empleados.sucursal),
+                    joinedload(Empleados.usuario)
+                        .joinedload(Usuarios.rol)
+                )
+                .filter(Empleados.id == id_empleado).first()
+            )
+            if empleado:
+                return empleado, True
+            else:
+                return [], False
+        except Exception as e:
+            return [], False

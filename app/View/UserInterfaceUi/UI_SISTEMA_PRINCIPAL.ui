@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1009</width>
+    <width>1125</width>
     <height>974</height>
    </rect>
   </property>
@@ -39,7 +39,7 @@ background-color: rgb(255, 255, 255);
 	background-color: rgb(214, 214, 214);
 }
 #w_encabezado{
-background-color:#1F3A5F;
+background-color:#8494A4;
 height:30px;
 min-height: 30px;
 max-height: 30px;
@@ -53,7 +53,7 @@ background-color: rgb(255, 255, 255);
 #w_cuerpo_menu{
 min-width:40px;
 max-width:70px;
-background-color: #1F3A5F;
+background-color: #8494A4;
 }
 #label_fotousuario{
 image: url(:/Icons/IconosSVG/perfil.png);
@@ -110,7 +110,7 @@ border-radius: 10px;
 qproperty-iconSize: 20px 20px;
 }</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_18">
+  <layout class="QGridLayout" name="gridLayout_4">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -123,12 +123,12 @@ qproperty-iconSize: 20px 20px;
    <property name="bottomMargin">
     <number>0</number>
    </property>
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <item row="0" column="0">
     <widget class="QWidget" name="w_contenedor" native="true">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>0</number>
-      </property>
+     <layout class="QGridLayout" name="gridLayout_2">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -141,127 +141,10 @@ qproperty-iconSize: 20px 20px;
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item>
-       <widget class="QWidget" name="w_encabezado" native="true">
-        <layout class="QGridLayout" name="gridLayout_2">
-         <property name="leftMargin">
-          <number>5</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <property name="horizontalSpacing">
-          <number>5</number>
-         </property>
-         <property name="verticalSpacing">
-          <number>0</number>
-         </property>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="btc_minimizar_2">
-           <property name="minimumSize">
-            <size>
-             <width>35</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Minimizar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="styleSheet">
-            <string notr="true"/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../../Source/ibootstrap.qrc">
-             <normaloff>:/Icons/Bootstrap/arrows-angle-contract.svg</normaloff>:/Icons/Bootstrap/arrows-angle-contract.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>20</width>
-             <height>15</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QPushButton" name="btc_cerrar_2">
-           <property name="minimumSize">
-            <size>
-             <width>35</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Cerrar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../../Source/ibootstrap.qrc">
-             <normaloff>:/Icons/Bootstrap/x-lg.svg</normaloff>:/Icons/Bootstrap/x-lg.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>20</width>
-             <height>15</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_logoempresa">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item row="0" column="0">
        <widget class="QWidget" name="w_cuerpo" native="true">
         <layout class="QGridLayout" name="gridLayout_3">
          <property name="leftMargin">
@@ -279,23 +162,194 @@ qproperty-iconSize: 20px 20px;
          <property name="spacing">
           <number>0</number>
          </property>
-         <item row="0" column="0" alignment="Qt::AlignHCenter">
+         <item row="1" column="1">
+          <widget class="QStackedWidget" name="w_cuerpo_contenido">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="p_inicial">
+            <layout class="QGridLayout" name="gridLayout">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QWidget" name="widget_3" native="true">
+               <layout class="QGridLayout" name="gridLayout_19">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label">
+                  <property name="styleSheet">
+                   <string notr="true">image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);
+background: #0a1f44;</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+         <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignVCenter">
+          <widget class="QWidget" name="w_encabezado" native="true">
+           <layout class="QGridLayout" name="gridLayout_5">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>5</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <property name="horizontalSpacing">
+             <number>5</number>
+            </property>
+            <property name="verticalSpacing">
+             <number>0</number>
+            </property>
+            <item row="0" column="3">
+             <widget class="QPushButton" name="btc_cerrar_2">
+              <property name="minimumSize">
+               <size>
+                <width>35</width>
+                <height>25</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Cerrar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/ibootstrap.qrc">
+                <normaloff>:/Icons/Bootstrap/x-lg.svg</normaloff>:/Icons/Bootstrap/x-lg.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>20</width>
+                <height>15</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="2">
+             <widget class="QPushButton" name="btc_minimizar_2">
+              <property name="minimumSize">
+               <size>
+                <width>35</width>
+                <height>25</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Minimizar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/ibootstrap.qrc">
+                <normaloff>:/Icons/Bootstrap/arrows-angle-contract.svg</normaloff>:/Icons/Bootstrap/arrows-angle-contract.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>20</width>
+                <height>15</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="0" column="0" rowspan="2">
           <widget class="QWidget" name="w_cuerpo_menu" native="true">
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <property name="spacing">
-             <number>15</number>
+             <number>10</number>
             </property>
             <property name="leftMargin">
              <number>3</number>
             </property>
             <property name="topMargin">
-             <number>10</number>
+             <number>0</number>
             </property>
             <property name="rightMargin">
              <number>3</number>
             </property>
             <property name="bottomMargin">
-             <number>3</number>
+             <number>0</number>
             </property>
             <item>
              <widget class="QLabel" name="label_fotousuario">
@@ -312,7 +366,7 @@ qproperty-iconSize: 20px 20px;
                <bool>false</bool>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -497,7 +551,7 @@ qproperty-iconSize: 20px 20px;
             <item>
              <spacer name="verticalSpacer">
               <property name="orientation">
-               <enum>Qt::Vertical</enum>
+               <enum>Qt::Orientation::Vertical</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
@@ -510,36 +564,6 @@ qproperty-iconSize: 20px 20px;
            </layout>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QStackedWidget" name="w_cuerpo_contenido">
-           <property name="styleSheet">
-            <string notr="true"/>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="p_inicial">
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="0">
-              <widget class="QWidget" name="widget_3" native="true">
-               <layout class="QGridLayout" name="gridLayout_19">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label">
-                  <property name="styleSheet">
-                   <string notr="true">image: url(:/Icons/IconosSVG/logo_devrous.png);</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </widget>
-         </item>
         </layout>
        </widget>
       </item>
@@ -550,6 +574,7 @@ qproperty-iconSize: 20px 20px;
  </widget>
  <resources>
   <include location="../../Source/iconsdvg.qrc"/>
+  <include location="../../Source/logos.qrc"/>
   <include location="../../Source/ibootstrap.qrc"/>
  </resources>
  <connections/>

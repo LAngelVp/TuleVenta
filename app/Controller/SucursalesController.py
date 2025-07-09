@@ -10,6 +10,7 @@ from .MensajesAlertasController import *
 from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from .Validaciones import Validaciones
 
 class SucursalesController(QDialog):
     VENTANA_SUCURSALES_CERRADA = Signal()
@@ -35,6 +36,12 @@ class SucursalesController(QDialog):
         self.ui.txt_estado.setMaxLength(50)
         self.ui.txt_pais.setMaxLength(50)
         self.ui.txt_ntelefono.setMaxLength(10)
+        self.ui.txt_razonsocial.setMaxLength(300)
+        self.ui.txt_rfcsucursal.setMaxLength(13)
+        #// Validaciones
+        self.ui.txt_codigopostal.setValidator(Validaciones().get_int_validator)
+        self.ui.txt_ntelefono.setValidator(Validaciones().get_int_validator)
+        self.ui.txt_rfcsucursal.setValidator(Validaciones().get_rfc_validator)
         
         self.ui.btn_btn_agregar.clicked.connect(self.agregar)
         self.ui.lista_sucursales.itemClicked.connect(self.obtenerId)
@@ -80,7 +87,6 @@ class SucursalesController(QDialog):
             elif isinstance(campo, QPlainTextEdit):
                 campo.clear()
         self.id_sucursal = None
-
         
     def campos_nomales(self):
         return {
@@ -90,18 +96,22 @@ class SucursalesController(QDialog):
             'estado': self.ui.txt_estado,
             'pais': self.ui.txt_pais,
             'num_telefono': self.ui.txt_ntelefono,
+            "razon_social": self.ui.txt_razonsocial,
+            "rfc": self.ui.txt_rfcsucursal,
             'direccion': self.ui.txtlargo_direccion
         }
     
     def obtener_datos_campos(self):
         return {
-            'nombre_sucursal': self.ui.txt_nombre.text().strip().upper(),
-            'codigo_postal': self.ui.txt_codigopostal.text().strip().upper(),
-            'ciudad': self.ui.txt_ciudad.text().strip().upper(),
-            'estado': self.ui.txt_estado.text().strip().upper(),
-            'pais': self.ui.txt_pais.text().strip().upper(),
-            'num_telefono': self.ui.txt_ntelefono.text().strip().upper(),
-            'direccion': self.ui.txtlargo_direccion.toPlainText().strip().upper()
+            'nombre_sucursal': self.ui.txt_nombre.text().strip(),
+            'codigo_postal': self.ui.txt_codigopostal.text().strip(),
+            'ciudad': self.ui.txt_ciudad.text().strip(),
+            'estado': self.ui.txt_estado.text().strip(),
+            'pais': self.ui.txt_pais.text().strip(),
+            'num_telefono': self.ui.txt_ntelefono.text().strip(),
+            "razon_social": self.ui.txt_razonsocial.text().strip(),
+            "rfc": self.ui.txt_rfcsucursal.text().strip(),
+            'direccion': self.ui.txtlargo_direccion.toPlainText().strip()
         }
 
     def agregar(self):
@@ -179,6 +189,8 @@ class SucursalesController(QDialog):
                         self.ui.txt_estado.setText(sucursal.estado)  # Aquí debe ser `estado`
                         self.ui.txt_pais.setText(sucursal.pais)  # Aquí debe ser `pais`
                         self.ui.txt_ntelefono.setText(sucursal.num_telefono)  # Aquí debe ser `num_telefono`
+                        self.ui.txt_razonsocial.setText(sucursal.razon_social)
+                        self.ui.txt_rfcsucursal.setText(sucursal.rfc)
                         self.ui.txtlargo_direccion.setPlainText(sucursal.direccion)
                         self.listar_departamentos_asignados(sucursal.departamentos)
                 except Exception as e:

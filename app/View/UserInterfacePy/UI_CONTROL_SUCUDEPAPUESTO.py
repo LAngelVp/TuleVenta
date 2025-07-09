@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QPushButton, QSizePolicy, QStackedWidget,
     QWidget)
 from ...Source import iconsdvg_rc
+from ...Source import logos_rc
 
 class Ui_Control_SucursalesDepartamentosPuestos(object):
     def setupUi(self, Control_SucursalesDepartamentosPuestos):
@@ -112,7 +113,8 @@ class Ui_Control_SucursalesDepartamentosPuestos(object):
         self.contenedor_label.setObjectName(u"contenedor_label")
         self.contenedor_label.setEnabled(False)
         self.contenedor_label.setMouseTracking(False)
-        self.contenedor_label.setStyleSheet(u"image: url(:/Icons/IconosSVG/logo_devrous.png);")
+        self.contenedor_label.setStyleSheet(u"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
+"background: #0a1f44;")
 
         self.gridLayout_3.addWidget(self.contenedor_label, 0, 0, 1, 1)
 

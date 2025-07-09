@@ -11,6 +11,8 @@ class SucursalesModel:
                         estado,
                         pais,
                         num_telefono,
+                        razon_social,
+                        rfc,
                         direccion
                         ):
         try:
@@ -18,7 +20,7 @@ class SucursalesModel:
             if sucursal:
                 return sucursal, False
             else:
-                sucursal = Sucursales(nombre_sucursal=nombre_sucursal, codigo_postal=codigo_postal, ciudad = ciudad,  estado = estado, pais = pais, num_telefono=num_telefono, direccion = direccion)
+                sucursal = Sucursales(nombre_sucursal=nombre_sucursal, codigo_postal=codigo_postal, ciudad = ciudad,  estado = estado, pais = pais, num_telefono=num_telefono, razon_social = razon_social, rfc = rfc, direccion = direccion)
                 self.session.add(sucursal)
                 self.session.flush()
                 return sucursal, True
@@ -67,6 +69,8 @@ class SucursalesModel:
                 estado,
                 pais,
                 num_telefono,
+                razon_social,
+                rfc,
                 direccion):
         try:
             sucursal = self.session.query(Sucursales).filter_by(id = id).first()
@@ -77,6 +81,8 @@ class SucursalesModel:
                 sucursal.estado = estado
                 sucursal.pais = pais
                 sucursal.num_telefono = num_telefono
+                sucursal.razon_social = razon_social,
+                sucursal.rfc = rfc,
                 sucursal.direccion = direccion
                 return sucursal, True
             else:

@@ -19,13 +19,14 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QLabel, QPushButton,
     QSizePolicy, QSpacerItem, QStackedWidget, QToolButton,
     QVBoxLayout, QWidget)
 from ...Source import iconsdvg_rc
+from ...Source import logos_rc
 from ...Source import ibootstrap_rc
 
 class Ui_Principal_sistema(object):
     def setupUi(self, Principal_sistema):
         if not Principal_sistema.objectName():
             Principal_sistema.setObjectName(u"Principal_sistema")
-        Principal_sistema.resize(1009, 974)
+        Principal_sistema.resize(1125, 974)
         Principal_sistema.setStyleSheet(u"#Principal_sistema{\n"
 "background-color: rgb(255, 255, 255);\n"
 "}\n"
@@ -51,7 +52,7 @@ class Ui_Principal_sistema(object):
 "	background-color: rgb(214, 214, 214);\n"
 "}\n"
 "#w_encabezado{\n"
-"background-color:#1F3A5F;\n"
+"background-color:#8494A4;\n"
 "height:30px;\n"
 "min-height: 30px;\n"
 "max-height: 30px;\n"
@@ -65,7 +66,7 @@ class Ui_Principal_sistema(object):
 "#w_cuerpo_menu{\n"
 "min-width:40px;\n"
 "max-width:70px;\n"
-"background-color: #1F3A5F;\n"
+"background-color: #8494A4;\n"
 "}\n"
 "#label_fotousuario{\n"
 "image: url(:/Icons/IconosSVG/perfil.png);\n"
@@ -123,77 +124,101 @@ class Ui_Principal_sistema(object):
 "#btn_ver_datosempleado{\n"
 "qproperty-iconSize: 20px 20px;\n"
 "}")
-        self.gridLayout_18 = QGridLayout(Principal_sistema)
-        self.gridLayout_18.setObjectName(u"gridLayout_18")
-        self.gridLayout_18.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_4 = QGridLayout(Principal_sistema)
+        self.gridLayout_4.setSpacing(0)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
         self.w_contenedor = QWidget(Principal_sistema)
         self.w_contenedor.setObjectName(u"w_contenedor")
-        self.verticalLayout = QVBoxLayout(self.w_contenedor)
-        self.verticalLayout.setSpacing(0)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.w_encabezado = QWidget(self.w_contenedor)
-        self.w_encabezado.setObjectName(u"w_encabezado")
-        self.gridLayout_2 = QGridLayout(self.w_encabezado)
+        self.gridLayout_2 = QGridLayout(self.w_contenedor)
+        self.gridLayout_2.setSpacing(0)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setHorizontalSpacing(5)
-        self.gridLayout_2.setVerticalSpacing(0)
-        self.gridLayout_2.setContentsMargins(5, 0, 5, 0)
-        self.btc_minimizar_2 = QPushButton(self.w_encabezado)
-        self.btc_minimizar_2.setObjectName(u"btc_minimizar_2")
-        self.btc_minimizar_2.setMinimumSize(QSize(35, 25))
-        self.btc_minimizar_2.setMaximumSize(QSize(16777215, 16777215))
-        self.btc_minimizar_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btc_minimizar_2.setStyleSheet(u"")
-        icon = QIcon()
-        icon.addFile(u":/Icons/Bootstrap/arrows-angle-contract.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btc_minimizar_2.setIcon(icon)
-        self.btc_minimizar_2.setIconSize(QSize(20, 15))
-
-        self.gridLayout_2.addWidget(self.btc_minimizar_2, 0, 2, 1, 1)
-
-        self.btc_cerrar_2 = QPushButton(self.w_encabezado)
-        self.btc_cerrar_2.setObjectName(u"btc_cerrar_2")
-        self.btc_cerrar_2.setMinimumSize(QSize(35, 25))
-        self.btc_cerrar_2.setMaximumSize(QSize(16777215, 16777215))
-        self.btc_cerrar_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/Bootstrap/x-lg.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btc_cerrar_2.setIcon(icon1)
-        self.btc_cerrar_2.setIconSize(QSize(20, 15))
-
-        self.gridLayout_2.addWidget(self.btc_cerrar_2, 0, 3, 1, 1)
-
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_2.addItem(self.horizontalSpacer_2, 0, 1, 1, 1)
-
-        self.label_logoempresa = QLabel(self.w_encabezado)
-        self.label_logoempresa.setObjectName(u"label_logoempresa")
-        self.label_logoempresa.setAlignment(Qt.AlignCenter)
-
-        self.gridLayout_2.addWidget(self.label_logoempresa, 0, 0, 1, 1)
-
-
-        self.verticalLayout.addWidget(self.w_encabezado)
-
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.w_cuerpo = QWidget(self.w_contenedor)
         self.w_cuerpo.setObjectName(u"w_cuerpo")
         self.gridLayout_3 = QGridLayout(self.w_cuerpo)
         self.gridLayout_3.setSpacing(0)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.w_cuerpo_contenido = QStackedWidget(self.w_cuerpo)
+        self.w_cuerpo_contenido.setObjectName(u"w_cuerpo_contenido")
+        self.w_cuerpo_contenido.setStyleSheet(u"")
+        self.p_inicial = QWidget()
+        self.p_inicial.setObjectName(u"p_inicial")
+        self.gridLayout = QGridLayout(self.p_inicial)
+        self.gridLayout.setSpacing(0)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.widget_3 = QWidget(self.p_inicial)
+        self.widget_3.setObjectName(u"widget_3")
+        self.gridLayout_19 = QGridLayout(self.widget_3)
+        self.gridLayout_19.setSpacing(0)
+        self.gridLayout_19.setObjectName(u"gridLayout_19")
+        self.gridLayout_19.setContentsMargins(0, 0, 0, 0)
+        self.label = QLabel(self.widget_3)
+        self.label.setObjectName(u"label")
+        self.label.setStyleSheet(u"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
+"background: #0a1f44;")
+
+        self.gridLayout_19.addWidget(self.label, 0, 0, 1, 1)
+
+
+        self.gridLayout.addWidget(self.widget_3, 0, 0, 1, 1)
+
+        self.w_cuerpo_contenido.addWidget(self.p_inicial)
+
+        self.gridLayout_3.addWidget(self.w_cuerpo_contenido, 1, 1, 1, 1)
+
+        self.w_encabezado = QWidget(self.w_cuerpo)
+        self.w_encabezado.setObjectName(u"w_encabezado")
+        self.gridLayout_5 = QGridLayout(self.w_encabezado)
+        self.gridLayout_5.setObjectName(u"gridLayout_5")
+        self.gridLayout_5.setHorizontalSpacing(5)
+        self.gridLayout_5.setVerticalSpacing(0)
+        self.gridLayout_5.setContentsMargins(0, 0, 5, 0)
+        self.btc_cerrar_2 = QPushButton(self.w_encabezado)
+        self.btc_cerrar_2.setObjectName(u"btc_cerrar_2")
+        self.btc_cerrar_2.setMinimumSize(QSize(35, 25))
+        self.btc_cerrar_2.setMaximumSize(QSize(16777215, 16777215))
+        self.btc_cerrar_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon = QIcon()
+        icon.addFile(u":/Icons/Bootstrap/x-lg.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btc_cerrar_2.setIcon(icon)
+        self.btc_cerrar_2.setIconSize(QSize(20, 15))
+
+        self.gridLayout_5.addWidget(self.btc_cerrar_2, 0, 3, 1, 1)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_5.addItem(self.horizontalSpacer_2, 0, 0, 1, 1)
+
+        self.btc_minimizar_2 = QPushButton(self.w_encabezado)
+        self.btc_minimizar_2.setObjectName(u"btc_minimizar_2")
+        self.btc_minimizar_2.setMinimumSize(QSize(35, 25))
+        self.btc_minimizar_2.setMaximumSize(QSize(16777215, 16777215))
+        self.btc_minimizar_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btc_minimizar_2.setStyleSheet(u"")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/Bootstrap/arrows-angle-contract.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btc_minimizar_2.setIcon(icon1)
+        self.btc_minimizar_2.setIconSize(QSize(20, 15))
+
+        self.gridLayout_5.addWidget(self.btc_minimizar_2, 0, 2, 1, 1)
+
+
+        self.gridLayout_3.addWidget(self.w_encabezado, 0, 1, 1, 1, Qt.AlignmentFlag.AlignVCenter)
+
         self.w_cuerpo_menu = QWidget(self.w_cuerpo)
         self.w_cuerpo_menu.setObjectName(u"w_cuerpo_menu")
         self.verticalLayout_2 = QVBoxLayout(self.w_cuerpo_menu)
-        self.verticalLayout_2.setSpacing(15)
+        self.verticalLayout_2.setSpacing(10)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(3, 10, 3, 3)
+        self.verticalLayout_2.setContentsMargins(3, 0, 3, 0)
         self.label_fotousuario = QLabel(self.w_cuerpo_menu)
         self.label_fotousuario.setObjectName(u"label_fotousuario")
         self.label_fotousuario.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.label_fotousuario.setScaledContents(False)
-        self.label_fotousuario.setAlignment(Qt.AlignCenter)
+        self.label_fotousuario.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_2.addWidget(self.label_fotousuario)
 
@@ -281,37 +306,13 @@ class Ui_Principal_sistema(object):
         self.verticalLayout_2.addItem(self.verticalSpacer)
 
 
-        self.gridLayout_3.addWidget(self.w_cuerpo_menu, 0, 0, 1, 1, Qt.AlignHCenter)
-
-        self.w_cuerpo_contenido = QStackedWidget(self.w_cuerpo)
-        self.w_cuerpo_contenido.setObjectName(u"w_cuerpo_contenido")
-        self.w_cuerpo_contenido.setStyleSheet(u"")
-        self.p_inicial = QWidget()
-        self.p_inicial.setObjectName(u"p_inicial")
-        self.gridLayout = QGridLayout(self.p_inicial)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.widget_3 = QWidget(self.p_inicial)
-        self.widget_3.setObjectName(u"widget_3")
-        self.gridLayout_19 = QGridLayout(self.widget_3)
-        self.gridLayout_19.setObjectName(u"gridLayout_19")
-        self.label = QLabel(self.widget_3)
-        self.label.setObjectName(u"label")
-        self.label.setStyleSheet(u"image: url(:/Icons/IconosSVG/logo_devrous.png);")
-
-        self.gridLayout_19.addWidget(self.label, 0, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.w_cuerpo_menu, 0, 0, 2, 1)
 
 
-        self.gridLayout.addWidget(self.widget_3, 0, 0, 1, 1)
-
-        self.w_cuerpo_contenido.addWidget(self.p_inicial)
-
-        self.gridLayout_3.addWidget(self.w_cuerpo_contenido, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.w_cuerpo, 0, 0, 1, 1)
 
 
-        self.verticalLayout.addWidget(self.w_cuerpo)
-
-
-        self.gridLayout_18.addWidget(self.w_contenedor, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.w_contenedor, 0, 0, 1, 1)
 
 
         self.retranslateUi(Principal_sistema)
@@ -324,15 +325,15 @@ class Ui_Principal_sistema(object):
 
     def retranslateUi(self, Principal_sistema):
         Principal_sistema.setWindowTitle(QCoreApplication.translate("Principal_sistema", u"Form", None))
-#if QT_CONFIG(tooltip)
-        self.btc_minimizar_2.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Minimizar</span></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
-        self.btc_minimizar_2.setText("")
+        self.label.setText("")
 #if QT_CONFIG(tooltip)
         self.btc_cerrar_2.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Cerrar</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.btc_cerrar_2.setText("")
-        self.label_logoempresa.setText("")
+#if QT_CONFIG(tooltip)
+        self.btc_minimizar_2.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Minimizar</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.btc_minimizar_2.setText("")
 #if QT_CONFIG(tooltip)
         self.label_fotousuario.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Perfil</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
@@ -369,6 +370,5 @@ class Ui_Principal_sistema(object):
         self.btn_laterales_btn_sucursales.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Administrador de Sucursales</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_laterales_btn_sucursales.setText("")
-        self.label.setText("")
     # retranslateUi
 

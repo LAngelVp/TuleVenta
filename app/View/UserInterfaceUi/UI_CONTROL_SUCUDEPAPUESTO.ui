@@ -183,7 +183,8 @@ background: #2196F3;
                 <bool>false</bool>
                </property>
                <property name="styleSheet">
-                <string notr="true">image: url(:/Icons/IconosSVG/logo_devrous.png);</string>
+                <string notr="true">image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);
+background: #0a1f44;</string>
                </property>
                <property name="text">
                 <string/>
@@ -204,6 +205,7 @@ background: #2196F3;
  </widget>
  <resources>
   <include location="../../Source/iconsdvg.qrc"/>
+  <include location="../../Source/logos.qrc"/>
  </resources>
  <connections/>
 </ui>

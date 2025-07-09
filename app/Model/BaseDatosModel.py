@@ -187,6 +187,8 @@ class Sucursales(Base):
     estado = Column(String(50))
     pais = Column(String(50))
     num_telefono = Column(String(10))
+    razon_social = Column(String(300))
+    rfc = Column(String(13))
     direccion = Column(Text)
     productos = relationship(
         "Productos", secondary=sucursal_producto, back_populates="sucursales", 

@@ -18,16 +18,18 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QComboBox,
     QDateEdit, QDoubleSpinBox, QFrame, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPlainTextEdit, QPushButton, QSizePolicy, QSpacerItem,
-    QTimeEdit, QToolButton, QWidget)
+    QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
+    QSpacerItem, QTimeEdit, QToolButton, QVBoxLayout,
+    QWidget)
 from ...Source import ibootstrap_rc
+from ...Source import logos_rc
 from ...Source import iconosSVG_rc
 
 class Ui_Formulario_Datos_Empleado(object):
     def setupUi(self, Formulario_Datos_Empleado):
         if not Formulario_Datos_Empleado.objectName():
             Formulario_Datos_Empleado.setObjectName(u"Formulario_Datos_Empleado")
-        Formulario_Datos_Empleado.resize(1101, 774)
+        Formulario_Datos_Empleado.resize(807, 502)
         Formulario_Datos_Empleado.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "#Formulario_Datos_Empleado{\n"
 "background-color: #fffefb;\n"
@@ -51,28 +53,31 @@ class Ui_Formulario_Datos_Empleado(object):
 "padding-top: 5px;\n"
 "}\n"
 "#tarjeta_usuario{\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0.818455, y2:0.824, stop:0 rgba(115, 115, 115, 255), stop:1 rgba(5, 95, 212, 219));\n"
+"max-width:200px;\n"
+"min-height:150px;\n"
+"min-width:200px;\n"
+"max-height:150px;\n"
+"background:  qconicalgradient(cx:0, cy:0, angle:228.9, stop:0.136364 rgba(0, 63, 126, 255), stop:0.522222 rgba(0, 199, 255, 236));\n"
 "border-radius: 12px;\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]{\n"
 "font-family: Arial;\n"
 "font-size: 14px;\n"
 "font-weight: bold;\n"
-"color: rgb(29, 28, 28);\n"
+"color: #fffefb;\n"
 "min-height: 30px;\n"
 "border-radius: 5px;\n"
-"background-color: #00619a;\n"
+"background: #00619a;\n"
 "text-align: center;\n"
 "padding-left: 5px;\n"
 "padding-right: 5px;\n"
 "}\n"
-"[objectName*=\"btn_btn_aceptar\"]{\n"
-"background-color:#0"
-                        "0619a;\n"
-"	color: rgb(245, 244, 241);\n"
+""
+                        "[objectName*=\"btn_btn_\"]:hover{\n"
+"background: #2196F3;\n"
 "}\n"
-"[objectName*=\"btn_btn_aceptar\"]:hover{\n"
-"background-color: #68a67d;\n"
+"[objectName*=\"btn_btn_\"]:pressed{\n"
+"background: #1B80D0;\n"
 "}\n"
 "[objectName*=\"etiquetaTitulo\"]{\n"
 "font-family: Arial;\n"
@@ -106,14 +111,15 @@ class Ui_Formulario_Datos_Empleado(object):
 "border-radius: 5px;\n"
 "font-size: 12px;\n"
 "font-family: Arial;\n"
+"min-width: 250px;\n"
 "}\n"
 "[objectName^=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
-"[objectName*=\"fecha_\"]{\n"
+"[objectName*="
+                        "\"fecha_\"]{\n"
 "border: none;\n"
-""
-                        "border-bottom: 1px solid #3b3c3d;\n"
+"border-bottom: 1px solid #3b3c3d;\n"
 "border-radius: 5px;\n"
 "padding: 2px;\n"
 "background-color: #f5f4f1;\n"
@@ -150,9 +156,9 @@ class Ui_Formulario_Datos_Empleado(object):
 "/* BOTONES DE NAVEGACI\u00d3N */\n"
 "QCalendarWidget QToolButton {\n"
 "    background-color: transparent;\n"
-"    color: white;\n"
-"    font-w"
-                        "eight: bold;\n"
+""
+                        "    color: white;\n"
+"    font-weight: bold;\n"
 "    padding: 5px;\n"
 "}\n"
 "\n"
@@ -191,10 +197,10 @@ class Ui_Formulario_Datos_Empleado(object):
 "color:#fffefb;\n"
 "border:none;\n"
 "}\n"
-"[objectName*=\"cajaOpciones\"] {\n"
+"[objectName*=\"cajaOpciones"
+                        "\"] {\n"
 "    border: none;\n"
-""
-                        "    border-bottom: 1px solid #787878 ;\n"
+"    border-bottom: 1px solid #787878 ;\n"
 "    padding: 2px ;\n"
 "    background-color: #F5F5F5 ;\n"
 "    font-size: 14px ;\n"
@@ -228,8 +234,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "}\n"
 "/* FLECHA DESPLEGABLE */\n"
 "[objectName*=\"cajaOpciones\"]::down-arrow {\n"
-"    image: url(:/Icons/Bootstrap/filter-left.s"
-                        "vg);\n"
+"    image: url"
+                        "(:/Icons/Bootstrap/filter-left.svg);\n"
 "    width: 17% ;\n"
 "    height: 17% ;\n"
 "    padding-left: 5px ;\n"
@@ -269,16 +275,33 @@ class Ui_Formulario_Datos_Empleado(object):
 "font-family: Arial;\n"
 "max-height: 60px;\n"
 "}\n"
-"[objectName^=\"txtlargo\"]::focus{\n"
-""
-                        "border-bottom: 2px solid #00668c;\n"
+"[obj"
+                        "ectName^=\"txtlargo\"]::focus{\n"
+"border-bottom: 2px solid #00668c;\n"
 "}\n"
 "")
-        self.gridLayout_6 = QGridLayout(Formulario_Datos_Empleado)
+        self.verticalLayout = QVBoxLayout(Formulario_Datos_Empleado)
+        self.verticalLayout.setSpacing(0)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.label_wp_titulo_usuario = QLabel(Formulario_Datos_Empleado)
+        self.label_wp_titulo_usuario.setObjectName(u"label_wp_titulo_usuario")
+        self.label_wp_titulo_usuario.setMinimumSize(QSize(0, 0))
+        self.label_wp_titulo_usuario.setMaximumSize(QSize(16777215, 16777215))
+
+        self.verticalLayout.addWidget(self.label_wp_titulo_usuario)
+
+        self.scrollArea = QScrollArea(Formulario_Datos_Empleado)
+        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1137, 724))
+        self.gridLayout_6 = QGridLayout(self.scrollAreaWidgetContents)
+        self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
-        self.gridLayout_6.setVerticalSpacing(0)
         self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
-        self.contenedor = QFrame(Formulario_Datos_Empleado)
+        self.contenedor = QFrame(self.scrollAreaWidgetContents)
         self.contenedor.setObjectName(u"contenedor")
         self.contenedor.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedor.setFrameShadow(QFrame.Shadow.Raised)
@@ -328,45 +351,23 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.tarjeta_usuario = QWidget(self.widget_3)
         self.tarjeta_usuario.setObjectName(u"tarjeta_usuario")
-        self.tarjeta_usuario.setMinimumSize(QSize(250, 100))
-        self.tarjeta_usuario.setMaximumSize(QSize(400, 177))
+        self.tarjeta_usuario.setMinimumSize(QSize(200, 150))
+        self.tarjeta_usuario.setMaximumSize(QSize(200, 150))
         self.tarjeta_usuario.setStyleSheet(u"")
         self.gridLayout_2 = QGridLayout(self.tarjeta_usuario)
+        self.gridLayout_2.setSpacing(0)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setHorizontalSpacing(10)
-        self.gridLayout_2.setContentsMargins(10, 10, 10, 10)
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 10)
+        self.foto_empleadoperfil = QLabel(self.tarjeta_usuario)
+        self.foto_empleadoperfil.setObjectName(u"foto_empleadoperfil")
+        self.foto_empleadoperfil.setStyleSheet(u"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
+"background:transparent;")
+        self.foto_empleadoperfil.setScaledContents(True)
 
-        self.gridLayout_2.addItem(self.verticalSpacer, 2, 1, 1, 1)
-
-        self.etiquetaDato_nombre = QLabel(self.tarjeta_usuario)
-        self.etiquetaDato_nombre.setObjectName(u"etiquetaDato_nombre")
-        font = QFont()
-        font.setFamilies([u"Arial"])
-        font.setBold(True)
-        self.etiquetaDato_nombre.setFont(font)
-        self.etiquetaDato_nombre.setStyleSheet(u"")
-        self.etiquetaDato_nombre.setWordWrap(True)
-
-        self.gridLayout_2.addWidget(self.etiquetaDato_nombre, 1, 1, 1, 1)
-
-        self.etiquetaTituloDato_nombre = QLabel(self.tarjeta_usuario)
-        self.etiquetaTituloDato_nombre.setObjectName(u"etiquetaTituloDato_nombre")
-        self.etiquetaTituloDato_nombre.setFont(font)
-        self.etiquetaTituloDato_nombre.setStyleSheet(u"")
-
-        self.gridLayout_2.addWidget(self.etiquetaTituloDato_nombre, 0, 1, 1, 1)
-
-        self.label = QLabel(self.tarjeta_usuario)
-        self.label.setObjectName(u"label")
-        self.label.setStyleSheet(u"image: url(:/Icons/Bootstrap/person-circle.svg);\n"
-"background:none;")
-        self.label.setScaledContents(True)
-
-        self.gridLayout_2.addWidget(self.label, 0, 0, 3, 1)
+        self.gridLayout_2.addWidget(self.foto_empleadoperfil, 0, 0, 2, 1)
 
 
-        self.gridLayout_3.addWidget(self.tarjeta_usuario, 1, 0, 1, 2)
+        self.gridLayout_3.addWidget(self.tarjeta_usuario, 1, 0, 1, 2, Qt.AlignmentFlag.AlignHCenter)
 
         self.contenedor_frame_4 = QFrame(self.widget_3)
         self.contenedor_frame_4.setObjectName(u"contenedor_frame_4")
@@ -375,13 +376,6 @@ class Ui_Formulario_Datos_Empleado(object):
         self.contenedor_frame_4.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_5 = QGridLayout(self.contenedor_frame_4)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.fecha_contrato = QDateEdit(self.contenedor_frame_4)
-        self.fecha_contrato.setObjectName(u"fecha_contrato")
-        self.fecha_contrato.setEnabled(False)
-        self.fecha_contrato.setCalendarPopup(True)
-
-        self.gridLayout_5.addWidget(self.fecha_contrato, 7, 1, 1, 2)
-
         self.numerodecimal_salario = QDoubleSpinBox(self.contenedor_frame_4)
         self.numerodecimal_salario.setObjectName(u"numerodecimal_salario")
         self.numerodecimal_salario.setEnabled(False)
@@ -530,6 +524,13 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.gridLayout_5.addWidget(self.cajaOpciones_sucursales, 2, 1, 1, 3)
 
+        self.fecha_contrato = QDateEdit(self.contenedor_frame_4)
+        self.fecha_contrato.setObjectName(u"fecha_contrato")
+        self.fecha_contrato.setEnabled(False)
+        self.fecha_contrato.setCalendarPopup(True)
+
+        self.gridLayout_5.addWidget(self.fecha_contrato, 7, 1, 1, 3)
+
 
         self.gridLayout_3.addWidget(self.contenedor_frame_4, 2, 0, 1, 2)
 
@@ -548,6 +549,185 @@ class Ui_Formulario_Datos_Empleado(object):
         self.contenedor_Izquierdo.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout = QGridLayout(self.contenedor_Izquierdo)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.etiqueta_parentescocontactoemergencia = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_parentescocontactoemergencia.setObjectName(u"etiqueta_parentescocontactoemergencia")
+
+        self.gridLayout.addWidget(self.etiqueta_parentescocontactoemergencia, 22, 2, 1, 1)
+
+        self.etiqueta_nombre = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_nombre.setObjectName(u"etiqueta_nombre")
+
+        self.gridLayout.addWidget(self.etiqueta_nombre, 1, 0, 1, 1)
+
+        self.etiqueta_nombrecontactoemergencia = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_nombrecontactoemergencia.setObjectName(u"etiqueta_nombrecontactoemergencia")
+
+        self.gridLayout.addWidget(self.etiqueta_nombrecontactoemergencia, 21, 0, 1, 1)
+
+        self.etiqueta_rfc = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_rfc.setObjectName(u"etiqueta_rfc")
+
+        self.gridLayout.addWidget(self.etiqueta_rfc, 5, 0, 1, 1)
+
+        self.txt_nombrecontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_nombrecontactoemergencia.setObjectName(u"txt_nombrecontactoemergencia")
+        self.txt_nombrecontactoemergencia.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_nombrecontactoemergencia, 21, 1, 1, 1)
+
+        self.etiqueta_numinterior = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_numinterior.setObjectName(u"etiqueta_numinterior")
+
+        self.gridLayout.addWidget(self.etiqueta_numinterior, 16, 0, 1, 1)
+
+        self.txt_apellidomaterno = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_apellidomaterno.setObjectName(u"txt_apellidomaterno")
+        self.txt_apellidomaterno.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_apellidomaterno, 2, 1, 1, 1)
+
+        self.txt_carreraperfil = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_carreraperfil.setObjectName(u"txt_carreraperfil")
+
+        self.gridLayout.addWidget(self.txt_carreraperfil, 9, 3, 1, 1)
+
+        self.txt_nombre = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_nombre.setObjectName(u"txt_nombre")
+        self.txt_nombre.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_nombre, 1, 1, 1, 1)
+
+        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout.addItem(self.verticalSpacer_3, 24, 0, 1, 1)
+
+        self.etiquetaTitulo_datospersonales = QLabel(self.contenedor_Izquierdo)
+        self.etiquetaTitulo_datospersonales.setObjectName(u"etiquetaTitulo_datospersonales")
+        font = QFont()
+        font.setFamilies([u"Arial"])
+        font.setBold(True)
+        self.etiquetaTitulo_datospersonales.setFont(font)
+
+        self.gridLayout.addWidget(self.etiquetaTitulo_datospersonales, 0, 0, 1, 4)
+
+        self.etiqueta_calles = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_calles.setObjectName(u"etiqueta_calles")
+
+        self.gridLayout.addWidget(self.etiqueta_calles, 13, 2, 1, 1)
+
+        self.cajaOpciones_parentescocontactoemergencia = QComboBox(self.contenedor_Izquierdo)
+        self.cajaOpciones_parentescocontactoemergencia.setObjectName(u"cajaOpciones_parentescocontactoemergencia")
+        self.cajaOpciones_parentescocontactoemergencia.setEnabled(False)
+        self.cajaOpciones_parentescocontactoemergencia.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout.addWidget(self.cajaOpciones_parentescocontactoemergencia, 22, 3, 1, 1)
+
+        self.etiquetaTitulo_contactoemergencia = QLabel(self.contenedor_Izquierdo)
+        self.etiquetaTitulo_contactoemergencia.setObjectName(u"etiquetaTitulo_contactoemergencia")
+
+        self.gridLayout.addWidget(self.etiquetaTitulo_contactoemergencia, 20, 0, 1, 4)
+
+        self.etiqueta_apellidopaterno = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_apellidopaterno.setObjectName(u"etiqueta_apellidopaterno")
+
+        self.gridLayout.addWidget(self.etiqueta_apellidopaterno, 1, 2, 1, 1)
+
+        self.txt_numerointerior = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_numerointerior.setObjectName(u"txt_numerointerior")
+        self.txt_numerointerior.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_numerointerior, 16, 1, 1, 1)
+
+        self.etiqueta_numtelefonocontactoemergencia = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_numtelefonocontactoemergencia.setObjectName(u"etiqueta_numtelefonocontactoemergencia")
+
+        self.gridLayout.addWidget(self.etiqueta_numtelefonocontactoemergencia, 22, 0, 1, 1)
+
+        self.txt_numeroexterior = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_numeroexterior.setObjectName(u"txt_numeroexterior")
+        self.txt_numeroexterior.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_numeroexterior, 15, 1, 1, 1)
+
+        self.etiqueta_numerosegurosocial = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_numerosegurosocial.setObjectName(u"etiqueta_numerosegurosocial")
+
+        self.gridLayout.addWidget(self.etiqueta_numerosegurosocial, 3, 0, 1, 1)
+
+        self.txt_estado = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_estado.setObjectName(u"txt_estado")
+        self.txt_estado.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_estado, 12, 3, 1, 1)
+
+        self.fecha_fechanacimiento = QDateEdit(self.contenedor_Izquierdo)
+        self.fecha_fechanacimiento.setObjectName(u"fecha_fechanacimiento")
+        self.fecha_fechanacimiento.setEnabled(False)
+        self.fecha_fechanacimiento.setCalendarPopup(True)
+
+        self.gridLayout.addWidget(self.fecha_fechanacimiento, 4, 1, 1, 1)
+
+        self.etiqueta_carreraperfil = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_carreraperfil.setObjectName(u"etiqueta_carreraperfil")
+
+        self.gridLayout.addWidget(self.etiqueta_carreraperfil, 9, 2, 1, 1)
+
+        self.txt_colonia = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_colonia.setObjectName(u"txt_colonia")
+        self.txt_colonia.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_colonia, 14, 3, 1, 1)
+
+        self.line = QFrame(self.contenedor_Izquierdo)
+        self.line.setObjectName(u"line")
+        self.line.setFrameShape(QFrame.Shape.HLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.gridLayout.addWidget(self.line, 10, 0, 1, 4)
+
+        self.etiqueta_ciudad = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_ciudad.setObjectName(u"etiqueta_ciudad")
+
+        self.gridLayout.addWidget(self.etiqueta_ciudad, 12, 0, 1, 1)
+
+        self.etiqueta_estadocivil = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_estadocivil.setObjectName(u"etiqueta_estadocivil")
+
+        self.gridLayout.addWidget(self.etiqueta_estadocivil, 3, 2, 1, 1)
+
+        self.etiqueta_correo = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_correo.setObjectName(u"etiqueta_correo")
+
+        self.gridLayout.addWidget(self.etiqueta_correo, 4, 2, 1, 1)
+
+        self.txt_rfc = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_rfc.setObjectName(u"txt_rfc")
+        self.txt_rfc.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_rfc, 5, 1, 1, 1)
+
+        self.etiqueta_fechanacimiento = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_fechanacimiento.setObjectName(u"etiqueta_fechanacimiento")
+
+        self.gridLayout.addWidget(self.etiqueta_fechanacimiento, 4, 0, 1, 1)
+
+        self.txt_apellidopaterno = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_apellidopaterno.setObjectName(u"txt_apellidopaterno")
+        self.txt_apellidopaterno.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_apellidopaterno, 1, 3, 1, 1)
+
+        self.txt_calles = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_calles.setObjectName(u"txt_calles")
+        self.txt_calles.setEnabled(False)
+
+        self.gridLayout.addWidget(self.txt_calles, 13, 3, 1, 1)
+
+        self.etiqueta_curp = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_curp.setObjectName(u"etiqueta_curp")
+
+        self.gridLayout.addWidget(self.etiqueta_curp, 2, 2, 1, 1)
+
         self.grupobox_etiqueta_diaslaborales_2 = QGroupBox(self.contenedor_Izquierdo)
         self.grupobox_etiqueta_diaslaborales_2.setObjectName(u"grupobox_etiqueta_diaslaborales_2")
         self.grupobox_etiqueta_diaslaborales_2.setEnabled(False)
@@ -589,79 +769,79 @@ class Ui_Formulario_Datos_Empleado(object):
         self.gridLayout_8.addWidget(self.opcion_sabado, 1, 2, 1, 1)
 
 
-        self.gridLayout.addWidget(self.grupobox_etiqueta_diaslaborales_2, 19, 0, 1, 4)
+        self.gridLayout.addWidget(self.grupobox_etiqueta_diaslaborales_2, 23, 0, 1, 4)
+
+        self.etiqueta_estado = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_estado.setObjectName(u"etiqueta_estado")
+
+        self.gridLayout.addWidget(self.etiqueta_estado, 12, 2, 1, 1)
 
         self.txt_codigopostal = QLineEdit(self.contenedor_Izquierdo)
         self.txt_codigopostal.setObjectName(u"txt_codigopostal")
         self.txt_codigopostal.setEnabled(False)
 
-        self.gridLayout.addWidget(self.txt_codigopostal, 9, 1, 1, 1)
+        self.gridLayout.addWidget(self.txt_codigopostal, 13, 1, 1, 1)
 
-        self.etiqueta_pais = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_pais.setObjectName(u"etiqueta_pais")
+        self.etiqueta_apellidomaterno = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_apellidomaterno.setObjectName(u"etiqueta_apellidomaterno")
 
-        self.gridLayout.addWidget(self.etiqueta_pais, 11, 2, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_apellidomaterno, 2, 0, 1, 1)
 
-        self.txt_avenidas = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_avenidas.setObjectName(u"txt_avenidas")
-        self.txt_avenidas.setEnabled(False)
+        self.line_4 = QFrame(self.contenedor_Izquierdo)
+        self.line_4.setObjectName(u"line_4")
+        self.line_4.setFrameShape(QFrame.Shape.HLine)
+        self.line_4.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.txt_avenidas, 11, 1, 1, 1)
+        self.gridLayout.addWidget(self.line_4, 19, 0, 1, 4)
 
-        self.txt_colonia = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_colonia.setObjectName(u"txt_colonia")
-        self.txt_colonia.setEnabled(False)
+        self.txt_curp = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_curp.setObjectName(u"txt_curp")
+        self.txt_curp.setEnabled(False)
 
-        self.gridLayout.addWidget(self.txt_colonia, 10, 3, 1, 1)
+        self.gridLayout.addWidget(self.txt_curp, 2, 3, 1, 1)
 
-        self.etiqueta_calles = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_calles.setObjectName(u"etiqueta_calles")
+        self.txt_ciudad = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_ciudad.setObjectName(u"txt_ciudad")
+        self.txt_ciudad.setEnabled(False)
 
-        self.gridLayout.addWidget(self.etiqueta_calles, 9, 2, 1, 1)
+        self.gridLayout.addWidget(self.txt_ciudad, 12, 1, 1, 1)
 
-        self.etiqueta_telefono = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_telefono.setObjectName(u"etiqueta_telefono")
+        self.etiquetaTitulo_datosacademicosperfil = QLabel(self.contenedor_Izquierdo)
+        self.etiquetaTitulo_datosacademicosperfil.setObjectName(u"etiquetaTitulo_datosacademicosperfil")
 
-        self.gridLayout.addWidget(self.etiqueta_telefono, 10, 0, 1, 1)
+        self.gridLayout.addWidget(self.etiquetaTitulo_datosacademicosperfil, 8, 0, 1, 4)
 
-        self.txt_numerotelefono = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_numerotelefono.setObjectName(u"txt_numerotelefono")
-        self.txt_numerotelefono.setEnabled(False)
+        self.txt_correo = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_correo.setObjectName(u"txt_correo")
+        self.txt_correo.setEnabled(False)
 
-        self.gridLayout.addWidget(self.txt_numerotelefono, 10, 1, 1, 1)
+        self.gridLayout.addWidget(self.txt_correo, 4, 3, 1, 1)
 
         self.etiqueta_nexterior = QLabel(self.contenedor_Izquierdo)
         self.etiqueta_nexterior.setObjectName(u"etiqueta_nexterior")
 
-        self.gridLayout.addWidget(self.etiqueta_nexterior, 12, 0, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_nexterior, 15, 0, 1, 1)
 
-        self.etiqueta_colonia = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_colonia.setObjectName(u"etiqueta_colonia")
+        self.txt_numtelefonocontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_numtelefonocontactoemergencia.setObjectName(u"txt_numtelefonocontactoemergencia")
+        self.txt_numtelefonocontactoemergencia.setEnabled(False)
 
-        self.gridLayout.addWidget(self.etiqueta_colonia, 10, 2, 1, 1)
+        self.gridLayout.addWidget(self.txt_numtelefonocontactoemergencia, 22, 1, 1, 1)
 
-        self.txt_calles = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_calles.setObjectName(u"txt_calles")
-        self.txt_calles.setEnabled(False)
+        self.etiquetaTitulo_datosubicacion = QLabel(self.contenedor_Izquierdo)
+        self.etiquetaTitulo_datosubicacion.setObjectName(u"etiquetaTitulo_datosubicacion")
 
-        self.gridLayout.addWidget(self.txt_calles, 9, 3, 1, 1)
+        self.gridLayout.addWidget(self.etiquetaTitulo_datosubicacion, 11, 0, 1, 2)
 
-        self.txt_numeroexterior = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_numeroexterior.setObjectName(u"txt_numeroexterior")
-        self.txt_numeroexterior.setEnabled(False)
+        self.cajaOpciones_nivelacademicoperfil = QComboBox(self.contenedor_Izquierdo)
+        self.cajaOpciones_nivelacademicoperfil.setObjectName(u"cajaOpciones_nivelacademicoperfil")
 
-        self.gridLayout.addWidget(self.txt_numeroexterior, 12, 1, 1, 1)
+        self.gridLayout.addWidget(self.cajaOpciones_nivelacademicoperfil, 9, 1, 1, 1)
 
-        self.etiqueta_numinterior = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_numinterior.setObjectName(u"etiqueta_numinterior")
+        self.etiqueta_pais = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_pais.setObjectName(u"etiqueta_pais")
 
-        self.gridLayout.addWidget(self.etiqueta_numinterior, 12, 2, 1, 1)
-
-        self.txt_numerointerior = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_numerointerior.setObjectName(u"txt_numerointerior")
-        self.txt_numerointerior.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_numerointerior, 12, 3, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_pais, 15, 2, 1, 1)
 
         self.txtlargo_referenciadireccion = QPlainTextEdit(self.contenedor_Izquierdo)
         self.txtlargo_referenciadireccion.setObjectName(u"txtlargo_referenciadireccion")
@@ -672,137 +852,39 @@ class Ui_Formulario_Datos_Empleado(object):
         self.txtlargo_referenciadireccion.setCenterOnScroll(False)
         self.txtlargo_referenciadireccion.setProperty(u"tabStopWidth", 80)
 
-        self.gridLayout.addWidget(self.txtlargo_referenciadireccion, 14, 0, 1, 4)
+        self.gridLayout.addWidget(self.txtlargo_referenciadireccion, 18, 0, 1, 4)
 
-        self.etiqueta_avenidas = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_avenidas.setObjectName(u"etiqueta_avenidas")
+        self.etiqueta_colonia = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_colonia.setObjectName(u"etiqueta_colonia")
 
-        self.gridLayout.addWidget(self.etiqueta_avenidas, 11, 0, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_colonia, 14, 2, 1, 1)
 
-        self.line_4 = QFrame(self.contenedor_Izquierdo)
-        self.line_4.setObjectName(u"line_4")
-        self.line_4.setFrameShape(QFrame.Shape.HLine)
-        self.line_4.setFrameShadow(QFrame.Shadow.Sunken)
+        self.etiqueta_cpostal = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_cpostal.setObjectName(u"etiqueta_cpostal")
 
-        self.gridLayout.addWidget(self.line_4, 15, 0, 1, 4)
+        self.gridLayout.addWidget(self.etiqueta_cpostal, 13, 0, 1, 1)
 
         self.etiquetaTitulo_referencias = QLabel(self.contenedor_Izquierdo)
         self.etiquetaTitulo_referencias.setObjectName(u"etiquetaTitulo_referencias")
         self.etiquetaTitulo_referencias.setWordWrap(True)
 
-        self.gridLayout.addWidget(self.etiquetaTitulo_referencias, 13, 0, 1, 2)
+        self.gridLayout.addWidget(self.etiquetaTitulo_referencias, 17, 0, 1, 2)
 
-        self.etiquetaTitulo_contactoemergencia = QLabel(self.contenedor_Izquierdo)
-        self.etiquetaTitulo_contactoemergencia.setObjectName(u"etiquetaTitulo_contactoemergencia")
+        self.txt_numerosocial = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_numerosocial.setObjectName(u"txt_numerosocial")
+        self.txt_numerosocial.setEnabled(False)
 
-        self.gridLayout.addWidget(self.etiquetaTitulo_contactoemergencia, 16, 0, 1, 4)
+        self.gridLayout.addWidget(self.txt_numerosocial, 3, 1, 1, 1)
 
-        self.etiqueta_nombrecontactoemergencia = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_nombrecontactoemergencia.setObjectName(u"etiqueta_nombrecontactoemergencia")
+        self.cajaOpciones_generoperfil = QComboBox(self.contenedor_Izquierdo)
+        self.cajaOpciones_generoperfil.setObjectName(u"cajaOpciones_generoperfil")
 
-        self.gridLayout.addWidget(self.etiqueta_nombrecontactoemergencia, 17, 0, 1, 1)
+        self.gridLayout.addWidget(self.cajaOpciones_generoperfil, 5, 3, 1, 1)
 
-        self.txt_pais = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_pais.setObjectName(u"txt_pais")
-        self.txt_pais.setEnabled(False)
+        self.etiqueta_generoperfil = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_generoperfil.setObjectName(u"etiqueta_generoperfil")
 
-        self.gridLayout.addWidget(self.txt_pais, 11, 3, 1, 1)
-
-        self.txt_nombrecontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_nombrecontactoemergencia.setObjectName(u"txt_nombrecontactoemergencia")
-        self.txt_nombrecontactoemergencia.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_nombrecontactoemergencia, 17, 1, 1, 1)
-
-        self.etiqueta_numtelefonocontactoemergencia = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_numtelefonocontactoemergencia.setObjectName(u"etiqueta_numtelefonocontactoemergencia")
-
-        self.gridLayout.addWidget(self.etiqueta_numtelefonocontactoemergencia, 18, 0, 1, 1)
-
-        self.txt_numtelefonocontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_numtelefonocontactoemergencia.setObjectName(u"txt_numtelefonocontactoemergencia")
-        self.txt_numtelefonocontactoemergencia.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_numtelefonocontactoemergencia, 18, 1, 1, 1)
-
-        self.etiqueta_parentescocontactoemergencia = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_parentescocontactoemergencia.setObjectName(u"etiqueta_parentescocontactoemergencia")
-
-        self.gridLayout.addWidget(self.etiqueta_parentescocontactoemergencia, 18, 2, 1, 1)
-
-        self.cajaOpciones_parentescocontactoemergencia = QComboBox(self.contenedor_Izquierdo)
-        self.cajaOpciones_parentescocontactoemergencia.addItem("")
-        self.cajaOpciones_parentescocontactoemergencia.addItem("")
-        self.cajaOpciones_parentescocontactoemergencia.addItem("")
-        self.cajaOpciones_parentescocontactoemergencia.addItem("")
-        self.cajaOpciones_parentescocontactoemergencia.addItem("")
-        self.cajaOpciones_parentescocontactoemergencia.setObjectName(u"cajaOpciones_parentescocontactoemergencia")
-        self.cajaOpciones_parentescocontactoemergencia.setEnabled(False)
-        self.cajaOpciones_parentescocontactoemergencia.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout.addWidget(self.cajaOpciones_parentescocontactoemergencia, 18, 3, 1, 1)
-
-        self.etiquetaTitulo_datospersonales = QLabel(self.contenedor_Izquierdo)
-        self.etiquetaTitulo_datospersonales.setObjectName(u"etiquetaTitulo_datospersonales")
-        self.etiquetaTitulo_datospersonales.setFont(font)
-
-        self.gridLayout.addWidget(self.etiquetaTitulo_datospersonales, 0, 0, 1, 2)
-
-        self.line = QFrame(self.contenedor_Izquierdo)
-        self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.Shape.HLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout.addWidget(self.line, 6, 0, 1, 4)
-
-        self.txt_rfc = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_rfc.setObjectName(u"txt_rfc")
-        self.txt_rfc.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_rfc, 5, 1, 1, 1)
-
-        self.etiqueta_apellidopaterno = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_apellidopaterno.setObjectName(u"etiqueta_apellidopaterno")
-
-        self.gridLayout.addWidget(self.etiqueta_apellidopaterno, 1, 2, 1, 1)
-
-        self.etiqueta_apellidomaterno = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_apellidomaterno.setObjectName(u"etiqueta_apellidomaterno")
-
-        self.gridLayout.addWidget(self.etiqueta_apellidomaterno, 2, 0, 1, 1)
-
-        self.etiqueta_nombre = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_nombre.setObjectName(u"etiqueta_nombre")
-
-        self.gridLayout.addWidget(self.etiqueta_nombre, 1, 0, 1, 1)
-
-        self.txt_apellidomaterno = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_apellidomaterno.setObjectName(u"txt_apellidomaterno")
-        self.txt_apellidomaterno.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_apellidomaterno, 2, 1, 1, 1)
-
-        self.txt_nombre = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_nombre.setObjectName(u"txt_nombre")
-        self.txt_nombre.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_nombre, 1, 1, 1, 1)
-
-        self.etiqueta_estadocivil = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_estadocivil.setObjectName(u"etiqueta_estadocivil")
-
-        self.gridLayout.addWidget(self.etiqueta_estadocivil, 3, 2, 1, 1)
-
-        self.txt_apellidopaterno = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_apellidopaterno.setObjectName(u"txt_apellidopaterno")
-        self.txt_apellidopaterno.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_apellidopaterno, 1, 3, 1, 1)
-
-        self.etiqueta_numerosegurosocial = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_numerosegurosocial.setObjectName(u"etiqueta_numerosegurosocial")
-
-        self.gridLayout.addWidget(self.etiqueta_numerosegurosocial, 3, 0, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_generoperfil, 5, 2, 1, 1)
 
         self.cajaOpciones_estadosocial = QComboBox(self.contenedor_Izquierdo)
         self.cajaOpciones_estadosocial.setObjectName(u"cajaOpciones_estadosocial")
@@ -811,86 +893,45 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.gridLayout.addWidget(self.cajaOpciones_estadosocial, 3, 3, 1, 1)
 
-        self.etiqueta_fechanacimiento = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_fechanacimiento.setObjectName(u"etiqueta_fechanacimiento")
+        self.txt_avenidas = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_avenidas.setObjectName(u"txt_avenidas")
+        self.txt_avenidas.setEnabled(False)
 
-        self.gridLayout.addWidget(self.etiqueta_fechanacimiento, 4, 0, 1, 1)
+        self.gridLayout.addWidget(self.txt_avenidas, 14, 1, 1, 1)
 
-        self.etiqueta_curp = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_curp.setObjectName(u"etiqueta_curp")
+        self.txt_pais = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_pais.setObjectName(u"txt_pais")
+        self.txt_pais.setEnabled(False)
 
-        self.gridLayout.addWidget(self.etiqueta_curp, 2, 2, 1, 1)
+        self.gridLayout.addWidget(self.txt_pais, 15, 3, 1, 1)
 
-        self.txt_curp = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_curp.setObjectName(u"txt_curp")
-        self.txt_curp.setEnabled(False)
+        self.etiqueta_avenidas = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_avenidas.setObjectName(u"etiqueta_avenidas")
 
-        self.gridLayout.addWidget(self.txt_curp, 2, 3, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_avenidas, 14, 0, 1, 1)
 
-        self.etiqueta_correo = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_correo.setObjectName(u"etiqueta_correo")
+        self.line_5 = QFrame(self.contenedor_Izquierdo)
+        self.line_5.setObjectName(u"line_5")
+        self.line_5.setFrameShape(QFrame.Shape.HLine)
+        self.line_5.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.etiqueta_correo, 4, 2, 1, 1)
+        self.gridLayout.addWidget(self.line_5, 7, 0, 1, 4)
 
-        self.fecha_fechanacimiento = QDateEdit(self.contenedor_Izquierdo)
-        self.fecha_fechanacimiento.setObjectName(u"fecha_fechanacimiento")
-        self.fecha_fechanacimiento.setEnabled(False)
-        self.fecha_fechanacimiento.setCalendarPopup(True)
+        self.etiqueta_nivelacademicoperfil = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_nivelacademicoperfil.setObjectName(u"etiqueta_nivelacademicoperfil")
 
-        self.gridLayout.addWidget(self.fecha_fechanacimiento, 4, 1, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_nivelacademicoperfil, 9, 0, 1, 1)
 
-        self.txt_correo = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_correo.setObjectName(u"txt_correo")
-        self.txt_correo.setEnabled(False)
+        self.etiqueta_telefono = QLabel(self.contenedor_Izquierdo)
+        self.etiqueta_telefono.setObjectName(u"etiqueta_telefono")
 
-        self.gridLayout.addWidget(self.txt_correo, 4, 3, 1, 1)
+        self.gridLayout.addWidget(self.etiqueta_telefono, 6, 0, 1, 1)
 
-        self.txt_numerosocial = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_numerosocial.setObjectName(u"txt_numerosocial")
-        self.txt_numerosocial.setEnabled(False)
+        self.txt_numerotelefono = QLineEdit(self.contenedor_Izquierdo)
+        self.txt_numerotelefono.setObjectName(u"txt_numerotelefono")
+        self.txt_numerotelefono.setEnabled(False)
 
-        self.gridLayout.addWidget(self.txt_numerosocial, 3, 1, 1, 1)
-
-        self.etiqueta_rfc = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_rfc.setObjectName(u"etiqueta_rfc")
-
-        self.gridLayout.addWidget(self.etiqueta_rfc, 5, 0, 1, 1)
-
-        self.etiqueta_estado = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_estado.setObjectName(u"etiqueta_estado")
-
-        self.gridLayout.addWidget(self.etiqueta_estado, 8, 2, 1, 1)
-
-        self.txt_estado = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_estado.setObjectName(u"txt_estado")
-        self.txt_estado.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_estado, 8, 3, 1, 1)
-
-        self.etiquetaTitulo_datosubicacion = QLabel(self.contenedor_Izquierdo)
-        self.etiquetaTitulo_datosubicacion.setObjectName(u"etiquetaTitulo_datosubicacion")
-
-        self.gridLayout.addWidget(self.etiquetaTitulo_datosubicacion, 7, 0, 1, 2)
-
-        self.etiqueta_cpostal = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_cpostal.setObjectName(u"etiqueta_cpostal")
-
-        self.gridLayout.addWidget(self.etiqueta_cpostal, 9, 0, 1, 1)
-
-        self.etiqueta_ciudad = QLabel(self.contenedor_Izquierdo)
-        self.etiqueta_ciudad.setObjectName(u"etiqueta_ciudad")
-
-        self.gridLayout.addWidget(self.etiqueta_ciudad, 8, 0, 1, 1)
-
-        self.txt_ciudad = QLineEdit(self.contenedor_Izquierdo)
-        self.txt_ciudad.setObjectName(u"txt_ciudad")
-        self.txt_ciudad.setEnabled(False)
-
-        self.gridLayout.addWidget(self.txt_ciudad, 8, 1, 1, 1)
-
-        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.gridLayout.addItem(self.verticalSpacer_3, 20, 0, 1, 1)
+        self.gridLayout.addWidget(self.txt_numerotelefono, 6, 1, 1, 1)
 
 
         self.gridLayout_4.addWidget(self.contenedor_Izquierdo, 1, 0, 1, 1)
@@ -920,6 +961,8 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.btn_btn_editar = QPushButton(self.widget_4)
         self.btn_btn_editar.setObjectName(u"btn_btn_editar")
+        self.btn_btn_editar.setEnabled(True)
+        self.btn_btn_editar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon1 = QIcon()
         icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/editar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_editar.setIcon(icon1)
@@ -937,14 +980,11 @@ class Ui_Formulario_Datos_Empleado(object):
         self.gridLayout_7.addWidget(self.widget_2, 0, 0, 1, 1)
 
 
-        self.gridLayout_6.addWidget(self.contenedor, 1, 0, 1, 1)
+        self.gridLayout_6.addWidget(self.contenedor, 0, 0, 1, 1)
 
-        self.label_wp_titulo_usuario = QLabel(Formulario_Datos_Empleado)
-        self.label_wp_titulo_usuario.setObjectName(u"label_wp_titulo_usuario")
-        self.label_wp_titulo_usuario.setMinimumSize(QSize(0, 0))
-        self.label_wp_titulo_usuario.setMaximumSize(QSize(16777215, 16777215))
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
-        self.gridLayout_6.addWidget(self.label_wp_titulo_usuario, 0, 0, 1, 1)
+        self.verticalLayout.addWidget(self.scrollArea)
 
 
         self.retranslateUi(Formulario_Datos_Empleado)
@@ -954,12 +994,10 @@ class Ui_Formulario_Datos_Empleado(object):
 
     def retranslateUi(self, Formulario_Datos_Empleado):
         Formulario_Datos_Empleado.setWindowTitle(QCoreApplication.translate("Formulario_Datos_Empleado", u"Form", None))
+        self.label_wp_titulo_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"ADMINISTRACI\u00d3N DEL PERFIL", None))
         self.etiqueta_baja.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Baja:", None))
         self.fecha_baja.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
-        self.etiquetaDato_nombre.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Luis Angel Vallejo Perez", None))
-        self.etiquetaTituloDato_nombre.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
-        self.label.setText("")
-        self.fecha_contrato.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+        self.foto_empleadoperfil.setText("")
         self.etiqueta_horastrabajo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hras. Trabajo", None))
         self.etiqueta_horaentrada.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hora Entrada", None))
         self.etiqueta_departamento.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Departamento", None))
@@ -974,6 +1012,25 @@ class Ui_Formulario_Datos_Empleado(object):
         self.etiquetaTitulo_datosusuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos sobre el usuario", None))
         self.etiqueta_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Usuario", None))
         self.etiqueta_password.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Contrase\u00f1a", None))
+        self.fecha_contrato.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+        self.etiqueta_parentescocontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Parentesco", None))
+        self.etiqueta_nombre.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
+        self.etiqueta_nombrecontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
+        self.etiqueta_rfc.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"RFC", None))
+        self.etiqueta_numinterior.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Int", None))
+        self.etiquetaTitulo_datospersonales.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"DATOS PERSONALES", None))
+        self.etiqueta_calles.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Calle/s", None))
+        self.etiquetaTitulo_contactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"DATOS DE CONTACTO", None))
+        self.etiqueta_apellidopaterno.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Apellido Paterno", None))
+        self.etiqueta_numtelefonocontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"N\u00fam. Contacto", None))
+        self.etiqueta_numerosegurosocial.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"NSS", None))
+        self.fecha_fechanacimiento.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+        self.etiqueta_carreraperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Carrera", None))
+        self.etiqueta_ciudad.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Ciudad", None))
+        self.etiqueta_estadocivil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Estado Civil", None))
+        self.etiqueta_correo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Correo", None))
+        self.etiqueta_fechanacimiento.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Fecha de Nacimiento", None))
+        self.etiqueta_curp.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"CURP", None))
         self.grupobox_etiqueta_diaslaborales_2.setTitle(QCoreApplication.translate("Formulario_Datos_Empleado", u"Dias Laborales", None))
         self.opcion_lunes.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Lunes", None))
         self.opcion_miercoles.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Miercoles", None))
@@ -982,42 +1039,21 @@ class Ui_Formulario_Datos_Empleado(object):
         self.opcion_martes.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Martes", None))
         self.opcion_jueves.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Jueves", None))
         self.opcion_sabado.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Sabado", None))
-        self.etiqueta_pais.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Pais", None))
-        self.etiqueta_calles.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Calle/s", None))
-        self.etiqueta_telefono.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Telefono", None))
-        self.etiqueta_nexterior.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Ext.", None))
-        self.etiqueta_colonia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Colonia", None))
-        self.etiqueta_numinterior.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Int", None))
-        self.txtlargo_referenciadireccion.setPlaceholderText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Ingresa detalles sobre la direcci\u00f3n del registro.", None))
-        self.etiqueta_avenidas.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Avenida/s", None))
-        self.etiquetaTitulo_referencias.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Referencias sobre la direccion", None))
-        self.etiquetaTitulo_contactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Contacto de emergencia", None))
-        self.etiqueta_nombrecontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
-        self.etiqueta_numtelefonocontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Contacto", None))
-        self.etiqueta_parentescocontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Parentesco", None))
-        self.cajaOpciones_parentescocontactoemergencia.setItemText(0, QCoreApplication.translate("Formulario_Datos_Empleado", u"MADRE", None))
-        self.cajaOpciones_parentescocontactoemergencia.setItemText(1, QCoreApplication.translate("Formulario_Datos_Empleado", u"PADRE", None))
-        self.cajaOpciones_parentescocontactoemergencia.setItemText(2, QCoreApplication.translate("Formulario_Datos_Empleado", u"TIO/A", None))
-        self.cajaOpciones_parentescocontactoemergencia.setItemText(3, QCoreApplication.translate("Formulario_Datos_Empleado", u"ESPOSO/A", None))
-        self.cajaOpciones_parentescocontactoemergencia.setItemText(4, QCoreApplication.translate("Formulario_Datos_Empleado", u"OTRO", None))
-
-        self.etiquetaTitulo_datospersonales.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos Personales", None))
-        self.etiqueta_apellidopaterno.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Apellido Paterno", None))
-        self.etiqueta_apellidomaterno.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Apellido Materno", None))
-        self.etiqueta_nombre.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
-        self.etiqueta_estadocivil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Estado Civil", None))
-        self.etiqueta_numerosegurosocial.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"NSS", None))
-        self.etiqueta_fechanacimiento.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Fecha de Nacimiento", None))
-        self.etiqueta_curp.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"CURP", None))
-        self.etiqueta_correo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Correo", None))
-        self.fecha_fechanacimiento.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
-        self.etiqueta_rfc.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"RFC", None))
         self.etiqueta_estado.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Estado", None))
-        self.etiquetaTitulo_datosubicacion.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos sobre la ubicaci\u00f3n", None))
+        self.etiqueta_apellidomaterno.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Apellido Materno", None))
+        self.etiquetaTitulo_datosacademicosperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"DATOS ACADEMICOS", None))
+        self.etiqueta_nexterior.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Ext.", None))
+        self.etiquetaTitulo_datosubicacion.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"DATOS DE UBICACI\u00d3N", None))
+        self.etiqueta_pais.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Pais", None))
+        self.txtlargo_referenciadireccion.setPlaceholderText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Ingresa detalles sobre la direcci\u00f3n del registro.", None))
+        self.etiqueta_colonia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Colonia", None))
         self.etiqueta_cpostal.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Codigo Postal", None))
-        self.etiqueta_ciudad.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Ciudad", None))
+        self.etiquetaTitulo_referencias.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"DIRECCI\u00d3N COMPLETA", None))
+        self.etiqueta_generoperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Genero", None))
+        self.etiqueta_avenidas.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Avenida/s", None))
+        self.etiqueta_nivelacademicoperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nivel ac\u00e1demico", None))
+        self.etiqueta_telefono.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Telefono", None))
         self.btn_btn_aceptar.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Guardar cambios", None))
         self.btn_btn_editar.setText("")
-        self.label_wp_titulo_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"ADMINISTRACI\u00d3N DEL PERFIL", None))
     # retranslateUi
 

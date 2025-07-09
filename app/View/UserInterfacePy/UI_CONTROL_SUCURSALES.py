@@ -30,8 +30,7 @@ class Ui_Nueva_sucursal(object):
         Nueva_sucursal.resize(818, 512)
         Nueva_sucursal.setMinimumSize(QSize(0, 0))
         Nueva_sucursal.setMaximumSize(QSize(16777215, 16777215))
-        Nueva_sucursal.setStyleSheet(u"*{color: #1d1c1c;}\n"
-"#Nueva_sucursal{\n"
+        Nueva_sucursal.setStyleSheet(u"#Nueva_sucursal{\n"
 "background: #fffefb;\n"
 "}\n"
 "#contenedor_encabezado{\n"
@@ -77,9 +76,9 @@ class Ui_Nueva_sucursal(object):
 "font-family:Arial;\n"
 "background: #F5F5F5;\n"
 "border:none;\n"
-"border-radius:5px"
-                        ";\n"
-"border-bottom: 1px solid #1d1c1c;\n"
+"border-radius:5px;\n"
+"border-bottom: 1p"
+                        "x solid #1d1c1c;\n"
 "}\n"
 "[objectName*=\"txtlargo_\"]{\n"
 "color: #1d1c1c;\n"
@@ -222,89 +221,25 @@ class Ui_Nueva_sucursal(object):
         self.gridLayout_2.setHorizontalSpacing(0)
         self.gridLayout_2.setVerticalSpacing(5)
         self.gridLayout_2.setContentsMargins(10, -1, 10, 0)
-        self.txt_pais = QLineEdit(self.contenedor)
-        self.txt_pais.setObjectName(u"txt_pais")
-
-        self.gridLayout_2.addWidget(self.txt_pais, 5, 2, 1, 2)
-
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_2.addItem(self.horizontalSpacer, 0, 2, 1, 1)
-
-        self.etiqueta_nombre = QLabel(self.contenedor)
-        self.etiqueta_nombre.setObjectName(u"etiqueta_nombre")
-
-        self.gridLayout_2.addWidget(self.etiqueta_nombre, 1, 0, 1, 2)
-
-        self.etiqueta_pais = QLabel(self.contenedor)
-        self.etiqueta_pais.setObjectName(u"etiqueta_pais")
-
-        self.gridLayout_2.addWidget(self.etiqueta_pais, 5, 0, 1, 2)
-
-        self.txt_ntelefono = QLineEdit(self.contenedor)
-        self.txt_ntelefono.setObjectName(u"txt_ntelefono")
-
-        self.gridLayout_2.addWidget(self.txt_ntelefono, 6, 2, 1, 2)
-
-        self.txt_codigopostal = QLineEdit(self.contenedor)
-        self.txt_codigopostal.setObjectName(u"txt_codigopostal")
-
-        self.gridLayout_2.addWidget(self.txt_codigopostal, 2, 2, 1, 2)
-
-        self.etiqueta_estado = QLabel(self.contenedor)
-        self.etiqueta_estado.setObjectName(u"etiqueta_estado")
-
-        self.gridLayout_2.addWidget(self.etiqueta_estado, 4, 0, 1, 1)
-
-        self.etiqueta_codigopostal = QLabel(self.contenedor)
-        self.etiqueta_codigopostal.setObjectName(u"etiqueta_codigopostal")
-
-        self.gridLayout_2.addWidget(self.etiqueta_codigopostal, 2, 0, 1, 2)
-
         self.txt_ciudad = QLineEdit(self.contenedor)
         self.txt_ciudad.setObjectName(u"txt_ciudad")
 
         self.gridLayout_2.addWidget(self.txt_ciudad, 3, 2, 1, 2)
-
-        self.txtlargo_direccion = QPlainTextEdit(self.contenedor)
-        self.txtlargo_direccion.setObjectName(u"txtlargo_direccion")
-
-        self.gridLayout_2.addWidget(self.txtlargo_direccion, 8, 0, 1, 4)
-
-        self.etiqueta_ciudad = QLabel(self.contenedor)
-        self.etiqueta_ciudad.setObjectName(u"etiqueta_ciudad")
-
-        self.gridLayout_2.addWidget(self.etiqueta_ciudad, 3, 0, 1, 1)
-
-        self.etiqueta_direccion = QLabel(self.contenedor)
-        self.etiqueta_direccion.setObjectName(u"etiqueta_direccion")
-
-        self.gridLayout_2.addWidget(self.etiqueta_direccion, 7, 0, 1, 2)
-
-        self.etiquetaTitulo_sucursal = QLabel(self.contenedor)
-        self.etiquetaTitulo_sucursal.setObjectName(u"etiquetaTitulo_sucursal")
-
-        self.gridLayout_2.addWidget(self.etiquetaTitulo_sucursal, 0, 0, 1, 2)
 
         self.txt_estado = QLineEdit(self.contenedor)
         self.txt_estado.setObjectName(u"txt_estado")
 
         self.gridLayout_2.addWidget(self.txt_estado, 4, 2, 1, 2)
 
-        self.txt_nombre = QLineEdit(self.contenedor)
-        self.txt_nombre.setObjectName(u"txt_nombre")
+        self.etiqueta_ciudad = QLabel(self.contenedor)
+        self.etiqueta_ciudad.setObjectName(u"etiqueta_ciudad")
 
-        self.gridLayout_2.addWidget(self.txt_nombre, 1, 2, 1, 2)
+        self.gridLayout_2.addWidget(self.etiqueta_ciudad, 3, 0, 1, 1)
 
-        self.btn_btn_limpiar = QPushButton(self.contenedor)
-        self.btn_btn_limpiar.setObjectName(u"btn_btn_limpiar")
-        self.btn_btn_limpiar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiar.setIcon(icon1)
-        self.btn_btn_limpiar.setIconSize(QSize(25, 25))
+        self.etiqueta_razonsocial = QLabel(self.contenedor)
+        self.etiqueta_razonsocial.setObjectName(u"etiqueta_razonsocial")
 
-        self.gridLayout_2.addWidget(self.btn_btn_limpiar, 0, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.etiqueta_razonsocial, 7, 0, 1, 1)
 
         self.contenedor_botones = QFrame(self.contenedor)
         self.contenedor_botones.setObjectName(u"contenedor_botones")
@@ -316,9 +251,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_eliminar = QPushButton(self.contenedor_botones)
         self.btn_btn_eliminar.setObjectName(u"btn_btn_eliminar")
         self.btn_btn_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_eliminar.setIcon(icon2)
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_eliminar.setIcon(icon1)
         self.btn_btn_eliminar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_eliminar)
@@ -326,9 +261,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_actualizar = QPushButton(self.contenedor_botones)
         self.btn_btn_actualizar.setObjectName(u"btn_btn_actualizar")
         self.btn_btn_actualizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_actualizar.setIcon(icon3)
+        icon2 = QIcon()
+        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_actualizar.setIcon(icon2)
         self.btn_btn_actualizar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_actualizar)
@@ -336,24 +271,108 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_agregar = QPushButton(self.contenedor_botones)
         self.btn_btn_agregar.setObjectName(u"btn_btn_agregar")
         self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_agregar.setIcon(icon4)
+        icon3 = QIcon()
+        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_agregar.setIcon(icon3)
         self.btn_btn_agregar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_agregar)
 
 
-        self.gridLayout_2.addWidget(self.contenedor_botones, 10, 0, 1, 4)
+        self.gridLayout_2.addWidget(self.contenedor_botones, 12, 0, 1, 4)
 
         self.etiqueta_ntelefono = QLabel(self.contenedor)
         self.etiqueta_ntelefono.setObjectName(u"etiqueta_ntelefono")
 
         self.gridLayout_2.addWidget(self.etiqueta_ntelefono, 6, 0, 1, 1)
 
+        self.etiquetaTitulo_sucursal = QLabel(self.contenedor)
+        self.etiquetaTitulo_sucursal.setObjectName(u"etiquetaTitulo_sucursal")
+
+        self.gridLayout_2.addWidget(self.etiquetaTitulo_sucursal, 0, 0, 1, 2)
+
+        self.etiqueta_nombre = QLabel(self.contenedor)
+        self.etiqueta_nombre.setObjectName(u"etiqueta_nombre")
+
+        self.gridLayout_2.addWidget(self.etiqueta_nombre, 1, 0, 1, 2)
+
+        self.txtlargo_direccion = QPlainTextEdit(self.contenedor)
+        self.txtlargo_direccion.setObjectName(u"txtlargo_direccion")
+
+        self.gridLayout_2.addWidget(self.txtlargo_direccion, 10, 0, 1, 4)
+
+        self.etiqueta_direccion = QLabel(self.contenedor)
+        self.etiqueta_direccion.setObjectName(u"etiqueta_direccion")
+
+        self.gridLayout_2.addWidget(self.etiqueta_direccion, 9, 0, 1, 2)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_2.addItem(self.horizontalSpacer, 0, 2, 1, 1)
+
+        self.txt_nombre = QLineEdit(self.contenedor)
+        self.txt_nombre.setObjectName(u"txt_nombre")
+
+        self.gridLayout_2.addWidget(self.txt_nombre, 1, 2, 1, 2)
+
+        self.etiqueta_codigopostal = QLabel(self.contenedor)
+        self.etiqueta_codigopostal.setObjectName(u"etiqueta_codigopostal")
+
+        self.gridLayout_2.addWidget(self.etiqueta_codigopostal, 2, 0, 1, 2)
+
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout_2.addItem(self.verticalSpacer, 9, 0, 1, 4)
+        self.gridLayout_2.addItem(self.verticalSpacer, 11, 0, 1, 4)
+
+        self.btn_btn_limpiar = QPushButton(self.contenedor)
+        self.btn_btn_limpiar.setObjectName(u"btn_btn_limpiar")
+        self.btn_btn_limpiar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiar.setIcon(icon4)
+        self.btn_btn_limpiar.setIconSize(QSize(25, 25))
+
+        self.gridLayout_2.addWidget(self.btn_btn_limpiar, 0, 3, 1, 1)
+
+        self.etiqueta_pais = QLabel(self.contenedor)
+        self.etiqueta_pais.setObjectName(u"etiqueta_pais")
+
+        self.gridLayout_2.addWidget(self.etiqueta_pais, 5, 0, 1, 2)
+
+        self.etiqueta_estado = QLabel(self.contenedor)
+        self.etiqueta_estado.setObjectName(u"etiqueta_estado")
+
+        self.gridLayout_2.addWidget(self.etiqueta_estado, 4, 0, 1, 1)
+
+        self.txt_ntelefono = QLineEdit(self.contenedor)
+        self.txt_ntelefono.setObjectName(u"txt_ntelefono")
+
+        self.gridLayout_2.addWidget(self.txt_ntelefono, 6, 2, 1, 2)
+
+        self.txt_codigopostal = QLineEdit(self.contenedor)
+        self.txt_codigopostal.setObjectName(u"txt_codigopostal")
+
+        self.gridLayout_2.addWidget(self.txt_codigopostal, 2, 2, 1, 2)
+
+        self.txt_razonsocial = QLineEdit(self.contenedor)
+        self.txt_razonsocial.setObjectName(u"txt_razonsocial")
+
+        self.gridLayout_2.addWidget(self.txt_razonsocial, 7, 2, 1, 2)
+
+        self.txt_pais = QLineEdit(self.contenedor)
+        self.txt_pais.setObjectName(u"txt_pais")
+
+        self.gridLayout_2.addWidget(self.txt_pais, 5, 2, 1, 2)
+
+        self.etiqueta_rfcsucursal = QLabel(self.contenedor)
+        self.etiqueta_rfcsucursal.setObjectName(u"etiqueta_rfcsucursal")
+
+        self.gridLayout_2.addWidget(self.etiqueta_rfcsucursal, 8, 0, 1, 1)
+
+        self.txt_rfcsucursal = QLineEdit(self.contenedor)
+        self.txt_rfcsucursal.setObjectName(u"txt_rfcsucursal")
+
+        self.gridLayout_2.addWidget(self.txt_rfcsucursal, 8, 2, 1, 2)
 
 
         self.gridLayout.addWidget(self.contenedor, 1, 0, 1, 1)
@@ -366,11 +385,17 @@ class Ui_Nueva_sucursal(object):
         QWidget.setTabOrder(self.txt_ciudad, self.txt_estado)
         QWidget.setTabOrder(self.txt_estado, self.txt_pais)
         QWidget.setTabOrder(self.txt_pais, self.txt_ntelefono)
-        QWidget.setTabOrder(self.txt_ntelefono, self.txtlargo_direccion)
-        QWidget.setTabOrder(self.txtlargo_direccion, self.btn_btn_eliminar)
+        QWidget.setTabOrder(self.txt_ntelefono, self.txt_razonsocial)
+        QWidget.setTabOrder(self.txt_razonsocial, self.txt_rfcsucursal)
+        QWidget.setTabOrder(self.txt_rfcsucursal, self.txtlargo_direccion)
+        QWidget.setTabOrder(self.txtlargo_direccion, self.btn_btn_limpiar)
+        QWidget.setTabOrder(self.btn_btn_limpiar, self.txt_buscarsucursales)
+        QWidget.setTabOrder(self.txt_buscarsucursales, self.btn_btn_eliminar)
         QWidget.setTabOrder(self.btn_btn_eliminar, self.btn_btn_actualizar)
         QWidget.setTabOrder(self.btn_btn_actualizar, self.btn_btn_agregar)
         QWidget.setTabOrder(self.btn_btn_agregar, self.lista_sucursales)
+        QWidget.setTabOrder(self.lista_sucursales, self.lista_departamentosasociados)
+        QWidget.setTabOrder(self.lista_departamentosasociados, self.btn_cerrar_encabezado)
 
         self.retranslateUi(Nueva_sucursal)
 
@@ -384,18 +409,36 @@ class Ui_Nueva_sucursal(object):
         self.etiquetasubtitulo_sucursales.setText(QCoreApplication.translate("Nueva_sucursal", u"Sucursales", None))
         self.etiquetasubtitulo_departamentosasociados.setText(QCoreApplication.translate("Nueva_sucursal", u"Departamentos", None))
         self.etiqueta_buscar.setText("")
+#if QT_CONFIG(tooltip)
+        self.txt_buscarsucursales.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Buscar\u00e1 la sucursal que en su nombre coincida con el ingresado en el campo de texto</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.txt_buscarsucursales.setPlaceholderText(QCoreApplication.translate("Nueva_sucursal", u" Buscar Sucursal", None))
-        self.etiqueta_nombre.setText(QCoreApplication.translate("Nueva_sucursal", u"Nombre", None))
-        self.etiqueta_pais.setText(QCoreApplication.translate("Nueva_sucursal", u"Pais", None))
-        self.etiqueta_estado.setText(QCoreApplication.translate("Nueva_sucursal", u"Estado", None))
-        self.etiqueta_codigopostal.setText(QCoreApplication.translate("Nueva_sucursal", u"Codigo Postal", None))
         self.etiqueta_ciudad.setText(QCoreApplication.translate("Nueva_sucursal", u"Ciudad", None))
-        self.etiqueta_direccion.setText(QCoreApplication.translate("Nueva_sucursal", u"Direccion", None))
-        self.etiquetaTitulo_sucursal.setText(QCoreApplication.translate("Nueva_sucursal", u"Nueva Sucursal", None))
-        self.btn_btn_limpiar.setText("")
+        self.etiqueta_razonsocial.setText(QCoreApplication.translate("Nueva_sucursal", u"Raz\u00f3n Social", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_eliminar.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Eliminar sucursal</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_eliminar.setText(QCoreApplication.translate("Nueva_sucursal", u"ELIMINAR", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_actualizar.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Actualizar sucursal</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_actualizar.setText(QCoreApplication.translate("Nueva_sucursal", u"ACTUALIZAR", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_agregar.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Agregar sucursal</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_agregar.setText(QCoreApplication.translate("Nueva_sucursal", u"AGREGAR", None))
         self.etiqueta_ntelefono.setText(QCoreApplication.translate("Nueva_sucursal", u"Num. Telefono", None))
+        self.etiquetaTitulo_sucursal.setText(QCoreApplication.translate("Nueva_sucursal", u"Nueva Sucursal", None))
+        self.etiqueta_nombre.setText(QCoreApplication.translate("Nueva_sucursal", u"Nombre", None))
+        self.etiqueta_direccion.setText(QCoreApplication.translate("Nueva_sucursal", u"DIRECCI\u00d3N COMPLETA", None))
+        self.etiqueta_codigopostal.setText(QCoreApplication.translate("Nueva_sucursal", u"Codigo Postal", None))
+        self.btn_btn_limpiar.setText("")
+        self.etiqueta_pais.setText(QCoreApplication.translate("Nueva_sucursal", u"Pais", None))
+        self.etiqueta_estado.setText(QCoreApplication.translate("Nueva_sucursal", u"Estado", None))
+        self.etiqueta_rfcsucursal.setText(QCoreApplication.translate("Nueva_sucursal", u"RFC", None))
+#if QT_CONFIG(tooltip)
+        self.txt_rfcsucursal.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Un RFC contiene solo mayusculas</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.txt_rfcsucursal.setInputMask("")
     # retranslateUi
 

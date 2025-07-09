@@ -6,7 +6,7 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
-from ..View.UserInterfacePy.UI_INICIO_SESION import *
+from ..View.UserInterfacePy.UI_INICIO_SESION_ui import *
 from ..View.UserInterfacePy.UI_VENTANA_SALUDO_INGRESO import Ui_Saludo_bienvenida
 from .Hilo_consultas import *
 from ..Source.iconos_rc import *
@@ -32,12 +32,12 @@ class Login(QWidget):
         self.setWindowIcon(QIcon(":Icons/IconosSVG/logo_devrous.svg"))
         self.setWindowTitle("Inicio de sesión")
 
-        sombra = QGraphicsDropShadowEffect()
-        sombra.setBlurRadius(25) 
-        sombra.setOffset(0, 0)
-        sombra.setColor(QColor(0, 102, 204)) 
+        # sombra = QGraphicsDropShadowEffect()
+        # sombra.setBlurRadius(25) 
+        # sombra.setOffset(0, 0)
+        # sombra.setColor(QColor(0, 102, 204)) 
 
-        self.ui.contenedor_global.setGraphicsEffect(sombra)
+        # self.ui.contenedor_global.setGraphicsEffect(sombra)
         
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)

@@ -35,6 +35,8 @@ class Inicio_sistema:
 
         # Bordes y líneas
         palette.setColor(QPalette.Mid, QColor("#cccccc"))
+        palette.setColor(QPalette.ToolTipBase, QColor("#1B305B"))  # Fondo del ToolTip (azul oscuro)
+        palette.setColor(QPalette.ToolTipText, QColor("#ECEFF4"))  # Texto del ToolTip (blanco)
 
         # Aplica la paleta global
         self.app.setPalette(palette)

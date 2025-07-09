@@ -50,7 +50,7 @@ class SistemaPrincipal(QWidget):
         self.ui.btc_minimizar_2.clicked.connect(lambda: self.showMinimized())
         
         self.ventana_sucursales = None
-        self.perfil= Perfil()
+        self.perfil= Perfil(parent = self, usuario = self.datos_usuario)
         self.venta= Venta()
         self.ventas= Ventas()
         self.compras= Compras(parent = self, usuario = self.datos_usuario)
