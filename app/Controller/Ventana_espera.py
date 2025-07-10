@@ -16,12 +16,12 @@ class Modal_de_espera(QDialog):
         self.ui.etiqueta_spiner.setMovie(self.gif_movie)
         self.gif_movie.start()
         
-        sombra = QGraphicsDropShadowEffect()
-        sombra.setBlurRadius(25) 
-        sombra.setOffset(0, 0)
-        sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra = QGraphicsDropShadowEffect()
+        self.sombra.setBlurRadius(25) 
+        self.sombra.setOffset(0, 0)
+        self.sombra.setColor(QColor(0, 102, 204)) 
 
-        self.ui.contenedor.setGraphicsEffect(sombra)
+        self.ui.contenedor.setGraphicsEffect(self.sombra)
         
         self.setWindowModality(Qt.ApplicationModal)  # Bloquea interacción con otras ventanas
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 

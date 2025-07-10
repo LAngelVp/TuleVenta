@@ -32,12 +32,12 @@ class Login(QWidget):
         self.setWindowIcon(QIcon(":Icons/IconosSVG/logo_devrous.svg"))
         self.setWindowTitle("Inicio de sesión")
 
-        # sombra = QGraphicsDropShadowEffect()
-        # sombra.setBlurRadius(25) 
-        # sombra.setOffset(0, 0)
-        # sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra = QGraphicsDropShadowEffect()
+        self.sombra.setBlurRadius(25) 
+        self.sombra.setOffset(0, 0)
+        self.sombra.setColor(QColor(0, 102, 204)) 
 
-        # self.ui.contenedor_global.setGraphicsEffect(sombra)
+        self.ui.principal.setGraphicsEffect(self.sombra)
         
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -112,12 +112,12 @@ class SaludoIngreso(QWidget):
         self.move(pantalla.topLeft())
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        sombra = QGraphicsDropShadowEffect()
-        sombra.setBlurRadius(25) 
-        sombra.setOffset(0, 0)
-        sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra = QGraphicsDropShadowEffect()
+        self.sombra.setBlurRadius(25) 
+        self.sombra.setOffset(0, 0)
+        self.sombra.setColor(QColor(0, 102, 204)) 
 
-        self.ui.contenedor.setGraphicsEffect(sombra)
+        self.ui.contenedor.setGraphicsEffect(self.sombra)
         self.ui.btn_entrar.clicked.connect(self.entrar_al_sistema)
         
         self.saludar()

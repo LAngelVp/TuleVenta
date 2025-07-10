@@ -139,6 +139,14 @@ class Admin_productosController(QWidget):
         self.ui.contenedorModal_contenedorFechaCaducidad.hide()
         self.ui.txt_codBarras.setFocus()
         
+        
+        self.sombra = QGraphicsDropShadowEffect()
+        self.sombra.setBlurRadius(25) 
+        self.sombra.setOffset(0, 0)
+        self.sombra.setColor(QColor(0, 102, 204)) 
+
+        self.ui.contenedorModal_general.setGraphicsEffect(self.sombra)
+        
 #// Validaciones:
         self.ui.txt_codBarras.setMaxLength(255)
         self.ui.txt_nombreProducto.setMaxLength(255)

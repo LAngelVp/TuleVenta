@@ -31,7 +31,7 @@ class Ui_contenedorModal_agregar_productos(object):
         if not contenedorModal_agregar_productos.objectName():
             contenedorModal_agregar_productos.setObjectName(u"contenedorModal_agregar_productos")
         contenedorModal_agregar_productos.setWindowModality(Qt.WindowModality.WindowModal)
-        contenedorModal_agregar_productos.resize(872, 550)
+        contenedorModal_agregar_productos.resize(1221, 613)
         contenedorModal_agregar_productos.setAutoFillBackground(False)
         contenedorModal_agregar_productos.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "#etiqueta_barras{\n"
@@ -322,13 +322,9 @@ class Ui_contenedorModal_agregar_productos(object):
 "color: black;\n"
 "}\n"
 "")
-        self.gridLayout = QGridLayout(contenedorModal_agregar_productos)
-        self.gridLayout.setSpacing(0)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.contenedorModal_general = QFrame(contenedorModal_agregar_productos)
         self.contenedorModal_general.setObjectName(u"contenedorModal_general")
+        self.contenedorModal_general.setGeometry(QRect(20, 10, 1181, 581))
         self.contenedorModal_general.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedorModal_general.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_14 = QGridLayout(self.contenedorModal_general)
@@ -377,7 +373,7 @@ class Ui_contenedorModal_agregar_productos(object):
         self.contenedorModal_formulario_izquierda.setWidgetResizable(True)
         self.contenedorModal_scroll_formulario = QWidget()
         self.contenedorModal_scroll_formulario.setObjectName(u"contenedorModal_scroll_formulario")
-        self.contenedorModal_scroll_formulario.setGeometry(QRect(-452, -269, 1326, 1190))
+        self.contenedorModal_scroll_formulario.setGeometry(QRect(-157, -20, 1326, 1190))
         self.gridLayout_2 = QGridLayout(self.contenedorModal_scroll_formulario)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.etiqueta_tituloProductos = QLabel(self.contenedorModal_scroll_formulario)
@@ -1036,9 +1032,6 @@ class Ui_contenedorModal_agregar_productos(object):
 
 
         self.gridLayout_14.addWidget(self.contenedorModal_informacion, 1, 0, 1, 1)
-
-
-        self.gridLayout.addWidget(self.contenedorModal_general, 0, 0, 1, 1)
 
 
         self.retranslateUi(contenedorModal_agregar_productos)
