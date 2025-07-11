@@ -153,7 +153,7 @@ class SucursalesController(QDialog):
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
                 try:
-                    sucursales = SucursalesModel(session).obtener_todo()
+                    sucursales, estado = SucursalesModel(session).obtener_todo()
                 except Exception as e:
                     Mensaje().mensaje_alerta("Error al obtener sucursales")
             if sucursales:

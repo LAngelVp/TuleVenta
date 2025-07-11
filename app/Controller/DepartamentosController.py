@@ -259,7 +259,7 @@ class DepartamentosController(QDialog):
         try:
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
-                self.sucursales = SucursalesModel(session).obtener_todo()  # O ajusta esto a tus necesidades
+                self.sucursales, estado = SucursalesModel(session).obtener_todo()  # O ajusta esto a tus necesidades
                 for sucursal in self.sucursales:
                     if sucursal.id not in sucursales_vinculadas:  # Solo agregar sucursales no vinculadas
                         self.sucursales_seleccionadas_existentes.add(sucursal.id)

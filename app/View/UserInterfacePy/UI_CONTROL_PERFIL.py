@@ -30,8 +30,7 @@ class Ui_Formulario_Datos_Empleado(object):
         if not Formulario_Datos_Empleado.objectName():
             Formulario_Datos_Empleado.setObjectName(u"Formulario_Datos_Empleado")
         Formulario_Datos_Empleado.resize(807, 502)
-        Formulario_Datos_Empleado.setStyleSheet(u"*{color: #1d1c1c;}\n"
-"#Formulario_Datos_Empleado{\n"
+        Formulario_Datos_Empleado.setStyleSheet(u"#Formulario_Datos_Empleado{\n"
 "background-color: #fffefb;\n"
 "}\n"
 "[objectName*=\"contenedor\"]{\n"
@@ -52,13 +51,14 @@ class Ui_Formulario_Datos_Empleado(object):
 "font-family: \"Arial\";\n"
 "padding-top: 5px;\n"
 "}\n"
-"#tarjeta_usuario{\n"
+"#foto_empleadoperfil{\n"
 "max-width:200px;\n"
 "min-height:150px;\n"
 "min-width:200px;\n"
 "max-height:150px;\n"
 "background:  qconicalgradient(cx:0, cy:0, angle:228.9, stop:0.136364 rgba(0, 63, 126, 255), stop:0.522222 rgba(0, 199, 255, 236));\n"
 "border-radius: 12px;\n"
+"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]{\n"
 "font-family: Arial;\n"
@@ -69,11 +69,11 @@ class Ui_Formulario_Datos_Empleado(object):
 "border-radius: 5px;\n"
 "background: #00619a;\n"
 "text-align: center;\n"
-"padding-left: 5px;\n"
+"padding-left"
+                        ": 5px;\n"
 "padding-right: 5px;\n"
 "}\n"
-""
-                        "[objectName*=\"btn_btn_\"]:hover{\n"
+"[objectName*=\"btn_btn_\"]:hover{\n"
 "background: #2196F3;\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:pressed{\n"
@@ -90,12 +90,22 @@ class Ui_Formulario_Datos_Empleado(object):
 "font-size: 12px;\n"
 "font-weight:bold;\n"
 "text-transform: capitalize;\n"
+"color: #1d1c1c;\n"
+"}\n"
+"[objectName*=\"opcion\"]{\n"
+"color: #1d1c1c;\n"
 "}\n"
 "[objectName*=\"etiquetaTituloDato_\"]{\n"
 "font-family: Arial;\n"
 "font-size: 18px;\n"
 "font-weight:bold;\n"
-"color: rgb(0, 0, 0);\n"
+"color: #1d1c1c;\n"
+"}\n"
+"[objectName*=\"etiquetaTitulo_\"]{\n"
+"font-family: Arial;\n"
+"font-size: 18px;\n"
+"font-weight:bold;\n"
+"color: #1d1c1c;\n"
 "}\n"
 "[objectName*=\"etiquetaDato_\"]{\n"
 "font-family: Arial;\n"
@@ -105,7 +115,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "}\n"
 "[objectName*=\"txt_\"]{\n"
 "background-color: rgb(245, 244, 241);\n"
-"color: rgb(29, 28, 28);\n"
+"color: rgb(29, 28, 28"
+                        ");\n"
 "border: none;\n"
 "border-bottom: 1px solid;\n"
 "border-radius: 5px;\n"
@@ -116,8 +127,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "[objectName^=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
-"[objectName*="
-                        "\"fecha_\"]{\n"
+"[objectName*=\"fecha_\"]{\n"
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
 "border-radius: 5px;\n"
@@ -147,7 +157,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
-"    background-color: #00668c;\n"
+"    ba"
+                        "ckground-color: #00668c;\n"
 "    color: white;\n"
 "    border-top-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
@@ -156,8 +167,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "/* BOTONES DE NAVEGACI\u00d3N */\n"
 "QCalendarWidget QToolButton {\n"
 "    background-color: transparent;\n"
-""
-                        "    color: white;\n"
+"    color: white;\n"
 "    font-weight: bold;\n"
 "    padding: 5px;\n"
 "}\n"
@@ -187,7 +197,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
-"/* EFECTO HOVER SOBRE D\u00cdAS */\n"
+"/* EFECTO HOVER SOBRE D\u00cd"
+                        "AS */\n"
 "QCalendarWidget QAbstractItemView::item:hover {\n"
 "    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
@@ -197,8 +208,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "color:#fffefb;\n"
 "border:none;\n"
 "}\n"
-"[objectName*=\"cajaOpciones"
-                        "\"] {\n"
+"[objectName*=\"cajaOpciones\"] {\n"
 "    border: none;\n"
 "    border-bottom: 1px solid #787878 ;\n"
 "    padding: 2px ;\n"
@@ -226,7 +236,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "[objectName*=\"cajaOpciones\"]::drop-down {\n"
 "    subcontrol-origin: padding ;\n"
 "    subcontrol-position: top right ;\n"
-"    padding-right: 5px ;\n"
+"    "
+                        "padding-right: 5px ;\n"
 "    width: 20% ;\n"
 "    border-left-width: 1px ;\n"
 "    border-radius: 3px ;\n"
@@ -234,8 +245,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "}\n"
 "/* FLECHA DESPLEGABLE */\n"
 "[objectName*=\"cajaOpciones\"]::down-arrow {\n"
-"    image: url"
-                        "(:/Icons/Bootstrap/filter-left.svg);\n"
+"    image: url(:/Icons/Bootstrap/filter-left.svg);\n"
 "    width: 17% ;\n"
 "    height: 17% ;\n"
 "    padding-left: 5px ;\n"
@@ -265,7 +275,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "[objectName^=\"tiempo_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
-"[objectName*=\"txtlargo_\"]{\n"
+"[objectNam"
+                        "e*=\"txtlargo_\"]{\n"
 "background-color: rgb(245, 244, 241);\n"
 "color: rgb(29, 28, 28);\n"
 "border: none;\n"
@@ -275,8 +286,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "font-family: Arial;\n"
 "max-height: 60px;\n"
 "}\n"
-"[obj"
-                        "ectName^=\"txtlargo\"]::focus{\n"
+"[objectName^=\"txtlargo\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "")
@@ -296,7 +306,7 @@ class Ui_Formulario_Datos_Empleado(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1137, 724))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1137, 772))
         self.gridLayout_6 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
@@ -326,6 +336,166 @@ class Ui_Formulario_Datos_Empleado(object):
         self.gridLayout_3.setHorizontalSpacing(0)
         self.gridLayout_3.setVerticalSpacing(5)
         self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.contenedor_frame_4 = QFrame(self.widget_3)
+        self.contenedor_frame_4.setObjectName(u"contenedor_frame_4")
+        self.contenedor_frame_4.setEnabled(True)
+        self.contenedor_frame_4.setMinimumSize(QSize(0, 0))
+        self.contenedor_frame_4.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_frame_4.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_5 = QGridLayout(self.contenedor_frame_4)
+        self.gridLayout_5.setObjectName(u"gridLayout_5")
+        self.txt_usuario = QLineEdit(self.contenedor_frame_4)
+        self.txt_usuario.setObjectName(u"txt_usuario")
+        self.txt_usuario.setEnabled(False)
+
+        self.gridLayout_5.addWidget(self.txt_usuario, 12, 2, 1, 2)
+
+        self.etiqueta_horasalida = QLabel(self.contenedor_frame_4)
+        self.etiqueta_horasalida.setObjectName(u"etiqueta_horasalida")
+
+        self.gridLayout_5.addWidget(self.etiqueta_horasalida, 6, 2, 1, 1)
+
+        self.etiqueta_horaentrada = QLabel(self.contenedor_frame_4)
+        self.etiqueta_horaentrada.setObjectName(u"etiqueta_horaentrada")
+
+        self.gridLayout_5.addWidget(self.etiqueta_horaentrada, 6, 0, 1, 1)
+
+        self.etiqueta_sucursal = QLabel(self.contenedor_frame_4)
+        self.etiqueta_sucursal.setObjectName(u"etiqueta_sucursal")
+
+        self.gridLayout_5.addWidget(self.etiqueta_sucursal, 2, 0, 1, 1)
+
+        self.numerodecimal_horastrabajo = QDoubleSpinBox(self.contenedor_frame_4)
+        self.numerodecimal_horastrabajo.setObjectName(u"numerodecimal_horastrabajo")
+        self.numerodecimal_horastrabajo.setEnabled(False)
+        self.numerodecimal_horastrabajo.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.numerodecimal_horastrabajo.setMaximum(99999999999999991433150857216.000000000000000)
+
+        self.gridLayout_5.addWidget(self.numerodecimal_horastrabajo, 5, 3, 1, 1)
+
+        self.etiqueta_puesto = QLabel(self.contenedor_frame_4)
+        self.etiqueta_puesto.setObjectName(u"etiqueta_puesto")
+
+        self.gridLayout_5.addWidget(self.etiqueta_puesto, 4, 0, 1, 1)
+
+        self.txtlargo_descripcionpuesto = QPlainTextEdit(self.contenedor_frame_4)
+        self.txtlargo_descripcionpuesto.setObjectName(u"txtlargo_descripcionpuesto")
+        self.txtlargo_descripcionpuesto.setEnabled(False)
+        self.txtlargo_descripcionpuesto.setMaximumSize(QSize(16777215, 61))
+
+        self.gridLayout_5.addWidget(self.txtlargo_descripcionpuesto, 9, 0, 1, 4)
+
+        self.cajaOpciones_sucursales = QComboBox(self.contenedor_frame_4)
+        self.cajaOpciones_sucursales.setObjectName(u"cajaOpciones_sucursales")
+        self.cajaOpciones_sucursales.setEnabled(False)
+        self.cajaOpciones_sucursales.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout_5.addWidget(self.cajaOpciones_sucursales, 2, 1, 1, 3)
+
+        self.tiempo_horaentrada = QTimeEdit(self.contenedor_frame_4)
+        self.tiempo_horaentrada.setObjectName(u"tiempo_horaentrada")
+        self.tiempo_horaentrada.setEnabled(False)
+        self.tiempo_horaentrada.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+
+        self.gridLayout_5.addWidget(self.tiempo_horaentrada, 6, 1, 1, 1)
+
+        self.etiqueta_descripcionpuesto = QLabel(self.contenedor_frame_4)
+        self.etiqueta_descripcionpuesto.setObjectName(u"etiqueta_descripcionpuesto")
+
+        self.gridLayout_5.addWidget(self.etiqueta_descripcionpuesto, 8, 0, 1, 4)
+
+        self.etiqueta_horastrabajo = QLabel(self.contenedor_frame_4)
+        self.etiqueta_horastrabajo.setObjectName(u"etiqueta_horastrabajo")
+
+        self.gridLayout_5.addWidget(self.etiqueta_horastrabajo, 5, 2, 1, 1)
+
+        self.etiquetaTitulo_datosempleo = QLabel(self.contenedor_frame_4)
+        self.etiquetaTitulo_datosempleo.setObjectName(u"etiquetaTitulo_datosempleo")
+
+        self.gridLayout_5.addWidget(self.etiquetaTitulo_datosempleo, 1, 0, 1, 4)
+
+        self.line_3 = QFrame(self.contenedor_frame_4)
+        self.line_3.setObjectName(u"line_3")
+        self.line_3.setFrameShape(QFrame.Shape.HLine)
+        self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.gridLayout_5.addWidget(self.line_3, 0, 0, 1, 4)
+
+        self.line_2 = QFrame(self.contenedor_frame_4)
+        self.line_2.setObjectName(u"line_2")
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.gridLayout_5.addWidget(self.line_2, 10, 0, 1, 4)
+
+        self.fecha_contrato = QDateEdit(self.contenedor_frame_4)
+        self.fecha_contrato.setObjectName(u"fecha_contrato")
+        self.fecha_contrato.setEnabled(False)
+        self.fecha_contrato.setCalendarPopup(True)
+
+        self.gridLayout_5.addWidget(self.fecha_contrato, 7, 1, 1, 3)
+
+        self.etiqueta_usuario = QLabel(self.contenedor_frame_4)
+        self.etiqueta_usuario.setObjectName(u"etiqueta_usuario")
+
+        self.gridLayout_5.addWidget(self.etiqueta_usuario, 12, 0, 1, 1)
+
+        self.cajaOpciones_puestos = QComboBox(self.contenedor_frame_4)
+        self.cajaOpciones_puestos.setObjectName(u"cajaOpciones_puestos")
+        self.cajaOpciones_puestos.setEnabled(False)
+        self.cajaOpciones_puestos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout_5.addWidget(self.cajaOpciones_puestos, 4, 1, 1, 3)
+
+        self.etiqueta_departamento = QLabel(self.contenedor_frame_4)
+        self.etiqueta_departamento.setObjectName(u"etiqueta_departamento")
+
+        self.gridLayout_5.addWidget(self.etiqueta_departamento, 3, 0, 1, 1)
+
+        self.etiqueta_fechacontrato = QLabel(self.contenedor_frame_4)
+        self.etiqueta_fechacontrato.setObjectName(u"etiqueta_fechacontrato")
+
+        self.gridLayout_5.addWidget(self.etiqueta_fechacontrato, 7, 0, 1, 1)
+
+        self.cajaOpciones_departamentos = QComboBox(self.contenedor_frame_4)
+        self.cajaOpciones_departamentos.setObjectName(u"cajaOpciones_departamentos")
+        self.cajaOpciones_departamentos.setEnabled(False)
+        self.cajaOpciones_departamentos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout_5.addWidget(self.cajaOpciones_departamentos, 3, 1, 1, 3)
+
+        self.etiquetaTitulo_datosusuario = QLabel(self.contenedor_frame_4)
+        self.etiquetaTitulo_datosusuario.setObjectName(u"etiquetaTitulo_datosusuario")
+
+        self.gridLayout_5.addWidget(self.etiquetaTitulo_datosusuario, 11, 0, 1, 4)
+
+        self.etiqueta_salario = QLabel(self.contenedor_frame_4)
+        self.etiqueta_salario.setObjectName(u"etiqueta_salario")
+
+        self.gridLayout_5.addWidget(self.etiqueta_salario, 5, 0, 1, 1)
+
+        self.numerodecimal_salario = QDoubleSpinBox(self.contenedor_frame_4)
+        self.numerodecimal_salario.setObjectName(u"numerodecimal_salario")
+        self.numerodecimal_salario.setEnabled(False)
+        self.numerodecimal_salario.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.numerodecimal_salario.setMaximum(1000000000000000000.000000000000000)
+
+        self.gridLayout_5.addWidget(self.numerodecimal_salario, 5, 1, 1, 1)
+
+        self.tiempo_horasalida = QTimeEdit(self.contenedor_frame_4)
+        self.tiempo_horasalida.setObjectName(u"tiempo_horasalida")
+        self.tiempo_horasalida.setEnabled(False)
+        self.tiempo_horasalida.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+
+        self.gridLayout_5.addWidget(self.tiempo_horasalida, 6, 3, 1, 1)
+
+
+        self.gridLayout_3.addWidget(self.contenedor_frame_4, 2, 0, 1, 2)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_3.addItem(self.verticalSpacer_2, 3, 0, 1, 1)
+
         self.contenedor_baja = QFrame(self.widget_3)
         self.contenedor_baja.setObjectName(u"contenedor_baja")
         self.contenedor_baja.setFrameShape(QFrame.Shape.StyledPanel)
@@ -351,17 +521,17 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.tarjeta_usuario = QWidget(self.widget_3)
         self.tarjeta_usuario.setObjectName(u"tarjeta_usuario")
-        self.tarjeta_usuario.setMinimumSize(QSize(200, 150))
-        self.tarjeta_usuario.setMaximumSize(QSize(200, 150))
+        self.tarjeta_usuario.setMinimumSize(QSize(0, 0))
+        self.tarjeta_usuario.setMaximumSize(QSize(16777215, 16777215))
         self.tarjeta_usuario.setStyleSheet(u"")
         self.gridLayout_2 = QGridLayout(self.tarjeta_usuario)
         self.gridLayout_2.setSpacing(0)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setContentsMargins(0, 0, 0, 10)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.foto_empleadoperfil = QLabel(self.tarjeta_usuario)
         self.foto_empleadoperfil.setObjectName(u"foto_empleadoperfil")
-        self.foto_empleadoperfil.setStyleSheet(u"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
-"background:transparent;")
+        self.foto_empleadoperfil.setEnabled(False)
+        self.foto_empleadoperfil.setStyleSheet(u"")
         self.foto_empleadoperfil.setScaledContents(True)
 
         self.gridLayout_2.addWidget(self.foto_empleadoperfil, 0, 0, 2, 1)
@@ -369,180 +539,12 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.gridLayout_3.addWidget(self.tarjeta_usuario, 1, 0, 1, 2, Qt.AlignmentFlag.AlignHCenter)
 
-        self.contenedor_frame_4 = QFrame(self.widget_3)
-        self.contenedor_frame_4.setObjectName(u"contenedor_frame_4")
-        self.contenedor_frame_4.setMinimumSize(QSize(0, 0))
-        self.contenedor_frame_4.setFrameShape(QFrame.Shape.StyledPanel)
-        self.contenedor_frame_4.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout_5 = QGridLayout(self.contenedor_frame_4)
-        self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.numerodecimal_salario = QDoubleSpinBox(self.contenedor_frame_4)
-        self.numerodecimal_salario.setObjectName(u"numerodecimal_salario")
-        self.numerodecimal_salario.setEnabled(False)
-        self.numerodecimal_salario.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-        self.gridLayout_5.addWidget(self.numerodecimal_salario, 5, 1, 1, 1)
-
-        self.etiqueta_horastrabajo = QLabel(self.contenedor_frame_4)
-        self.etiqueta_horastrabajo.setObjectName(u"etiqueta_horastrabajo")
-
-        self.gridLayout_5.addWidget(self.etiqueta_horastrabajo, 5, 2, 1, 1)
-
-        self.etiqueta_horaentrada = QLabel(self.contenedor_frame_4)
-        self.etiqueta_horaentrada.setObjectName(u"etiqueta_horaentrada")
-
-        self.gridLayout_5.addWidget(self.etiqueta_horaentrada, 6, 0, 1, 1)
-
-        self.etiqueta_departamento = QLabel(self.contenedor_frame_4)
-        self.etiqueta_departamento.setObjectName(u"etiqueta_departamento")
-
-        self.gridLayout_5.addWidget(self.etiqueta_departamento, 3, 0, 1, 1)
-
-        self.line_3 = QFrame(self.contenedor_frame_4)
-        self.line_3.setObjectName(u"line_3")
-        self.line_3.setFrameShape(QFrame.Shape.HLine)
-        self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout_5.addWidget(self.line_3, 0, 0, 1, 4)
-
-        self.etiqueta_puesto = QLabel(self.contenedor_frame_4)
-        self.etiqueta_puesto.setObjectName(u"etiqueta_puesto")
-
-        self.gridLayout_5.addWidget(self.etiqueta_puesto, 4, 0, 1, 1)
-
-        self.etiquetaTitulo_datosempleo = QLabel(self.contenedor_frame_4)
-        self.etiquetaTitulo_datosempleo.setObjectName(u"etiquetaTitulo_datosempleo")
-
-        self.gridLayout_5.addWidget(self.etiquetaTitulo_datosempleo, 1, 0, 1, 4)
-
-        self.etiqueta_sucursal = QLabel(self.contenedor_frame_4)
-        self.etiqueta_sucursal.setObjectName(u"etiqueta_sucursal")
-
-        self.gridLayout_5.addWidget(self.etiqueta_sucursal, 2, 0, 1, 1)
-
-        self.numerodecimal_horastrabajo = QDoubleSpinBox(self.contenedor_frame_4)
-        self.numerodecimal_horastrabajo.setObjectName(u"numerodecimal_horastrabajo")
-        self.numerodecimal_horastrabajo.setEnabled(False)
-        self.numerodecimal_horastrabajo.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-        self.gridLayout_5.addWidget(self.numerodecimal_horastrabajo, 5, 3, 1, 1)
-
-        self.tiempo_horaentrada = QTimeEdit(self.contenedor_frame_4)
-        self.tiempo_horaentrada.setObjectName(u"tiempo_horaentrada")
-        self.tiempo_horaentrada.setEnabled(False)
-        self.tiempo_horaentrada.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-        self.gridLayout_5.addWidget(self.tiempo_horaentrada, 6, 1, 1, 1)
-
-        self.etiqueta_horasalida = QLabel(self.contenedor_frame_4)
-        self.etiqueta_horasalida.setObjectName(u"etiqueta_horasalida")
-
-        self.gridLayout_5.addWidget(self.etiqueta_horasalida, 6, 2, 1, 1)
-
-        self.etiqueta_salario = QLabel(self.contenedor_frame_4)
-        self.etiqueta_salario.setObjectName(u"etiqueta_salario")
-
-        self.gridLayout_5.addWidget(self.etiqueta_salario, 5, 0, 1, 1)
-
-        self.tiempo_horasalida = QTimeEdit(self.contenedor_frame_4)
-        self.tiempo_horasalida.setObjectName(u"tiempo_horasalida")
-        self.tiempo_horasalida.setEnabled(False)
-        self.tiempo_horasalida.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-        self.gridLayout_5.addWidget(self.tiempo_horasalida, 6, 3, 1, 1)
-
-        self.etiqueta_descripcionpuesto = QLabel(self.contenedor_frame_4)
-        self.etiqueta_descripcionpuesto.setObjectName(u"etiqueta_descripcionpuesto")
-
-        self.gridLayout_5.addWidget(self.etiqueta_descripcionpuesto, 8, 0, 1, 4)
-
-        self.txtlargo_descripcionpuesto = QPlainTextEdit(self.contenedor_frame_4)
-        self.txtlargo_descripcionpuesto.setObjectName(u"txtlargo_descripcionpuesto")
-        self.txtlargo_descripcionpuesto.setEnabled(False)
-        self.txtlargo_descripcionpuesto.setMaximumSize(QSize(16777215, 61))
-
-        self.gridLayout_5.addWidget(self.txtlargo_descripcionpuesto, 9, 0, 1, 4)
-
-        self.etiqueta_fechacontrato = QLabel(self.contenedor_frame_4)
-        self.etiqueta_fechacontrato.setObjectName(u"etiqueta_fechacontrato")
-
-        self.gridLayout_5.addWidget(self.etiqueta_fechacontrato, 7, 0, 1, 1)
-
-        self.line_2 = QFrame(self.contenedor_frame_4)
-        self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.Shape.HLine)
-        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout_5.addWidget(self.line_2, 10, 0, 1, 4)
-
-        self.etiquetaTitulo_datosusuario = QLabel(self.contenedor_frame_4)
-        self.etiquetaTitulo_datosusuario.setObjectName(u"etiquetaTitulo_datosusuario")
-
-        self.gridLayout_5.addWidget(self.etiquetaTitulo_datosusuario, 11, 0, 1, 4)
-
-        self.txt_password = QLineEdit(self.contenedor_frame_4)
-        self.txt_password.setObjectName(u"txt_password")
-        self.txt_password.setEnabled(False)
-        self.txt_password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
-
-        self.gridLayout_5.addWidget(self.txt_password, 13, 2, 1, 2)
-
-        self.etiqueta_usuario = QLabel(self.contenedor_frame_4)
-        self.etiqueta_usuario.setObjectName(u"etiqueta_usuario")
-
-        self.gridLayout_5.addWidget(self.etiqueta_usuario, 12, 0, 1, 1)
-
-        self.txt_usuario = QLineEdit(self.contenedor_frame_4)
-        self.txt_usuario.setObjectName(u"txt_usuario")
-        self.txt_usuario.setEnabled(False)
-
-        self.gridLayout_5.addWidget(self.txt_usuario, 12, 2, 1, 2)
-
-        self.etiqueta_password = QLabel(self.contenedor_frame_4)
-        self.etiqueta_password.setObjectName(u"etiqueta_password")
-
-        self.gridLayout_5.addWidget(self.etiqueta_password, 13, 0, 1, 1)
-
-        self.cajaOpciones_puestos = QComboBox(self.contenedor_frame_4)
-        self.cajaOpciones_puestos.setObjectName(u"cajaOpciones_puestos")
-        self.cajaOpciones_puestos.setEnabled(False)
-        self.cajaOpciones_puestos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_5.addWidget(self.cajaOpciones_puestos, 4, 1, 1, 3)
-
-        self.cajaOpciones_departamentos = QComboBox(self.contenedor_frame_4)
-        self.cajaOpciones_departamentos.setObjectName(u"cajaOpciones_departamentos")
-        self.cajaOpciones_departamentos.setEnabled(False)
-        self.cajaOpciones_departamentos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_5.addWidget(self.cajaOpciones_departamentos, 3, 1, 1, 3)
-
-        self.cajaOpciones_sucursales = QComboBox(self.contenedor_frame_4)
-        self.cajaOpciones_sucursales.setObjectName(u"cajaOpciones_sucursales")
-        self.cajaOpciones_sucursales.setEnabled(False)
-        self.cajaOpciones_sucursales.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_5.addWidget(self.cajaOpciones_sucursales, 2, 1, 1, 3)
-
-        self.fecha_contrato = QDateEdit(self.contenedor_frame_4)
-        self.fecha_contrato.setObjectName(u"fecha_contrato")
-        self.fecha_contrato.setEnabled(False)
-        self.fecha_contrato.setCalendarPopup(True)
-
-        self.gridLayout_5.addWidget(self.fecha_contrato, 7, 1, 1, 3)
-
-
-        self.gridLayout_3.addWidget(self.contenedor_frame_4, 2, 0, 1, 2)
-
-        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.gridLayout_3.addItem(self.verticalSpacer_2, 3, 0, 1, 1)
-
 
         self.gridLayout_4.addWidget(self.widget_3, 0, 2, 2, 1, Qt.AlignmentFlag.AlignRight)
 
         self.contenedor_Izquierdo = QFrame(self.widget_2)
         self.contenedor_Izquierdo.setObjectName(u"contenedor_Izquierdo")
+        self.contenedor_Izquierdo.setEnabled(True)
         self.contenedor_Izquierdo.setMinimumSize(QSize(0, 0))
         self.contenedor_Izquierdo.setMaximumSize(QSize(16777215, 16777215))
         self.contenedor_Izquierdo.setFrameShape(QFrame.Shape.StyledPanel)
@@ -571,7 +573,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_nombrecontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_nombrecontactoemergencia.setObjectName(u"txt_nombrecontactoemergencia")
-        self.txt_nombrecontactoemergencia.setEnabled(False)
+        self.txt_nombrecontactoemergencia.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_nombrecontactoemergencia, 21, 1, 1, 1)
 
@@ -588,6 +590,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_carreraperfil = QLineEdit(self.contenedor_Izquierdo)
         self.txt_carreraperfil.setObjectName(u"txt_carreraperfil")
+        self.txt_carreraperfil.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_carreraperfil, 9, 3, 1, 1)
 
@@ -617,7 +620,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.cajaOpciones_parentescocontactoemergencia = QComboBox(self.contenedor_Izquierdo)
         self.cajaOpciones_parentescocontactoemergencia.setObjectName(u"cajaOpciones_parentescocontactoemergencia")
-        self.cajaOpciones_parentescocontactoemergencia.setEnabled(False)
+        self.cajaOpciones_parentescocontactoemergencia.setEnabled(True)
         self.cajaOpciones_parentescocontactoemergencia.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
         self.gridLayout.addWidget(self.cajaOpciones_parentescocontactoemergencia, 22, 3, 1, 1)
@@ -634,7 +637,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numerointerior = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numerointerior.setObjectName(u"txt_numerointerior")
-        self.txt_numerointerior.setEnabled(False)
+        self.txt_numerointerior.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_numerointerior, 16, 1, 1, 1)
 
@@ -645,7 +648,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numeroexterior = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numeroexterior.setObjectName(u"txt_numeroexterior")
-        self.txt_numeroexterior.setEnabled(False)
+        self.txt_numeroexterior.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_numeroexterior, 15, 1, 1, 1)
 
@@ -674,7 +677,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_colonia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_colonia.setObjectName(u"txt_colonia")
-        self.txt_colonia.setEnabled(False)
+        self.txt_colonia.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_colonia, 14, 3, 1, 1)
 
@@ -730,7 +733,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.grupobox_etiqueta_diaslaborales_2 = QGroupBox(self.contenedor_Izquierdo)
         self.grupobox_etiqueta_diaslaborales_2.setObjectName(u"grupobox_etiqueta_diaslaborales_2")
-        self.grupobox_etiqueta_diaslaborales_2.setEnabled(False)
+        self.grupobox_etiqueta_diaslaborales_2.setEnabled(True)
         self.gridLayout_8 = QGridLayout(self.grupobox_etiqueta_diaslaborales_2)
         self.gridLayout_8.setObjectName(u"gridLayout_8")
         self.opcion_lunes = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
@@ -824,7 +827,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numtelefonocontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numtelefonocontactoemergencia.setObjectName(u"txt_numtelefonocontactoemergencia")
-        self.txt_numtelefonocontactoemergencia.setEnabled(False)
+        self.txt_numtelefonocontactoemergencia.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_numtelefonocontactoemergencia, 22, 1, 1, 1)
 
@@ -835,6 +838,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.cajaOpciones_nivelacademicoperfil = QComboBox(self.contenedor_Izquierdo)
         self.cajaOpciones_nivelacademicoperfil.setObjectName(u"cajaOpciones_nivelacademicoperfil")
+        self.cajaOpciones_nivelacademicoperfil.setEnabled(False)
 
         self.gridLayout.addWidget(self.cajaOpciones_nivelacademicoperfil, 9, 1, 1, 1)
 
@@ -845,7 +849,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txtlargo_referenciadireccion = QPlainTextEdit(self.contenedor_Izquierdo)
         self.txtlargo_referenciadireccion.setObjectName(u"txtlargo_referenciadireccion")
-        self.txtlargo_referenciadireccion.setEnabled(False)
+        self.txtlargo_referenciadireccion.setEnabled(True)
         self.txtlargo_referenciadireccion.setMaximumSize(QSize(16777215, 61))
         self.txtlargo_referenciadireccion.setTabChangesFocus(False)
         self.txtlargo_referenciadireccion.setBackgroundVisible(False)
@@ -878,6 +882,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.cajaOpciones_generoperfil = QComboBox(self.contenedor_Izquierdo)
         self.cajaOpciones_generoperfil.setObjectName(u"cajaOpciones_generoperfil")
+        self.cajaOpciones_generoperfil.setEnabled(False)
 
         self.gridLayout.addWidget(self.cajaOpciones_generoperfil, 5, 3, 1, 1)
 
@@ -901,7 +906,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_pais = QLineEdit(self.contenedor_Izquierdo)
         self.txt_pais.setObjectName(u"txt_pais")
-        self.txt_pais.setEnabled(False)
+        self.txt_pais.setEnabled(True)
 
         self.gridLayout.addWidget(self.txt_pais, 15, 3, 1, 1)
 
@@ -959,15 +964,22 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.horizontalLayout.addWidget(self.btn_btn_aceptar, 0, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
 
-        self.btn_btn_editar = QPushButton(self.widget_4)
-        self.btn_btn_editar.setObjectName(u"btn_btn_editar")
-        self.btn_btn_editar.setEnabled(True)
-        self.btn_btn_editar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/editar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_editar.setIcon(icon1)
+        self.btn_btn_editarperfil = QPushButton(self.widget_4)
+        self.btn_btn_editarperfil.setObjectName(u"btn_btn_editarperfil")
+        self.btn_btn_editarperfil.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.horizontalLayout.addWidget(self.btn_btn_editar)
+        self.horizontalLayout.addWidget(self.btn_btn_editarperfil)
+
+        self.btn_btn_verdatos = QPushButton(self.widget_4)
+        self.btn_btn_verdatos.setObjectName(u"btn_btn_verdatos")
+        self.btn_btn_verdatos.setEnabled(True)
+        self.btn_btn_verdatos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_verdatos.setIcon(icon1)
+        self.btn_btn_verdatos.setIconSize(QSize(20, 20))
+
+        self.horizontalLayout.addWidget(self.btn_btn_verdatos)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -995,24 +1007,26 @@ class Ui_Formulario_Datos_Empleado(object):
     def retranslateUi(self, Formulario_Datos_Empleado):
         Formulario_Datos_Empleado.setWindowTitle(QCoreApplication.translate("Formulario_Datos_Empleado", u"Form", None))
         self.label_wp_titulo_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"ADMINISTRACI\u00d3N DEL PERFIL", None))
-        self.etiqueta_baja.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Baja:", None))
-        self.fecha_baja.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
-        self.foto_empleadoperfil.setText("")
-        self.etiqueta_horastrabajo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hras. Trabajo", None))
-        self.etiqueta_horaentrada.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hora Entrada", None))
-        self.etiqueta_departamento.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Departamento", None))
-        self.etiqueta_puesto.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Puesto", None))
-        self.etiquetaTitulo_datosempleo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos del empleo", None))
-        self.etiqueta_sucursal.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Sucursal", None))
         self.etiqueta_horasalida.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hora Salida", None))
-        self.etiqueta_salario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Salario", None))
-        self.etiqueta_descripcionpuesto.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Descripci\u00f3n del Puesto", None))
+        self.etiqueta_horaentrada.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hora Entrada", None))
+        self.etiqueta_sucursal.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Sucursal", None))
+        self.etiqueta_puesto.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Puesto", None))
         self.txtlargo_descripcionpuesto.setPlaceholderText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Ingresa detalles sobre el puesto", None))
+        self.etiqueta_descripcionpuesto.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Descripci\u00f3n del Puesto", None))
+        self.etiqueta_horastrabajo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hras. Trabajo", None))
+        self.etiquetaTitulo_datosempleo.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos del empleo", None))
+        self.fecha_contrato.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+        self.etiqueta_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Usuario", None))
+        self.etiqueta_departamento.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Departamento", None))
         self.etiqueta_fechacontrato.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"F.Contrato", None))
         self.etiquetaTitulo_datosusuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Datos sobre el usuario", None))
-        self.etiqueta_usuario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Usuario", None))
-        self.etiqueta_password.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Contrase\u00f1a", None))
-        self.fecha_contrato.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+        self.etiqueta_salario.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Salario", None))
+        self.etiqueta_baja.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Baja:", None))
+        self.fecha_baja.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
+#if QT_CONFIG(tooltip)
+        self.foto_empleadoperfil.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Presiona para agregar imagen", None))
+#endif // QT_CONFIG(tooltip)
+        self.foto_empleadoperfil.setText("")
         self.etiqueta_parentescocontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Parentesco", None))
         self.etiqueta_nombre.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
         self.etiqueta_nombrecontactoemergencia.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nombre", None))
@@ -1053,7 +1067,17 @@ class Ui_Formulario_Datos_Empleado(object):
         self.etiqueta_avenidas.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Avenida/s", None))
         self.etiqueta_nivelacademicoperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nivel ac\u00e1demico", None))
         self.etiqueta_telefono.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Telefono", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_aceptar.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Guardar", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_aceptar.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Guardar cambios", None))
-        self.btn_btn_editar.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_btn_editarperfil.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Permite editar los campos", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_editarperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Editar Campos", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_verdatos.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Visualizar Datos", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_verdatos.setText("")
     # retranslateUi
 

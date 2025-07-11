@@ -47,9 +47,9 @@ class SucursalesModel:
     def obtener_todo(self):
         try:
             sucursales = self.session.query(Sucursales).all()
-            return sucursales
+            return sucursales, True
         except Exception as e:
-            return None
+            return None, False
 
     def eliminar(self, id):
         try:

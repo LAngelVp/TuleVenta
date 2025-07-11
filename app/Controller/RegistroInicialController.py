@@ -433,7 +433,7 @@ p, li { white-space: pre-wrap; }
         try:
             with Conexion_base_datos() as db:
                 session = db.session
-                sucursales = SucursalesModel(session).obtener_todo()
+                sucursales, estado = SucursalesModel(session).obtener_todo()
             if sucursales:
                 for sucursal in sucursales:
                     self.ui.cajaOpciones_sucursales.addItem(sucursal.nombre_sucursal, sucursal)

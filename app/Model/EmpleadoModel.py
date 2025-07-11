@@ -224,11 +224,13 @@ class EmpleadosModel:
                     joinedload(Empleados.usuario)
                         .joinedload(Usuarios.rol)
                 )
-                .filter(Empleados.id == id_empleado).first()
+                .filter(Empleados.id == id_empleado)
+                .first()
             )
             if empleado:
                 return empleado, True
             else:
-                return [], False
+                return None, False
         except Exception as e:
-            return [], False
+            self.session.rollback()
+            return None, False
