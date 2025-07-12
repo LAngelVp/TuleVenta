@@ -10,6 +10,7 @@ from ..Model.SucursalesModel import SucursalesModel
 from .Ventana_espera import Modal_de_espera
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from .MensajesAlertasController import Mensaje
 from ..Source.logos_rc import *
 from ..View.UserInterfacePy.UI_CONTROL_PERFIL import Ui_Formulario_Datos_Empleado
 
@@ -38,68 +39,7 @@ class Perfil(QWidget):
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_generoperfil)
         
         self.ui.btn_btn_verdatos.clicked.connect(self.consulta_datos_hilo)
-        self.ui.btn_btn_editarperfil.clicked.connect(self.alternar_edicion)
-        
     
-    def alternar_edicion(self):
-        """Alterna el estado de edición de todos los campos"""
-        if self.modo_edicion == False:
-            self.modo_edicion = True
-            print("verdadero")
-        else:
-            self.modo_edicion = False
-        print(self.modo_edicion)
-        self.canpos_en_activacion(self.modo_edicion)
-
-    def canpos_en_activacion(self, estado):
-        # Habilitar/deshabilitar widgets uno por uno
-        self.ui.contenedor_Izquierdo.setEnabled(estado)
-        self.ui.txt_nombre.setEnabled(estado)
-        self.ui.txt_apellidomaterno.setEnabled(estado)
-        self.ui.txt_numerosocial.setEnabled(estado)
-        self.ui.fecha_fechanacimiento.setEnabled(estado)
-        self.ui.cajaOpciones_generoperfil.setEnabled(estado)
-        self.ui.cajaOpciones_estadosocial.setEnabled(estado)
-        self.ui.txt_rfc.setEnabled(estado)
-        self.ui.txt_curp.setEnabled(estado)
-        self.ui.txt_numerosocial.setEnabled(estado)
-        self.ui.txt_numerotelefono.setEnabled(estado)
-        self.ui.txt_correo.setEnabled(estado)
-        self.ui.cajaOpciones_nivelacademicoperfil.setEnabled(estado)
-        self.ui.txt_carreraperfil.setEnabled(estado)
-        self.ui.txt_codigopostal.setEnabled(estado)
-        self.ui.txt_calles.setEnabled(estado)
-        self.ui.txt_avenidas.setEnabled(estado)
-        self.ui.txt_numeroexterior.setEnabled(estado)
-        self.ui.txt_numerointerior.setEnabled(estado)
-        self.ui.txt_colonia.setEnabled(estado)
-        self.ui.txt_ciudad.setEnabled(estado)
-        self.ui.txt_estado.setEnabled(estado)
-        self.ui.txt_pais.setEnabled(estado)
-        self.ui.txtlargo_referenciadireccion.setEnabled(estado)
-        self.ui.cajaOpciones_departamentos.setEnabled(estado)
-        self.ui.cajaOpciones_puestos.setEnabled(estado)
-        self.ui.cajaOpciones_sucursales.setEnabled(estado)
-        self.ui.numerodecimal_salario.setEnabled(estado)
-        self.ui.numerodecimal_horastrabajo.setEnabled(estado)
-        self.ui.tiempo_horaentrada.setEnabled(estado)
-        self.ui.tiempo_horasalida.setEnabled(estado)
-        self.ui.fecha_contrato.setEnabled(estado)
-        self.ui.txtlargo_descripcionpuesto.setEnabled(estado)
-        self.ui.txt_nombrecontactoemergencia.setEnabled(estado)
-        self.ui.txt_numtelefonocontactoemergencia.setEnabled(estado)
-        self.ui.cajaOpciones_parentescocontactoemergencia.setEnabled(estado)
-        self.ui.txt_usuario.setEnabled(estado)
-        self.ui.grupobox_etiqueta_diaslaborales_2.setEnabled(estado)
-        self.ui.contenedor_frame_4.setEnabled(estado)
-        # Checkboxes de días laborales
-        self.ui.opcion_lunes.setEnabled(estado)
-        self.ui.opcion_martes.setEnabled(estado)
-        self.ui.opcion_miercoles.setEnabled(estado)
-        self.ui.opcion_jueves.setEnabled(estado)
-        self.ui.opcion_viernes.setEnabled(estado)
-        self.ui.opcion_sabado.setEnabled(estado)
-        self.ui.opcion_domingo.setEnabled(estado)
     
     def modal_espera_local(self):
         if self.cargando is None or not self.cargando.isVisible():

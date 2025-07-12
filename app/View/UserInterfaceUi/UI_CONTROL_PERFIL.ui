@@ -312,7 +312,7 @@ border-bottom: 2px solid #00668c;
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>-344</x>
         <y>0</y>
         <width>1137</width>
         <height>772</height>
@@ -814,7 +814,7 @@ border-bottom: 2px solid #00668c;
                 <item row="21" column="1">
                  <widget class="QLineEdit" name="txt_nombrecontactoemergencia">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -883,7 +883,7 @@ border-bottom: 2px solid #00668c;
                 <item row="22" column="3">
                  <widget class="QComboBox" name="cajaOpciones_parentescocontactoemergencia">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                   <property name="sizeAdjustPolicy">
                    <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
@@ -907,7 +907,7 @@ border-bottom: 2px solid #00668c;
                 <item row="16" column="1">
                  <widget class="QLineEdit" name="txt_numerointerior">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -921,7 +921,7 @@ border-bottom: 2px solid #00668c;
                 <item row="15" column="1">
                  <widget class="QLineEdit" name="txt_numeroexterior">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -962,7 +962,7 @@ border-bottom: 2px solid #00668c;
                 <item row="14" column="3">
                  <widget class="QLineEdit" name="txt_colonia">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -1040,6 +1040,9 @@ border-bottom: 2px solid #00668c;
                   <layout class="QGridLayout" name="gridLayout_8">
                    <item row="0" column="0">
                     <widget class="QCheckBox" name="opcion_lunes">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Lunes</string>
                      </property>
@@ -1047,6 +1050,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="0" column="1">
                     <widget class="QCheckBox" name="opcion_miercoles">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Miercoles</string>
                      </property>
@@ -1054,6 +1060,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="0" column="2">
                     <widget class="QCheckBox" name="opcion_viernes">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Viernes</string>
                      </property>
@@ -1061,6 +1070,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="0" column="3">
                     <widget class="QCheckBox" name="opcion_domingo">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Domingo</string>
                      </property>
@@ -1068,6 +1080,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="1" column="0">
                     <widget class="QCheckBox" name="opcion_martes">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Martes</string>
                      </property>
@@ -1075,6 +1090,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="1" column="1">
                     <widget class="QCheckBox" name="opcion_jueves">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Jueves</string>
                      </property>
@@ -1082,6 +1100,9 @@ border-bottom: 2px solid #00668c;
                    </item>
                    <item row="1" column="2">
                     <widget class="QCheckBox" name="opcion_sabado">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Sabado</string>
                      </property>
@@ -1156,7 +1177,7 @@ border-bottom: 2px solid #00668c;
                 <item row="22" column="1">
                  <widget class="QLineEdit" name="txt_numtelefonocontactoemergencia">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -1184,7 +1205,7 @@ border-bottom: 2px solid #00668c;
                 <item row="18" column="0" colspan="4">
                  <widget class="QPlainTextEdit" name="txtlargo_referenciadireccion">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                   <property name="maximumSize">
                    <size>
@@ -1274,7 +1295,7 @@ border-bottom: 2px solid #00668c;
                 <item row="15" column="3">
                  <widget class="QLineEdit" name="txt_pais">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
@@ -1334,63 +1355,6 @@ border-bottom: 2px solid #00668c;
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
-                 <widget class="QToolButton" name="btn_btn_aceptar">
-                  <property name="cursor">
-                   <cursorShape>PointingHandCursor</cursorShape>
-                  </property>
-                  <property name="toolTip">
-                   <string>Guardar</string>
-                  </property>
-                  <property name="layoutDirection">
-                   <enum>Qt::LayoutDirection::LeftToRight</enum>
-                  </property>
-                  <property name="autoFillBackground">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Guardar cambios</string>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="../../Source/iconosSVG.qrc">
-                    <normaloff>:/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>24</width>
-                    <height>24</height>
-                   </size>
-                  </property>
-                  <property name="autoRepeat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="popupMode">
-                   <enum>QToolButton::ToolButtonPopupMode::DelayedPopup</enum>
-                  </property>
-                  <property name="toolButtonStyle">
-                   <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
-                  </property>
-                  <property name="autoRaise">
-                   <bool>false</bool>
-                  </property>
-                  <property name="arrowType">
-                   <enum>Qt::ArrowType::NoArrow</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="btn_btn_editarperfil">
-                  <property name="cursor">
-                   <cursorShape>PointingHandCursor</cursorShape>
-                  </property>
-                  <property name="toolTip">
-                   <string>Permite editar los campos</string>
-                  </property>
-                  <property name="text">
-                   <string>Editar Campos</string>
-                  </property>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QPushButton" name="btn_btn_verdatos">
                   <property name="enabled">

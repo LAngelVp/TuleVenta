@@ -87,7 +87,7 @@ class SistemaPrincipal(QWidget):
     def mostrar_proveedores(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.proveedores:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.proveedores)
-            self.LISTAR_CATEGORIAS_VPROVEEDORES.connect(self.proveedores.mostrar_categorias)
+            self.LISTAR_CATEGORIAS_VPROVEEDORES.connect(self.proveedores.mostrar_categorias_proveedor)
             self.LIMPIAR_CAMPOS_PROVEEDORES.connect(self.proveedores.limpiar_campos)
             self.LISTAR_CATEGORIAS_VPROVEEDORES.emit()
         self.LIMPIAR_CAMPOS_PROVEEDORES.emit()

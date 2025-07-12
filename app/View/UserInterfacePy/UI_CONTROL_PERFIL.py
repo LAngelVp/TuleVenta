@@ -19,8 +19,7 @@ from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QCombo
     QDateEdit, QDoubleSpinBox, QFrame, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit,
     QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
-    QSpacerItem, QTimeEdit, QToolButton, QVBoxLayout,
-    QWidget)
+    QSpacerItem, QTimeEdit, QVBoxLayout, QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import logos_rc
 from ...Source import iconosSVG_rc
@@ -306,7 +305,7 @@ class Ui_Formulario_Datos_Empleado(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1137, 772))
+        self.scrollAreaWidgetContents.setGeometry(QRect(-344, 0, 1137, 772))
         self.gridLayout_6 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
@@ -573,7 +572,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_nombrecontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_nombrecontactoemergencia.setObjectName(u"txt_nombrecontactoemergencia")
-        self.txt_nombrecontactoemergencia.setEnabled(True)
+        self.txt_nombrecontactoemergencia.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_nombrecontactoemergencia, 21, 1, 1, 1)
 
@@ -620,7 +619,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.cajaOpciones_parentescocontactoemergencia = QComboBox(self.contenedor_Izquierdo)
         self.cajaOpciones_parentescocontactoemergencia.setObjectName(u"cajaOpciones_parentescocontactoemergencia")
-        self.cajaOpciones_parentescocontactoemergencia.setEnabled(True)
+        self.cajaOpciones_parentescocontactoemergencia.setEnabled(False)
         self.cajaOpciones_parentescocontactoemergencia.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
         self.gridLayout.addWidget(self.cajaOpciones_parentescocontactoemergencia, 22, 3, 1, 1)
@@ -637,7 +636,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numerointerior = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numerointerior.setObjectName(u"txt_numerointerior")
-        self.txt_numerointerior.setEnabled(True)
+        self.txt_numerointerior.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_numerointerior, 16, 1, 1, 1)
 
@@ -648,7 +647,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numeroexterior = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numeroexterior.setObjectName(u"txt_numeroexterior")
-        self.txt_numeroexterior.setEnabled(True)
+        self.txt_numeroexterior.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_numeroexterior, 15, 1, 1, 1)
 
@@ -677,7 +676,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_colonia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_colonia.setObjectName(u"txt_colonia")
-        self.txt_colonia.setEnabled(True)
+        self.txt_colonia.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_colonia, 14, 3, 1, 1)
 
@@ -738,36 +737,43 @@ class Ui_Formulario_Datos_Empleado(object):
         self.gridLayout_8.setObjectName(u"gridLayout_8")
         self.opcion_lunes = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_lunes.setObjectName(u"opcion_lunes")
+        self.opcion_lunes.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_lunes, 0, 0, 1, 1)
 
         self.opcion_miercoles = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_miercoles.setObjectName(u"opcion_miercoles")
+        self.opcion_miercoles.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_miercoles, 0, 1, 1, 1)
 
         self.opcion_viernes = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_viernes.setObjectName(u"opcion_viernes")
+        self.opcion_viernes.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_viernes, 0, 2, 1, 1)
 
         self.opcion_domingo = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_domingo.setObjectName(u"opcion_domingo")
+        self.opcion_domingo.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_domingo, 0, 3, 1, 1)
 
         self.opcion_martes = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_martes.setObjectName(u"opcion_martes")
+        self.opcion_martes.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_martes, 1, 0, 1, 1)
 
         self.opcion_jueves = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_jueves.setObjectName(u"opcion_jueves")
+        self.opcion_jueves.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_jueves, 1, 1, 1, 1)
 
         self.opcion_sabado = QCheckBox(self.grupobox_etiqueta_diaslaborales_2)
         self.opcion_sabado.setObjectName(u"opcion_sabado")
+        self.opcion_sabado.setEnabled(False)
 
         self.gridLayout_8.addWidget(self.opcion_sabado, 1, 2, 1, 1)
 
@@ -827,7 +833,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_numtelefonocontactoemergencia = QLineEdit(self.contenedor_Izquierdo)
         self.txt_numtelefonocontactoemergencia.setObjectName(u"txt_numtelefonocontactoemergencia")
-        self.txt_numtelefonocontactoemergencia.setEnabled(True)
+        self.txt_numtelefonocontactoemergencia.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_numtelefonocontactoemergencia, 22, 1, 1, 1)
 
@@ -849,7 +855,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txtlargo_referenciadireccion = QPlainTextEdit(self.contenedor_Izquierdo)
         self.txtlargo_referenciadireccion.setObjectName(u"txtlargo_referenciadireccion")
-        self.txtlargo_referenciadireccion.setEnabled(True)
+        self.txtlargo_referenciadireccion.setEnabled(False)
         self.txtlargo_referenciadireccion.setMaximumSize(QSize(16777215, 61))
         self.txtlargo_referenciadireccion.setTabChangesFocus(False)
         self.txtlargo_referenciadireccion.setBackgroundVisible(False)
@@ -906,7 +912,7 @@ class Ui_Formulario_Datos_Empleado(object):
 
         self.txt_pais = QLineEdit(self.contenedor_Izquierdo)
         self.txt_pais.setObjectName(u"txt_pais")
-        self.txt_pais.setEnabled(True)
+        self.txt_pais.setEnabled(False)
 
         self.gridLayout.addWidget(self.txt_pais, 15, 3, 1, 1)
 
@@ -947,36 +953,13 @@ class Ui_Formulario_Datos_Empleado(object):
         self.horizontalLayout.setSpacing(5)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.btn_btn_aceptar = QToolButton(self.widget_4)
-        self.btn_btn_aceptar.setObjectName(u"btn_btn_aceptar")
-        self.btn_btn_aceptar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_aceptar.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.btn_btn_aceptar.setAutoFillBackground(False)
-        icon = QIcon()
-        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_aceptar.setIcon(icon)
-        self.btn_btn_aceptar.setIconSize(QSize(24, 24))
-        self.btn_btn_aceptar.setAutoRepeat(True)
-        self.btn_btn_aceptar.setPopupMode(QToolButton.ToolButtonPopupMode.DelayedPopup)
-        self.btn_btn_aceptar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.btn_btn_aceptar.setAutoRaise(False)
-        self.btn_btn_aceptar.setArrowType(Qt.ArrowType.NoArrow)
-
-        self.horizontalLayout.addWidget(self.btn_btn_aceptar, 0, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
-
-        self.btn_btn_editarperfil = QPushButton(self.widget_4)
-        self.btn_btn_editarperfil.setObjectName(u"btn_btn_editarperfil")
-        self.btn_btn_editarperfil.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
-        self.horizontalLayout.addWidget(self.btn_btn_editarperfil)
-
         self.btn_btn_verdatos = QPushButton(self.widget_4)
         self.btn_btn_verdatos.setObjectName(u"btn_btn_verdatos")
         self.btn_btn_verdatos.setEnabled(True)
         self.btn_btn_verdatos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_verdatos.setIcon(icon1)
+        icon = QIcon()
+        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_verdatos.setIcon(icon)
         self.btn_btn_verdatos.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_verdatos)
@@ -1067,14 +1050,6 @@ class Ui_Formulario_Datos_Empleado(object):
         self.etiqueta_avenidas.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Avenida/s", None))
         self.etiqueta_nivelacademicoperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Nivel ac\u00e1demico", None))
         self.etiqueta_telefono.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Num. Telefono", None))
-#if QT_CONFIG(tooltip)
-        self.btn_btn_aceptar.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Guardar", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_btn_aceptar.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Guardar cambios", None))
-#if QT_CONFIG(tooltip)
-        self.btn_btn_editarperfil.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Permite editar los campos", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_btn_editarperfil.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Editar Campos", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_verdatos.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Visualizar Datos", None))
 #endif // QT_CONFIG(tooltip)

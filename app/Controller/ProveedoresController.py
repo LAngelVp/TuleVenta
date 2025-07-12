@@ -34,7 +34,7 @@ class Control_proveedores(QWidget):
         
         self.ui.btnradio_representantefalse.setChecked(True)
         self.ui.contenedor_datosrepresentante.setVisible(False)
-        self.ui.btnradio_representantetrue.toggled.connect(self.representante)
+        self.ui.btnradio_representantetrue.toggled.connect(self.representante_visibilidad)
         self.ui.btn_btn_agregarcategoria.clicked.connect(self.nueva_categoria)
         self.ui.btn_btn_guardar.clicked.connect(self.control_agregar_proveedor)
         self.ui.btn_btn_limpiardatos.clicked.connect(self.limpiar_campos)
@@ -101,7 +101,8 @@ class Control_proveedores(QWidget):
             else:
                 self.ventana_productos_precios.raise_()
     
-    def mostrar_categorias(self):
+    def mostrar_categorias_proveedor(self):
+        pass
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
             with session.begin():
@@ -155,11 +156,12 @@ class Control_proveedores(QWidget):
         self.ui.btnradio_representantefalse.setChecked(True)
         self.ui.btnradio_representantetrue.setChecked(False)
         self.proveedor_seleccionado = None
+        self.ui.contenedor_datosrepresentante.hide()
         self.representante = None
-        self.mostrar_categorias()
+        self.mostrar_categorias_proveedor()
 
 #COMMENT FUNCION CORRECTA
-    def representante(self):
+    def representante_visibilidad(self):
         if self.ui.btnradio_representantetrue.isChecked():
             self.ui.contenedor_datosrepresentante.setVisible(True)
         else:
@@ -492,7 +494,7 @@ class Control_proveedores(QWidget):
                 proveedor = elemento.data(Qt.UserRole)
                 if proveedor:
                     print(proveedor)
-                    self.proveedor_seleccionado = proveedor
+                    self.proveedor_seleccionado = proveedor  
                     self.cargar_datos_proveedor(self.proveedor_seleccionado)
             else:
                 return
@@ -514,7 +516,6 @@ class Control_proveedores(QWidget):
         self.ui.txt_telefono.setText(proveedor.telefono)
         
         if proveedor.categoria:
-            nombre = None
             nombre = proveedor.categoria.nombre
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_categorias, nombre)
         
@@ -543,6 +544,7 @@ class Control_proveedores(QWidget):
         # Cargar representantes
         if proveedor.representante:
             self.ui.btnradio_representantetrue.setChecked(True)
+            self.ui.contenedor_datosrepresentante.show()
             self.ui.txt_nombrerepresentante.setText(proveedor.representante.nombre)
             self.ui.txt_apellidopaternorepresen.setText(proveedor.representante.apellido_paterno)
             self.ui.txt_apellidomaternorepresen.setText(proveedor.representante.apellido_materno)
@@ -551,7 +553,7 @@ class Control_proveedores(QWidget):
             self.ui.txt_puestorepresentante.setText(proveedor.representante.puesto)
         else:
             self.ui.btnradio_representantefalse.setChecked(True)
-            # self.ui.contenedor_datosrepresentante.hide()
+            self.ui.contenedor_datosrepresentante.hide()
 
     def buscar_proveedor_hilo(self):
         if self.ui.txt_buscarproveedor.text().strip() == "":

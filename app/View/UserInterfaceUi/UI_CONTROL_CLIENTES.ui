@@ -20,8 +20,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">*{color: #1d1c1c;}
-#Control_Clientes{
+   <string notr="true">#Control_Clientes{
 background: #fffefb;
 }
 [objectName*=&quot;wpc&quot;]{
@@ -32,8 +31,10 @@ border: none;
 background-color: #fffefb;
 border: none;
 }
-#label_wp_titulo_clientes{
+[objectName*=&quot;etiqueta&quot;]{
 color:#1d1c1c;
+}
+#etiquetaTitulo_wp_titulo_clientes{
 background-color: #fffefb;
 font-size: 24px;
 font-weight: bold;
@@ -2198,7 +2199,7 @@ QCalendarWidget QAbstractItemView::item:hover {
        </widget>
       </item>
       <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_wp_titulo_clientes">
+       <widget class="QLabel" name="etiquetaTitulo_wp_titulo_clientes">
         <property name="minimumSize">
          <size>
           <width>0</width>

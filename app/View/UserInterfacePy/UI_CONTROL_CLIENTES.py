@@ -31,8 +31,7 @@ class Ui_Control_Clientes(object):
             Control_Clientes.setObjectName(u"Control_Clientes")
         Control_Clientes.resize(1400, 590)
         Control_Clientes.setMinimumSize(QSize(0, 0))
-        Control_Clientes.setStyleSheet(u"*{color: #1d1c1c;}\n"
-"#Control_Clientes{\n"
+        Control_Clientes.setStyleSheet(u"#Control_Clientes{\n"
 "background: #fffefb;\n"
 "}\n"
 "[objectName*=\"wpc\"]{\n"
@@ -43,8 +42,10 @@ class Ui_Control_Clientes(object):
 "background-color: #fffefb;\n"
 "border: none;\n"
 "}\n"
-"#label_wp_titulo_clientes{\n"
+"[objectName*=\"etiqueta\"]{\n"
 "color:#1d1c1c;\n"
+"}\n"
+"#etiquetaTitulo_wp_titulo_clientes{\n"
 "background-color: #fffefb;\n"
 "font-size: 24px;\n"
 "font-weight: bold;\n"
@@ -78,9 +79,9 @@ class Ui_Control_Clientes(object):
 "min-width:35px;\n"
 "min-height:25px;\n"
 "}\n"
-"[objectName^=\"btn_btn_\"]{\n"
-"bac"
-                        "kground-color: #00619a;\n"
+"[objectName"
+                        "^=\"btn_btn_\"]{\n"
+"background-color: #00619a;\n"
 "border-radius: 3px;\n"
 "color: #fffefb;\n"
 "font-weight: bold;\n"
@@ -123,9 +124,9 @@ class Ui_Control_Clientes(object):
 "font-size: 15px;\n"
 "border: none;\n"
 "border-bottom: 1px solid rgb(0, 0, 0);\n"
-"background: #F5F5F5;\n"
-"border-radius: 2px"
+"background: #F5F5F5"
                         ";\n"
+"border-radius: 2px;\n"
 "color: #1d1c1c;\n"
 "min-width: 200px;\n"
 "}\n"
@@ -167,9 +168,9 @@ class Ui_Control_Clientes(object):
 "    padding: 2px ;\n"
 "    background-color: #F5F5F5 ;\n"
 "    font-size: 14px ;\n"
-"    min-width: 200px ;\n"
-""
-                        "    font-family: \"Arial\" ;\n"
+" "
+                        "   min-width: 200px ;\n"
+"    font-family: \"Arial\" ;\n"
 "    color: #1d1c1c ;\n"
 "	selection-background-color: #4791F5; \n"
 "}\n"
@@ -205,9 +206,9 @@ class Ui_Control_Clientes(object):
 "    padding-right: 5px ;\n"
 "}\n"
 "/*TABLA*/\n"
-"\n"
-"[objectName*=\"tabla_"
-                        "\"] {\n"
+""
+                        "\n"
+"[objectName*=\"tabla_\"] {\n"
 "font-family: Arial;\n"
 "font-size: 14px;\n"
 "background: #E3E3E3;\n"
@@ -250,8 +251,8 @@ class Ui_Control_Clientes(object):
 "color:#1d1c1c;\n"
 "font-weight: bold;\n"
 "}\n"
-"#wpc_clientes_contenedord"
-                        "atos{\n"
+""
+                        "#wpc_clientes_contenedordatos{\n"
 "max-width:800px;\n"
 "background: #fffefb;\n"
 "}\n"
@@ -295,10 +296,10 @@ class Ui_Control_Clientes(object):
 "height: 17%;\n"
 "padding-left:5px;\n"
 "padding-right:5px;\n"
-"background: #F5F5F5;\n"
+"backgro"
+                        "und: #F5F5F5;\n"
 "}\n"
-"*"
-                        "[objectName*=\"fecha_\"]::focus{\n"
+"*[objectName*=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
@@ -333,11 +334,11 @@ class Ui_Control_Clientes(object):
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
 "    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
-"    selection-color: white;\n"
+"    selection-colo"
+                        "r: white;\n"
 "}\n"
 "\n"
-""
-                        "/* D\u00cdAS DE OTROS MESES */\n"
+"/* D\u00cdAS DE OTROS MESES */\n"
 "QCalendarWidget QAbstractItemView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
@@ -1387,11 +1388,11 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_9.addWidget(self.wpc_clientes_contenido, 2, 0, 1, 2)
 
-        self.label_wp_titulo_clientes = QLabel(self.wpc_contenido_general)
-        self.label_wp_titulo_clientes.setObjectName(u"label_wp_titulo_clientes")
-        self.label_wp_titulo_clientes.setMinimumSize(QSize(0, 0))
+        self.etiquetaTitulo_wp_titulo_clientes = QLabel(self.wpc_contenido_general)
+        self.etiquetaTitulo_wp_titulo_clientes.setObjectName(u"etiquetaTitulo_wp_titulo_clientes")
+        self.etiquetaTitulo_wp_titulo_clientes.setMinimumSize(QSize(0, 0))
 
-        self.gridLayout_9.addWidget(self.label_wp_titulo_clientes, 0, 0, 1, 2)
+        self.gridLayout_9.addWidget(self.etiquetaTitulo_wp_titulo_clientes, 0, 0, 1, 2)
 
         self.wpc_menu_opciones_clientes = QWidget(self.wpc_contenido_general)
         self.wpc_menu_opciones_clientes.setObjectName(u"wpc_menu_opciones_clientes")
@@ -1694,7 +1695,7 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_avenidas_moral.setText(QCoreApplication.translate("Control_Clientes", u"Avenida o entre avenidas", None))
         self.etiqueta_direccionadicional_moral.setText(QCoreApplication.translate("Control_Clientes", u"Direcci\u00f3 Adicional", None))
         self.etiqueta_wpc_correo_repre_moral.setText(QCoreApplication.translate("Control_Clientes", u"Correo electronico", None))
-        self.label_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
+        self.etiquetaTitulo_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_limpiarcampos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limpiar campos", None))
 #endif // QT_CONFIG(tooltip)

@@ -234,3 +234,5 @@ class EmpleadosModel:
         except Exception as e:
             self.session.rollback()
             return None, False
+        
+    
