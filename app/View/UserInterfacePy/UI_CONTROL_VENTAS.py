@@ -27,8 +27,7 @@ class Ui_Control_Ventas(object):
         if not Control_Ventas.objectName():
             Control_Ventas.setObjectName(u"Control_Ventas")
         Control_Ventas.resize(775, 409)
-        Control_Ventas.setStyleSheet(u"*{color: #1d1c1c;}\n"
-"[objectName*=\"contenedor\"]{border:none;}\n"
+        Control_Ventas.setStyleSheet(u"[objectName*=\"contenedor\"]{border:none;}\n"
 "#Control_Ventas{\n"
 "background: #fffefb;\n"
 "}\n"
@@ -60,13 +59,23 @@ class Ui_Control_Ventas(object):
 "[objectName*=\"btn_btn_\"]:hover{\n"
 "background:#2196F3;\n"
 "}\n"
+"[objectName*=\"btn_btn_\"]:pressed{\n"
+"background:#1B80D0;\n"
+"}\n"
 "#btn_btn_agregar:hover{\n"
 "background:#68a67d;\n"
+"}\n"
+"#btn_btn_agregar:pressed{\n"
+"background:#578B69;\n"
 "}\n"
 "#btn_btn_eliminar:hover{\n"
 "background:#EE1D52;\n"
 "}\n"
-"#btn_RefrescarTabla{\n"
+"#btn_btn_eliminar:pressed{\n"
+"background:#B13636;\n"
+"}\n"
+"#btn_RefrescarTabla{"
+                        "\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
 "padding: 5px;\n"
@@ -74,8 +83,7 @@ class Ui_Control_Ventas(object):
 "#btn_RefrescarTabla:hover{\n"
 "background: rgb(179, 179, 179);\n"
 "}\n"
-"#btn_RefrescarTab"
-                        "la:pressed{\n"
+"#btn_RefrescarTabla:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
 "\n"
@@ -114,15 +122,15 @@ class Ui_Control_Ventas(object):
 "}\n"
 "\n"
 "/* Encabezados */\n"
-"[objectName*=\"tabla_\"] QHeaderView::section {\n"
+"[ob"
+                        "jectName*=\"tabla_\"] QHeaderView::section {\n"
 "background-color: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
 "padding: 5px;\n"
 "border: 1px solid gray;\n"
 "}\n"
-""
-                        "\n"
+"\n"
 "[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
 "background-color: #023375;\n"
@@ -172,6 +180,7 @@ class Ui_Control_Ventas(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.btn_btn_agregar = QPushButton(self.contenedor_controles)
         self.btn_btn_agregar.setObjectName(u"btn_btn_agregar")
+        self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon = QIcon()
         icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_agregar.setIcon(icon)
@@ -181,6 +190,7 @@ class Ui_Control_Ventas(object):
 
         self.btn_btn_eliminar = QPushButton(self.contenedor_controles)
         self.btn_btn_eliminar.setObjectName(u"btn_btn_eliminar")
+        self.btn_btn_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon1 = QIcon()
         icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_eliminar.setIcon(icon1)
@@ -190,6 +200,7 @@ class Ui_Control_Ventas(object):
 
         self.btn_btn_modificar = QPushButton(self.contenedor_controles)
         self.btn_btn_modificar.setObjectName(u"btn_btn_modificar")
+        self.btn_btn_modificar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon2 = QIcon()
         icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/editar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_modificar.setIcon(icon2)
@@ -227,6 +238,7 @@ class Ui_Control_Ventas(object):
 
         self.btn_btn_buscar = QPushButton(self.contenedor_tabla)
         self.btn_btn_buscar.setObjectName(u"btn_btn_buscar")
+        self.btn_btn_buscar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.horizontalLayout_2.addWidget(self.btn_btn_buscar)
 

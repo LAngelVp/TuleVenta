@@ -53,6 +53,9 @@ border-radius:5px;
 [objectName*=&quot;btn_btn&quot;]:hover{
 background: #2196F3;
 }
+[objectName*=&quot;btn_btn&quot;]:pressed{
+background: #1B80D0;
+}
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -107,7 +110,7 @@ background: #2196F3;
          <item>
           <widget class="QPushButton" name="btn_btn_sucursales">
            <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string>Sucursales</string>
@@ -117,7 +120,7 @@ background: #2196F3;
          <item>
           <widget class="QPushButton" name="btn_btn_departamentos">
            <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string>Departamentos</string>
@@ -127,7 +130,7 @@ background: #2196F3;
          <item>
           <widget class="QPushButton" name="btn_btn_puestos">
            <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string>Puestos</string>

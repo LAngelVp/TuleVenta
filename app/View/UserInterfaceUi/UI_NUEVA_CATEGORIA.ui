@@ -83,7 +83,10 @@ border-radius: 5px;
 height: 25px;
 }
 [objectName*=&quot;btn_btn_&quot;]:hover{
-background: #68a67d;
+background: #2196F3;
+}
+[objectName*=&quot;btn_btn_&quot;]:pressed{
+background: #1B80D0;
 }
 
 </string>

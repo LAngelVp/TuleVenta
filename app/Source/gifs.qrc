@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="gifs">
+    <file>Icons/Gif/loader_puntos.gif</file>
     <file>Icons/Gif/loader.gif</file>
   </qresource>
 </RCC>

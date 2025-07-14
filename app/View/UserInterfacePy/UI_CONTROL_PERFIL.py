@@ -66,7 +66,7 @@ class Ui_Formulario_Datos_Empleado(object):
 "color: #fffefb;\n"
 "min-height: 30px;\n"
 "border-radius: 5px;\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "text-align: center;\n"
 "padding-left"
                         ": 5px;\n"
@@ -305,7 +305,7 @@ class Ui_Formulario_Datos_Empleado(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(-344, 0, 1137, 772))
+        self.scrollAreaWidgetContents.setGeometry(QRect(-344, 0, 1137, 769))
         self.gridLayout_6 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")

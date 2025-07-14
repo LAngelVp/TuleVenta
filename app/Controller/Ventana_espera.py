@@ -9,7 +9,7 @@ from ..View.UserInterfacePy.UI_PROCESO_CARGANDO import Ui_Ventana_Cargando
 class Modal_de_espera(QDialog):
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.gif = ":gifs/Icons/Gif/loader.gif"
+        self.gif = ":gifs/Icons/Gif/loader_puntos.gif"
         self.ui = Ui_Ventana_Cargando()
         self.ui.setupUi(self)
         self.gif_movie = QMovie(self.gif)

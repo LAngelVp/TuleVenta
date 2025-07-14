@@ -88,7 +88,7 @@ class Ui_contenedorModal_agregar_productos(object):
 "font-family:\"Arial\";\n"
 "font-weight:bold;\n"
 "padding: 5px;\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "color: #fffefb;\n"
 "border-radius: 4px;\n"
 "max-height: 15px;\n"
@@ -373,7 +373,7 @@ class Ui_contenedorModal_agregar_productos(object):
         self.contenedorModal_formulario_izquierda.setWidgetResizable(True)
         self.contenedorModal_scroll_formulario = QWidget()
         self.contenedorModal_scroll_formulario.setObjectName(u"contenedorModal_scroll_formulario")
-        self.contenedorModal_scroll_formulario.setGeometry(QRect(-157, -20, 1326, 1190))
+        self.contenedorModal_scroll_formulario.setGeometry(QRect(0, 0, 1326, 1190))
         self.gridLayout_2 = QGridLayout(self.contenedorModal_scroll_formulario)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.etiqueta_tituloProductos = QLabel(self.contenedorModal_scroll_formulario)

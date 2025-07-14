@@ -78,6 +78,9 @@ font-family: 'Lucida sans';
 QPushButton:hover{
 background-color: #2196F3;
 }
+QPushButton:pressed{
+background-color: #1B80D0;
+}
 #labelNombreEmpresa{
 	color: #313d44;
 }

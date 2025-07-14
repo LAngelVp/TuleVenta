@@ -85,7 +85,7 @@ class Ui_Control_Roles_Permisos(object):
 "color: #fffefb;\n"
 "font-family:Arial;\n"
 "font-weight: bold;\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "border-radius:5px;\n"
 "height: 25px;\n"
 "border: none;\n"
@@ -98,6 +98,9 @@ class Ui_Control_Roles_Permisos(object):
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
 "background: #2196F3;\n"
+"}\n"
+"[objectName*=\"btn_btn_\"]:pressed{\n"
+"background: #1B80D0;\n"
 "}\n"
 "/*TABLA*/\n"
 "\n"
@@ -120,12 +123,12 @@ class Ui_Control_Roles_Permisos(object):
 "background-color: #ffffff;\n"
 "alternate-background-color: #f0f0f0;\n"
 "selection-background-color: #cce4ff;\n"
-"selection-color: black;\n"
+""
+                        "selection-color: black;\n"
 "}\n"
 "\n"
 "/* Encabezados */\n"
-"[objectNa"
-                        "me*=\"tabla_\"] QHeaderView::section {\n"
+"[objectName*=\"tabla_\"] QHeaderView::section {\n"
 "background-color: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
@@ -161,21 +164,21 @@ class Ui_Control_Roles_Permisos(object):
 "        padding: 6px 15px;\n"
 "        min-width: 80px;\n"
 "        border-top-left-radius: 4px;\n"
-"        border-top-right-radius: 4px;\n"
+"        border-top-right-radius: 4px;"
+                        "\n"
 "        margin-right: 2px;\n"
 "    }\n"
 "    \n"
-"    /* Pesta\u00f1"
-                        "a seleccionada */\n"
+"    /* Pesta\u00f1a seleccionada */\n"
 "    QTabBar::tab:selected {\n"
-"        background: #4791F5;\n"
+"        background: #023375;\n"
 "        color: white;\n"
 "        font-weight: bold;\n"
 "    }\n"
 "    \n"
 "    /* Pesta\u00f1a al pasar el mouse */\n"
 "    QTabBar::tab:hover {\n"
-"        background: #E8E8E8;\n"
+"        background: #2196F3;\n"
 "    }\n"
 "    \n"
 "    /* Pesta\u00f1a deshabilitada */\n"
@@ -259,6 +262,7 @@ class Ui_Control_Roles_Permisos(object):
 
         self.btn_btn_eliminarrol = QPushButton(self.contenedor_funcionlistaroles)
         self.btn_btn_eliminarrol.setObjectName(u"btn_btn_eliminarrol")
+        self.btn_btn_eliminarrol.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon = QIcon()
         icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_eliminarrol.setIcon(icon)
@@ -268,6 +272,7 @@ class Ui_Control_Roles_Permisos(object):
 
         self.btn_btn_modificarrol = QPushButton(self.contenedor_funcionlistaroles)
         self.btn_btn_modificarrol.setObjectName(u"btn_btn_modificarrol")
+        self.btn_btn_modificarrol.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon1 = QIcon()
         icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_modificarrol.setIcon(icon1)

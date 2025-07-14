@@ -105,11 +105,20 @@ height:25px;
 [objectName*=&quot;btn_btn_&quot;]:hover{
 background: #2196F3;
 }
+[objectName*=&quot;btn_btn_&quot;]:pressed{
+background: #1B80D0;
+}
 #btn_btn_agregar:hover{
 background: #68a67d;
 }
+#btn_btn_agregar:pressed{
+background: #578B69;
+}
 #btn_btn_eliminar:hover{
 background: #EE1D52;
+}
+#btn_btn_eliminar:pressed{
+background: #B13636;
 }
 /*QLISTWIDGET*/
 QListWidget {

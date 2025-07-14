@@ -21,6 +21,7 @@ class Consultas_segundo_plano(QObject):
                     else:
                         self.resultado.emit(None, estado, "No se logro la operación")
             except Exception as e:
+                print(e)
                 self.error.emit(str(e))
             finally:
                 self.terminado.emit()

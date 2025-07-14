@@ -93,6 +93,9 @@ height: 30px;
 [objectName*=&quot;btn_btn_&quot;]:hover{
 background: #2196F3;
 }
+[objectName*=&quot;btn_btn_&quot;]:pressed{
+background: #1B80D0;
+}
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -129,8 +132,8 @@ background: #2196F3;
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>337</width>
-           <height>313</height>
+           <width>352</width>
+           <height>321</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">

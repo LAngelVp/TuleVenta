@@ -94,6 +94,9 @@ class Ui_Control_nuevo_rol(object):
 "[objectName*=\"btn_btn_\"]:hover{\n"
 "background: #2196F3;\n"
 "}\n"
+"[objectName*=\"btn_btn_\"]:pressed{\n"
+"background: #1B80D0;\n"
+"}\n"
 "")
         self.gridLayout = QGridLayout(Control_nuevo_rol)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -118,7 +121,7 @@ class Ui_Control_nuevo_rol(object):
         self.contenedor_permisos.setWidgetResizable(True)
         self.contenedor_permisosscroll = QWidget()
         self.contenedor_permisosscroll.setObjectName(u"contenedor_permisosscroll")
-        self.contenedor_permisosscroll.setGeometry(QRect(0, 0, 337, 313))
+        self.contenedor_permisosscroll.setGeometry(QRect(0, 0, 352, 321))
         self.gridLayout_2 = QGridLayout(self.contenedor_permisosscroll)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.etiquetasubtitulo_proveedor = QLabel(self.contenedor_permisosscroll)

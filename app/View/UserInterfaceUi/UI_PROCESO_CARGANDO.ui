@@ -17,9 +17,6 @@
    <string notr="true">#contenedor{
 	background-color: rgb(255, 255, 255);
 border-radius:20px;
-}
-#etiqueta_logo_cargando{
-	image: url(:/Icons/IconosSVG/logo_devrous.png);
 }</string>
   </property>
   <widget class="QFrame" name="contenedor">
@@ -31,20 +28,26 @@ border-radius:20px;
      <height>161</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(12, 28, 68);</string>
+   </property>
    <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
+    <enum>QFrame::Shape::StyledPanel</enum>
    </property>
    <property name="frameShadow">
-    <enum>QFrame::Raised</enum>
+    <enum>QFrame::Shadow::Raised</enum>
    </property>
    <widget class="QLabel" name="etiqueta_logo_cargando">
     <property name="geometry">
      <rect>
-      <x>70</x>
+      <x>30</x>
       <y>0</y>
-      <width>161</width>
-      <height>101</height>
+      <width>231</width>
+      <height>111</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);</string>
     </property>
     <property name="text">
      <string/>
@@ -53,10 +56,10 @@ border-radius:20px;
    <widget class="QLabel" name="etiqueta_spiner">
     <property name="geometry">
      <rect>
-      <x>114</x>
-      <y>80</y>
-      <width>71</width>
-      <height>61</height>
+      <x>119</x>
+      <y>100</y>
+      <width>51</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="font">
@@ -68,13 +71,13 @@ border-radius:20px;
      <string/>
     </property>
     <property name="textFormat">
-     <enum>Qt::AutoText</enum>
+     <enum>Qt::TextFormat::AutoText</enum>
     </property>
     <property name="scaledContents">
      <bool>true</bool>
     </property>
     <property name="alignment">
-     <set>Qt::AlignCenter</set>
+     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
     <property name="wordWrap">
      <bool>false</bool>
@@ -83,8 +86,7 @@ border-radius:20px;
   </widget>
  </widget>
  <resources>
-  <include location="../../Source/iconsdvg.qrc"/>
-  <include location="../../Source/iconosSVG.qrc"/>
+  <include location="../../Source/logos.qrc"/>
   <include location="../../Source/gifs.qrc"/>
  </resources>
  <connections/>

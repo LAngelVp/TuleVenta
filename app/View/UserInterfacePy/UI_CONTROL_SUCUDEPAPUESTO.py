@@ -53,6 +53,9 @@ class Ui_Control_SucursalesDepartamentosPuestos(object):
 "[objectName*=\"btn_btn\"]:hover{\n"
 "background: #2196F3;\n"
 "}\n"
+"[objectName*=\"btn_btn\"]:pressed{\n"
+"background: #1B80D0;\n"
+"}\n"
 "")
         self.gridLayout = QGridLayout(Control_SucursalesDepartamentosPuestos)
         self.gridLayout.setSpacing(0)
@@ -74,19 +77,19 @@ class Ui_Control_SucursalesDepartamentosPuestos(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.btn_btn_sucursales = QPushButton(self.contenedor_botones)
         self.btn_btn_sucursales.setObjectName(u"btn_btn_sucursales")
-        self.btn_btn_sucursales.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self.btn_btn_sucursales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.horizontalLayout.addWidget(self.btn_btn_sucursales)
 
         self.btn_btn_departamentos = QPushButton(self.contenedor_botones)
         self.btn_btn_departamentos.setObjectName(u"btn_btn_departamentos")
-        self.btn_btn_departamentos.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self.btn_btn_departamentos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.horizontalLayout.addWidget(self.btn_btn_departamentos)
 
         self.btn_btn_puestos = QPushButton(self.contenedor_botones)
         self.btn_btn_puestos.setObjectName(u"btn_btn_puestos")
-        self.btn_btn_puestos.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self.btn_btn_puestos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.horizontalLayout.addWidget(self.btn_btn_puestos)
 

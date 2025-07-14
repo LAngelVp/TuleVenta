@@ -70,7 +70,7 @@ class Ui_UI_EXISTENCIA_PRODUCTO(object):
 "font-weight:bold;\n"
 "padding: 5px;\n"
 "background: #"
-                        "00619a;\n"
+                        "023375;\n"
 "color: #fffefb;\n"
 "border-radius: 4px;\n"
 "}\n"

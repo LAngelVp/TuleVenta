@@ -64,7 +64,7 @@ min-width: 20px;
 [objectName*=&quot;btn_btn_&quot;]{
 height: 25px;
 color: #fffefb;
-background: #00619a;
+background: #023375;
 border-radius: 5px;
 font-family: Arial;
 font-weight: bold;
@@ -75,6 +75,9 @@ padding-right: 5px;
 [objectName*=&quot;btn_btn_&quot;]:hover{
 background: #2196F3;
 }
+[objectName*=&quot;btn_btn_&quot;]:pressed{
+background: #1B80D0;
+}
 #btn_btn_cobrar{
 min-height:70px;
 min-width: 90px;
@@ -82,6 +85,9 @@ font-size:20px;
 }
 #btn_btn_cobrar:hover{
 background: #68a67d;
+}
+#btn_btn_cobrar:pressed{
+background: #578B69;
 }
 [objectName*=&quot;txt_&quot;]:focus{
 border-bottom: 2px solid #023375;

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>313</width>
+    <width>314</width>
     <height>277</height>
    </rect>
   </property>
@@ -47,7 +47,7 @@ font-weight:bold;
 border-radius:2px;
 }
 [objectName*=&quot;btn_precio_producto&quot;]{
-background:#00619a;
+background:#023375;
 font-size: 14px;
 font-family:&quot;Arial&quot;;
 font-weight:bold;

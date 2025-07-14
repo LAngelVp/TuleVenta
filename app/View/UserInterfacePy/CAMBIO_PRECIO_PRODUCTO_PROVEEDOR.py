@@ -23,7 +23,7 @@ class Ui_PreciosProductosProveedor(object):
     def setupUi(self, PreciosProductosProveedor):
         if not PreciosProductosProveedor.objectName():
             PreciosProductosProveedor.setObjectName(u"PreciosProductosProveedor")
-        PreciosProductosProveedor.resize(313, 277)
+        PreciosProductosProveedor.resize(314, 277)
         PreciosProductosProveedor.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "#PreciosProductosProveedor{\n"
 "background: #fffefb;\n"
@@ -57,7 +57,7 @@ class Ui_PreciosProductosProveedor(object):
 "border-radius:2px;\n"
 "}\n"
 "[objectName*=\"btn_precio_producto\"]{\n"
-"background:#00619a;\n"
+"background:#023375;\n"
 "font-size: 14px;\n"
 "font-family:\"Arial\";\n"
 "font-weight:bold;\n"

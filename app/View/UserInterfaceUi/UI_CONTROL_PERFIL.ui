@@ -51,7 +51,7 @@ font-weight: bold;
 color: #fffefb;
 min-height: 30px;
 border-radius: 5px;
-background: #00619a;
+background: #023375;
 text-align: center;
 padding-left: 5px;
 padding-right: 5px;
@@ -315,7 +315,7 @@ border-bottom: 2px solid #00668c;
         <x>-344</x>
         <y>0</y>
         <width>1137</width>
-        <height>772</height>
+        <height>769</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">

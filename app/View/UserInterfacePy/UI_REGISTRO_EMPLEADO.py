@@ -29,10 +29,7 @@ class Ui_RegistroAdministrador(object):
         if not RegistroAdministrador.objectName():
             RegistroAdministrador.setObjectName(u"RegistroAdministrador")
         RegistroAdministrador.resize(863, 550)
-        RegistroAdministrador.setStyleSheet(u"*{\n"
-"color: black;\n"
-"}\n"
-"#frame{border:none;}\n"
+        RegistroAdministrador.setStyleSheet(u"#frame{border:none;}\n"
 "#widget_contenedor{border-radius: 10px;}\n"
 "#RegistroAdministrador{\n"
 "background: #fffefb;\n"
@@ -74,9 +71,9 @@ class Ui_RegistroAdministrador(object):
 "	background-color: rgb(214, 214, 214);\n"
 "}\n"
 "#btc_cerrar::hover{\n"
-"	backgro"
-                        "und-color: rgb(255, 0, 0);\n"
-"}\n"
+"	background-color: rgb(255, 0, 0);\n"
+""
+                        "}\n"
 "\n"
 "#widget_contenedor{\n"
 "	background-color: #fffefb;\n"
@@ -87,12 +84,17 @@ class Ui_RegistroAdministrador(object):
 "	font-size: 14px;\n"
 "	font-weight: bold;\n"
 "}\n"
+"[objectName^=\"etiqueta\"]{\n"
+"	color: #1d1c1c;\n"
+"}\n"
 "[objectName^=\"etiquetaTitulo_\"]{\n"
+"	color: #1d1c1c;\n"
 "	font-family: Arial;\n"
 "	font-size: 18px;\n"
 "	font-weight: bold;\n"
 "}\n"
 "[objectName^=\"etiquetasubtitulo_\"]{\n"
+"	color: #1d1c1c;\n"
 "	font-family: Arial;\n"
 "	font-size: 16px;\n"
 "	font-weight: bold;\n"
@@ -108,23 +110,25 @@ class Ui_RegistroAdministrador(object):
 "	font-family: Arial;\n"
 "	font-size: 14px;\n"
 "	border:none;\n"
-"border-radius: 4px;\n"
+"	border-radius: 4px;\n"
 "	border-bottom: 1px solid #3b3c3d;\n"
 "	background-color: #F5F5F5;\n"
-"padding: 2px;\n"
-"min-width: 150px;\n"
+"	padding: 2px;\n"
+"	min-width: 150px;\n"
+"	color: #1d1c1c;\n"
 "}\n"
 "[objectName^=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
-"[objectName^=\"decimal_\"]{\n"
+"[objectName^=\"d"
+                        "ecimal_\"]{\n"
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
 "border-radius: 4px;\n"
-""
-                        "background-color: #F5F5F5;\n"
+"background-color: #F5F5F5;\n"
 "font-size: 14px;\n"
 "padding: 2px;\n"
+"color: #1d1c1c;\n"
 "}\n"
 "[objectName^=\"decimal_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
@@ -136,6 +140,7 @@ class Ui_RegistroAdministrador(object):
 "background-color: #F5F5F5;\n"
 "font-size: 14px;\n"
 "padding: 2px;\n"
+"color: #1d1c1c;\n"
 "}\n"
 "[objectName^=\"numero_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
@@ -144,9 +149,11 @@ class Ui_RegistroAdministrador(object):
 "font-size: 14px;\n"
 "font-family:Arial;\n"
 "font-weight:bold;\n"
+"	color: #1d1c1c;\n"
 "}\n"
 "\n"
 "[objectName*=\"cajaOpciones\"] {\n"
+"	color: #1d1c1c;\n"
 "    border: none;\n"
 "    border-bottom: 1px solid #787878 ;\n"
 "    padding: 2px ;\n"
@@ -156,15 +163,16 @@ class Ui_RegistroAdministrador(object):
 "    font-family: \"Arial\" ;\n"
 "    color: #1d1c1c ;\n"
 "	selection-background-color: #4791F5; \n"
-"}\n"
+""
+                        "}\n"
 "\n"
 "/* ESTILO DEL DROPDOWN (LISTA) */\n"
 "[objectName*=\"cajaOpciones\"] QListView {\n"
+"	color: #1d1c1c;\n"
 "    background: #F5F5F5 ;\n"
 "    border-radius: 3px;\n"
 "    outline: none;\n"
-""
-                        "}\n"
+"}\n"
 "\n"
 "/* ESTILO DE LOS \u00cdTEMS */\n"
 "[objectName*=\"cajaOpciones\"] QListView::item {\n"
@@ -192,19 +200,21 @@ class Ui_RegistroAdministrador(object):
 "\n"
 "\n"
 "[objectName^=\"txtlargo_\"]{\n"
+"	color: #1d1c1c;\n"
 "	font-family: Arial;\n"
 "	font-size: 14px;\n"
-"	max-height: 100px;\n"
+"	max-heig"
+                        "ht: 100px;\n"
 "	min-height: 100px;\n"
 "border-radius: 4px;\n"
 "background-color: #F5F5F5;\n"
 "border: 1px solid #787878;\n"
 "}\n"
 "[objectName*=\"fecha_\"]{\n"
+"	color: #1d1c1c;\n"
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
-"bo"
-                        "rder-radius: 5px;\n"
+"border-radius: 5px;\n"
 "padding: 2px;\n"
 "background-color: #f5f4f1;\n"
 "font-size: 14px;\n"
@@ -236,7 +246,8 @@ class Ui_RegistroAdministrador(object):
 "border:none;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
-"    background-color: #00668c;\n"
+""
+                        "    background-color: #00668c;\n"
 "    color: white;\n"
 "    border-top-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
@@ -244,8 +255,7 @@ class Ui_RegistroAdministrador(object):
 "\n"
 "/* BOTONES DE NAVEGACI\u00d3N */\n"
 "QCalendarWidget QToolButton {\n"
-"    background-color: t"
-                        "ransparent;\n"
+"    background-color: transparent;\n"
 "    color: white;\n"
 "    font-weight: bold;\n"
 "    padding: 5px;\n"
@@ -276,7 +286,8 @@ class Ui_RegistroAdministrador(object):
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
-"/* EFECTO HOVER SOBRE D\u00cdAS */\n"
+"/* EFECTO HOVER SO"
+                        "BRE D\u00cdAS */\n"
 "QCalendarWidget QAbstractItemView::item:hover {\n"
 "    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
@@ -285,10 +296,9 @@ class Ui_RegistroAdministrador(object):
 "[objectName^=\"Button\"]{\n"
 "	font-family: Arial;\n"
 "	font-size: 14px;\n"
-"	font-weight:bold"
-                        ";\n"
+"	font-weight:bold;\n"
 "color: #fffefb;\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "border:none;\n"
 "border-radius:5px;\n"
 "height:25px;\n"
@@ -297,6 +307,9 @@ class Ui_RegistroAdministrador(object):
 "[objectName^=\"Button\"]:hover{\n"
 "background: #2196F3;\n"
 "}\n"
+"[objectName^=\"Button\"]:pressed{\n"
+"background: #1B80D0;\n"
+"}\n"
 "#Button_aceptar{\n"
 "	border: none;\n"
 "	border-radius: 5px;\n"
@@ -304,10 +317,13 @@ class Ui_RegistroAdministrador(object):
 "	width: 70px;\n"
 "	min-height: 30px;\n"
 "	height: 30px;\n"
-"	background-color: #00619a;\n"
+"	background: #023375;\n"
 "}\n"
 "#Button_aceptar:hover{\n"
 "	background-color: #68a67d;\n"
+"}\n"
+"#Button_aceptar:pressed{\n"
+"	background-color: #578B69;\n"
 "}\n"
 "#Button_cancelar{\n"
 "	border: none;\n"
@@ -316,10 +332,14 @@ class Ui_RegistroAdministrador(object):
 "	width: 70px;\n"
 "	min-height: 30px;\n"
 "	height: 30px;\n"
-"	background-color: #00619a;	\n"
+"	background: #023375;	\n"
 "}\n"
-"#Button_cancelar:hover{\n"
+"#Button_cancelar:hover{"
+                        "\n"
 "	background-color: #EE1D52;\n"
+"}\n"
+"#Button_cancelar:pressed{\n"
+"	background-color: #B13636;\n"
 "}\n"
 "#Button_actualizar{\n"
 "	border: none;\n"
@@ -328,15 +348,17 @@ class Ui_RegistroAdministrador(object):
 "	width: 70px;\n"
 "	min-height: 33px;\n"
 "	height: 30px;\n"
-"	background-color: #00619a;\n"
+"	background: #023375;\n"
 "}\n"
 "#Button_actualizar:hover{\n"
-"	background-color: #2196F3;\n"
+"	background: #2196F3;\n"
+"}\n"
+"#Button_actualizar:pressed{\n"
+"	background: #1B80D0;\n"
 "}\n"
 "#btn_btn_bajapersona{\n"
 "	border: none;\n"
-"	padding: 2px 5px"
-                        ";\n"
+"	padding: 2px 5px;\n"
 "	border-radius: 5px;	\n"
 "	background-color: #00619a;	\n"
 "	text-transform: uppercase;\n"
@@ -346,6 +368,9 @@ class Ui_RegistroAdministrador(object):
 "}\n"
 "#btn_btn_bajapersona:hover{\n"
 "	background-color: #EE1D52;\n"
+"}\n"
+"#btn_btn_bajapersona:pressed{\n"
+"	background-color: #B13636;\n"
 "}\n"
 "#btn_btn_recontratar{\n"
 "	border: none;\n"
@@ -357,10 +382,15 @@ class Ui_RegistroAdministrador(object):
 "	font-weight:bold;\n"
 "	color:#fffefb;\n"
 "}\n"
-"#btn_btn_recontratar:hover{\n"
+"#btn"
+                        "_btn_recontratar:hover{\n"
 "	background-color: #68a67d;\n"
 "}\n"
+"#btn_btn_recontratar:pressed{\n"
+"	background-color: #578B69;\n"
+"}\n"
 "#foto_usuario{\n"
+"	color: #1d1c1c;\n"
 "	min-height: 180px;\n"
 "	min-width: 180px;\n"
 "	max-height: 180px;\n"
@@ -371,6 +401,7 @@ class Ui_RegistroAdministrador(object):
 "border: 1px solid #1f3a5f;\n"
 "}\n"
 "[objectName^=\"fecha_\"]{\n"
+"	color: #1d1c1c;\n"
 "border: none;\n"
 "border-bottom: 1px solid #3b3c3d;\n"
 "border-radius: 5px;\n"
@@ -380,8 +411,7 @@ class Ui_RegistroAdministrador(object):
 "width:87px;\n"
 "}\n"
 "*[objectName^=\"fecha_\"]::drop-down{\n"
-"subcontrol-origin: padd"
-                        "ing;\n"
+"subcontrol-origin: padding;\n"
 "subcontrol-position: top right;\n"
 "padding-right:5px;\n"
 "width: 20%;\n"
@@ -396,7 +426,8 @@ class Ui_RegistroAdministrador(object):
 "padding-left:5px;\n"
 "padding-right:5px;\n"
 "}\n"
-"*[objectName^=\"fecha_\"]::focus{\n"
+"*[ob"
+                        "jectName^=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName*=\"tiempo_\"]{\n"
@@ -487,7 +518,7 @@ class Ui_RegistroAdministrador(object):
         self.contenedor_scrollArea.setWidgetResizable(True)
         self.contenedor_scroll = QWidget()
         self.contenedor_scroll.setObjectName(u"contenedor_scroll")
-        self.contenedor_scroll.setGeometry(QRect(0, 0, 1198, 625))
+        self.contenedor_scroll.setGeometry(QRect(-349, 0, 1198, 625))
         self.gridLayout_11 = QGridLayout(self.contenedor_scroll)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -515,61 +546,19 @@ class Ui_RegistroAdministrador(object):
         self.contenedor_datosderecha.setMaximumSize(QSize(200, 16777215))
         self.gridLayout_3 = QGridLayout(self.contenedor_datosderecha)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.etiqueta_rol_usuario = QLabel(self.contenedor_datosderecha)
-        self.etiqueta_rol_usuario.setObjectName(u"etiqueta_rol_usuario")
-
-        self.gridLayout_3.addWidget(self.etiqueta_rol_usuario, 8, 0, 1, 1)
-
-        self.etiqueta_departamento = QLabel(self.contenedor_datosderecha)
-        self.etiqueta_departamento.setObjectName(u"etiqueta_departamento")
-
-        self.gridLayout_3.addWidget(self.etiqueta_departamento, 4, 0, 1, 1)
-
-        self.etiqueta_puesto = QLabel(self.contenedor_datosderecha)
-        self.etiqueta_puesto.setObjectName(u"etiqueta_puesto")
-
-        self.gridLayout_3.addWidget(self.etiqueta_puesto, 6, 0, 1, 1)
-
-        self.cajaOpciones_departamentos = QComboBox(self.contenedor_datosderecha)
-        self.cajaOpciones_departamentos.setObjectName(u"cajaOpciones_departamentos")
-        self.cajaOpciones_departamentos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_3.addWidget(self.cajaOpciones_departamentos, 5, 0, 1, 2)
-
-        self.cajaOpciones_puestos = QComboBox(self.contenedor_datosderecha)
-        self.cajaOpciones_puestos.setObjectName(u"cajaOpciones_puestos")
-        self.cajaOpciones_puestos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_3.addWidget(self.cajaOpciones_puestos, 7, 0, 1, 2)
-
-        self.etiqueta_sucursal = QLabel(self.contenedor_datosderecha)
-        self.etiqueta_sucursal.setObjectName(u"etiqueta_sucursal")
-
-        self.gridLayout_3.addWidget(self.etiqueta_sucursal, 1, 0, 1, 1)
-
-        self.foto_usuario = QLabel(self.contenedor_datosderecha)
-        self.foto_usuario.setObjectName(u"foto_usuario")
-        self.foto_usuario.setMinimumSize(QSize(182, 182))
-        self.foto_usuario.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.foto_usuario.setScaledContents(False)
-
-        self.gridLayout_3.addWidget(self.foto_usuario, 0, 0, 1, 1)
-
-        self.Button_nuevasucursal = QPushButton(self.contenedor_datosderecha)
-        self.Button_nuevasucursal.setObjectName(u"Button_nuevasucursal")
-        self.Button_nuevasucursal.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.Button_agregarpuesto = QPushButton(self.contenedor_datosderecha)
+        self.Button_agregarpuesto.setObjectName(u"Button_agregarpuesto")
+        self.Button_agregarpuesto.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon4 = QIcon()
         icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.Button_nuevasucursal.setIcon(icon4)
-        self.Button_nuevasucursal.setIconSize(QSize(24, 24))
+        self.Button_agregarpuesto.setIcon(icon4)
+        self.Button_agregarpuesto.setIconSize(QSize(24, 24))
 
-        self.gridLayout_3.addWidget(self.Button_nuevasucursal, 1, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.Button_agregarpuesto, 7, 1, 1, 1)
 
-        self.cajaOpciones_sucursales = QComboBox(self.contenedor_datosderecha)
-        self.cajaOpciones_sucursales.setObjectName(u"cajaOpciones_sucursales")
-        self.cajaOpciones_sucursales.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.verticalSpacer = QSpacerItem(20, 203, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout_3.addWidget(self.cajaOpciones_sucursales, 2, 0, 1, 2)
+        self.gridLayout_3.addItem(self.verticalSpacer, 12, 0, 1, 2)
 
         self.Button_agregardepartamento = QPushButton(self.contenedor_datosderecha)
         self.Button_agregardepartamento.setObjectName(u"Button_agregardepartamento")
@@ -577,19 +566,29 @@ class Ui_RegistroAdministrador(object):
         self.Button_agregardepartamento.setIcon(icon4)
         self.Button_agregardepartamento.setIconSize(QSize(24, 24))
 
-        self.gridLayout_3.addWidget(self.Button_agregardepartamento, 4, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.Button_agregardepartamento, 5, 1, 1, 1)
 
-        self.Button_agregarpuesto = QPushButton(self.contenedor_datosderecha)
-        self.Button_agregarpuesto.setObjectName(u"Button_agregarpuesto")
-        self.Button_agregarpuesto.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.Button_agregarpuesto.setIcon(icon4)
-        self.Button_agregarpuesto.setIconSize(QSize(24, 24))
+        self.cajaOpciones_sucursales = QComboBox(self.contenedor_datosderecha)
+        self.cajaOpciones_sucursales.setObjectName(u"cajaOpciones_sucursales")
+        self.cajaOpciones_sucursales.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
-        self.gridLayout_3.addWidget(self.Button_agregarpuesto, 6, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.cajaOpciones_sucursales, 3, 0, 1, 2)
 
-        self.verticalSpacer = QSpacerItem(20, 203, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.etiqueta_sucursal = QLabel(self.contenedor_datosderecha)
+        self.etiqueta_sucursal.setObjectName(u"etiqueta_sucursal")
 
-        self.gridLayout_3.addItem(self.verticalSpacer, 11, 0, 1, 2)
+        self.gridLayout_3.addWidget(self.etiqueta_sucursal, 2, 0, 1, 1)
+
+        self.cajaOpciones_rol_usuario = QComboBox(self.contenedor_datosderecha)
+        self.cajaOpciones_rol_usuario.setObjectName(u"cajaOpciones_rol_usuario")
+        self.cajaOpciones_rol_usuario.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout_3.addWidget(self.cajaOpciones_rol_usuario, 10, 0, 1, 2)
+
+        self.etiqueta_rol_usuario = QLabel(self.contenedor_datosderecha)
+        self.etiqueta_rol_usuario.setObjectName(u"etiqueta_rol_usuario")
+
+        self.gridLayout_3.addWidget(self.etiqueta_rol_usuario, 9, 0, 1, 1)
 
         self.gridLayout_9 = QGridLayout()
         self.gridLayout_9.setObjectName(u"gridLayout_9")
@@ -616,13 +615,51 @@ class Ui_RegistroAdministrador(object):
         self.gridLayout_9.addWidget(self.fecha_fechadespido, 3, 0, 1, 1)
 
 
-        self.gridLayout_3.addLayout(self.gridLayout_9, 10, 0, 1, 2)
+        self.gridLayout_3.addLayout(self.gridLayout_9, 11, 0, 1, 2)
 
-        self.cajaOpciones_rol_usuario = QComboBox(self.contenedor_datosderecha)
-        self.cajaOpciones_rol_usuario.setObjectName(u"cajaOpciones_rol_usuario")
-        self.cajaOpciones_rol_usuario.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.cajaOpciones_puestos = QComboBox(self.contenedor_datosderecha)
+        self.cajaOpciones_puestos.setObjectName(u"cajaOpciones_puestos")
+        self.cajaOpciones_puestos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
-        self.gridLayout_3.addWidget(self.cajaOpciones_rol_usuario, 9, 0, 1, 2)
+        self.gridLayout_3.addWidget(self.cajaOpciones_puestos, 8, 0, 1, 2)
+
+        self.etiqueta_puesto = QLabel(self.contenedor_datosderecha)
+        self.etiqueta_puesto.setObjectName(u"etiqueta_puesto")
+
+        self.gridLayout_3.addWidget(self.etiqueta_puesto, 7, 0, 1, 1)
+
+        self.Button_nuevasucursal = QPushButton(self.contenedor_datosderecha)
+        self.Button_nuevasucursal.setObjectName(u"Button_nuevasucursal")
+        self.Button_nuevasucursal.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.Button_nuevasucursal.setIcon(icon4)
+        self.Button_nuevasucursal.setIconSize(QSize(24, 24))
+
+        self.gridLayout_3.addWidget(self.Button_nuevasucursal, 2, 1, 1, 1)
+
+        self.foto_usuario = QLabel(self.contenedor_datosderecha)
+        self.foto_usuario.setObjectName(u"foto_usuario")
+        self.foto_usuario.setMinimumSize(QSize(182, 182))
+        self.foto_usuario.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.foto_usuario.setScaledContents(False)
+
+        self.gridLayout_3.addWidget(self.foto_usuario, 0, 0, 1, 1)
+
+        self.etiqueta_departamento = QLabel(self.contenedor_datosderecha)
+        self.etiqueta_departamento.setObjectName(u"etiqueta_departamento")
+
+        self.gridLayout_3.addWidget(self.etiqueta_departamento, 5, 0, 1, 1)
+
+        self.cajaOpciones_departamentos = QComboBox(self.contenedor_datosderecha)
+        self.cajaOpciones_departamentos.setObjectName(u"cajaOpciones_departamentos")
+        self.cajaOpciones_departamentos.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+        self.gridLayout_3.addWidget(self.cajaOpciones_departamentos, 6, 0, 1, 2)
+
+        self.Button_eliminarfoto = QPushButton(self.contenedor_datosderecha)
+        self.Button_eliminarfoto.setObjectName(u"Button_eliminarfoto")
+        self.Button_eliminarfoto.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.gridLayout_3.addWidget(self.Button_eliminarfoto, 1, 0, 1, 2)
 
 
         self.gridLayout_4.addWidget(self.contenedor_datosderecha, 2, 7, 1, 1)
@@ -1080,26 +1117,29 @@ class Ui_RegistroAdministrador(object):
         self.btc_cerrar.setText("")
         self.btn_btn_bajapersona.setText(QCoreApplication.translate("RegistroAdministrador", u"dar de baja", None))
         self.etiqueta_status_empleado.setText("")
-        self.etiqueta_rol_usuario.setText(QCoreApplication.translate("RegistroAdministrador", u"Rol del usuario:", None))
-        self.etiqueta_departamento.setText(QCoreApplication.translate("RegistroAdministrador", u"Departamento", None))
-        self.etiqueta_puesto.setText(QCoreApplication.translate("RegistroAdministrador", u"Puesto", None))
+        self.Button_agregarpuesto.setText("")
+        self.Button_agregardepartamento.setText("")
         self.etiqueta_sucursal.setText(QCoreApplication.translate("RegistroAdministrador", u"Sucursal", None))
+        self.etiqueta_rol_usuario.setText(QCoreApplication.translate("RegistroAdministrador", u"Rol del usuario:", None))
+        self.etiqueta_fechadespido.setText(QCoreApplication.translate("RegistroAdministrador", u"Fecha de despido", None))
+        self.fecha_fechacontratacion.setDisplayFormat(QCoreApplication.translate("RegistroAdministrador", u"dd/MM/yyyy", None))
+        self.etiqueta_fechacontratacion.setText(QCoreApplication.translate("RegistroAdministrador", u"Fecha de contrataci\u00f3n:", None))
+        self.fecha_fechadespido.setDisplayFormat(QCoreApplication.translate("RegistroAdministrador", u"dd/MM/yyyy", None))
+        self.etiqueta_puesto.setText(QCoreApplication.translate("RegistroAdministrador", u"Puesto", None))
+        self.Button_nuevasucursal.setText("")
         self.foto_usuario.setText(QCoreApplication.translate("RegistroAdministrador", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>\n"
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>", None))
-        self.Button_nuevasucursal.setText("")
-        self.Button_agregardepartamento.setText("")
-        self.Button_agregarpuesto.setText("")
-        self.etiqueta_fechadespido.setText(QCoreApplication.translate("RegistroAdministrador", u"Fecha de despido", None))
-        self.fecha_fechacontratacion.setDisplayFormat(QCoreApplication.translate("RegistroAdministrador", u"dd/MM/yyyy", None))
-        self.etiqueta_fechacontratacion.setText(QCoreApplication.translate("RegistroAdministrador", u"Fecha de contrataci\u00f3n:", None))
-        self.fecha_fechadespido.setDisplayFormat(QCoreApplication.translate("RegistroAdministrador", u"dd/MM/yyyy", None))
+        self.etiqueta_departamento.setText(QCoreApplication.translate("RegistroAdministrador", u"Departamento", None))
+        self.Button_eliminarfoto.setText(QCoreApplication.translate("RegistroAdministrador", u"Eliminar foto", None))
         self.etiquetaTitulo_agregarpersona.setText(QCoreApplication.translate("RegistroAdministrador", u"REGISTRO DE PERSONAL", None))
         self.btn_btn_recontratar.setText(QCoreApplication.translate("RegistroAdministrador", u"recontratar", None))
         self.etiqueta_nombrecontactoemergencia.setText(QCoreApplication.translate("RegistroAdministrador", u"Nombre", None))
+        self.txt_nombrecontactoemergencia.setPlaceholderText(QCoreApplication.translate("RegistroAdministrador", u"Nombre completo", None))
+        self.txt_contactoemergencia.setPlaceholderText(QCoreApplication.translate("RegistroAdministrador", u"N\u00famero de contacto", None))
         self.etiqueta_contactoemergencia.setText(QCoreApplication.translate("RegistroAdministrador", u"Contacto Emergencia", None))
         self.etiqueta_parentesco.setText(QCoreApplication.translate("RegistroAdministrador", u"Parentesco", None))
         self.txtlargo_direccion_completa.setPlaceholderText(QCoreApplication.translate("RegistroAdministrador", u"Direcci\u00f3n completa y datos de referencia.", None))

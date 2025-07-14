@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QComboBox,
-    QDoubleSpinBox, QFrame, QGridLayout, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPlainTextEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QTableView,
-    QTimeEdit, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QCheckBox,
+    QComboBox, QDoubleSpinBox, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QPlainTextEdit, QPushButton, QSizePolicy, QSpacerItem,
+    QTableView, QTimeEdit, QWidget)
 from ...Source import iconsdvg_rc
 from ...Source import iconosSVG_rc
 from ...Source import ibootstrap_rc
@@ -115,7 +115,7 @@ class Ui_Formulario_puestos(object):
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName^=\"btn_btn_\"]{\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "font-size: 14px;\n"
 "font-weight: bold;\n"
 "color: #fffefb;\n"
@@ -275,6 +275,9 @@ class Ui_Formulario_puestos(object):
         self.tabla_listapuestos = QTableView(self.contenedor_frame)
         self.tabla_listapuestos.setObjectName(u"tabla_listapuestos")
         self.tabla_listapuestos.setMinimumSize(QSize(420, 0))
+        self.tabla_listapuestos.setAlternatingRowColors(True)
+        self.tabla_listapuestos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_listapuestos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_listapuestos.horizontalHeader().setMinimumSectionSize(200)
         self.tabla_listapuestos.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_listapuestos.horizontalHeader().setStretchLastSection(False)

@@ -14,10 +14,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">*{
-color: black;
-}
-#frame{border:none;}
+   <string notr="true">#frame{border:none;}
 #widget_contenedor{border-radius: 10px;}
 #RegistroAdministrador{
 background: #fffefb;
@@ -71,12 +68,17 @@ background-color: rgb(255, 255, 255);
 	font-size: 14px;
 	font-weight: bold;
 }
+[objectName^=&quot;etiqueta&quot;]{
+	color: #1d1c1c;
+}
 [objectName^=&quot;etiquetaTitulo_&quot;]{
+	color: #1d1c1c;
 	font-family: Arial;
 	font-size: 18px;
 	font-weight: bold;
 }
 [objectName^=&quot;etiquetasubtitulo_&quot;]{
+	color: #1d1c1c;
 	font-family: Arial;
 	font-size: 16px;
 	font-weight: bold;
@@ -92,11 +94,12 @@ background-color: rgb(255, 255, 255);
 	font-family: Arial;
 	font-size: 14px;
 	border:none;
-border-radius: 4px;
+	border-radius: 4px;
 	border-bottom: 1px solid #3b3c3d;
 	background-color: #F5F5F5;
-padding: 2px;
-min-width: 150px;
+	padding: 2px;
+	min-width: 150px;
+	color: #1d1c1c;
 }
 [objectName^=&quot;txt_&quot;]::focus{
 border-bottom: 2px solid #00668c;
@@ -108,6 +111,7 @@ border-radius: 4px;
 background-color: #F5F5F5;
 font-size: 14px;
 padding: 2px;
+color: #1d1c1c;
 }
 [objectName^=&quot;decimal_&quot;]::focus{
 border-bottom: 2px solid #00668c;
@@ -119,6 +123,7 @@ border-radius: 4px;
 background-color: #F5F5F5;
 font-size: 14px;
 padding: 2px;
+color: #1d1c1c;
 }
 [objectName^=&quot;numero_&quot;]::focus{
 border-bottom: 2px solid #00668c;
@@ -127,9 +132,11 @@ border-bottom: 2px solid #00668c;
 font-size: 14px;
 font-family:Arial;
 font-weight:bold;
+	color: #1d1c1c;
 }
 
 [objectName*=&quot;cajaOpciones&quot;] {
+	color: #1d1c1c;
     border: none;
     border-bottom: 1px solid #787878 ;
     padding: 2px ;
@@ -143,6 +150,7 @@ font-weight:bold;
 
 /* ESTILO DEL DROPDOWN (LISTA) */
 [objectName*=&quot;cajaOpciones&quot;] QListView {
+	color: #1d1c1c;
     background: #F5F5F5 ;
     border-radius: 3px;
     outline: none;
@@ -174,6 +182,7 @@ font-weight:bold;
 
 
 [objectName^=&quot;txtlargo_&quot;]{
+	color: #1d1c1c;
 	font-family: Arial;
 	font-size: 14px;
 	max-height: 100px;
@@ -183,6 +192,7 @@ background-color: #F5F5F5;
 border: 1px solid #787878;
 }
 [objectName*=&quot;fecha_&quot;]{
+	color: #1d1c1c;
 border: none;
 border-bottom: 1px solid #3b3c3d;
 border-radius: 5px;
@@ -267,7 +277,7 @@ QCalendarWidget QAbstractItemView::item:hover {
 	font-size: 14px;
 	font-weight:bold;
 color: #fffefb;
-background: #00619a;
+background: #023375;
 border:none;
 border-radius:5px;
 height:25px;
@@ -276,6 +286,9 @@ padding: 0px 3px;
 [objectName^=&quot;Button&quot;]:hover{
 background: #2196F3;
 }
+[objectName^=&quot;Button&quot;]:pressed{
+background: #1B80D0;
+}
 #Button_aceptar{
 	border: none;
 	border-radius: 5px;
@@ -283,10 +296,13 @@ background: #2196F3;
 	width: 70px;
 	min-height: 30px;
 	height: 30px;
-	background-color: #00619a;
+	background: #023375;
 }
 #Button_aceptar:hover{
 	background-color: #68a67d;
+}
+#Button_aceptar:pressed{
+	background-color: #578B69;
 }
 #Button_cancelar{
 	border: none;
@@ -295,10 +311,13 @@ background: #2196F3;
 	width: 70px;
 	min-height: 30px;
 	height: 30px;
-	background-color: #00619a;	
+	background: #023375;	
 }
 #Button_cancelar:hover{
 	background-color: #EE1D52;
+}
+#Button_cancelar:pressed{
+	background-color: #B13636;
 }
 #Button_actualizar{
 	border: none;
@@ -307,10 +326,13 @@ background: #2196F3;
 	width: 70px;
 	min-height: 33px;
 	height: 30px;
-	background-color: #00619a;
+	background: #023375;
 }
 #Button_actualizar:hover{
-	background-color: #2196F3;
+	background: #2196F3;
+}
+#Button_actualizar:pressed{
+	background: #1B80D0;
 }
 #btn_btn_bajapersona{
 	border: none;
@@ -325,6 +347,9 @@ background: #2196F3;
 #btn_btn_bajapersona:hover{
 	background-color: #EE1D52;
 }
+#btn_btn_bajapersona:pressed{
+	background-color: #B13636;
+}
 #btn_btn_recontratar{
 	border: none;
 	padding: 2px 5px;
@@ -338,7 +363,11 @@ background: #2196F3;
 #btn_btn_recontratar:hover{
 	background-color: #68a67d;
 }
+#btn_btn_recontratar:pressed{
+	background-color: #578B69;
+}
 #foto_usuario{
+	color: #1d1c1c;
 	min-height: 180px;
 	min-width: 180px;
 	max-height: 180px;
@@ -349,6 +378,7 @@ background-color: #F5F5F5;
 border: 1px solid #1f3a5f;
 }
 [objectName^=&quot;fecha_&quot;]{
+	color: #1d1c1c;
 border: none;
 border-bottom: 1px solid #3b3c3d;
 border-radius: 5px;
@@ -587,7 +617,7 @@ border-bottom: 2px solid #00668c;
      <widget class="QWidget" name="contenedor_scroll">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>-349</x>
         <y>0</y>
         <width>1198</width>
         <height>625</height>
@@ -642,120 +672,7 @@ border-bottom: 2px solid #00668c;
              </size>
             </property>
             <layout class="QGridLayout" name="gridLayout_3">
-             <item row="8" column="0">
-              <widget class="QLabel" name="etiqueta_rol_usuario">
-               <property name="text">
-                <string>Rol del usuario:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="etiqueta_departamento">
-               <property name="text">
-                <string>Departamento</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="etiqueta_puesto">
-               <property name="text">
-                <string>Puesto</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0" colspan="2">
-              <widget class="QComboBox" name="cajaOpciones_departamentos">
-               <property name="sizeAdjustPolicy">
-                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0" colspan="2">
-              <widget class="QComboBox" name="cajaOpciones_puestos">
-               <property name="sizeAdjustPolicy">
-                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="etiqueta_sucursal">
-               <property name="text">
-                <string>Sucursal</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="foto_usuario">
-               <property name="minimumSize">
-                <size>
-                 <width>182</width>
-                 <height>182</height>
-                </size>
-               </property>
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/Icons/IconosSVG/subir_imagen.png&quot; width=&quot;90&quot; height=&quot;80&quot; /&gt;&lt;/p&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:bold;font-family:Arial&quot;&gt;Cargar Imagen&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="scaledContents">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QPushButton" name="Button_nuevasucursal">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="../../Source/iconosSVG.qrc">
-                 <normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>24</width>
-                 <height>24</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QComboBox" name="cajaOpciones_sucursales">
-               <property name="sizeAdjustPolicy">
-                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QPushButton" name="Button_agregardepartamento">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="../../Source/iconosSVG.qrc">
-                 <normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>24</width>
-                 <height>24</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
+             <item row="7" column="1">
               <widget class="QPushButton" name="Button_agregarpuesto">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
@@ -775,7 +692,7 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="11" column="0" colspan="2">
+             <item row="12" column="0" colspan="2">
               <spacer name="verticalSpacer">
                <property name="orientation">
                 <enum>Qt::Orientation::Vertical</enum>
@@ -788,7 +705,55 @@ p, li { white-space: pre-wrap; }
                </property>
               </spacer>
              </item>
+             <item row="5" column="1">
+              <widget class="QPushButton" name="Button_agregardepartamento">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="../../Source/iconosSVG.qrc">
+                 <normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>24</width>
+                 <height>24</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QComboBox" name="cajaOpciones_sucursales">
+               <property name="sizeAdjustPolicy">
+                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="etiqueta_sucursal">
+               <property name="text">
+                <string>Sucursal</string>
+               </property>
+              </widget>
+             </item>
              <item row="10" column="0" colspan="2">
+              <widget class="QComboBox" name="cajaOpciones_rol_usuario">
+               <property name="sizeAdjustPolicy">
+                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="9" column="0">
+              <widget class="QLabel" name="etiqueta_rol_usuario">
+               <property name="text">
+                <string>Rol del usuario:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="11" column="0" colspan="2">
               <layout class="QGridLayout" name="gridLayout_9">
                <item row="2" column="0">
                 <widget class="QLabel" name="etiqueta_fechadespido">
@@ -826,10 +791,85 @@ p, li { white-space: pre-wrap; }
                </item>
               </layout>
              </item>
-             <item row="9" column="0" colspan="2">
-              <widget class="QComboBox" name="cajaOpciones_rol_usuario">
+             <item row="8" column="0" colspan="2">
+              <widget class="QComboBox" name="cajaOpciones_puestos">
                <property name="sizeAdjustPolicy">
                 <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="etiqueta_puesto">
+               <property name="text">
+                <string>Puesto</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QPushButton" name="Button_nuevasucursal">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="../../Source/iconosSVG.qrc">
+                 <normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>24</width>
+                 <height>24</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="foto_usuario">
+               <property name="minimumSize">
+                <size>
+                 <width>182</width>
+                 <height>182</height>
+                </size>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/Icons/IconosSVG/subir_imagen.png&quot; width=&quot;90&quot; height=&quot;80&quot; /&gt;&lt;/p&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:bold;font-family:Arial&quot;&gt;Cargar Imagen&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="scaledContents">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="etiqueta_departamento">
+               <property name="text">
+                <string>Departamento</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0" colspan="2">
+              <widget class="QComboBox" name="cajaOpciones_departamentos">
+               <property name="sizeAdjustPolicy">
+                <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QPushButton" name="Button_eliminarfoto">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string>Eliminar foto</string>
                </property>
               </widget>
              </item>
@@ -875,10 +915,18 @@ p, li { white-space: pre-wrap; }
                   </widget>
                  </item>
                  <item row="0" column="3">
-                  <widget class="QLineEdit" name="txt_nombrecontactoemergencia"/>
+                  <widget class="QLineEdit" name="txt_nombrecontactoemergencia">
+                   <property name="placeholderText">
+                    <string>Nombre completo</string>
+                   </property>
+                  </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QLineEdit" name="txt_contactoemergencia"/>
+                  <widget class="QLineEdit" name="txt_contactoemergencia">
+                   <property name="placeholderText">
+                    <string>Número de contacto</string>
+                   </property>
+                  </widget>
                  </item>
                  <item row="0" column="0">
                   <widget class="QLabel" name="etiqueta_contactoemergencia">

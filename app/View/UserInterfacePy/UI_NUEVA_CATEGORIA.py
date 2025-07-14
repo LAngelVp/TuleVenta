@@ -84,7 +84,10 @@ class Ui_Nueva_categoria(object):
 "height: 25px;\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
-"background: #68a67d;\n"
+"background: #2196F3;\n"
+"}\n"
+"[objectName*=\"btn_btn_\"]:pressed{\n"
+"background: #1B80D0;\n"
 "}\n"
 "\n"
 "")

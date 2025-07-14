@@ -28,7 +28,7 @@ class Ui_Bienvenida(object):
         Bienvenida.setMinimumSize(QSize(600, 450))
         Bienvenida.setMaximumSize(QSize(600, 450))
         Bienvenida.setStyleSheet(u"#Bienvenida{\n"
-"background-color: #fffefb;\n"
+"background: #fffefb;\n"
 "}\n"
 "#contenedor{\n"
 "background-color: #fffefb;\n"
@@ -39,22 +39,21 @@ class Ui_Bienvenida(object):
 "font-weight:bold;\n"
 "font-size: 18px;\n"
 "}\n"
-"")
-        self.contenedor = QWidget(Bienvenida)
-        self.contenedor.setObjectName(u"contenedor")
-        self.contenedor.setGeometry(QRect(40, 80, 521, 291))
-        self.contenedor.setStyleSheet(u"#btn_btn_registrar{\n"
-"background-color: rgb(0, 97, 154);\n"
+"#btn_btn_registrar{\n"
+"background: #023375;\n"
 "border-radius: 5px;\n"
 "color:#fffefb;\n"
 "}\n"
 "#btn_btn_registrar:hover{\n"
-"background-color:#68a67d;\n"
+"background: #2196F3;\n"
 "}\n"
 "#btn_btn_registrar:pressed{\n"
-"background-color:#fffefb;\n"
-"color:#1d1c1c;\n"
+"background-color:#1B80D0;\n"
 "}")
+        self.contenedor = QWidget(Bienvenida)
+        self.contenedor.setObjectName(u"contenedor")
+        self.contenedor.setGeometry(QRect(40, 80, 521, 291))
+        self.contenedor.setStyleSheet(u"")
         self.etiqueta_imagen = QLabel(self.contenedor)
         self.etiqueta_imagen.setObjectName(u"etiqueta_imagen")
         self.etiqueta_imagen.setGeometry(QRect(100, 30, 351, 221))

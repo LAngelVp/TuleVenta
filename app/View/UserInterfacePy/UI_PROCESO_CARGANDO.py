@@ -17,8 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QSizePolicy,
     QWidget)
-from ...Source import iconsdvg_rc
-from ...Source import iconosSVG_rc
+from ...Source import logos_rc
 from ...Source import gifs_rc
 
 class Ui_Ventana_Cargando(object):
@@ -29,27 +28,26 @@ class Ui_Ventana_Cargando(object):
         Ventana_Cargando.setStyleSheet(u"#contenedor{\n"
 "	background-color: rgb(255, 255, 255);\n"
 "border-radius:20px;\n"
-"}\n"
-"#etiqueta_logo_cargando{\n"
-"	image: url(:/Icons/IconosSVG/logo_devrous.png);\n"
 "}")
         self.contenedor = QFrame(Ventana_Cargando)
         self.contenedor.setObjectName(u"contenedor")
         self.contenedor.setGeometry(QRect(50, 30, 290, 161))
-        self.contenedor.setFrameShape(QFrame.StyledPanel)
-        self.contenedor.setFrameShadow(QFrame.Raised)
+        self.contenedor.setStyleSheet(u"background-color: rgb(12, 28, 68);")
+        self.contenedor.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor.setFrameShadow(QFrame.Shadow.Raised)
         self.etiqueta_logo_cargando = QLabel(self.contenedor)
         self.etiqueta_logo_cargando.setObjectName(u"etiqueta_logo_cargando")
-        self.etiqueta_logo_cargando.setGeometry(QRect(70, 0, 161, 101))
+        self.etiqueta_logo_cargando.setGeometry(QRect(30, 0, 231, 111))
+        self.etiqueta_logo_cargando.setStyleSheet(u"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);")
         self.etiqueta_spiner = QLabel(self.contenedor)
         self.etiqueta_spiner.setObjectName(u"etiqueta_spiner")
-        self.etiqueta_spiner.setGeometry(QRect(114, 80, 71, 61))
+        self.etiqueta_spiner.setGeometry(QRect(119, 100, 51, 31))
         font = QFont()
         font.setPointSize(11)
         self.etiqueta_spiner.setFont(font)
-        self.etiqueta_spiner.setTextFormat(Qt.AutoText)
+        self.etiqueta_spiner.setTextFormat(Qt.TextFormat.AutoText)
         self.etiqueta_spiner.setScaledContents(True)
-        self.etiqueta_spiner.setAlignment(Qt.AlignCenter)
+        self.etiqueta_spiner.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.etiqueta_spiner.setWordWrap(False)
 
         self.retranslateUi(Ventana_Cargando)

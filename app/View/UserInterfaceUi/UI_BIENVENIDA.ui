@@ -27,7 +27,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">#Bienvenida{
-background-color: #fffefb;
+background: #fffefb;
 }
 #contenedor{
 background-color: #fffefb;
@@ -38,7 +38,17 @@ font-family: Arial;
 font-weight:bold;
 font-size: 18px;
 }
-</string>
+#btn_btn_registrar{
+background: #023375;
+border-radius: 5px;
+color:#fffefb;
+}
+#btn_btn_registrar:hover{
+background: #2196F3;
+}
+#btn_btn_registrar:pressed{
+background-color:#1B80D0;
+}</string>
   </property>
   <widget class="QWidget" name="contenedor" native="true">
    <property name="geometry">
@@ -50,18 +60,7 @@ font-size: 18px;
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">#btn_btn_registrar{
-background-color: rgb(0, 97, 154);
-border-radius: 5px;
-color:#fffefb;
-}
-#btn_btn_registrar:hover{
-background-color:#68a67d;
-}
-#btn_btn_registrar:pressed{
-background-color:#fffefb;
-color:#1d1c1c;
-}</string>
+    <string notr="true"/>
    </property>
    <widget class="QLabel" name="etiqueta_imagen">
     <property name="geometry">

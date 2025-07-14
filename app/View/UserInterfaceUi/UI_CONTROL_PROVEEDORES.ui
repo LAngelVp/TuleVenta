@@ -62,15 +62,14 @@ border: 1px solid;
 max-height: 100px;
 }
 [objectName*=&quot;btn_btn&quot;]{
-background: #00619a;
+background: #023375;
 font-size: 12px;
 font-family: Arial;
 font-weight: bold;
 border: none;
 border-radius: 5px;
 color: #fffefb;
-padding-left:5px;
-padding-right:5px;
+padding: 2px;
 }
 #btn_btn_listadeproductoyprecios{
 font-size: 14px;
@@ -84,11 +83,20 @@ font-weight: bold;
 [objectName*=&quot;btn_btn&quot;]:hover{
 background: #2196F3;
 }
+[objectName*=&quot;btn_btn&quot;]:pressed{
+background: #1B80D0;
+}
 #btn_btn_cancelar:hover{
 background: #EE1D52;
 }
+#btn_btn_cancelar:pressed{
+background: #B13636;
+}
 #btn_btn_guardar:hover{
 background: #68a67d;
+}
+#btn_btn_guardar:pressed{
+background: #578B69;
 }
 
 
@@ -262,7 +270,7 @@ color: black;
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>1065</width>
+           <width>1041</width>
            <height>577</height>
           </rect>
          </property>

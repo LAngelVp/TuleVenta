@@ -52,7 +52,7 @@ font-size: 14px;
 font-weight:bold;
 }
 *[objectName*=&quot;btn_btn_&quot;]{
-background: #00619a;
+background: #023375;
 font-size: 14px;
 font-family: Arial;
 font-weight: bold;
@@ -66,13 +66,16 @@ padding: 3px 5px;
 background-color: #00619a;
 }
 *[objectName*=&quot;btn_btn_&quot;]:hover{
-background-color: #59a5f5;
+background-color: #2196F3;
+}
+*[objectName*=&quot;btn_btn_&quot;]:pressed{
+background: #1B80D0;
 }
 #btn_btn_agregar:hover{
 background-color: #68a67d;
 }
-#btn_btn_terminar:hover{
-background-color: #68a67d;
+#btn_btn_agregar:pressed{
+background-color: #578B69;
 }
 #btn_btn_cerrar{
 background-color: #fffefb;

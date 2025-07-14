@@ -69,12 +69,13 @@ min-width:35px;
 min-height:25px;
 }
 [objectName^=&quot;btn_btn_&quot;]{
-background-color: #00619a;
+background-color: #023375;
 border-radius: 3px;
 color: #fffefb;
 font-weight: bold;
 font-family: Arial;
 font-size: 16px;
+padding: 2px; 
 }
 [objectName*=&quot;btn_btn_&quot;]:hover{
 background-color: #2196F3;
@@ -395,7 +396,7 @@ QCalendarWidget QAbstractItemView::item:hover {
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>-600</y>
+              <y>0</y>
               <width>1388</width>
               <height>1104</height>
              </rect>

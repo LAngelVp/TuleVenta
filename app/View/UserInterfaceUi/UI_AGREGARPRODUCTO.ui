@@ -74,7 +74,7 @@ font-size:14px;
 font-family:&quot;Arial&quot;;
 font-weight:bold;
 padding: 5px;
-background: #00619a;
+background: #023375;
 color: #fffefb;
 border-radius: 4px;
 max-height: 15px;
@@ -428,8 +428,8 @@ color: black;
          <widget class="QWidget" name="contenedorModal_scroll_formulario">
           <property name="geometry">
            <rect>
-            <x>-157</x>
-            <y>-20</y>
+            <x>0</x>
+            <y>0</y>
             <width>1326</width>
             <height>1190</height>
            </rect>

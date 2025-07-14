@@ -58,7 +58,7 @@ class Ui_Formulario(object):
 "font-weight:bold;\n"
 "font-family:\"Arial\";\n"
 "color: #fffefb;\n"
-"background: #00619a;\n"
+"background: #023375;\n"
 "border:none;\n"
 "border-radius:4px;\n"
 "padding: 2px 0px;\n"
