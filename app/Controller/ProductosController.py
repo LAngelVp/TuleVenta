@@ -1014,6 +1014,7 @@ class Productos(QWidget):
         self.ui.btn_btn_adminProductos_buscar.clicked.connect(self.buscar_producto)
         self.ui.btn_btn_adminProductos_ExistenciaProducto.clicked.connect(self.existencia_productos)
         self.ui.btn_RefrescarTabla.clicked.connect(self.consultar_productos_db)
+        # self.comprobar_modelo_tabla_productos()
         
         self.producto_actual = None
         self.consultor = None
@@ -1023,7 +1024,6 @@ class Productos(QWidget):
         self.codigo_upc_producto = None
         self.AdminProductos = None
         self.ventana_existencia_productos = None
-        self.comprobar_modelo_tabla_productos()
         
     def  buscar_producto(self):
         nombre_producto = self.ui.txt_buscar.text().strip()
@@ -1124,6 +1124,7 @@ class Productos(QWidget):
         self.codigo_upc_producto = None
         
     def listar_productos(self, productos, estado):
+        print("listando")
         if not estado:
             Mensaje().mensaje_informativo("No hay productos para mostrar")
             self.comprobar_modelo_tabla_productos()
@@ -1184,14 +1185,15 @@ class Productos(QWidget):
         self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
         self.seleccion_conectada_productos = True
 
-        QTimer.singleShot(0, self.cargando_cerrar)
+        # QTimer.singleShot(0, self.cargando_cerrar)
 
     def consultar_productos_db(self):
         self.modal_espera_local()
+        self.comprobar_modelo_tabla_productos()
         self.consultor = Consultas_segundo_plano()
         self.consultor.resultado.connect(self.listar_productos)
         self.consultor.ejecutar_hilo(funcion=self.obtener_productos_query)
-    
+        
     def modal_espera_local(self):
         if self.cargando is None or not self.cargando.isVisible():
             self.cargando = Modal_de_espera(parent=self)
@@ -1206,7 +1208,9 @@ class Productos(QWidget):
             self.cargando = None
             
     def obtener_productos_query(self, session):
+        print("obteniendo")
         productos, estado = ProductosModel(session).obtener_productos()
+        productos = [productos] if estado else []
         return productos, estado
     
     def mostrar_error_consulta(self, mensaje):
