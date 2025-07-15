@@ -118,6 +118,7 @@ class Admin_productosController(QWidget):
     PRODUCTOS_AGREGADOS = Signal()
     RECIBIR_PRODUCTO_ACTUALIZAR_ID = Signal(object)
     VENTANA_CERRADA_PRODUCTOS = Signal()
+    closed = Signal()
     
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -125,6 +126,7 @@ class Admin_productosController(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.ui = Ui_contenedorModal_agregar_productos()
         self.ui.setupUi(self)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         # self.setStyleSheet(self.styleSheet())
         icon = QIcon(':Icons/IconosSVG/productos.png')
         self.setWindowIcon(icon)
@@ -203,8 +205,8 @@ class Admin_productosController(QWidget):
             self._ventanaCentradaProductoExistente = True
 
     def closeEvent(self, event):
-        self.VENTANA_CERRADA_PRODUCTOS.emit() 
-        event.accept()
+        self.closed.emit()  # Emitir señal antes de cerrar
+        super().closeEvent(event)
         
 #FUNCIONES-VENTANAS EMERGENTES: 
     def agregar_presentacion(self):
@@ -618,110 +620,178 @@ class Admin_productosController(QWidget):
         self.cargando = None
         
     def __cargar_datos_en_campos(self, producto):
-        self.producto = producto
-        self.ui.txt_codBarras.setEnabled(False)
-        self.ui.contenedorModal_proveedores_vinculados.show()
-        self.ui.contenedorModal_proveedores_existentes.show()
-        self.ui.contenedorModal_proveedores_a_vincular.show()
-        self.ui.txt_proveedor.hide()
-        self.ui.etiqueta_proveedor.hide()
-        self.ui.tabla_productos.hide()
-        self.ui.etiqueta_tituloProductos
-        self.ui.btn_btn_addProduct_agregar_producto.hide()
-        self.ui.btn_btn_addProduct_guardar_producto.hide()
-        self.ui.btn_btn_addProduct_cargar_CSVProductos.hide()
-        self.ui.btn_btn_addProduct_limpiarTablaProductos.hide()
-        self.ui.btn_btn_addProduct_actualizar_producto.show()
-        self.ui.txt_codBarras.setText(self.producto.codigo_upc)
-        self.ui.txt_codBarras.setText(self.producto.codigo_upc)
-        self.ui.txt_nombreProducto.setText(self.producto.nombre_producto)
-        self.ui.txt_marcaProducto.setText(self.producto.marca)
-        self.ui.txt_modeloProducto.setText(self.producto.modelo)
-        self.ui.txt_colorProducto.setText(self.producto.color)
-        self.ui.txt_materialProducto.setText(self.producto.material)
-        self.ui.txtlargo_descripcionProducto.setPlainText(self.producto.descripcion_producto)
-        self.ui.txtlargo_notasProducto.setPlainText(self.producto.notas)
-
-        self.ui.decimal_costoInicialProducto.setValue(self.producto.costo_inicial)
-        self.ui.decimal_costoFinalProducto.setValue(self.producto.costo_final)
-        
-        if self.producto.imagen:
-            try:
-                # Verifica si la ruta de la imagen es válida
-                pixmap = QPixmap(self.producto.imagen)
-                if pixmap.isNull():  # Si no se puede cargar la imagen
-                    raise ValueError("Imagen no válida")
-
-                # Escala la imagen antes de establecerla
-                pixmap_scaled = pixmap.scaled(self.ui.etiqueta_fotoProducto.size(), Qt.KeepAspectRatio)
-                self.ui.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
-                self.imagenProducto = self.producto.imagen  # Guarda la imagen si todo está bien
-            except Exception as e:
-                # Si hay un error al cargar la imagen, muestra un mensaje y coloca el icono predeterminado
-                Mensaje().mensaje_informativo(f"Error al cargar la imagen: {e}")
-                _translate = QtCore.QCoreApplication.translate
-                self.ui.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"80\" height=\"70\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-family:Arial; font-weight:bold;\">Cargar Imagen</span></p></body></html>"))
-        else:
-            # Si no hay imagen, coloca el mensaje predeterminado
-            _translate = QtCore.QCoreApplication.translate
-            self.ui.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"80\" height=\"70\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-family:Arial; font-weight:bold;\">Cargar Imagen</span></p></body></html>"))
-
-        # Asumiendo que margen_porcentaje es tipo string como "25 %"
         try:
-            margen = int(str(self.producto.margen_porcentaje).rstrip("%"))
-        except Exception:
-            margen = 0
-        self.ui.entero_margenProducto.setValue(margen)
-        self.ui.decimal_precioVentaProducto.setValue(self.producto.precio)
-        self.ui.decimal_existenciaProducto.setValue(self.producto.existencia)
-        self.ui.decimal_existenciaMinProducto.setValue(self.producto.existencia_minima)
-        self.ui.decimal_existenciaMaxProducto.setValue(self.producto.existencia_maxima)
-        self.ui.decimal_pesoProducto.setValue(self.producto.peso)
-
-        if producto.fecha_fabricacion:
-            # Convertir datetime.date a string con formato "YYYY-MM-DD"
-            fecha_fabricacion_str = producto.fecha_fabricacion.strftime("%Y-%m-%d")
-            fecha_fabricacion = QDate.fromString(fecha_fabricacion_str, "yyyy-MM-dd")
-            self.ui.fecha_fabricacionProducto.setDate(fecha_fabricacion)
+            # Limpiar referencias previas
+            if hasattr(self, 'producto'):
+                del self.producto
             
-        if producto.fecha_vencimiento:
-            self.ui.opcion_TieneCaducidad.setChecked(True)
-            fecha_vencimiento_str = producto.fecha_vencimiento.strftime("%Y-%m-%d") if producto.fecha_vencimiento else None
-            fecha_vencimiento = QDate.fromString(fecha_vencimiento_str, "yyyy-MM-dd") if fecha_vencimiento_str else QDate()
-            self.ui.fecha_vencimientoProducto.setDate(fecha_vencimiento)
+            # Guardar nueva referencia
+            self.producto = producto
+            
+            # Configuración básica de UI
+            self.ui.txt_codBarras.setEnabled(False)
+            self.ui.contenedorModal_proveedores_vinculados.show()
+            self.ui.contenedorModal_proveedores_existentes.show()
+            self.ui.contenedorModal_proveedores_a_vincular.show()
+            self.ui.txt_proveedor.hide()
+            self.ui.etiqueta_proveedor.hide()
+            self.ui.tabla_productos.hide()
+            self.ui.btn_btn_addProduct_agregar_producto.hide()
+            self.ui.btn_btn_addProduct_guardar_producto.hide()
+            self.ui.btn_btn_addProduct_cargar_CSVProductos.hide()
+            self.ui.btn_btn_addProduct_limpiarTablaProductos.hide()
+            self.ui.btn_btn_addProduct_actualizar_producto.show()
+            
+            # Cargar datos básicos
+            self.ui.txt_codBarras.setText(self.producto.codigo_upc)
+            self.ui.txt_nombreProducto.setText(self.producto.nombre_producto)
+            self.ui.txt_marcaProducto.setText(self.producto.marca)
+            self.ui.txt_modeloProducto.setText(self.producto.modelo)
+            self.ui.txt_colorProducto.setText(self.producto.color)
+            self.ui.txt_materialProducto.setText(self.producto.material)
+            self.ui.txtlargo_descripcionProducto.setPlainText(self.producto.descripcion_producto)
+            self.ui.txtlargo_notasProducto.setPlainText(self.producto.notas)
 
-        # Cargar dimensiones si existen
-        if producto.dimensiones:
-            dimensiones = producto.dimensiones.split("-")
+            # Cargar valores numéricos
+            self.ui.decimal_costoInicialProducto.setValue(float(self.producto.costo_inicial))
+            self.ui.decimal_costoFinalProducto.setValue(float(self.producto.costo_final))
+            
+            # Manejo seguro de imagen
+            self._cargar_imagen_producto()
+
+            # Manejo de margen
             try:
-                alto = float(dimensiones[0])
-                ancho = float(dimensiones[1])
-                largo = float(dimensiones[2])
+                margen = int(str(self.producto.margen_porcentaje).strip().rstrip("%"))
+            except:
+                margen = 0
+            self.ui.entero_margenProducto.setValue(margen)
+            
+            # Resto de valores
+            self.ui.decimal_precioVentaProducto.setValue(float(self.producto.precio))
+            self.ui.decimal_existenciaProducto.setValue(float(self.producto.existencia))
+            self.ui.decimal_existenciaMinProducto.setValue(float(self.producto.existencia_minima))
+            self.ui.decimal_existenciaMaxProducto.setValue(float(self.producto.existencia_maxima))
+            self.ui.decimal_pesoProducto.setValue(float(self.producto.peso))
 
-                self.ui.decimal_altoDimensiones.setValue(alto)
-                self.ui.decimal_anchoDimensiones.setValue(ancho)
-                self.ui.decimal_largoDimensiones.setValue(largo)
-            except Exception as e:
-                print(f"Error al cargar dimensiones: {e}")
-        # Actualizar categoría del producto
-        
-        # Actualizar categoría del producto
-        if producto.categoria:
-            categoria_nombre = producto.categoria.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_categoriaProducto, categoria_nombre)
+            # Fechas
+            self._cargar_fechas_producto()
 
-        if producto.unidad_medida_productos:
-            medida_nombre = producto.unidad_medida_productos.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_unidadMedidaProducto, medida_nombre)
+            # Dimensiones
+            self._cargar_dimensiones_producto()
 
-        # Actualizar presentación del producto
-        if producto.presentacion_productos:
-            presentacion_nombre = producto.presentacion_productos.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_presentacionProducto, presentacion_nombre)
+            # Categorías y unidades
+            self._cargar_opciones_seleccionadas()
 
-        if producto.proveedores:
-            self.proveedores_vinculados = {p.id: p for p in producto.proveedores}
-            self.listar_proveedores(self.proveedores_vinculados)
+            # Proveedores
+            if hasattr(producto, 'proveedores') and producto.proveedores:
+                self.manejar_proveedores_vinculados(producto)
+            else:
+                self.proveedores_vinculados = {}
+                self.__proveedores_desvinculados()
+
+        except Exception as e:
+            print(f"Error al cargar datos: {str(e)}")
+            Mensaje().mensaje_informativo(f"Error al cargar datos del producto: {str(e)}")
+
+    def _cargar_dimensiones_producto(self):
+        """Carga las dimensiones del producto de forma segura"""
+        try:
+            if hasattr(self.producto, 'dimensiones') and self.producto.dimensiones:
+                # Separar las dimensiones (formato esperado: "alto-ancho-largo")
+                partes = self.producto.dimensiones.split('-')
+                if len(partes) == 3:
+                    alto, ancho, largo = partes
+                    # Cargar valores con conversión segura a float
+                    self.ui.decimal_altoDimensiones.setValue(float(alto))
+                    self.ui.decimal_anchoDimensiones.setValue(float(ancho))
+                    self.ui.decimal_largoDimensiones.setValue(float(largo))
+                else:
+                    # Formato incorrecto, limpiar campos
+                    self.ui.decimal_altoDimensiones.setValue(0.0)
+                    self.ui.decimal_anchoDimensiones.setValue(0.0)
+                    self.ui.decimal_largoDimensiones.setValue(0.0)
+            else:
+                # No hay dimensiones, limpiar campos
+                self.ui.decimal_altoDimensiones.setValue(0.0)
+                self.ui.decimal_anchoDimensiones.setValue(0.0)
+                self.ui.decimal_largoDimensiones.setValue(0.0)
+        except Exception as e:
+            print(f"Error al cargar dimensiones: {str(e)}")
+            # Limpiar campos en caso de error
+            self.ui.decimal_altoDimensiones.setValue(0.0)
+            self.ui.decimal_anchoDimensiones.setValue(0.0)
+            self.ui.decimal_largoDimensiones.setValue(0.0)
+            
+    def _cargar_imagen_producto(self):
+        """Maneja la carga segura de imágenes"""
+        try:
+            if hasattr(self.producto, 'imagen') and self.producto.imagen:
+                pixmap = QPixmap(self.producto.imagen)
+                if not pixmap.isNull():
+                    self.imagenProducto = self.producto.imagen
+                    pixmap_scaled = pixmap.scaled(
+                        self.ui.etiqueta_fotoProducto.size(), 
+                        Qt.KeepAspectRatio,
+                        Qt.SmoothTransformation
+                    )
+                    self.ui.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
+                    return
+            
+            # Imagen por defecto
+            _translate = QtCore.QCoreApplication.translate
+            default_html = """<html><head/><body><p align="center">
+                            <img src=":/Icons/IconosSVG/subir_imagen.png" width="80" height="70"/>
+                            </p><p align="center"><span style="font-size:16pt; font-family:Arial; font-weight:bold;">
+                            Cargar Imagen</span></p></body></html>"""
+            self.ui.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", default_html))
+            self.imagenProducto = None
+        except Exception as e:
+            print(f"Error cargando imagen: {str(e)}")
+
+    def _cargar_fechas_producto(self):
+        """Maneja la carga segura de fechas"""
+        try:
+            if hasattr(self.producto, 'fecha_fabricacion') and self.producto.fecha_fabricacion:
+                fecha_fabricacion_str = self.producto.fecha_fabricacion.strftime("%Y-%m-%d")
+                self.ui.fecha_fabricacionProducto.setDate(QDate.fromString(fecha_fabricacion_str, "yyyy-MM-dd"))
+            
+            if hasattr(self.producto, 'fecha_vencimiento') and self.producto.fecha_vencimiento:
+                self.ui.opcion_TieneCaducidad.setChecked(True)
+                fecha_vencimiento_str = self.producto.fecha_vencimiento.strftime("%Y-%m-%d")
+                self.ui.fecha_vencimientoProducto.setDate(QDate.fromString(fecha_vencimiento_str, "yyyy-MM-dd"))
+            else:
+                self.ui.opcion_TieneCaducidad.setChecked(False)
+        except:
+            pass
+
+    def _cargar_opciones_seleccionadas(self):
+        """Carga categorías, unidades y presentaciones"""
+        try:
+            if hasattr(self.producto, 'categoria') and self.producto.categoria:
+                FuncionesAuxiliaresController().caja_opciones_mover_elemento(
+                    self.ui.cajaOpciones_categoriaProducto, 
+                    self.producto.categoria.nombre
+                )
+            
+            if hasattr(self.producto, 'unidad_medida_productos') and self.producto.unidad_medida_productos:
+                FuncionesAuxiliaresController().caja_opciones_mover_elemento(
+                    self.ui.cajaOpciones_unidadMedidaProducto,
+                    self.producto.unidad_medida_productos.nombre
+                )
+            
+            if hasattr(self.producto, 'presentacion_productos') and self.producto.presentacion_productos:
+                FuncionesAuxiliaresController().caja_opciones_mover_elemento(
+                    self.ui.cajaOpciones_presentacionProducto,
+                    self.producto.presentacion_productos.nombre
+                )
+        except Exception as e:
+            print(f"Error cargando opciones: {str(e)}")
+    
+    def manejar_proveedores_vinculados(self, producto):
+        """Configura los proveedores vinculados al producto"""
+        self.proveedores_vinculados = {p.id: p for p in producto.proveedores} if producto.proveedores else {}
+        self.listar_proveedores(self.proveedores_vinculados)
+        self.__proveedores_desvinculados()  # Actualizar lista de no vinculados
     
     def listar_proveedores(self, proveedores):
         self.ui.lista_proveedores_vinculados.clear()
@@ -754,6 +824,10 @@ class Admin_productosController(QWidget):
         self.__proveedores_desvinculados()
         
     def __proveedores_desvinculados(self):
+        """Calcula y muestra proveedores no vinculados"""
+        if not hasattr(self, 'proveedores_vinculados'):
+            self.proveedores_vinculados = {}
+        
         self.proveedores_no_vinculados = {
             pid: p for pid, p in self.proveedores_generales_del_sistema_dict.items()
             if pid not in self.proveedores_vinculados
@@ -770,33 +844,16 @@ class Admin_productosController(QWidget):
             self.proveedor_id = None
 
     def listar_proveedores_existentes(self):
+            """Muestra proveedores disponibles para vincular"""
             self.ui.lista_todos_los_proveedores.clear()
             self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
             
-            if not self.proveedores_vinculados:  # Si proveedores vinculados está vacío
-                # Mostrar todos los proveedores
-                for proveedor_id, proveedor in self.proveedores_generales_del_sistema_dict.items():
-                    # Crear el item con el nombre del proveedor
-                    item = QListWidgetItem(proveedor.nombre)  # Solo mostrar el nombre
-                    item.setIcon(self.icono_proveedor)
-                    
-                    # Almacenar tanto el id como el objeto del proveedor en UserRole
-                    item.setData(Qt.UserRole, (proveedor_id, proveedor))  # Guardamos el id y el objeto
-                    
-                    # Agregar el item a la lista
-                    self.ui.lista_todos_los_proveedores.addItem(item)
-            else:
-                # Mostrar los proveedores no vinculados
-                for proveedor_id, proveedor in self.proveedores_no_vinculados.items():
-                    # Crear el item con el nombre del proveedor
-                    item = QListWidgetItem(proveedor.nombre)  # Solo mostrar el nombre
-                    item.setIcon(self.icono_proveedor)
-                    
-                    # Almacenar tanto el id como el objeto del proveedor en UserRole
-                    item.setData(Qt.UserRole, (proveedor_id, proveedor))  # Guardamos el id y el objeto
-                    
-                    # Agregar el item a la lista
-                    self.ui.lista_todos_los_proveedores.addItem(item)
+            # Mostrar todos los proveedores no vinculados
+            for proveedor in self.proveedores_no_vinculados.values():
+                item = QListWidgetItem(proveedor.nombre)
+                item.setIcon(self.icono_proveedor)
+                item.setData(Qt.UserRole, (proveedor.id, proveedor))
+                self.ui.lista_todos_los_proveedores.addItem(item)
     
     def buscar_proveedor_existente(self):
         nombre = self.ui.txt_buscar_proveedor_a_vincular.text().strip()
@@ -1014,6 +1071,7 @@ class Productos(QWidget):
         self.ui.btn_btn_adminProductos_buscar.clicked.connect(self.buscar_producto)
         self.ui.btn_btn_adminProductos_ExistenciaProducto.clicked.connect(self.existencia_productos)
         self.ui.btn_RefrescarTabla.clicked.connect(self.consultar_productos_db)
+        self.ui.btn_RefrescarTabla_paginar.clicked.connect(self.cargar_mas_productos)
         # self.comprobar_modelo_tabla_productos()
         
         self.producto_actual = None
@@ -1024,33 +1082,82 @@ class Productos(QWidget):
         self.codigo_upc_producto = None
         self.AdminProductos = None
         self.ventana_existencia_productos = None
+        self.cantidad_inicial_consulta = 0
+        self.cantidad_final_consulta = 100
+        self.busqueda_realizada = False
+        self.nombre_producto = None
+        self.codigo_del_producto = None
         
     def  buscar_producto(self):
-        nombre_producto = self.ui.txt_buscar.text().strip()
-        codigo_del_producto = self.ui.txt_buscar_productoUPC.text().strip()
-        if nombre_producto == "" and codigo_del_producto == "":
-            Mensaje().mensaje_informativo("No haz insertado texto para realizar la busqueda")
+        # Obtener valores actuales de los campos de búsqueda
+        nuevo_nombre = self.ui.txt_buscar.text().strip()
+        nuevo_codigo = self.ui.txt_buscar_productoUPC.text().strip()
+        
+        # Verificar si los parámetros de búsqueda cambiaron
+        busqueda_nueva = (nuevo_nombre != self.nombre_producto or 
+                        nuevo_codigo != self.codigo_del_producto)
+        
+        # Actualizar los valores
+        self.nombre_producto = nuevo_nombre
+        self.codigo_del_producto = nuevo_codigo
+        
+        # Validaciones
+        if not self.nombre_producto and not self.codigo_del_producto:
+            Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
             return
-        elif nombre_producto and codigo_del_producto:
-            Mensaje().mensaje_informativo("Solo puedes realizar la consulta por nombre o por codigo del producto. No ambos")
+        elif self.nombre_producto and self.codigo_del_producto:
+            Mensaje().mensaje_informativo("Solo puedes buscar por nombre o por código")
             return
+        
         self.modal_espera_local()
+        
+        if not hasattr(self, 'cantidad_inicial_consulta'):
+            self.cantidad_inicial_consulta = 0
+        else:
+            self.cantidad_inicial_consulta = 0  # Reinicia para nueva consulta
+        
+        # Reiniciar paginación solo si es una búsqueda nueva
+        if busqueda_nueva:
+            self.cantidad_inicial_consulta = 0
+            self.busqueda_realizada = True
+        
+        # Limpiar tabla solo para búsqueda nueva
+        if busqueda_nueva and hasattr(self, 'modelo_tabla_productos'):
+            self.modelo_tabla_productos.clear()
+            
+        self.comprobar_modelo_tabla_productos() 
         self.consultor = Consultas_segundo_plano()
-        self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.listar_productos)
         self.consultor.ejecutar_hilo(
-            funcion=self.busar_producto_query,
-            nombre_producto = nombre_producto,
-            codigo_del_producto = codigo_del_producto
-            )
-        
-    def busar_producto_query(self, session, nombre_producto, codigo_del_producto):
+            funcion=self.buscar_producto_query,
+            nombre_producto=self.nombre_producto,
+            codigo_del_producto=self.codigo_del_producto
+        )
+
+    def buscar_producto_query(self, session, nombre_producto, codigo_del_producto):
         if nombre_producto:
-            datos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre_producto)
+            datos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre_producto, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
         elif codigo_del_producto:
             datos, estado = ProductosModel(session).consultar_producto_por_codigoUPC(codigo_upc=codigo_del_producto)
             datos = [datos] if estado else []
-        return datos, estado 
+        if estado:
+            self.busqueda_realizada = True
+            print(f"DEBUG - Obtenidos: {len(datos) if datos else 0} registros")
+            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        return datos, estado
+    
+    def paginar_busqueda_por_filtros(self, session):
+        if self.nombre_producto:
+            datos, estado = ProductosModel(session).consultar_por_nombre(
+                nombre=self.nombre_producto,
+                cantidad_inicial=self.cantidad_inicial_consulta,
+                cantidad_final=self.cantidad_final_consulta
+            )
+            print(f"DEBUG - Obtenidos: {len(datos) if datos else 0} registros")
+            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        return datos, estado
     
     def agregar_producto(self):
         if self.AdminProductos is None or self.AdminProductos.isVisible():
@@ -1101,95 +1208,97 @@ class Productos(QWidget):
         self.enviar_produto_al_ui(self.producto_actual)
         
     def enviar_produto_al_ui(self, producto):
-        if self.AdminProductos is None or not self.AdminProductos.isVisible():
+        if self.AdminProductos is None:
+            # Crear nueva instancia
             self.AdminProductos = Admin_productosController(self)
-            self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
-            self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(self.AdminProductos.listar_presentaciones_productos)
-            self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
-            self.AdminProductos.VENTANA_CERRADA_PRODUCTOS.connect(self.ventana_productos_cerrada)
-            self.LISTAR_PROVEEDORES_EXISTENTES_SIGNAL.connect(self.AdminProductos.obtener_proveedores)
+            self.AdminProductos.closed.connect(self.__ventana_destruida)
+            
+            
+            # Conectar señales (solo una vez)
+            if not hasattr(self, '_signals_connected'):
+                self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
+                self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(self.AdminProductos.listar_presentaciones_productos)
+                self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
+                self.AdminProductos.VENTANA_CERRADA_PRODUCTOS.connect(self.ventana_productos_cerrada)
+                self.LISTAR_PROVEEDORES_EXISTENTES_SIGNAL.connect(self.AdminProductos.obtener_proveedores)
+                self._signals_connected = True
+            
+            # Emitir señales
             self.LISTAR_PROVEEDORES_EXISTENTES_SIGNAL.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
-            self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(self.producto_actual)
+            
+            # Configurar ventana
+            self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
             self.AdminProductos.setParent(self)
             self.AdminProductos.setStyleSheet(self.AdminProductos.styleSheet())
             self.AdminProductos.show()
         else:
-            # Si ya existe y está visible, solo elevar la ventana
+            # Si ya existe y está visible, actualizar contenido
             self.AdminProductos.raise_()
             self.AdminProductos.activateWindow()
+            self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
         
         self.codigo_upc_producto = None
-        
+    
+    def __ventana_destruida(self):
+        self.AdminProductos = None
+    
     def listar_productos(self, productos, estado):
-        print("listando")
+        """Maneja los resultados de búsqueda"""
         if not estado:
-            Mensaje().mensaje_informativo("No hay productos para mostrar")
-            self.comprobar_modelo_tabla_productos()
-            self.modelo_tabla_productos.removeRows(0, self.modelo_tabla_productos.rowCount())
+            Mensaje().mensaje_informativo("Error en la consulta")
+            QTimer.singleShot(0, self.cargando_cerrar)
             return
-        self.productos = productos
-        self.comprobar_modelo_tabla_productos()
-        self.modelo_tabla_productos.removeRows(0, self.modelo_tabla_productos.rowCount())
-
-        # Establecer los encabezados de la tabla
-        cabeceras = [
-            "Proveedor", "Codigo upc", "Nombre Producto", "Categoria", "Marca", "Modelo", "Color", 
-            "Material", "Unidad de Medida", "Presentacion", "Costo Inicial", "Costo Final", "Margen Porcentaje", "Precio", 
-            "Existencia", "Existencia Minima", "Existencia Maxima", "Peso", 
-            "Dimensiones", "Descripcion Producto", "Notas", "Fecha Vencimiento", "Fecha Fabricacion", "Imagen"
-        ]
-        self.modelo_tabla_productos.setHorizontalHeaderLabels(cabeceras)
-
-        # Recorrer la lista de productos
-        for producto in self.productos:
-            list_productos = []
-
-            for col in cabeceras:
-                value = ""
-
-                if col.lower() == "proveedor":
-                    value = ", ".join([proveedor.nombre for proveedor in producto.proveedores]) if producto.proveedores else ""
-                elif col.lower() == "categoria":
-                    value = producto.categoria.nombre if producto.categoria else ""
-                elif col.lower() == "unidad de medida":
-                    value = producto.unidad_medida_productos.nombre if producto.unidad_medida_productos else ""
-                elif col.lower() == "presentacion":
-                    value = producto.presentacion_productos.nombre if producto.presentacion_productos else ""
-                elif hasattr(producto, col.lower().replace(" ", "_")):
-                    value = getattr(producto, col.lower().replace(" ", "_"))
-
-                item = QStandardItem(str(value))
-                item.setTextAlignment(Qt.AlignCenter)
-
-                # 💡 Asociar el objeto completo al item de la columna "Codigo upc" (columna 1)
-                if col.lower() == "codigo upc":
-                    item.setData(producto, Qt.UserRole)
-
-                list_productos.append(item)
-
-            self.modelo_tabla_productos.appendRow(list_productos)
-
-        # Establecer el modelo en la tabla
-        self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
-        self.ui.tabla_productos.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.ui.tabla_productos.resizeColumnsToContents()
-
-        # Conectar señal solo si no está conectada
-        if self.seleccion_conectada_productos:
-            self.ui.tabla_productos.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
-            self.seleccion_conectada_productos = False
-
-        self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
-        self.seleccion_conectada_productos = True
-
-        # QTimer.singleShot(0, self.cargando_cerrar)
-
+            
+        if not productos:
+            Mensaje().mensaje_informativo("No se encontraron productos")
+            QTimer.singleShot(0, self.cargando_cerrar)
+            return
+        
+        # Asegúrate que el modelo existe
+        if not hasattr(self, 'modelo_tabla_productos'):
+            self.comprobar_modelo_tabla_productos()
+        
+        # Actualiza los datos (siempre reset para búsquedas)
+        self.modelo_tabla_productos.update_data(productos, reset=True)
+        
+        QTimer.singleShot(0, self.cargando_cerrar)
+        
+    def cargar_mas_productos(self):
+        """Carga los siguientes productos manteniendo los actuales"""
+        if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
+            # Si no hay búsqueda previa, cargar productos normales
+            self.consultor = Consultas_segundo_plano()
+            self.consultor.resultado.connect(self.agregar_productos_en_tabla)
+            self.consultor.ejecutar_hilo(funcion=self.obtener_productos_query)
+        else:
+            # Si hay búsqueda previa, paginar los filtros
+            self.modal_espera_local()
+            self.consultor = Consultas_segundo_plano()
+            self.consultor.resultado.connect(self.agregar_productos_en_tabla)
+            self.consultor.ejecutar_hilo(funcion=self.paginar_busqueda_por_filtros)
+            
+        
+        
+    def agregar_productos_en_tabla(self, nuevos_productos, estado):
+        """Agrega nuevos productos al modelo existente"""
+        if not estado or not nuevos_productos:
+            Mensaje().mensaje_informativo("No hay más productos por mostrar")
+            return
+        # Agrega los nuevos productos al modelo
+        self.modelo_tabla_productos.update_data(nuevos_productos, reset=False)
+        QTimer.singleShot(0, self.cargando_cerrar)
+    
     def consultar_productos_db(self):
         self.modal_espera_local()
-        self.comprobar_modelo_tabla_productos()
+        if not hasattr(self, 'cantidad_inicial_consulta'):
+            self.cantidad_inicial_consulta = 0
+        else:
+            self.cantidad_inicial_consulta = 0  # Reinicia para nueva consulta
+            
+        self.comprobar_modelo_tabla_productos() 
         self.consultor = Consultas_segundo_plano()
         self.consultor.resultado.connect(self.listar_productos)
         self.consultor.ejecutar_hilo(funcion=self.obtener_productos_query)
@@ -1206,35 +1315,70 @@ class Productos(QWidget):
         if self.cargando is not None:
             self.cargando.close()
             self.cargando = None
+        print(self.cantidad_inicial_consulta, " ", self.cantidad_final_consulta)
             
     def obtener_productos_query(self, session):
-        print("obteniendo")
-        productos, estado = ProductosModel(session).obtener_productos()
-        productos = [productos] if estado else []
+        productos, estado = ProductosModel(session).obtener_productos(
+            offset=self.cantidad_inicial_consulta,
+            limit=self.cantidad_final_consulta
+        )
+        print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
+        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+        self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        
         return productos, estado
     
     def mostrar_error_consulta(self, mensaje):
         print(f"❌ Error en la consulta: {mensaje}")
         # Aquí podrías usar un QMessageBox si estás en una GUI
         
-    def obtener_id_elemento_tabla_productos(self, current, previus = None):
-        if current.isValid():
-            fila = current.row()
-            # Accedemos al item de la columna que tiene el objeto (columna 1 = Codigo upc)
-            item = self.modelo_tabla_productos.item(fila, 1)
-            if item:
-                producto = item.data(Qt.UserRole)
-                if producto:
-                    print(producto)
-                    self.producto_actual = producto
+    def obtener_id_elemento_tabla_productos(self, index):
+        try:
+            if not index.isValid():
+                return None
+                
+            if not hasattr(self, 'modelo_tabla_productos'):
+                return None
+                
+            # Obtener el producto completo
+            producto = self.modelo_tabla_productos.data(index, Qt.UserRole)
+            self.producto_actual = producto
+            
+            if not producto:
+                return None
+                
+            # Verificar si es un objeto producto válido
+            if hasattr(producto, 'id'):
+                return producto.id
+            elif hasattr(producto, 'codigo_upc'):  # Opcional: alternativa por si acaso
+                return producto.codigo_upc
+                
+            return None
+            
+        except Exception as e:
+            print(f"Error al obtener ID del producto: {str(e)}")
+            return None
     
     def comprobar_modelo_tabla_productos(self):
-        # Si no existe el modelo de la tabla, crearlo como QStandardItemModel
         if not hasattr(self, 'modelo_tabla_productos'):
-            self.modelo_tabla_productos = QStandardItemModel()
-
-            # Asignar el modelo al QTableView si no está asignado
-            self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
+            self.modelo_tabla_productos = ProductosAbstractModel()
+            
+            # Configurar tabla
+            tabla = self.ui.tabla_productos
+            tabla.setModel(self.modelo_tabla_productos)
+            tabla.setSortingEnabled(True)
+            tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            
+            # Conexión de señales
+            self.modelo_tabla_productos.data_updated.connect(
+                lambda: tabla.resizeColumnsToContents())
+            
+            # Configuración de selección
+            if hasattr(self, 'seleccion_conectada_productos') and self.seleccion_conectada_productos:
+                tabla.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
+            
+            tabla.clicked.connect(self.obtener_id_elemento_tabla_productos)
+            self.seleccion_conectada_productos = True
 
     def existencia_productos(self):
         if self.producto_actual is None:
@@ -1251,4 +1395,95 @@ class Productos(QWidget):
         self.ventana_existencia_productos = None
         self.producto_actual = None
         
+
+
+class ProductosAbstractModel(QAbstractTableModel):
+    data_updated = Signal()
     
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._productos = []
+        self._headers = [
+            "Proveedor", "Codigo upc", "Nombre Producto", "Categoria", "Marca", "Modelo", "Color",
+            "Material", "Unidad de Medida", "Presentacion", "Costo Inicial", "Costo Final", "Margen Porcentaje", "Precio",
+            "Existencia", "Existencia Minima", "Existencia Maxima", "Peso",
+            "Dimensiones", "Descripcion Producto", "Notas", "Fecha Vencimiento", "Fecha Fabricacion", "Imagen"
+        ]
+        self._attr_map = {
+            "categoria": lambda p: p.categoria.nombre if p.categoria else "",
+            "unidad de medida": lambda p: p.unidad_medida_productos.nombre if p.unidad_medida_productos else "",
+            "presentacion": lambda p: p.presentacion_productos.nombre if p.presentacion_productos else "",
+            "proveedor": lambda p: ", ".join([pr.nombre for pr in p.proveedores]) if p.proveedores else "",
+        }
+
+    def rowCount(self, parent=None):
+        return len(self._productos)
+
+    def columnCount(self, parent=None):
+        return len(self._headers)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+            
+        producto = self._productos[index.row()]
+        col_name = self._headers[index.column()].lower()
+        
+        if role == Qt.DisplayRole:
+            value = self._attr_map.get(col_name, 
+                     lambda p: getattr(p, col_name.replace(" ", "_"), ""))(producto)
+            return str(value)
+        
+        elif role == Qt.UserRole:
+        # Devuelve siempre el objeto producto completo para UserRole
+            return producto
+            
+        elif role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+            
+        return None
+            
+        # elif role == Qt.UserRole and col_name == "codigo upc":
+        #     return producto
+            
+        # elif role == Qt.TextAlignmentRole:
+        #     return Qt.AlignCenter
+            
+        # return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self._headers[section]
+        return None
+
+    def update_data(self, productos, reset=False):
+        """Actualiza los datos del modelo de manera segura"""
+        try:
+            if reset:
+                self.beginResetModel()
+                self._productos = productos.copy() if productos else []
+                self.endResetModel()
+            else:
+                if productos:
+                    start = len(self._productos)
+                    end = start + len(productos) - 1
+                    self.beginInsertRows(QModelIndex(), start, end)
+                    self._productos.extend(productos)
+                    self.endInsertRows()
+            
+            self.data_updated.emit()
+        except Exception as e:
+            print(f"Error actualizando modelo: {str(e)}")
+            self.beginResetModel()
+            self._productos = []
+            self.endResetModel()
+    
+    def clear(self):
+        """Limpia el modelo de manera segura"""
+        try:
+            self.beginResetModel()
+            self._productos = []
+            self.endResetModel()
+            self.data_updated.emit()
+        except Exception as e:
+            print(f"Error limpiando modelo: {str(e)}")

@@ -14,8 +14,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">*{color: #1d1c1c;}
-#Control_Productos{
+   <string notr="true">#Control_Productos{
 background: #fffefb;
 }
 [objectName*=&quot;contenedor&quot;]{
@@ -53,15 +52,15 @@ background:#68a67d;
 #btn_btn_eliminar:hover{
 background:#EE1D52;
 }
-#btn_RefrescarTabla{
+[objectName*=&quot;btn_RefrescarTabla&quot;]{
 border-radius: 2px;
 background: #e0e0e0;
 padding: 5px;
 }
-#btn_RefrescarTabla:hover{
+[objectName*=&quot;btn_RefrescarTabla&quot;]:hover{
 background: rgb(179, 179, 179);
 }
-#btn_RefrescarTabla:pressed{
+[objectName*=&quot;btn_RefrescarTabla&quot;]:pressed{
 background: #b6ccd8 ;
 }
 #etiqueta_buscar{
@@ -395,6 +394,29 @@ color: black;
                   </size>
                  </property>
                 </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_RefrescarTabla_paginar">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>Mostrar más productos</string>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="../../Source/iconosSVG.qrc">
+                   <normaloff>:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg</normaloff>:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>18</width>
+                   <height>18</height>
+                  </size>
+                 </property>
+                </widget>
                </item>
                <item alignment="Qt::AlignmentFlag::AlignVCenter">
                 <widget class="QPushButton" name="btn_RefrescarTabla">

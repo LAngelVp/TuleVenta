@@ -27,8 +27,7 @@ class Ui_Control_Productos(object):
         if not Control_Productos.objectName():
             Control_Productos.setObjectName(u"Control_Productos")
         Control_Productos.resize(743, 433)
-        Control_Productos.setStyleSheet(u"*{color: #1d1c1c;}\n"
-"#Control_Productos{\n"
+        Control_Productos.setStyleSheet(u"#Control_Productos{\n"
 "background: #fffefb;\n"
 "}\n"
 "[objectName*=\"contenedor\"]{\n"
@@ -66,16 +65,16 @@ class Ui_Control_Productos(object):
 "#btn_btn_eliminar:hover{\n"
 "background:#EE1D52;\n"
 "}\n"
-"#btn_RefrescarTabla{\n"
+"[objectName*=\"btn_RefrescarTabla\"]{\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
 "padding: 5px;\n"
 "}\n"
-"#btn_RefrescarTabla:hover{\n"
+"[objectName*=\"btn_RefrescarTabla\"]:hover{\n"
 "background: rgb(179, 179, 179);\n"
 "}\n"
-"#btn_Refre"
-                        "scarTabla:pressed{\n"
+""
+                        "[objectName*=\"btn_RefrescarTabla\"]:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
 "#etiqueta_buscar{\n"
@@ -117,10 +116,10 @@ class Ui_Control_Productos(object):
 "color: white;\n"
 "font-size: 16px;\n"
 "padding: 5px;\n"
-"border: 1px solid gray;\n"
+"border:"
+                        " 1px solid gray;\n"
 "}\n"
-""
-                        "\n"
+"\n"
 "[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
 "[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
 "background-color: #023375;\n"
@@ -257,12 +256,22 @@ class Ui_Control_Productos(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
+        self.btn_RefrescarTabla_paginar = QPushButton(self.contenedor_frame)
+        self.btn_RefrescarTabla_paginar.setObjectName(u"btn_RefrescarTabla_paginar")
+        self.btn_RefrescarTabla_paginar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon3 = QIcon()
+        icon3.addFile(u":/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla_paginar.setIcon(icon3)
+        self.btn_RefrescarTabla_paginar.setIconSize(QSize(18, 18))
+
+        self.horizontalLayout_2.addWidget(self.btn_RefrescarTabla_paginar)
+
         self.btn_RefrescarTabla = QPushButton(self.contenedor_frame)
         self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
         self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon4)
 
         self.horizontalLayout_2.addWidget(self.btn_RefrescarTabla, 0, Qt.AlignmentFlag.AlignVCenter)
 
@@ -319,6 +328,10 @@ class Ui_Control_Productos(object):
         self.btn_btn_adminProductos_buscar.setToolTip(QCoreApplication.translate("Control_Productos", u"Buscar producto", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_adminProductos_buscar.setText(QCoreApplication.translate("Control_Productos", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla_paginar.setToolTip(QCoreApplication.translate("Control_Productos", u"Mostrar m\u00e1s productos", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla_paginar.setText("")
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Productos", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)

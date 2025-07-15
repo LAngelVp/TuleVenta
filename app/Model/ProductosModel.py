@@ -298,21 +298,21 @@ class ProductosModel:
 
         return producto_actual, True
         
-    def obtener_productos(self):
+    def obtener_productos(self, offset=0, limit=100):
         productos = (
-            self.session.query(Productos).options(
+            self.session.query(Productos)
+            .options(
                 joinedload(Productos.proveedores),
                 joinedload(Productos.categoria),
                 joinedload(Productos.unidad_medida_productos),
                 joinedload(Productos.presentacion_productos)
             )
-        .order_by(Productos.nombre_producto.asc())
-        .all()
+            .order_by(Productos.nombre_producto.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
         )
-        if productos:
-            return productos, True
-        else:
-            return None, False
+        return productos, bool(productos)
         
     def eliminar_producto(self, codigo_producto):
         producto = self.session.query(Productos).filter(Productos.codigo_upc == codigo_producto).first()
@@ -335,7 +335,7 @@ class ProductosModel:
         else:
             return None, False
     
-    def consultar_por_nombre(self, nombre):
+    def consultar_por_nombre(self, nombre, cantidad_inicial=0, cantidad_final=100):
         productos = (
             self.session.query(Productos)
             .options(
@@ -346,6 +346,8 @@ class ProductosModel:
             )
             .filter(Productos.nombre_producto.ilike(f"%{nombre}%"))
             .order_by(Productos.nombre_producto.asc())
+            .offset(cantidad_inicial)
+            .limit(cantidad_final)
             .all()
         )
 
