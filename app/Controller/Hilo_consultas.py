@@ -40,7 +40,7 @@ class Consultas_segundo_plano(QObject):
                     "Descripción", "Notas", "Fecha Vencimiento", "Fecha Fabricación", "Imagen"
                 ]
 
-                df = pd.read_excel(documento, na_filter=False)
+                df = pd.read_csv(documento, na_filter=False)
 
                 columnas_faltantes = [col for col in columnas_esperadas if col not in df.columns]
                 if columnas_faltantes:

@@ -354,8 +354,8 @@ class Admin_productosController(QWidget):
             "ancho_dimensiones": self.ui.decimal_anchoDimensiones.value(),
             "descripcion_producto": self.ui.txtlargo_descripcionProducto.toPlainText(),
             "notas_producto": self.ui.txtlargo_notasProducto.toPlainText(),
-            "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto.date().toPyDate(),
-            "fecha_fabricacion_producto": self.ui.fecha_fabricacionProducto.date().toPyDate(),
+            "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto.date().toPython(),
+            "fecha_fabricacion_producto": self.ui.fecha_fabricacionProducto.date().toPython(),
         }
         return datos
         
@@ -989,7 +989,7 @@ class Admin_productosController(QWidget):
             del self.lista_proveedores_a_asignar[proveedor_id]  # Eliminarlo del diccionario de proveedores a asignar
 
     def __leer_archivo_csv(self):
-        documento, _ = QFileDialog.getOpenFileName(self, "Selecciona un documento de Excel", "", "Archivos Excel (*.xlsx *.xls)")
+        documento, _ = QFileDialog.getOpenFileName(self, "Selecciona un documento de Excel", "", "Archivos Excel (*.csv)")
         if not documento:
             return
         self.modal_espera_local()
@@ -999,12 +999,12 @@ class Admin_productosController(QWidget):
         self.consultor.resultado_productos_masivos_excel.connect(self.resultado_documento_excel)
         self.consultor.lecturas_y_procesamiento(documento, self.lista_productos)
 
-    def resultado_documento_excel(self, lista_nuevos_productos, duplicados):
-        self.lista_productos.extend(lista_nuevos_productos)
-        self.__cargar_datos_en_tabla(self.lista_productos)
+    # def resultado_documento_excel(self, lista_nuevos_productos, duplicados):
+    #     self.lista_productos.extend(lista_nuevos_productos)
+    #     self.__cargar_datos_en_tabla(self.lista_productos)
 
-        if duplicados:
-            Mensaje().mensaje_informativo("Se encontraron registros duplicados que no fueron agregados.\nSolo se agregaron los registros sin duplicar.")
+    #     if duplicados:
+    #         Mensaje().mensaje_informativo("Se encontraron registros duplicados que no fueron agregados.\nSolo se agregaron los registros sin duplicar.")
 
     def mensaje_error_docuemnto_xlsx(self, error):
         print(error)
@@ -1032,7 +1032,17 @@ class Admin_productosController(QWidget):
     
     def comprobar_existencia_modelo_tabla(self):
         if not hasattr(self, 'modelo_tabla_productos'):
-                self.modelo_tabla_productos = QStandardItemModel()
+            self.modelo_tabla_productos = ProductosAbstractModel()
+            
+            # Configurar tabla
+            tabla = self.ui.tabla_productos
+            tabla.setModel(self.modelo_tabla_productos)
+            tabla.setSortingEnabled(True)
+            tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            
+            # Conexión de señales
+            self.modelo_tabla_productos.data_updated.connect(
+                lambda: tabla.resizeColumnsToContents())
 
     def calcular_precio_venta(self):
         costo_final = self.ui.decimal_costoFinalProducto.value()
@@ -1244,6 +1254,7 @@ class Productos(QWidget):
     
     def __ventana_destruida(self):
         self.AdminProductos = None
+        self.producto_actual = None
     
     def listar_productos(self, productos, estado):
         """Maneja los resultados de búsqueda"""
