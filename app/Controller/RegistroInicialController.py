@@ -621,11 +621,11 @@ p, li { white-space: pre-wrap; }
 
         if self.validar_datos(datos=datos):
             self.mostrar_modal_local()
-            self.consultor = Consultas_segundo_plano()
+            self.consultor = WorkerDB()
             self.consultor.error.connect(self.mostrar_error_hilo)
             self.consultor.terminado.connect(self.cargando_cerrar)
             self.consultor.resultado.connect(self.mostrar_estado_usuario)
-            self.consultor.ejecutar_hilo(
+            self.consultor.ejecutar(
                 funcion=self.almacenar_informacion_query,
                 uso_del_sistema=uso_del_sistema,
                 id_empleado=id_empleado,
@@ -738,11 +738,11 @@ p, li { white-space: pre-wrap; }
         print(self.empleado_existente, id_empleado)
         if self.validar_datos(datos) and id_empleado is not None:
             self.mostrar_modal_local()
-            self.consultor = Consultas_segundo_plano()
+            self.consultor = WorkerDB()
             self.consultor.error.connect(self.mostrar_error_hilo)
             self.consultor.terminado.connect(self.cargando_cerrar)
             self.consultor.resultado.connect(self.mostrar_estado_usuario_actualizado)
-            self.consultor.ejecutar_hilo(
+            self.consultor.ejecutar(
                 funcion=self.actualizar_empleado_query,
                 id_empleado=id_empleado,
                 imagen = self.file_name,

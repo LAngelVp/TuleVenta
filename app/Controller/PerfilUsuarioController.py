@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
-from .Hilo_consultas import Consultas_segundo_plano
+from .Hilo_consultas import WorkerDB
 from ..Model.EmpleadoModel import EmpleadosModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from ..Model.PuestoModel import PuestoModel
@@ -56,9 +56,9 @@ class Perfil(QWidget):
     
     def consulta_datos_hilo(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_campos)
-        self.consultor.ejecutar_hilo(funcion=self.consulta_empleado_query)
+        self.consultor.ejecutar(funcion=self.consulta_empleado_query)
     
     def consulta_empleado_query(self, session):
         self.empleado, estado = EmpleadosModel(session).obtener_empleado_detallado_porId(id_empleado=self.usuario["id_usuario"])
@@ -163,9 +163,9 @@ class Perfil(QWidget):
         }
         
     def consultar_departamentos_hilo(self):
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_caja_departamentos)
-        self.consultor.ejecutar_hilo(funcion=self.departamentos_query)
+        self.consultor.ejecutar(funcion=self.departamentos_query)
     
     def departamentos_query(self, session):
         departamentos, estado = DepartamentosModel(session).obtener_todos()
@@ -179,9 +179,9 @@ class Perfil(QWidget):
             AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_departamentos)
             
     def consulta_puestos_hilo(self):
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_caja_puestos)
-        self.consultor.ejecutar_hilo(funcion=self.puestos_query)
+        self.consultor.ejecutar(funcion=self.puestos_query)
     
     def puestos_query(self, session):
         puestos, estado = PuestoModel(session).obtener_todos()
@@ -195,9 +195,9 @@ class Perfil(QWidget):
             AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_puestos)
             
     def consulta_sucursales_hilo(self):
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_caja_sucursales)
-        self.consultor.ejecutar_hilo(funcion=self.sucursales_query)
+        self.consultor.ejecutar(funcion=self.sucursales_query)
     
     def sucursales_query(self, session):
         sucursales, estado = SucursalesModel(session).obtener_todo()
