@@ -7,54 +7,48 @@ from contextlib import contextmanager
 
 class WorkerDB(QObject):
     terminado = Signal()
-    resultado = Signal(object, bool, str)
+    resultado = Signal(object, bool)  # Simplificado a (data, estado)
     error = Signal(str)
-    resultado_productos_masivos_excel = Signal(object, object)
-
+    
     def __init__(self):
         super().__init__()
         self.thread = QThread()
         self.moveToThread(self.thread)
         self.thread.started.connect(self._run)
+        self._funcion = None
+        self._args = ()
+        self._kwargs = {}
         
     def ejecutar(self, funcion, *args, **kwargs):
-        """Configura los parámetros para la ejecución del hilo"""
+        """Configura la función y parámetros para ejecutar en el hilo"""
+        if self.thread.isRunning():
+            self.thread.quit()
+            self.thread.wait()
+            
         self._funcion = funcion
         self._args = args
         self._kwargs = kwargs
         self.thread.start()
-
+        
     def _run(self):
-        """Método que se ejecuta en el hilo secundario"""
+        """Ejecuta la operación en el hilo secundario"""
         try:
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
-                data, estado = self._funcion(session, *self._args, **self._kwargs)
-                if estado:
-                    self.resultado.emit(data, estado, "")
+                result = self._funcion(session, *self._args, **self._kwargs)
+                
+                # Emitir resultados según el tipo de retorno
+                if isinstance(result, tuple) and len(result) == 2:
+                    data, estado = result
+                    self.resultado.emit(data, estado)
                 else:
-                    self.resultado.emit(None, estado, "No se logró la operación")
+                    self.resultado.emit(result, True)
+                    
         except Exception as e:
-            print(e)
-            self.error.emit(str(e))
+            self.error.emit(f"Error en WorkerDB: {str(e)}")
         finally:
             self.terminado.emit()
             self.thread.quit()
-
-    def detener(self):
-        """Detiene el hilo de forma segura"""
-        if self.thread.isRunning():
-            self.thread.quit()
-            self.thread.wait()
-
-    @contextmanager
-    def ejecutar(self, funcion, *args, **kwargs):
-        """Context manager para ejecución automática"""
-        try:
-            self.ejecutar(funcion, *args, **kwargs)
-            yield self
-        finally:
-            self.detener()
 
 class ProcesadorArchivo(QObject):
     terminado = Signal()
