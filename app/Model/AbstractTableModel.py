@@ -1,4 +1,5 @@
 from PySide6.QtCore import QAbstractTableModel, Qt, Signal, QModelIndex
+from PySide6.QtWidgets import QTableView, QHeaderView
 from typing import Any, List, Dict, Callable, Optional
 
 class GenericTableModel(QAbstractTableModel):

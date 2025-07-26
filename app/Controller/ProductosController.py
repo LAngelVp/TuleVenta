@@ -683,7 +683,7 @@ class Admin_productosController(QWidget):
             self._cargar_opciones_seleccionadas()
 
             # Proveedores
-            if hasattr(producto, 'proveedores') and producto.proveedores:
+            if producto.proveedores:
                 self.manejar_proveedores_vinculados(producto)
             else:
                 self.proveedores_vinculados = {}
@@ -807,15 +807,22 @@ class Admin_productosController(QWidget):
         self.lista_productos = []
                 
     def obtener_proveedores(self):
-        self.consultor = WorkerDB()
-        self.consultor.resultado.connect(self.__almacenar_proveedores_del_sistema)
-        self.consultor.ejecutar(funcion=self.__obtener_proveedores_query)
+        try:
+            self.cleanup_worker()
+            self.consultor = WorkerDB()
+            if self.consultor:
+                self.consultor.resultado.connect(self.__almacenar_proveedores_del_sistema)
+                self.consultor.ejecutar(funcion=self.__obtener_proveedores_query)
+        except Exception as e:
+            print(f"Error en consultar_productos_db: {str(e)}")
+            self.cleanup_worker()
+            self.mostrar_error_db("Error al iniciar la consulta")
     
     def __obtener_proveedores_query(self, session):
         proveedores, estado = ProveedoresModel(session).obtener_proveedores()
         return proveedores, estado
         
-    def __almacenar_proveedores_del_sistema(self, proveedores, estado):
+    def __almacenar_proveedores_del_sistema(self, proveedores, estado, mensaje = None):
         self.proveedores_generales_del_sistema_dict = {p.id: p for p in (proveedores if proveedores else [])}
         completar = QCompleter([proveedor.nombre for proveedor in self.proveedores_generales_del_sistema_dict.values()])
         completar.setCaseSensitivity(Qt.CaseInsensitive)
@@ -1063,7 +1070,39 @@ class Admin_productosController(QWidget):
         if self.cargando is not None:
             self.cargando.close()
             self.cargando = None
+    
+    def cleanup_worker(self):
+        """Limpia el worker de manera completamente segura"""
+        if not hasattr(self, 'consultor') or self.consultor is None:
+            return
+        try:
+            # Desconectar señales de manera segura
+            try:
+                if self.consultor is not None:
+                    self.consultor.resultado.disconnect()
+                    self.consultor.error.disconnect()
+                    self.consultor.terminado.disconnect()
+            except (RuntimeError, AttributeError):
+                pass  # Las señales ya estaban desconectadas o el objeto es inválido
             
+            # Detener el hilo de manera segura
+            try:
+                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
+                    if self.consultor.thread.isRunning():
+                        self.consultor.thread.quit()
+                        self.consultor.thread.wait(500)  # Esperar máximo 500ms
+            except (RuntimeError, AttributeError):
+                pass
+            
+            # Eliminar el worker
+            try:
+                self.consultor.deleteLater()
+            except RuntimeError:
+                pass
+            
+        finally:
+            # Asegurarse de eliminar la referencia
+            self.consultor = None
 class Productos(QWidget):
     LISTAR_CATEGORIAS_PRODUCTOS = Signal()
     LISTAR_UNIDADES_MEDIDA_PRODUCTOS = Signal()
@@ -1098,6 +1137,7 @@ class Productos(QWidget):
         self.busqueda_realizada = False
         self.nombre_producto = None
         self.codigo_del_producto = None
+        self._signals_connected = None
         
     def  buscar_producto(self):
         # Obtener valores actuales de los campos de búsqueda
@@ -1232,7 +1272,7 @@ class Productos(QWidget):
             
             
             # Conectar señales (solo una vez)
-            if not hasattr(self, '_signals_connected'):
+            if not self._signals_connected:
                 self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
                 self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(self.AdminProductos.listar_presentaciones_productos)
                 self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
@@ -1307,38 +1347,35 @@ class Productos(QWidget):
         """Limpia el worker de manera completamente segura"""
         if not hasattr(self, 'consultor') or self.consultor is None:
             return
-        
         try:
-            # Guardar referencia local
-            worker = self.consultor
-            
             # Desconectar señales de manera segura
             try:
-                if worker is not None:
-                    worker.resultado.disconnect()
-                    worker.error.disconnect()
-                    worker.terminado.disconnect()
+                if self.consultor is not None:
+                    self.consultor.resultado.disconnect()
+                    self.consultor.error.disconnect()
+                    self.consultor.terminado.disconnect()
             except (RuntimeError, AttributeError):
                 pass  # Las señales ya estaban desconectadas o el objeto es inválido
             
             # Detener el hilo de manera segura
             try:
-                if hasattr(worker, 'thread') and worker.thread is not None:
-                    if worker.thread.isRunning():
-                        worker.thread.quit()
-                        worker.thread.wait(500)  # Esperar máximo 500ms
+                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
+                    if self.consultor.thread.isRunning():
+                        self.consultor.thread.quit()
+                        self.consultor.thread.wait(500)  # Esperar máximo 500ms
             except (RuntimeError, AttributeError):
                 pass
             
             # Eliminar el worker
             try:
-                worker.deleteLater()
+                self.consultor.deleteLater()
             except RuntimeError:
                 pass
             
         finally:
             # Asegurarse de eliminar la referencia
             self.consultor = None
+    
     def obtener_productos_query(self, session):
         productos, estado = ProductosModel(session).obtener_productos(
             offset=self.cantidad_inicial_consulta,
@@ -1408,6 +1445,7 @@ class Productos(QWidget):
             self.cargando.close()
             self.cargando = None
         print(self.cantidad_inicial_consulta, " ", self.cantidad_final_consulta)
+        self.cleanup_worker()
                 
     def mostrar_error_db(self, error_msg):
         """Muestra errores de la base de datos"""
@@ -1420,27 +1458,33 @@ class Productos(QWidget):
         # Aquí podrías usar un QMessageBox si estás en una GUI
         
     def obtener_id_elemento_tabla_productos(self, index):
+        print(1)
+        # if not self.producto_actual:
+        #     print(2)
+        #     return None  # Evita acceder a datos si no hay worker activo
         try:
             if not index.isValid():
+                print(3)
                 return None
                 
             if not hasattr(self, 'modelo_tabla_productos'):
+                print(4)
                 return None
                 
             # Obtener el producto completo
             producto = self.modelo_tabla_productos.data(index, Qt.UserRole)
             self.producto_actual = producto
+            print("producto: ",self.producto_actual)
             
-            if not producto:
-                return None
+            # if not producto:
+            #     return None
                 
             # Verificar si es un objeto producto válido
-            if hasattr(producto, 'id'):
-                return producto.id
-            elif hasattr(producto, 'codigo_upc'):  # Opcional: alternativa por si acaso
-                return producto.codigo_upc
+            # if hasattr(producto, 'id'):
+            #     print(producto.id)
+            #     return producto.id
                 
-            return None
+            # return None
             
         except Exception as e:
             print(f"Error al obtener ID del producto: {str(e)}")
@@ -1462,20 +1506,22 @@ class Productos(QWidget):
             self.modelo_tabla_productos = GenericTableModel(encabezados, mapeo_cabecera)
             
             # Configurar tabla
-            tabla = self.ui.tabla_productos
-            tabla.setModel(self.modelo_tabla_productos)
-            tabla.setSortingEnabled(True)
-            tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            
+            self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
+            self.ui.tabla_productos.setSortingEnabled(True)
+            self.ui.tabla_productos.setEditTriggers(QAbstractItemView.NoEditTriggers)
             
             # Conexión de señales
             self.modelo_tabla_productos.data_updated.connect(
-                lambda: tabla.resizeColumnsToContents())
+                lambda: self.ui.tabla_productos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch))
             
+            if hasattr(self, 'consultor') and self.consultor:
+                self.cleanup_worker()
             # Configuración de selección
             if hasattr(self, 'seleccion_conectada_productos') and self.seleccion_conectada_productos:
-                tabla.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
+                self.ui.tabla_productos.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
             
-            tabla.clicked.connect(self.obtener_id_elemento_tabla_productos)
+            self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
             self.seleccion_conectada_productos = True
 
     def existencia_productos(self):
@@ -1492,4 +1538,9 @@ class Productos(QWidget):
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
+        
+    def closeEvent(self, event):
+        """Maneja el cierre de la ventana principal"""
+        self.cleanup_worker()  # Detiene cualquier hilo activo
+        event.accept()
         
