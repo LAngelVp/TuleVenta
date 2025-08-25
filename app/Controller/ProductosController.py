@@ -1290,9 +1290,7 @@ class Productos(QWidget):
             self.consultor = Consultas_segundo_plano()
             self.consultor.resultado.connect(self.agregar_productos_en_tabla)
             self.consultor.ejecutar_hilo(funcion=self.paginar_busqueda_por_filtros)
-            
-        
-        
+
     def agregar_productos_en_tabla(self, nuevos_productos, estado):
         """Agrega nuevos productos al modelo existente"""
         if not estado or not nuevos_productos:
