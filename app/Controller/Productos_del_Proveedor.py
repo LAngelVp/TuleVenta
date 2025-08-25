@@ -97,10 +97,10 @@ class Productos_de_proveedorController(QWidget):
     
     def obtener_productos_proveedor_hilo(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.productos_proveedores_tabla)
-        self.consultor.ejecutar_hilo(funcion=self.obtener_productos_proveedor_query)
+        self.consultor.ejecutar(funcion=self.obtener_productos_proveedor_query)
     
     def modal_espera_local(self):
         if self.cargando is None or not self.cargando.isVisible():
@@ -183,13 +183,13 @@ class Productos_de_proveedorController(QWidget):
     
     def filtrar_productos_de_proveedor(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.productos_proveedores_tabla)
         if self.ui.cajaOpciones_filtro_nombre.currentText() .lower()== "igual a":
-            self.consultor.ejecutar_hilo(funcion=self.filtrar_productos_del_proveedor_exacto_query)
+            self.consultor.ejecutar(funcion=self.filtrar_productos_del_proveedor_exacto_query)
         else:
-            self.consultor.ejecutar_hilo(funcion=self.filtrar_productos_del_proveedor_query)
+            self.consultor.ejecutar(funcion=self.filtrar_productos_del_proveedor_query)
             
         
     def filtrar_productos_del_proveedor_exacto_query(self, session):
@@ -206,14 +206,14 @@ class Productos_de_proveedorController(QWidget):
     
     def filtrar_productos_sistema(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.productos_del_sistema_tabla)
         print(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText())
         if self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText() .lower()== "es igual":
-            self.consultor.ejecutar_hilo(funcion=self.filtrar_productos_del_sistema_exacto_query)
+            self.consultor.ejecutar(funcion=self.filtrar_productos_del_sistema_exacto_query)
         else:
-            self.consultor.ejecutar_hilo(funcion=self.filtrar_productos_del_sistema_query)
+            self.consultor.ejecutar(funcion=self.filtrar_productos_del_sistema_query)
     
                 
     # comment: filtrar los productos con el nombre exacto
@@ -230,10 +230,10 @@ class Productos_de_proveedorController(QWidget):
     
     def obtener_productos_de_sistema_hilo(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.productos_del_sistema_tabla)
-        self.consultor.ejecutar_hilo(funcion=self.obtener_productos_de_sistema_query)
+        self.consultor.ejecutar(funcion=self.obtener_productos_de_sistema_query)
         
     def obtener_productos_de_sistema_query(self, session):
             productos_del_sistema, estado = ProductosModel(session).obtener_productos()

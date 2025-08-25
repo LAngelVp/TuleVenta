@@ -12,7 +12,7 @@ from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
 from .ComprobarValoresTablasController import Comprobacion
 from .Ventana_espera import Modal_de_espera
-from .Hilo_consultas import Consultas_segundo_plano
+from .Hilo_consultas import WorkerDB
 
 class EmpleadosController(QWidget):
     registro_listar_puestos = Signal()
@@ -79,10 +79,10 @@ class EmpleadosController(QWidget):
             Mensaje().mensaje_informativo("No haz ingresado datos para filtrar")
             return
         self.mostrar_modal_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.llenar_tabla_empleados)
-        self.consultor.ejecutar_hilo(
+        self.consultor.ejecutar(
             funcion=self.buscar_empleado_query,
             id_empleado=id_empleado,
             nombre_empleado=nombre_empleado,
@@ -104,11 +104,11 @@ class EmpleadosController(QWidget):
             return
         print(self.empleado_actual.id)
         self.mostrar_modal_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.mensaje_estado_eliminado)
         self.consultor.error.connect(self.mostrar_error)
-        self.consultor.ejecutar_hilo(
+        self.consultor.ejecutar(
             funcion=self.eliminar_empleado_query,
             id_empleado=self.empleado_actual.id,
         )
@@ -141,11 +141,11 @@ class EmpleadosController(QWidget):
     
     def listar_empleados(self):
         self.mostrar_modal_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.error.connect(self.mostrar_error)
         self.consultor.resultado.connect(self.llenar_tabla_empleados)
         # self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.ejecutar_hilo(self.obtener_empleados_query)
+        self.consultor.ejecutar(self.obtener_empleados_query)
         
     def mostrar_error(self, error):
         Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")

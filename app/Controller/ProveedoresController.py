@@ -277,9 +277,9 @@ class Control_proveedores(QWidget):
 
     def obtener_proveedores_tabla_hilo(self):
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_tabla_proveedores)
-        self.consultor.ejecutar_hilo(funcion=self.obtener_proveedores_tabla_query)
+        self.consultor.ejecutar(funcion=self.obtener_proveedores_tabla_query)
         
     def modal_espera_local(self):
         if self.cargando is None or not self.cargando.isVisible():
@@ -560,10 +560,10 @@ class Control_proveedores(QWidget):
             Mensaje().mensaje_informativo("No haz ingresado datos para filtrar")
             return
         self.modal_espera_local()
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.terminado.connect(self.cargando_cerrar)
         self.consultor.resultado.connect(self.llenar_tabla_proveedores)
-        self.consultor.ejecutar_hilo(funcion=self.buscar_proveedor_query)
+        self.consultor.ejecutar(funcion=self.buscar_proveedor_query)
         
     def buscar_proveedor_query(self, session):
         texto = self.ui.txt_buscarproveedor.text()

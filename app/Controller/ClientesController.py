@@ -12,7 +12,7 @@ from ..Model.AreaNegocioClientesModel import AreaNegocioClientesModel
 from ..Model.CategoriasModel import CategoriasModel
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .Ventana_espera import Modal_de_espera
-from .Hilo_consultas import Consultas_segundo_plano
+from .Hilo_consultas import WorkerDB
 from ..Model.ClientesFisicosAndMoralesModel import *
 from .MensajesAlertasController import Mensaje
 
@@ -418,14 +418,14 @@ class Clientes(QWidget):
             self.cargando.activateWindow()
             
     def obtener_clientes_fisicos_hilo(self):
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_tabla_clientes)
-        self.consultor.ejecutar_hilo(funcion=self.clientes_fisicos_query)
+        self.consultor.ejecutar(funcion=self.clientes_fisicos_query)
    
     def obtener_clientes_morales_hilo(self):
-        self.consultor = Consultas_segundo_plano()
+        self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.llenar_tabla_clientes)
-        self.consultor.ejecutar_hilo(funcion=self.clientes_morales_query)
+        self.consultor.ejecutar(funcion=self.clientes_morales_query)
         
     def clientes_fisicos_query(self, session):
         self.clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos() 
