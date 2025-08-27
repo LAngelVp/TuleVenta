@@ -1,8 +1,8 @@
-"""migracion
+"""Migracion
 
-Revision ID: 715dd3a29a9a
+Revision ID: 9cd7d12149b5
 Revises: 
-Create Date: 2025-04-21 15:27:13.208130
+Create Date: 2025-08-27 12:02:03.851707
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '715dd3a29a9a'
+revision: str = '9cd7d12149b5'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -108,6 +108,8 @@ def upgrade() -> None:
     sa.Column('estado', sa.String(length=50), nullable=True),
     sa.Column('pais', sa.String(length=50), nullable=True),
     sa.Column('num_telefono', sa.String(length=10), nullable=True),
+    sa.Column('razon_social', sa.String(length=300), nullable=True),
+    sa.Column('rfc', sa.String(length=13), nullable=True),
     sa.Column('direccion', sa.Text(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
@@ -288,35 +290,35 @@ def upgrade() -> None:
     )
     op.create_table('Empleados',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
-    sa.Column('nombre', sa.String(length=60), nullable=False),
-    sa.Column('apellido_paterno', sa.String(length=60), nullable=False),
-    sa.Column('apellido_materno', sa.String(length=60), nullable=False),
+    sa.Column('nombre', sa.String(length=100), nullable=True),
+    sa.Column('apellido_paterno', sa.String(length=100), nullable=True),
+    sa.Column('apellido_materno', sa.String(length=100), nullable=True),
     sa.Column('genero', sa.String(length=20), nullable=True),
-    sa.Column('fecha_nacimiento', sa.Date(), nullable=False),
-    sa.Column('estado_civil', sa.String(length=20), nullable=False),
-    sa.Column('curp', sa.String(length=18), nullable=False),
-    sa.Column('rfc', sa.String(length=13), nullable=False),
-    sa.Column('nivel_academico', sa.String(length=50), nullable=True),
+    sa.Column('fecha_nacimiento', sa.Date(), nullable=True),
+    sa.Column('estado_civil', sa.String(length=20), nullable=True),
+    sa.Column('curp', sa.String(length=18), nullable=True),
+    sa.Column('rfc', sa.String(length=13), nullable=True),
+    sa.Column('nivel_academico', sa.String(length=100), nullable=True),
     sa.Column('carrera', sa.String(length=150), nullable=True),
     sa.Column('correo_electronico', sa.String(length=100), nullable=True),
-    sa.Column('numero_seguro_social', sa.String(length=13), nullable=False),
-    sa.Column('fecha_contratacion', sa.Date(), nullable=False),
+    sa.Column('numero_seguro_social', sa.String(length=13), nullable=True),
+    sa.Column('fecha_contratacion', sa.Date(), nullable=True),
     sa.Column('fecha_despido', sa.Date(), nullable=True),
-    sa.Column('ciudad', sa.String(length=50), nullable=True),
+    sa.Column('ciudad', sa.String(length=100), nullable=True),
     sa.Column('codigo_postal', sa.String(length=5), nullable=True),
-    sa.Column('estado', sa.String(length=50), nullable=True),
-    sa.Column('pais', sa.String(length=50), nullable=True),
+    sa.Column('estado', sa.String(length=100), nullable=True),
+    sa.Column('pais', sa.String(length=100), nullable=True),
     sa.Column('numero_telefonico', sa.String(length=10), nullable=True),
     sa.Column('nombre_contacto', sa.String(length=100), nullable=True),
     sa.Column('contacto_emergencia', sa.String(length=10), nullable=True),
     sa.Column('parentesco_contacto', sa.String(length=20), nullable=True),
-    sa.Column('calles', sa.String(length=50), nullable=True),
-    sa.Column('avenidas', sa.String(length=50), nullable=True),
-    sa.Column('colonia', sa.String(length=50), nullable=True),
+    sa.Column('calles', sa.String(length=100), nullable=True),
+    sa.Column('avenidas', sa.String(length=100), nullable=True),
+    sa.Column('colonia', sa.String(length=100), nullable=True),
     sa.Column('num_interior', sa.String(length=10), nullable=True),
     sa.Column('num_exterior', sa.String(length=10), nullable=True),
     sa.Column('direccion_adicional', sa.Text(), nullable=True),
-    sa.Column('activo', sa.Boolean(), nullable=False),
+    sa.Column('activo', sa.Boolean(), nullable=True),
     sa.Column('foto', sa.Text(), nullable=True),
     sa.Column('puesto_id', sa.Integer(), nullable=True),
     sa.Column('usuario_id', sa.Integer(), nullable=True),

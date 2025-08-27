@@ -7,7 +7,7 @@ from app.Controller.MensajesAlertasController import *
 Base = declarative_base()
 class Conexion_base_datos:
     def __init__(self):
-        self.link_conexion = 'postgresql+psycopg2://Dev_Rous:Dev_Rous73@localhost:5432/Dev_Rous'
+        self.link_conexion = 'postgresql+psycopg2://dev_rous:dev_rous73@localhost:5432/devrousdb'
         self.conectar()
             
     def conectar(self):

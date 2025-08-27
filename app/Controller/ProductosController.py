@@ -1138,7 +1138,8 @@ class Productos(QWidget):
         self.nombre_producto = None
         self.codigo_del_producto = None
         self._signals_connected = None
-        
+
+# FUNCION : FILTRAR PRODUCTOS
     def  buscar_producto(self):
         # Obtener valores actuales de los campos de búsqueda
         nuevo_nombre = self.ui.txt_buscar.text().strip()
@@ -1184,7 +1185,6 @@ class Productos(QWidget):
             nombre_producto=self.nombre_producto,
             codigo_del_producto=self.codigo_del_producto
         )
-
     def buscar_producto_query(self, session, nombre_producto, codigo_del_producto):
         if nombre_producto:
             datos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre_producto, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
@@ -1197,19 +1197,9 @@ class Productos(QWidget):
             print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
             self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
         return datos, estado
-    
-    def paginar_busqueda_por_filtros(self, session):
-        if self.nombre_producto:
-            datos, estado = ProductosModel(session).consultar_por_nombre(
-                nombre=self.nombre_producto,
-                cantidad_inicial=self.cantidad_inicial_consulta,
-                cantidad_final=self.cantidad_final_consulta
-            )
-            print(f"DEBUG - Obtenidos: {len(datos) if datos else 0} registros")
-            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
-            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
-        return datos, estado
-    
+#TERMINA : FILTRAR PRODUCTO ++++++++++++++++++++
+
+# FUNCION : AGREGAR PRODUCTO
     def agregar_producto(self):
         if self.AdminProductos is None:
             self.AdminProductos = Admin_productosController(self)
@@ -1303,6 +1293,29 @@ class Productos(QWidget):
         self.AdminProductos = None
         self.producto_actual = None
     
+# FUNCION : LISTAR PRODUCTOS EN TABLA
+    def listar_productos(self, productos, estado, mensaje=None):
+        try:
+            if not estado or not productos:
+                self.refrescar_tabla()
+                return
+            self.cantidad_inicial_consulta = 0 if self.cantidad_inicial_consulta == 0 else self. cantidad_inicial_consulta + len(productos)
+            # Asegúrate que el modelo existe
+            if not hasattr(self, 'modelo_tabla_productos'):
+                self.comprobar_modelo_tabla_productos()
+            
+            # Actualiza los datos (siempre reset para búsquedas)
+            self.modelo_tabla_productos.update_data(productos, reset=True)
+            
+            print(f"Tabla actualizada: {len(productos)} productos")
+            
+            # QTimer.singleShot(0, self.cargando_cerrar)
+        except Exception as e:
+            print(f"Error en listar_productos: {str(e)}")
+            # Mensaje().mensaje_informativo("Error", "No se pudieron cargar los productos")
+        finally:
+            self.cargando_cerrar()
+    
     def refrescar_tabla(self):
         try:
             self.ui.btn_RefrescarTabla.setEnabled(False)
@@ -1310,7 +1323,7 @@ class Productos(QWidget):
         except Exception as e:
             print(f"error: {e}")
             self.ui.btn_RefrescarTabla.setEnabled(True)
-    
+            
     def consultar_productos_db(self, reset_paginacion=False):
         """Versión final segura para consultar productos"""
         try:
@@ -1343,39 +1356,6 @@ class Productos(QWidget):
             self.cleanup_worker()
             self.mostrar_error_db("Error al iniciar la consulta")
             
-    def cleanup_worker(self):
-        """Limpia el worker de manera completamente segura"""
-        if not hasattr(self, 'consultor') or self.consultor is None:
-            return
-        try:
-            # Desconectar señales de manera segura
-            try:
-                if self.consultor is not None:
-                    self.consultor.resultado.disconnect()
-                    self.consultor.error.disconnect()
-                    self.consultor.terminado.disconnect()
-            except (RuntimeError, AttributeError):
-                pass  # Las señales ya estaban desconectadas o el objeto es inválido
-            
-            # Detener el hilo de manera segura
-            try:
-                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
-                    if self.consultor.thread.isRunning():
-                        self.consultor.thread.quit()
-                        self.consultor.thread.wait(500)  # Esperar máximo 500ms
-            except (RuntimeError, AttributeError):
-                pass
-            
-            # Eliminar el worker
-            try:
-                self.consultor.deleteLater()
-            except RuntimeError:
-                pass
-            
-        finally:
-            # Asegurarse de eliminar la referencia
-            self.consultor = None
-    
     def obtener_productos_query(self, session):
         productos, estado = ProductosModel(session).obtener_productos(
             offset=self.cantidad_inicial_consulta,
@@ -1386,29 +1366,10 @@ class Productos(QWidget):
         self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
         
         return productos, estado
-    
-    def listar_productos(self, productos, estado, mensaje=None):
-        try:
-            if not estado or not productos:
-                self.refrescar_tabla()
-                return
-            self.cantidad_inicial_consulta = 0 if self.cantidad_inicial_consulta == 0 else self. cantidad_inicial_consulta + len(productos)
-            # Asegúrate que el modelo existe
-            if not hasattr(self, 'modelo_tabla_productos'):
-                self.comprobar_modelo_tabla_productos()
-            
-            # Actualiza los datos (siempre reset para búsquedas)
-            self.modelo_tabla_productos.update_data(productos, reset=True)
-            
-            print(f"Tabla actualizada: {len(productos)} productos")
-            
-            # QTimer.singleShot(0, self.cargando_cerrar)
-        except Exception as e:
-            print(f"Error en listar_productos: {str(e)}")
-            # Mensaje().mensaje_informativo("Error", "No se pudieron cargar los productos")
-        finally:
-            self.cargando_cerrar()
-        
+
+# TERMINA - LISTAR PRODUCTOS +++++++++++++++++++
+
+# FUNCION : AGREGAR MAS PRODUCTOS A LA VISTA DE LA TABLA
     def cargar_mas_productos(self):
         """Carga los siguientes productos manteniendo los actuales"""
         if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
@@ -1423,8 +1384,18 @@ class Productos(QWidget):
             self.consultor.resultado.connect(self.agregar_productos_en_tabla)
             self.consultor.ejecutar_hilo(funcion=self.paginar_busqueda_por_filtros)
             
-        
-        
+    def paginar_busqueda_por_filtros(self, session):
+        if self.nombre_producto:
+            datos, estado = ProductosModel(session).consultar_por_nombre(
+                nombre=self.nombre_producto,
+                cantidad_inicial=self.cantidad_inicial_consulta,
+                cantidad_final=self.cantidad_final_consulta
+            )
+            print(f"DEBUG - Obtenidos: {len(datos) if datos else 0} registros")
+            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        return datos, estado
+            
     def agregar_productos_en_tabla(self, nuevos_productos, estado):
         """Agrega nuevos productos al modelo existente"""
         if not estado or not nuevos_productos:
@@ -1433,32 +1404,37 @@ class Productos(QWidget):
         # Agrega los nuevos productos al modelo
         self.modelo_tabla_productos.update_data(nuevos_productos, reset=False)
         QTimer.singleShot(0, self.cargando_cerrar)
-    
-    def modal_espera_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(parent=self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
+#TERMINA - PAGINAR PRODUCTOS EN TABLA +++++++++++++++++++
+
+# FUNCION : COMPROBACION DEL MODELO DE LA TABLA DE PRODUCTOS
+    def comprobar_modelo_tabla_productos(self):
+    #// MAPEO DE LOS NOMBRE DE LAS COLUMNAS
+        if not hasattr(self, 'modelo_tabla_productos'):
+            encabezados = ['Nombre', 'Descripción', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
+            mapeo_cabecera = {
+                'nombre': lambda p: p.nombre_producto,
+                'descripción': lambda p: p.descripcion_producto or "",
+                'precio': lambda p: f"${p.precio:.2f}",
+                'existencia': lambda p: p.existencia,
+                'categoría': lambda p: p.categoria.nombre if p.categoria else "Sin categoría",
+                'descripción categoría': lambda p: p.categoria.descripcion if p.categoria else ""
+            }
+            self.modelo_tabla_productos = GenericTableModel(encabezados, mapeo_cabecera)
+        # // CONFIGURACION DE LA TABLA
+            self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
+            self.ui.tabla_productos.setSortingEnabled(True)
+            self.ui.tabla_productos.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # // CONEXION A SEÑALES
+            self.modelo_tabla_productos.data_updated.connect(
+                lambda: self.ui.tabla_productos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch))
+            if hasattr(self, 'consultor') and self.consultor:
+                self.cleanup_worker()
+        #  // CONFIGURACION DE SELECCION
+            if hasattr(self, 'seleccion_conectada_productos') and self.seleccion_conectada_productos:
+                self.ui.tabla_productos.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
+            self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
+            self.seleccion_conectada_productos = True
             
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
-        print(self.cantidad_inicial_consulta, " ", self.cantidad_final_consulta)
-        self.cleanup_worker()
-                
-    def mostrar_error_db(self, error_msg):
-        """Muestra errores de la base de datos"""
-        print("Error de base de datos", error_msg)
-        self.cargando_cerrar()
-        self.ui.btn_RefrescarTabla.setEnabled(True)
-    
-    def mostrar_error_consulta(self, mensaje):
-        print(f"❌ Error en la consulta: {mensaje}")
-        # Aquí podrías usar un QMessageBox si estás en una GUI
-        
     def obtener_id_elemento_tabla_productos(self, index):
         print(1)
         # if not self.producto_actual:
@@ -1491,41 +1467,9 @@ class Productos(QWidget):
         except Exception as e:
             print(f"Error al obtener ID del producto: {str(e)}")
             return None
-    
-    def comprobar_modelo_tabla_productos(self):
-        if not hasattr(self, 'modelo_tabla_productos'):
-            encabezados = ['Nombre', 'Descripción', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
-        
-            mapeo_cabecera = {
-                'nombre': lambda p: p.nombre_producto,
-                'descripción': lambda p: p.descripcion_producto or "",
-                'precio': lambda p: f"${p.precio:.2f}",
-                'existencia': lambda p: p.existencia,
-                'categoría': lambda p: p.categoria.nombre if p.categoria else "Sin categoría",
-                'descripción categoría': lambda p: p.categoria.descripcion if p.categoria else ""
-            }
-        
-            self.modelo_tabla_productos = GenericTableModel(encabezados, mapeo_cabecera)
-            
-            # Configurar tabla
-            
-            self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
-            self.ui.tabla_productos.setSortingEnabled(True)
-            self.ui.tabla_productos.setEditTriggers(QAbstractItemView.NoEditTriggers)
-            
-            # Conexión de señales
-            self.modelo_tabla_productos.data_updated.connect(
-                lambda: self.ui.tabla_productos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch))
-            
-            if hasattr(self, 'consultor') and self.consultor:
-                self.cleanup_worker()
-            # Configuración de selección
-            if hasattr(self, 'seleccion_conectada_productos') and self.seleccion_conectada_productos:
-                self.ui.tabla_productos.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
-            
-            self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
-            self.seleccion_conectada_productos = True
+# TERMINA - LISTAR PRODUCTOS++++++++++++++++++++
 
+# FUNCION : MANIPULACION DE LA EXISTENCIA DE LOS PRODUCTOS
     def existencia_productos(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo('Selecciona un producto.')
@@ -1536,13 +1480,71 @@ class Productos(QWidget):
             self.ventana_existencia_productos.RECIBIR_PRODUCTO_ID_EXISTENCIA.emit(self.producto_actual)
             self.MOSTRAR_DATOS_EXISTENCIAS.emit()
             self.ventana_existencia_productos.show()
-        
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
+#TERMINA - EXISTENCIA DE PRODUCTOS +++++++++++++++++++++
+        
         
     def closeEvent(self, event):
         """Maneja el cierre de la ventana principal"""
         self.cleanup_worker()  # Detiene cualquier hilo activo
         event.accept()
+    def cleanup_worker(self):
+        """Limpia el worker de manera completamente segura"""
+        if not hasattr(self, 'consultor') or self.consultor is None:
+            return
+        try:
+            # Desconectar señales de manera segura
+            try:
+                if self.consultor is not None:
+                    self.consultor.resultado.disconnect()
+                    self.consultor.error.disconnect()
+                    self.consultor.terminado.disconnect()
+            except (RuntimeError, AttributeError):
+                pass  # Las señales ya estaban desconectadas o el objeto es inválido
+            
+            # Detener el hilo de manera segura
+            try:
+                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
+                    if self.consultor.thread.isRunning():
+                        self.consultor.thread.quit()
+                        self.consultor.thread.wait(500)  # Esperar máximo 500ms
+            except (RuntimeError, AttributeError):
+                pass
+            
+            # Eliminar el worker
+            try:
+                self.consultor.deleteLater()
+            except RuntimeError:
+                pass
+            
+        finally:
+            # Asegurarse de eliminar la referencia
+            self.consultor = None
+            
+    def modal_espera_local(self):
+        if self.cargando is None or not self.cargando.isVisible():
+            self.cargando = Modal_de_espera(parent=self)
+            self.cargando.show()
+        else:
+            self.cargando.raise_()
+            self.cargando.activateWindow()
+            
+    def cargando_cerrar(self):
+        if self.cargando is not None:
+            self.cargando.close()
+            self.cargando = None
+        print(self.cantidad_inicial_consulta, " ", self.cantidad_final_consulta)
+        self.cleanup_worker()
+                
+    def mostrar_error_db(self, error_msg):
+        """Muestra errores de la base de datos"""
+        print("Error de base de datos", error_msg)
+        self.cargando_cerrar()
+        self.ui.btn_RefrescarTabla.setEnabled(True)
+    
+    def mostrar_error_consulta(self, mensaje):
+        print(f"❌ Error en la consulta: {mensaje}")
+        # Aquí podrías usar un QMessageBox si estás en una GUI
         
