@@ -15,11 +15,12 @@ from .Ventana_espera import Modal_de_espera
 from .Hilo_consultas import WorkerDB
 
 class EmpleadosController(QWidget):
+#señales:
     registro_listar_puestos = Signal()
+#-----------------------
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.ui = Ui_Control_empleados()
-        self.ui.setupUi(self)
+#comment: variables
         self.ventana_registro = None
         self.ventana_registro_cerrada = False
         self.seleccion_conectada_empleados = None
@@ -28,20 +29,24 @@ class EmpleadosController(QWidget):
         self.cargando = None
         self.consultor = None
         self.empleado_actual = None
+#---------------------------------------------------
+        self.ui = Ui_Control_empleados()
+        self.ui.setupUi(self)
         
-        
+#comment: validaciones:
         self.ui.txt_idempleado.setValidator(Validaciones().get_int_validator)
+#----------------------------------------------------
+#comment:_ botones
         self.ui.btn_btn_agregar.clicked.connect(self.agregar_empleado)
         self.ui.btn_btn_buscar.clicked.connect(self.buscar_empleado)
         self.ui.btn_RefrescarTabla.clicked.connect(self.limpiar)
         self.ui.btn_btn_eliminar.clicked.connect(self.eliminar_empleado)
         self.ui.btn_btn_editarempleado.clicked.connect(self.editar_empleado_seleccionado)
         self.ui.btn_RefrescarTabla.clicked.connect(self.listar_empleados)
-        
-        # SEÑALES: LISTAR PUESTOS EN EL REGISTRO INICIAL
-        # self.ventana = 
+#-------------------------------------------------------
+#señales:
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
-
+#---------------------------------------------------------
     def cargando_cerrar(self):
         if self.cargando is not None:
             self.cargando.close()
@@ -141,11 +146,23 @@ class EmpleadosController(QWidget):
     
     def listar_empleados(self):
         self.mostrar_modal_local()
-        self.consultor = WorkerDB()
-        self.consultor.error.connect(self.mostrar_error)
-        self.consultor.resultado.connect(self.llenar_tabla_empleados)
-        # self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.ejecutar(self.obtener_empleados_query)
+        try:
+            WorkerDB.cleanup_owner_workers("listar_empleados")
+            self.hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id="listar_empleados")
+            self.consultor_listarEmpleados = WorkerDB.get_managed_worker(self.hilo_listar_empleados)
+            if not self.consultor_listarEmpleados:
+                raise Exception("No se pudo obtener la lista de empleados.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.hilo_listar_empleados,
+                resultado_callback=self.llenar_tabla_empleados,
+                error_callback= self.mostrar_error,
+                terminado_callback=self.cargando_cerrar
+            )
+            self.consultor_listarEmpleados.ejecutar(
+                self.obtener_empleados_query
+            )
+        except Exception as e:
+            pass
         
     def mostrar_error(self, error):
         Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")

@@ -39,8 +39,6 @@ class Registro_personal_inicial(QDialog):
     registro_agregado_signal = Signal()
     VENTANA_REGISTRO_CERRADA = Signal()
     def __init__(self, parent = None, empleado = None):
-        super().__init__(parent)
-        # comment: variables globales:
         self.empleado = empleado
         self.estados_civiles = ['SOLTERO/A','CASADO/A','VIUDO/A','DIVORCIADO/A','UNION LIBRE']
         self.niveles_academicos = ['PRIMARIA', 'SECUNDARIA', 'BACHILLERATO', 'LICENCIATURA', 'CARRERA TRUNCA', 'MAESTRIA', 'DOCTORADO']
@@ -58,6 +56,8 @@ class Registro_personal_inicial(QDialog):
         self._ventanaCerradaRegistro = False
         self.cargando = None
         self.consultor = None
+        super().__init__(parent)
+        # comment: variables globales:
         
         # comment: inicializacion de la ventana
         self.ui = Ui_RegistroAdministrador()
@@ -620,24 +620,47 @@ p, li { white-space: pre-wrap; }
         datos = self.obtener_datos()
 
         if self.validar_datos(datos=datos):
-            self.mostrar_modal_local()
-            self.consultor = WorkerDB()
-            self.consultor.error.connect(self.mostrar_error_hilo)
-            self.consultor.terminado.connect(self.cargando_cerrar)
-            self.consultor.resultado.connect(self.mostrar_estado_usuario)
-            self.consultor.ejecutar(
-                funcion=self.almacenar_informacion_query,
-                uso_del_sistema=uso_del_sistema,
-                id_empleado=id_empleado,
-                imagen = self.file_name,
-                nombre_usuario=nombre_usuario,
-                password_usuario=password_usuario,
-                fecha_creacion=fecha_actual,
-                fecha_actualizacion=fecha_actual,
-                current_data_rol=current_data_rol,
-                datos=datos
-            )
-
+            try:
+                # ✅ Siempre limpiar workers anteriores del mismo tipo primero
+                WorkerDB.cleanup_owner_workers("agregar_empleado")
+                
+                # ✅ Crear nuevo worker gestionado
+                self.id_hilo_actual = WorkerDB.create_managed_worker(owner_id="agregar_empleado")
+                self.consultor = WorkerDB.get_managed_worker(self.id_hilo_actual)
+                
+                if not self.consultor:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                
+                # ✅ Conectar señales
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actual,
+                    resultado_callback=self.mostrar_estado_usuario,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.cargando_cerrar
+                )
+                
+                # ✅ Ejecutar
+                self.consultor.ejecutar(
+                    funcion=self.almacenar_informacion_query,
+                    uso_del_sistema=uso_del_sistema,
+                    id_empleado=id_empleado,
+                    imagen=self.file_name,
+                    nombre_usuario=nombre_usuario,
+                    password_usuario=password_usuario,
+                    fecha_creacion=fecha_actual,
+                    fecha_actualizacion=fecha_actual,
+                    current_data_rol=current_data_rol,
+                    datos=datos
+                )
+                
+            except Exception as e:
+                print(f"Error al configurar worker: {str(e)}")
+                # ✅ Limpiar en caso de error
+                if hasattr(self, 'id_hilo_actual'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actual)
+                self.mostrar_error_hilo("Error al iniciar el proceso")
+                
+                
     def mostrar_estado_usuario(self, mensaje, estado):
         Mensaje().mensaje_informativo(mensaje)
         if estado:

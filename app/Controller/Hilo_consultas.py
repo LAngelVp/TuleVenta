@@ -1,9 +1,144 @@
 import pandas as pd
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QThread
 from ..DataBase.conexionBD import Conexion_base_datos
-
-from PySide6.QtCore import QThread, QObject, Signal
 from contextlib import contextmanager
+from typing import Optional, Callable, Dict, Any
+import logging
+
+class WorkerDBManager:
+    """
+    Manager global para WorkerDB - Singleton
+    """
+    _instance = None
+    _workers: Dict[str, 'WorkerDB'] = {}
+    _worker_counter = 0
+    
+    def __init__(self):
+        if WorkerDBManager._instance is not None:
+            raise Exception("WorkerDBManager es un singleton. Usa WorkerDBManager.get_instance()")
+        self.logger = logging.getLogger(__name__)
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = WorkerDBManager()
+        return cls._instance
+    
+    @classmethod
+    def create_worker(cls, owner_id: str = "default") -> str:
+        """Crea un nuevo worker y retorna su ID"""
+        worker_id = f"{owner_id}_worker_{cls._worker_counter}"
+        cls._worker_counter += 1
+        
+        # Limpiar worker anterior del mismo owner
+        cls.cleanup_owner_workers(owner_id)
+        
+        worker = WorkerDB()
+        cls._workers[worker_id] = worker
+        
+        if cls._instance:
+            cls._instance.logger.debug(f"Worker creado: {worker_id}")
+        
+        return worker_id
+    
+    @classmethod
+    def get_worker(cls, worker_id: str) -> Optional['WorkerDB']:
+        """Obtiene un worker por su ID"""
+        return cls._workers.get(worker_id)
+    
+    @classmethod
+    def connect_worker_signals(cls, worker_id: str,
+                             resultado_callback: Optional[Callable] = None,
+                             error_callback: Optional[Callable] = None,
+                             terminado_callback: Optional[Callable] = None):
+        """Conecta señales del worker de manera segura"""
+        worker = cls.get_worker(worker_id)
+        if not worker:
+            if cls._instance:
+                cls._instance.logger.warning(f"Worker {worker_id} no encontrado")
+            return
+        
+        try:
+            if resultado_callback:
+                worker.resultado.connect(resultado_callback)
+            if error_callback:
+                worker.error.connect(error_callback)
+            if terminado_callback:
+                worker.terminado.connect(terminado_callback)
+                
+            if cls._instance:
+                cls._instance.logger.debug(f"Señales conectadas para worker: {worker_id}")
+                
+        except Exception as e:
+            if cls._instance:
+                cls._instance.logger.error(f"Error conectando señales: {str(e)}")
+    
+    @classmethod
+    def cleanup_worker(cls, worker_id: str):
+        """Limpia un worker específico"""
+        if worker_id not in cls._workers:
+            return
+        
+        worker = cls._workers[worker_id]
+        
+        try:
+            # Desconectar todas las señales
+            try:
+                worker.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+            
+            # Detener el hilo de manera segura
+            if hasattr(worker, 'thread') and worker.thread is not None:
+                thread = worker.thread
+                if thread.isRunning():
+                    thread.quit()
+                    if not thread.wait(500):
+                        thread.terminate()
+                        thread.wait(300)
+            
+            # Eliminar el worker
+            try:
+                worker.deleteLater()
+            except RuntimeError:
+                pass
+            
+            if cls._instance:
+                cls._instance.logger.debug(f"Worker limpiado: {worker_id}")
+            
+        except Exception as e:
+            if cls._instance:
+                cls._instance.logger.error(f"Error en cleanup_worker: {str(e)}")
+        finally:
+            # Eliminar referencia
+            if worker_id in cls._workers:
+                del cls._workers[worker_id]
+    
+    @classmethod
+    def cleanup_owner_workers(cls, owner_id: str):
+        """Limpia todos los workers de un owner específico"""
+        workers_to_remove = [
+            worker_id for worker_id in cls._workers.keys() 
+            if worker_id.startswith(f"{owner_id}_worker_")
+        ]
+        
+        for worker_id in workers_to_remove:
+            cls.cleanup_worker(worker_id)
+    
+    @classmethod
+    def cleanup_all_workers(cls):
+        """Limpia todos los workers activos"""
+        for worker_id in list(cls._workers.keys()):
+            cls.cleanup_worker(worker_id)
+        
+        if cls._instance:
+            cls._instance.logger.info("Todos los workers han sido limpiados")
+    
+    @classmethod
+    def list_active_workers(cls) -> list:
+        """Lista todos los workers activos"""
+        return list(cls._workers.keys())
+
 
 class WorkerDB(QObject):
     terminado = Signal()
@@ -49,6 +184,42 @@ class WorkerDB(QObject):
         finally:
             self.terminado.emit()
             self.thread.quit()
+    
+    # Métodos estáticos para acceso fácil al manager
+    @staticmethod
+    def create_managed_worker(owner_id: str = "default") -> str:
+        """Crea un worker gestionado globalmente"""
+        return WorkerDBManager.create_worker(owner_id)
+    
+    @staticmethod
+    def connect_managed_signals(worker_id: str,
+                              resultado_callback: Optional[Callable] = None,
+                              error_callback: Optional[Callable] = None,
+                              terminado_callback: Optional[Callable] = None):
+        """Conecta señales a un worker gestionado"""
+        WorkerDBManager.connect_worker_signals(
+            worker_id, resultado_callback, error_callback, terminado_callback
+        )
+    
+    @staticmethod
+    def get_managed_worker(worker_id: str) -> Optional['WorkerDB']:
+        """Obtiene un worker gestionado"""
+        return WorkerDBManager.get_worker(worker_id)
+    
+    @staticmethod
+    def cleanup_managed_worker(worker_id: str):
+        """Limpia un worker gestionado"""
+        WorkerDBManager.cleanup_worker(worker_id)
+    
+    @staticmethod
+    def cleanup_all_managed_workers():
+        """Limpia todos los workers gestionados"""
+        WorkerDBManager.cleanup_all_workers()
+    
+    @staticmethod
+    def cleanup_owner_workers(owner_id: str):
+        """Limpia workers de un owner específico"""
+        WorkerDBManager.cleanup_owner_workers(owner_id)
 
 class ProcesadorArchivo(QObject):
     terminado = Signal()
