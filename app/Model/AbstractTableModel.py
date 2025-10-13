@@ -1,5 +1,5 @@
 from PySide6.QtCore import QAbstractTableModel, Qt, Signal, QModelIndex
-from PySide6.QtWidgets import QTableView, QHeaderView
+from PySide6.QtWidgets import QTableView, QHeaderView, QAbstractItemView
 from typing import Any, List, Dict, Callable, Optional
 
 class GenericTableModel(QAbstractTableModel):
@@ -155,3 +155,57 @@ class GenericTableModel(QAbstractTableModel):
         if index.isValid():
             return default_flags | Qt.ItemIsEnabled | Qt.ItemIsSelectable
         return default_flags
+    
+class ComprobarModelosTablas:
+    def __init__(self, ventanaPrincipal: any):
+        self.ventana_principal = ventanaPrincipal
+        self._configuraciones = {}
+    
+    def comprobarModeloTabla(self, nombreModelo, interfazTabla, encabezados, mapeoCabecera = None, ordenable = True, editable = False, autoAjustarColumnas = True, signalPersonalizada = None, signalSeleccion = None):
+        if mapeoCabecera is None:
+            mapeoCabecera = {}
+        if not hasattr(self.ventana_principal, nombreModelo):
+            modelo = GenericTableModel(encabezados, mapeoCabecera)
+            interfazTabla.setModel(modelo)
+            interfazTabla.setSortingEnabled(ordenable)
+            if editable:
+                interfazTabla.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+            else:
+                interfazTabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            if autoAjustarColumnas:
+                if signalPersonalizada:
+                    modelo.data_updated.connect(signalPersonalizada)
+                else:
+                    modelo.data_updated.connect(
+                        lambda: interfazTabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+                    )
+            if hasattr(self.ventana_principal, 'consultor') and self.ventana_principal.consultor:
+                if hasattr(self.ventana_principal, 'cleanup_worker'):
+                    self.ventana_principal.cleanup_worker()
+            
+            # Configurar selección si se proporciona
+            if signalSeleccion:
+                # Desconectar si ya estaba conectado
+                nombre_conexion = f"seleccion_conectada_{nombreModelo.split('_')[-1]}"
+                if hasattr(self.ventana_principal, nombre_conexion) and getattr(self.ventana_principal, nombre_conexion):
+                    try:
+                        interfazTabla.clicked.disconnect(signalSeleccion)
+                    except:
+                        pass
+                
+                interfazTabla.clicked.connect(signalSeleccion)
+                setattr(self.ventana_principal, nombre_conexion, True)
+            
+            # Guardar modelo en la ventana principal
+            setattr(self.ventana_principal, nombreModelo, modelo)
+            
+            # Guardar configuración para uso futuro
+            self._configuraciones[nombreModelo] = { 
+                'tabla_ui': interfazTabla,
+                'encabezados': encabezados,
+                'mapeo_cabecera': mapeoCabecera
+            }
+            
+            return modelo
+        else:
+            return getattr(self.ventana_principal, nombreModelo)

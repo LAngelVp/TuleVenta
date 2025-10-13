@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
+from app.Model.AbstractTableModel import ComprobarModelosTablas
 from app.View.UserInterfacePy.UI_CONTROL_EMPLEADOS import *
 from app.Controller.RegistroInicialController import Registro_personal_inicial
 from app.Controller.RolesController import *
@@ -47,6 +48,8 @@ class EmpleadosController(QWidget):
 #señales:
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
 #---------------------------------------------------------
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        
     def cargando_cerrar(self):
         if self.cargando is not None:
             self.cargando.close()
@@ -177,11 +180,7 @@ class EmpleadosController(QWidget):
             Mensaje().mensaje_alerta("El widget tabla_listaempleados no está disponible.")
             return
 
-        if not hasattr(self, 'modelo_empleados_vempleados'):
-            self.modelo_empleados_vempleados = QStandardItemModel()
-
-        self.modelo_empleados_vempleados.clear()
-
+        # Configurar el modelo usando ComprobarModelosTablas
         cabeceras = [
             "ID", "Nombre", "Apellido Paterno", "Apellido Materno", "Fecha Nacimiento", "Estado Civil",
             "CURP", "RFC", "Nivel Académico", "Carrera", "Correo Electrónico", "Número Seguro Social",
@@ -192,60 +191,98 @@ class EmpleadosController(QWidget):
             "Hora Entrada", "Hora Salida", "Departamento", "Sucursal"
         ]
 
-        self.modelo_empleados_vempleados.setHorizontalHeaderLabels(cabeceras)
+        # Definir el mapeo de cabeceras para GenericTableModel
+        mapeo_cabecera = {
+            "id": lambda e: e.id,
+            "nombre": lambda e: e.nombre,
+            "apellido paterno": lambda e: e.apellido_paterno,
+            "apellido materno": lambda e: e.apellido_materno,
+            "fecha nacimiento": lambda e: e.fecha_nacimiento.strftime("%d/%m/%Y") if e.fecha_nacimiento else "",
+            "estado civil": lambda e: e.estado_civil,
+            "curp": lambda e: e.curp,
+            "rfc": lambda e: e.rfc,
+            "nivel académico": lambda e: e.nivel_academico,
+            "carrera": lambda e: e.carrera,
+            "correo electrónico": lambda e: e.correo_electronico,
+            "número seguro social": lambda e: e.numero_seguro_social,
+            "fecha contratación": lambda e: e.fecha_contratacion.strftime("%d/%m/%Y") if e.fecha_contratacion else "",
+            "fecha despido": lambda e: e.fecha_despido.strftime("%d/%m/%Y") if e.fecha_despido else "",
+            "ciudad": lambda e: e.ciudad,
+            "código postal": lambda e: e.codigo_postal,
+            "estado": lambda e: e.estado,
+            "país": lambda e: e.pais,
+            "número telefónico": lambda e: e.numero_telefonico,
+            "nombre contacto": lambda e: e.nombre_contacto,
+            "contacto emergencia": lambda e: e.contacto_emergencia,
+            "parentesco contacto": lambda e: e.parentesco_contacto,
+            "calles": lambda e: e.calles,
+            "avenidas": lambda e: e.avenidas,
+            "num interior": lambda e: e.num_interior,
+            "num exterior": lambda e: e.num_exterior,
+            "dirección adicional": lambda e: e.direccion_adicional,
+            "activo": lambda e: "Sí" if e.activo else "No",
+            "puesto": lambda e: e.puesto.nombre if e.puesto else '',
+            "salario": lambda e: f"${e.puesto.salario:.2f}" if e.puesto and e.puesto.salario else '',
+            "horas laborales": lambda e: e.puesto.horas_laborales if e.puesto else '',
+            "días laborales": lambda e: e.puesto.dias_laborales if e.puesto else '',
+            "hora entrada": lambda e: e.puesto.hora_entrada.strftime("%H:%M") if e.puesto and e.puesto.hora_entrada else '',
+            "hora salida": lambda e: e.puesto.hora_salida.strftime("%H:%M") if e.puesto and e.puesto.hora_salida else '',
+            "departamento": lambda e: e.departamento.nombre if e.departamento else '',
+            "sucursal": lambda e: e.sucursal.nombre_sucursal if e.sucursal else '',
+        }
+
+        # Usar ComprobarModelosTablas para crear/obtener el modelo
+        modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo='modelo_empleados_vempleados',
+            interfazTabla=self.ui.tabla_listaempleados,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabecera,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalSeleccion=self.obtener_id_elemento_tabla_empleados
+        )
 
         if not estado or not empleados:
             Mensaje().mensaje_informativo("No hay empleados para mostrar")
-            self.ui.tabla_listaempleados.setModel(self.modelo_empleados_vempleados)
+            modelo.clear()
             return
 
         self.empleados = empleados
 
-        campos_extras = {
-            "Puesto": lambda e: e.puesto.nombre if e.puesto else '',
-            "Salario": lambda e: e.puesto.salario if e.puesto else '',
-            "Horas Laborales": lambda e: e.puesto.horas_laborales if e.puesto else '',
-            "Días Laborales": lambda e: e.puesto.dias_laborales if e.puesto else '',
-            "Hora Entrada": lambda e: e.puesto.hora_entrada if e.puesto else '',
-            "Hora Salida": lambda e: e.puesto.hora_salida if e.puesto else '',
-            "Departamento": lambda e: e.departamento.nombre if e.departamento else '',
-            "Sucursal": lambda e: e.sucursal.nombre_sucursal if e.sucursal else '',
-        }
+        # Actualizar los datos del modelo
+        modelo.update_data(empleados, reset=True)
 
-        for empleado in empleados:
-            fila = []
-            for col in cabeceras:
-                valor = campos_extras[col](empleado) if col in campos_extras \
-                    else getattr(empleado, col.lower().replace(" ", "_"), '')
-                item = QStandardItem(str(valor))
-                item.setTextAlignment(Qt.AlignCenter)
-                if col == "ID":
-                    item.setData(empleado, Qt.UserRole)
-                fila.append(item)
-
-            self.modelo_empleados_vempleados.appendRow(fila)
-
-        self.ui.tabla_listaempleados.setModel(self.modelo_empleados_vempleados)
-        self.ui.tabla_listaempleados.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.ui.tabla_listaempleados.resizeColumnsToContents()
-
-        if self.seleccion_conectada_empleados:
-            self.ui.tabla_listaempleados.clicked.disconnect(self.obtener_id_elemento_tabla_empleados)
-            self.seleccion_conectada_empleados = False
+        # Configurar la selección (esto ya se hace en comprobarModeloTabla, pero por si acaso)
+        if hasattr(self, 'seleccion_conectada_empleados') and self.seleccion_conectada_empleados:
+            try:
+                self.ui.tabla_listaempleados.clicked.disconnect(self.obtener_id_elemento_tabla_empleados)
+            except:
+                pass
 
         self.ui.tabla_listaempleados.clicked.connect(self.obtener_id_elemento_tabla_empleados)
         self.seleccion_conectada_empleados = True
-        
+
         QTimer.singleShot(0, self.cargando_cerrar)
 
     def obtener_id_elemento_tabla_empleados(self, current, previus = None):
         if current.isValid():
             fila = current.row()
-            item = self.modelo_empleados_vempleados.item(fila, 0)  # columna 0 = ID (donde guardamos el objeto)
-            if item:
-                empleado = item.data(Qt.UserRole)
-                if empleado:
-                    self.empleado_actual = empleado
+            
+            # OPCIÓN 1: Usando get_item() de GenericTableModel (Recomendado)
+            empleado = self.modelo_empleados_vempleados.get_item(current)
+            
+            # OPCIÓN 2: Usando data() con Qt.UserRole
+            # empleado = self.modelo_empleados_vempleados.data(current, Qt.UserRole)
+            
+            # OPCIÓN 3: Obteniendo por índice de fila
+            # empleado = self.modelo_empleados_vempleados.get_item_by_row(fila)
+            
+            if empleado:
+                self.empleado_actual = empleado
+                # También puedes acceder al ID si lo necesitas:
+                # id_empleado = empleado.id
+                # print(f"Empleado seleccionado: {empleado.nombre} {empleado.apellido_paterno}")
 
     def obtencion_segura(atributo, default='Sin dato'):
         """Función auxiliar para obtener atributos de manera segura."""
