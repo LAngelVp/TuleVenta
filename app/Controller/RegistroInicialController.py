@@ -125,7 +125,6 @@ class Registro_personal_inicial(QDialog):
         self.listar_departamentos()
         self.listar_puestos()
         self.listar_sucursales()
-        self.listar_sucursales()
 
 # señales y slots:
         
@@ -625,15 +624,15 @@ p, li { white-space: pre-wrap; }
                 WorkerDB.cleanup_owner_workers("agregar_empleado")
                 
                 # ✅ Crear nuevo worker gestionado
-                self.id_hilo_actual = WorkerDB.create_managed_worker(owner_id="agregar_empleado")
-                self.consultor = WorkerDB.get_managed_worker(self.id_hilo_actual)
+                self.id_hilo_agregar_empleado = WorkerDB.create_managed_worker(owner_id="agregar_empleado")
+                self.consultor = WorkerDB.get_managed_worker(self.id_hilo_agregar_empleado)
                 
                 if not self.consultor:
                     raise Exception("No se pudo obtener el worker gestionado")
                 
                 # ✅ Conectar señales
                 WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_actual,
+                    worker_id=self.id_hilo_agregar_empleado,
                     resultado_callback=self.mostrar_estado_usuario,
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.cargando_cerrar
@@ -656,10 +655,9 @@ p, li { white-space: pre-wrap; }
             except Exception as e:
                 print(f"Error al configurar worker: {str(e)}")
                 # ✅ Limpiar en caso de error
-                if hasattr(self, 'id_hilo_actual'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_actual)
+                if hasattr(self, 'id_hilo_agregar_empleado'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_empleado)
                 self.mostrar_error_hilo("Error al iniciar el proceso")
-                
                 
     def mostrar_estado_usuario(self, mensaje, estado):
         Mensaje().mensaje_informativo(mensaje)
@@ -760,17 +758,33 @@ p, li { white-space: pre-wrap; }
         datos = self.obtener_datos()
         print(self.empleado_existente, id_empleado)
         if self.validar_datos(datos) and id_empleado is not None:
-            self.mostrar_modal_local()
-            self.consultor = WorkerDB()
-            self.consultor.error.connect(self.mostrar_error_hilo)
-            self.consultor.terminado.connect(self.cargando_cerrar)
-            self.consultor.resultado.connect(self.mostrar_estado_usuario_actualizado)
-            self.consultor.ejecutar(
-                funcion=self.actualizar_empleado_query,
-                id_empleado=id_empleado,
-                imagen = self.file_name,
-                datos=datos
-            )
+            try:
+                self.mostrar_modal_local()
+                WorkerDB.cleanup_owner_workers(owner_id="actualizar_empleado_thread")
+                self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id="actualizar_empleado_thread")
+                self.consultor_actualizar_empleado = WorkerDB.get_managed_worker(self.id_hilo_actual_actualizar_empleado)
+                if not self.consultor_actualizar_empleado:
+                    raise Exception("No se logro hacer la actualizacion del registro")
+                # conectar señales
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actual_actualizar_empleado,
+                    resultado_callback= self.mostrar_estado_usuario_actualizado,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.cargando_cerrar
+                )
+                # ejecutar hilo
+                self.consultor_actualizar_empleado.ejecutar(
+                    funcion=self.actualizar_empleado_query,
+                    id_empleado = id_empleado,
+                    imagen = self.file_name,
+                    datos = datos
+                )
+            except Exception as e:
+                print(f"Error al configurar worker: {str(e)}")
+                # ✅ Limpiar en caso de error
+                if hasattr(self, 'id_hilo_actual_actualizar_empleado'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actual_actualizar_empleado)
+                self.mostrar_error_hilo("Error al iniciar el proceso")
         else:
             Mensaje().mensaje_informativo("Todos los campos deben de estar completos")
     
@@ -822,7 +836,6 @@ p, li { white-space: pre-wrap; }
         
         return "no se logro actualizar", False
             
-            
     def agregar_usuario(self):
         print(self.empleado_existente.id)
         if not self.empleado_existente:
@@ -857,7 +870,6 @@ p, li { white-space: pre-wrap; }
                 session.commit()
                 Mensaje().mensaje_informativo("Usuario asignado correctamente al empleado.")
             
-    
     def abrir_inicio(self):
         if self.variable_primer_registro:
             from app.Controller.InicioDeSesionController import Login  # Mover la importación aquí
@@ -874,7 +886,6 @@ p, li { white-space: pre-wrap; }
             if sender.text() in self.dias_laborales:
                 self.dias_laborales.remove(sender.text())
 
-    
 #// funcionalidades de la ventana
     def cerrar(self):
         self.id_empleado = None

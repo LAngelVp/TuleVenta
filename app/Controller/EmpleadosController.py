@@ -87,15 +87,36 @@ class EmpleadosController(QWidget):
             Mensaje().mensaje_informativo("No haz ingresado datos para filtrar")
             return
         self.mostrar_modal_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.llenar_tabla_empleados)
-        self.consultor.ejecutar(
-            funcion=self.buscar_empleado_query,
-            id_empleado=id_empleado,
-            nombre_empleado=nombre_empleado,
-            tipo_filtro_nombre=tipo_filtro_nombre
-        )
+        try:
+            WorkerDB.cleanup_owner_workers("buscar_empleado_thread")
+            self.id_hilo_buscar_empleado = WorkerDB.create_managed_worker(owner_id="buscar_empleado_thread")
+            self.consultor_buscar_empleado = WorkerDB.get_managed_worker(self.id_hilo_buscar_empleado)
+            if not self.consultor_buscar_empleado:
+                raise Exception("No se logro realizar la busqueda del empleado")
+            # conexion a las señales
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_buscar_empleado,
+                resultado_callback=self.llenar_tabla_empleados,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.cargando_cerrar
+            )
+            #ejecutar hilo
+            self.consultor_buscar_empleado.ejecutar(
+                funcion=self.buscar_empleado_query,
+                id_empleado = id_empleado,
+                nombre_empleado = nombre_empleado,
+                tipo_filtro_nombre = tipo_filtro_nombre
+            )
+            
+        except Exception as e:
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_buscar_empleado'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_empleado)
+            self.mostrar_error_hilo("Error al iniciar el proceso")
+            
+    def mostrar_status(self, mensaje = None, estado = None):
+        Mensaje().mensaje_informativo(mensaje)
         
     def buscar_empleado_query(self, session, id_empleado, nombre_empleado, tipo_filtro_nombre):
         empleados, estado = EmpleadosModel(session).filtrar_empleados(id_empleado, nombre_empleado, tipo_filtro_nombre)
@@ -112,13 +133,21 @@ class EmpleadosController(QWidget):
             return
         print(self.empleado_actual.id)
         self.mostrar_modal_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.mensaje_estado_eliminado)
-        self.consultor.error.connect(self.mostrar_error)
-        self.consultor.ejecutar(
+        WorkerDB.cleanup_owner_workers("eliminar_empleado_thread")
+        self.id_hilo_eliminar_empleado = WorkerDB.create_managed_worker(owner_id="eliminar_empleado_thread")
+        self.consultor_eliminar_empleado = WorkerDB.get_managed_worker(self.id_hilo_eliminar_empleado)
+        if not self.consultor_eliminar_empleado:
+            raise Exception("No se logro hacer la operación para eliminar el registro")
+        
+        WorkerDB.connect_managed_signals(
+            worker_id=self.id_hilo_eliminar_empleado,
+            resultado_callback=self.mensaje_estado_eliminado,
+            error_callback=self.mostrar_error,
+            terminado_callback=self.cargando_cerrar
+        )
+        self.consultor_eliminar_empleado.ejecutar(
             funcion=self.eliminar_empleado_query,
-            id_empleado=self.empleado_actual.id,
+            id_empleado = self.empleado_actual.id
         )
         
     def eliminar_empleado_query(self, session, id_empleado):
@@ -150,13 +179,13 @@ class EmpleadosController(QWidget):
     def listar_empleados(self):
         self.mostrar_modal_local()
         try:
-            WorkerDB.cleanup_owner_workers("listar_empleados")
-            self.hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id="listar_empleados")
-            self.consultor_listarEmpleados = WorkerDB.get_managed_worker(self.hilo_listar_empleados)
+            WorkerDB.cleanup_owner_workers("listar_empleados_thread")
+            self.id_hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id="listar_empleados_thread")
+            self.consultor_listarEmpleados = WorkerDB.get_managed_worker(self.id_hilo_listar_empleados)
             if not self.consultor_listarEmpleados:
                 raise Exception("No se pudo obtener la lista de empleados.")
             WorkerDB.connect_managed_signals(
-                worker_id=self.hilo_listar_empleados,
+                worker_id=self.id_hilo_listar_empleados,
                 resultado_callback=self.llenar_tabla_empleados,
                 error_callback= self.mostrar_error,
                 terminado_callback=self.cargando_cerrar
@@ -165,7 +194,11 @@ class EmpleadosController(QWidget):
                 self.obtener_empleados_query
             )
         except Exception as e:
-            pass
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_listar_empleados'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_listar_empleados)
+            self.mostrar_error_hilo("Error al iniciar el proceso")
         
     def mostrar_error(self, error):
         Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")
