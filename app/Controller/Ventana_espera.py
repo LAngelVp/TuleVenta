@@ -30,4 +30,38 @@ class Modal_de_espera(QDialog):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
+
+# modal_manager.py
+from PySide6.QtCore import QObject
+
+class ModalManager(QObject):
+    def __init__(self):
+        super().__init__()
+        self.cargando = None
+        self._modal_class = None
+    
+    def set_modal_class(self, modal_class):
+        """Establece la clase del modal a usar"""
+        self._modal_class = modal_class
+    
+    def mostrar_modal(self, parent=None):
+        """Muestra el modal de espera"""
+        if self._modal_class is None:
+            raise ValueError("Modal class not set. Call set_modal_class() first.")
         
+        if self.cargando is None or not self.cargando.isVisible():
+            self.cargando = self._modal_class(parent)
+            self.cargando.show()
+        else:
+            self.cargando.raise_()
+            self.cargando.activateWindow()
+    
+    def cerrar_modal(self):
+        """Cierra el modal de espera"""
+        if self.cargando:
+            self.cargando.close()
+            self.cargando = None
+    
+    def __del__(self):
+        """Asegura que el modal se cierre al destruir el manager"""
+        self.cerrar_modal()

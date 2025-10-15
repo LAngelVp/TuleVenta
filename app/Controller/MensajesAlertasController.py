@@ -23,7 +23,7 @@ class Mensaje:
         boton_reintentar.setText("Cancelar")
         respuesta = self.mensaje.exec_()
         return respuesta
-    def mensaje_critico(self, cuerpo ):
+    def mensaje_critico(self, cuerpo):
         self.mensaje.setIcon(QMessageBox.Critical)
         self.mensaje.setWindowTitle('Critico')
         self.mensaje.setText(cuerpo)
@@ -38,7 +38,7 @@ class Mensaje:
         respuesta = self.mensaje.exec_()
         
         return respuesta
-    def mensaje_pregunta(self, cuerpo ):
+    def mensaje_pregunta(self, cuerpo):
         self.mensaje.setIcon(QMessageBox.Information)
         self.mensaje.setWindowTitle('Pregunta')
         self.mensaje.setText(cuerpo)

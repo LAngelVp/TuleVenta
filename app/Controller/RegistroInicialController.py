@@ -24,7 +24,7 @@ from .ControlSucursalesController import SucursalesController
 from .DepartamentosController import DepartamentosController
 from .PuestosController import PuestosController
 
-from .Ventana_espera import Modal_de_espera
+from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import *
 
 import traceback
@@ -125,6 +125,8 @@ class Registro_personal_inicial(QDialog):
         self.listar_departamentos()
         self.listar_puestos()
         self.listar_sucursales()
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
 
 # señales y slots:
         
@@ -158,10 +160,12 @@ class Registro_personal_inicial(QDialog):
     def eliminar_credenciales(self):
         id_empleado = self.id_empleado
         if id_empleado is not None:
+            self.manejadorModal.mostrar_modal(self)
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
                 with session.begin():
                     credenciales = EmpleadosModel(session).eliminar_credenciales(id_empleado)
+                    self.manejadorModal.cerrar_modal()
                     if credenciales:
                         Mensaje().mensaje_informativo("Se elimino el usuario del empleado.")
                     else:
@@ -178,6 +182,7 @@ class Registro_personal_inicial(QDialog):
             Mensaje().mensaje_informativo("Para actualizar las credenciales, debe de contener un nombre de usuario y una contraseña.")
             return
         try:
+            self.manejadorModal.mostrar_modal(self)
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
                 with session.begin():  # Inicia una transacción
@@ -188,6 +193,7 @@ class Registro_personal_inicial(QDialog):
                     
                     if usuario_actualizado:
                         Mensaje().mensaje_informativo("Credenciales actualizadas con éxito.")
+                        self.manejadorModal.cerrar_modal()
                         self.cerrar()  # Cierra la ventana o la acción correspondiente
                     else:
                         Mensaje().mensaje_informativo("No se pudo actualizar el usuario. Verifica los datos e intenta de nuevo.")
@@ -201,12 +207,14 @@ class Registro_personal_inicial(QDialog):
         if self.id_empleado is None:
             Mensaje().mensaje_informativo("No se logro dar de baja al empleado")
             return
+        self.manejadorModal.mostrar_modal(self)
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
             with session.begin():
                 empleado, estatus = EmpleadosModel(session).alta_empleado(self.id_empleado, True, fecha_actual)
                 if estatus:
                     Mensaje().mensaje_informativo("Empleado dado de alta con exito")
+                    self.manejadorModal.cerrar_modal()
                     self.cerrar()
             self.registro_agregado_signal.emit()
             return
@@ -217,7 +225,7 @@ class Registro_personal_inicial(QDialog):
         if self.empleado_existente is None:
             Mensaje().mensaje_informativo("No se logro dar de baja al empleado")
             return
-        self.mostrar_modal_local()
+        self.manejadorModal.mostrar_modal(self)
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
             with session.begin():
@@ -231,7 +239,7 @@ class Registro_personal_inicial(QDialog):
             self.registro_agregado_signal.emit()
             return
         Mensaje().mensaje_informativo("Existio un error al dar de baja al empleado.")
-        self.cargando_cerrar()
+        self.manejadorModal.cerrar_modal()
     
     def mostrar_agregar_credenciales(self):
         if self.ui.opcion_usodelsistema.isChecked():
@@ -620,6 +628,7 @@ p, li { white-space: pre-wrap; }
 
         if self.validar_datos(datos=datos):
             try:
+                self.manejadorModal.mostrar_modal(self)
                 # ✅ Siempre limpiar workers anteriores del mismo tipo primero
                 WorkerDB.cleanup_owner_workers("agregar_empleado")
                 
@@ -634,8 +643,8 @@ p, li { white-space: pre-wrap; }
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_agregar_empleado,
                     resultado_callback=self.mostrar_estado_usuario,
-                    error_callback=self.mostrar_error_hilo,
-                    terminado_callback=self.cargando_cerrar
+                    error_callback=self.mensaje_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 
                 # ✅ Ejecutar
@@ -657,8 +666,14 @@ p, li { white-space: pre-wrap; }
                 # ✅ Limpiar en caso de error
                 if hasattr(self, 'id_hilo_agregar_empleado'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_empleado)
-                self.mostrar_error_hilo("Error al iniciar el proceso")
+                Mensaje.mensaje_alerta(f"Error al iniciar el proceso: {e}")
                 
+    def mensaje_resultado_hilo(self, mensaje, estado):
+        Mensaje().mensaje_informativo(f"{mensaje}")
+        
+    def mensaje_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f"{error}")
+        
     def mostrar_estado_usuario(self, mensaje, estado):
         Mensaje().mensaje_informativo(mensaje)
         if estado:
@@ -666,22 +681,6 @@ p, li { white-space: pre-wrap; }
             self.registro_agregado_signal.emit()
             if self.empleado is None:
                 self.abrir_inicio()
-
-    def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f"Ocurrió un error: {error}")
-
-    def mostrar_modal_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera()
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
-            
-    def cargando_cerrar(self):
-        if self.cargando:
-            self.cargando.close()
-            self.cargando = None
 
     def almacenar_informacion_query(self, session, uso_del_sistema, id_empleado, imagen, nombre_usuario, password_usuario, fecha_creacion, fecha_actualizacion, current_data_rol, datos):
         try:
@@ -759,7 +758,7 @@ p, li { white-space: pre-wrap; }
         print(self.empleado_existente, id_empleado)
         if self.validar_datos(datos) and id_empleado is not None:
             try:
-                self.mostrar_modal_local()
+                self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers(owner_id="actualizar_empleado_thread")
                 self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id="actualizar_empleado_thread")
                 self.consultor_actualizar_empleado = WorkerDB.get_managed_worker(self.id_hilo_actual_actualizar_empleado)
@@ -769,8 +768,8 @@ p, li { white-space: pre-wrap; }
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actual_actualizar_empleado,
                     resultado_callback= self.mostrar_estado_usuario_actualizado,
-                    error_callback=self.mostrar_error_hilo,
-                    terminado_callback=self.cargando_cerrar
+                    error_callback=self.mensaje_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 # ejecutar hilo
                 self.consultor_actualizar_empleado.ejecutar(
@@ -784,7 +783,7 @@ p, li { white-space: pre-wrap; }
                 # ✅ Limpiar en caso de error
                 if hasattr(self, 'id_hilo_actual_actualizar_empleado'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actual_actualizar_empleado)
-                self.mostrar_error_hilo("Error al iniciar el proceso")
+                Mensaje.mensaje_alerta(f"Error al iniciar el proceso {e}")
         else:
             Mensaje().mensaje_informativo("Todos los campos deben de estar completos")
     
@@ -849,26 +848,29 @@ p, li { white-space: pre-wrap; }
         password = self.ui.txt_contrasenia_usuario_iniciosesion.text()
         fecha_actualizacion = datetime.now().date()
         rol = self.ui.cajaOpciones_rol_usuario.currentData()
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                usuario, status_usuario = UsuarioModel(session).crear_usuario(
-                                    usuario = usuario,
-                                    password = password,
-                                    fecha_creacion = fecha_actual,
-                                    fecha_actualizacion = fecha_actual,
-                                    rol_id = rol)
-                if not status_usuario:
-                    Mensaje().mensaje_alerta("El usuario que intentas crear ya esta ocupado.")
-                    return
-                
-                self.empleado_existente.usuario_id = usuario.id
-                
-                # Agregar el empleado a la sesión para guardar los cambios
-                session.add(self.empleado_existente)
-                
-                session.commit()
-                Mensaje().mensaje_informativo("Usuario asignado correctamente al empleado.")
+        try:
+            with Conexion_base_datos() as db:
+                session = db.abrir_sesion()
+                with session.begin():
+                    usuario, status_usuario = UsuarioModel(session).crear_usuario(
+                                        usuario = usuario,
+                                        password = password,
+                                        fecha_creacion = fecha_actual,
+                                        fecha_actualizacion = fecha_actual,
+                                        rol_id = rol)
+                    if not status_usuario:
+                        Mensaje().mensaje_alerta("El usuario que intentas crear ya esta ocupado.")
+                        return
+                    
+                    self.empleado_existente.usuario_id = usuario.id
+                    
+                    # Agregar el empleado a la sesión para guardar los cambios
+                    session.add(self.empleado_existente)
+                    
+                    session.commit()
+                    Mensaje().mensaje_informativo("Usuario asignado correctamente al empleado.")
+        except Exception as e:
+            Mensaje.mensaje_alerta(f'Existe un error al momento de agregar el usuario: {e}')
             
     def abrir_inicio(self):
         if self.variable_primer_registro:

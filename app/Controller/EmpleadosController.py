@@ -12,7 +12,7 @@ from app.Model.EmpleadoModel import EmpleadosModel
 from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
 from .ComprobarValoresTablasController import Comprobacion
-from .Ventana_espera import Modal_de_espera
+from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
 
 class EmpleadosController(QWidget):
@@ -48,12 +48,11 @@ class EmpleadosController(QWidget):
 #señales:
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
 #---------------------------------------------------------
+#funciones:
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+#-----------------------------------------------------------
             
     def ventana_cerrada_nuevo_personal(self):
         self.ventana_registro = None
@@ -86,7 +85,7 @@ class EmpleadosController(QWidget):
         if not id_empleado and not nombre_empleado:
             Mensaje().mensaje_informativo("No haz ingresado datos para filtrar")
             return
-        self.mostrar_modal_local()
+        self.manejadorModal.mostrar_modal(self)
         try:
             WorkerDB.cleanup_owner_workers("buscar_empleado_thread")
             self.id_hilo_buscar_empleado = WorkerDB.create_managed_worker(owner_id="buscar_empleado_thread")
@@ -109,11 +108,11 @@ class EmpleadosController(QWidget):
             )
             
         except Exception as e:
-            print(f"Error al configurar worker: {str(e)}")
             # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_buscar_empleado'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_empleado)
-            self.mostrar_error_hilo("Error al iniciar el proceso")
+            Mensaje.mensaje_alerta(f'Ocurrio un error en el proceso: {e}')
+        self.manejadorModal.cerrar_modal()
             
     def mostrar_status(self, mensaje = None, estado = None):
         Mensaje().mensaje_informativo(mensaje)
@@ -132,23 +131,29 @@ class EmpleadosController(QWidget):
             Mensaje().mensaje_informativo("No haz seleccionado un empleado")
             return
         print(self.empleado_actual.id)
-        self.mostrar_modal_local()
-        WorkerDB.cleanup_owner_workers("eliminar_empleado_thread")
-        self.id_hilo_eliminar_empleado = WorkerDB.create_managed_worker(owner_id="eliminar_empleado_thread")
-        self.consultor_eliminar_empleado = WorkerDB.get_managed_worker(self.id_hilo_eliminar_empleado)
-        if not self.consultor_eliminar_empleado:
-            raise Exception("No se logro hacer la operación para eliminar el registro")
-        
-        WorkerDB.connect_managed_signals(
-            worker_id=self.id_hilo_eliminar_empleado,
-            resultado_callback=self.mensaje_estado_eliminado,
-            error_callback=self.mostrar_error,
-            terminado_callback=self.cargando_cerrar
-        )
-        self.consultor_eliminar_empleado.ejecutar(
-            funcion=self.eliminar_empleado_query,
-            id_empleado = self.empleado_actual.id
-        )
+        self.manejadorModal.mostrar_modal(self)
+        try:
+            WorkerDB.cleanup_owner_workers("eliminar_empleado_thread")
+            self.id_hilo_eliminar_empleado = WorkerDB.create_managed_worker(owner_id="eliminar_empleado_thread")
+            self.consultor_eliminar_empleado = WorkerDB.get_managed_worker(self.id_hilo_eliminar_empleado)
+            if not self.consultor_eliminar_empleado:
+                raise Exception("No se logro hacer la operación para eliminar el registro")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_eliminar_empleado,
+                resultado_callback=self.mensaje_estado_eliminado,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_eliminar_empleado.ejecutar(
+                funcion=self.eliminar_empleado_query,
+                id_empleado = self.empleado_actual.id
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_eliminar_empleado'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_empleado)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+        self.manejadorModal.cerrar_modal()
         
     def eliminar_empleado_query(self, session, id_empleado):
         empleado, estado = EmpleadosModel(session).eliminar_empleado(id_empleado)
@@ -177,7 +182,7 @@ class EmpleadosController(QWidget):
             self.ventana_registro.activateWindow()
     
     def listar_empleados(self):
-        self.mostrar_modal_local()
+        self.manejadorModal.mostrar_modal(self)
         try:
             WorkerDB.cleanup_owner_workers("listar_empleados_thread")
             self.id_hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id="listar_empleados_thread")
@@ -188,7 +193,7 @@ class EmpleadosController(QWidget):
                 worker_id=self.id_hilo_listar_empleados,
                 resultado_callback=self.llenar_tabla_empleados,
                 error_callback= self.mostrar_error,
-                terminado_callback=self.cargando_cerrar
+                terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_listarEmpleados.ejecutar(
                 self.obtener_empleados_query
@@ -320,11 +325,3 @@ class EmpleadosController(QWidget):
     def obtencion_segura(atributo, default='Sin dato'):
         """Función auxiliar para obtener atributos de manera segura."""
         return atributo if atributo is not None else default
-
-    def mostrar_modal_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()

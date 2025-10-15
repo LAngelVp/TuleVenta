@@ -11,7 +11,8 @@ from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .Validaciones import Validaciones
-
+from .Hilo_consultas import *
+from .Ventana_espera import Modal_de_espera, ModalManager
 class SucursalesController(QDialog):
     VENTANA_SUCURSALES_CERRADA = Signal()
     signal_sucursal_agregada = Signal()
@@ -50,7 +51,9 @@ class SucursalesController(QDialog):
         self.ui.btn_btn_actualizar.clicked.connect(self.actualizar)
         self.ui.btn_cerrar_encabezado.clicked.connect(self.close)
 
-
+        #funciones:
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
         # señales:
         self.ui.txt_buscarsucursales.returnPressed.connect(self.buscar_sucursal)
         self.obtener_sucursales()
@@ -124,26 +127,46 @@ class SucursalesController(QDialog):
             return  # Salir del método si hay campos vacíos
 
         # Iniciar la conexión a la base de datos
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    # Agregar la sucursal a la base de datos
-                    sucursal, creada = SucursalesModel(session).agregar_sucursal(**datos)
-                    if creada == False:
-                        if sucursal.nombre_sucursal == datos['nombre_sucursal']:
-                            Mensaje().mensaje_informativo('El nombre de la sucursal que intentas agregar ya existe.')
-                            return
-                    Mensaje().mensaje_informativo('Se ha agregado la sucursal con éxito')
-                except Exception as e:
-                    # Manejo de errores
-                    Mensaje().mensaje_alerta(f'Error al agregar la sucursal: {e}')
-                    return
-        
-        self.signal_sucursal_agregada.emit()
-        # Listar sucursales después de agregar
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            
+            WorkerDB.cleanup_owner_workers("agregar_sucursal")
+            self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id="agregar_sucursal")
+            self.consultor_agregar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_agregar_sucursal)
+            if not self.consultor_agregar_sucursal:
+                raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_sucursal,
+                resultado_callback=self.mostrar_resultado_hilo,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_agregar_sucursal.ejecutar(
+                funcion=self.agregar_sucursal_query,
+                datos = datos
+                )
+        except Exception as e:
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_agregar_sucursal'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_sucursal)
+            Mensaje().mensaje_alerta("Error al iniciar el proceso")
         self.obtener_sucursales()
         self.limpiar()
+    
+    def agregar_sucursal_query(self, session, datos):
+        try:
+            sucursal, creada = SucursalesModel(session).agregar_sucursal(**datos)
+            if not creada:
+                if sucursal.nombre_sucursal == datos['nombre_sucursal']:
+                    session.rollback()
+                    return "La sucursal que intentas agregar ya existe", False
+        except Exception as e:
+            session.rollback()
+            return "Error al realizar la operacion de agregar sucursal", False
+        session.commit()
+        return "Registro de la sucursal, exitoso", True
                         
     def obtener_sucursales(self):
         sucursales = None
@@ -257,3 +280,9 @@ class SucursalesController(QDialog):
                     # Si ocurre una excepción, la transacción se hará rollback automáticamente
         self.limpiar()
         self.obtener_sucursales()
+        
+    def mostrar_resultado_hilo(self, mensaje, estado):
+        Mensaje().mensaje_informativo(f'{mensaje}')
+        
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
