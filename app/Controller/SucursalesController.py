@@ -22,9 +22,14 @@ class SucursalesController(QDialog):
         self._ventanaCentradaSucursales = False
         self.id_sucursal = None
         self.sucursales = None
+        self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         
         self.ui = Ui_Nueva_sucursal()
         self.ui.setupUi(self)
+        
+        self.setWindowModality(Qt.ApplicationModal)  # Bloquea interacción con otras ventanas
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
@@ -50,17 +55,15 @@ class SucursalesController(QDialog):
         self.ui.btn_btn_eliminar.clicked.connect(self.eliminar)
         self.ui.btn_btn_actualizar.clicked.connect(self.actualizar)
         self.ui.btn_cerrar_encabezado.clicked.connect(self.close)
-
+        self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_sucursales)
+        self.ui.btn_btn_buscar_sucursal.clicked.connect(self.buscar_sucursal)
+        
         #funciones:
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        # señales:
-        self.ui.txt_buscarsucursales.returnPressed.connect(self.buscar_sucursal)
-        self.obtener_sucursales()
         
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
-        
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -73,14 +76,35 @@ class SucursalesController(QDialog):
         event.accept()
 
     def buscar_sucursal(self):
-        nombre_sucursal = self.ui.txt_buscarsucursales.text()
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                self.sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
-                if estado == True:
-                    self.listar_sucursales(self.sucursales)
-
+        nombre_sucursal = self.ui.txt_buscarsucursales.text().strip()
+        if not nombre_sucursal:
+            Mensaje().mensaje_informativo("No haz ingresado algun dato para realizar la busqueda.")
+            return
+        self.ui.txt_buscarsucursales.clearFocus()
+        try:
+            WorkerDB.cleanup_owner_workers("buscar_sucursal_thread")
+            self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id="buscar_sucursal_thread")
+            self.consultor_buscar_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_buscar_sucursal)
+            if not self.consultor_buscar_sucursal_hilo:
+                raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_buscar_sucursal,
+                resultado_callback=self.listar_sucursales,
+                error_callback= self.mostrar_error_hilo
+            )
+            self.consultor_buscar_sucursal_hilo.ejecutar(
+                funcion=self.buscar_sucursal_query,
+                nombre_sucursal = nombre_sucursal
+                )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_buscar_sucursal'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_sucursal)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}")
+            
+    def buscar_sucursal_query(self, session, nombre_sucursal):
+        sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
+        return sucursales, estado
+        
     def limpiar(self):
         for campo in self.campos_nomales().values():
             # Limpiar QLineEdit
@@ -152,8 +176,8 @@ class SucursalesController(QDialog):
             if hasattr(self, 'id_hilo_agregar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_sucursal)
             Mensaje().mensaje_alerta("Error al iniciar el proceso")
-        self.obtener_sucursales()
-        self.limpiar()
+        # self.obtener_sucursales()
+        # self.limpiar()
     
     def agregar_sucursal_query(self, session, datos):
         try:
@@ -169,34 +193,45 @@ class SucursalesController(QDialog):
         return "Registro de la sucursal, exitoso", True
                         
     def obtener_sucursales(self):
-        sucursales = None
         self.ui.lista_sucursales.clear()
-        self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                try:
-                    sucursales, estado = SucursalesModel(session).obtener_todo()
-                except Exception as e:
-                    Mensaje().mensaje_alerta("Error al obtener sucursales")
-            if sucursales:
-                self.listar_sucursales(sucursales)
+            WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
+            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
+            self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
+            if not self.consultor_obtener_sucursal_hilo:
+                raise Exception("No se pudo obtener el worker gestionado al obtener la sucursal")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_sucursales,
+                resultado_callback=self.listar_sucursales,
+                error_callback= self.mostrar_error_hilo
+            )
+            self.consultor_obtener_sucursal_hilo.ejecutar(
+                funcion=self.obtener_sucursales_query
+                )
         except Exception as e:
-            Mensaje().mensaje_critico(f'Error al listar las sucursales : {e}')
+            if hasattr(self, 'id_hilo_obtener_sucursales'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_sucursales)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
+            
+    def obtener_sucursales_query(self, session):
+        sucursales, estado = SucursalesModel(session).obtener_todo()
+        return sucursales, estado
 
-    def listar_sucursales(self, sucursales):
+    def listar_sucursales(self, sucursales, estado):
         if sucursales:
-            self.ui.lista_sucursales.clear()
-            for  sucursal in sucursales:
-                # Crear un QListWidgetItem
-                item = QListWidgetItem(sucursal.nombre_sucursal)
-                
-                # Establecer el ícono en el ítem
-                item.setIcon(self.icon)
-                item.setData(Qt.UserRole, sucursal.id)
-                
-                # Agregar el ítem a la lista
-                self.ui.lista_sucursales.addItem(item)
+            try:
+                self.ui.lista_sucursales.clear()
+                for sucursal in sucursales:
+                    print(f"Procesando: {sucursal.nombre_sucursal} - {sucursal.id}")
+                    item = QListWidgetItem(sucursal.nombre_sucursal)
+                    item.setIcon(self.icon)
+                    item.setData(Qt.UserRole, sucursal.id)
+                    self.ui.lista_sucursales.addItem(item)
+                    
+            except Exception as e:
+                Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
+        else:
+            Mensaje().mensaje_informativo("No hay sucursales para mostrar")
 
     def obtenerId(self, item):
         self.id_sucursal = item.data(Qt.UserRole)

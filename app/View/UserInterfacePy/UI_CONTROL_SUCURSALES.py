@@ -36,7 +36,17 @@ class Ui_Nueva_sucursal(object):
 "#contenedor_encabezado{\n"
 "background: #023375\n"
 "}\n"
-"\n"
+"#btn_RefrescarTabla{\n"
+"border-radius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"}\n"
+"#btn_RefrescarTabla:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_RefrescarTabla:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
 "#etiqueta_buscar{\n"
 "image: url(:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg);\n"
 "min-width: 25px;\n"
@@ -66,7 +76,8 @@ class Ui_Nueva_sucursal(object):
 "}\n"
 "#etiqueta_titulo_encabezado{\n"
 "font-size: 18px;\n"
-"color: #fffefb;\n"
+"color: #fffef"
+                        "b;\n"
 "font-weight:bold;\n"
 "font-family:Arial;\n"
 "}\n"
@@ -77,8 +88,7 @@ class Ui_Nueva_sucursal(object):
 "background: #F5F5F5;\n"
 "border:none;\n"
 "border-radius:5px;\n"
-"border-bottom: 1p"
-                        "x solid #1d1c1c;\n"
+"border-bottom: 1px solid #1d1c1c;\n"
 "}\n"
 "[objectName*=\"txtlargo_\"]{\n"
 "color: #1d1c1c;\n"
@@ -113,7 +123,8 @@ class Ui_Nueva_sucursal(object):
 "[objectName*=\"btn_btn_\"]:pressed{\n"
 "background: #1B80D0;\n"
 "}\n"
-"#btn_btn_agregar:hover{\n"
+"#btn_btn_a"
+                        "gregar:hover{\n"
 "background: #68a67d;\n"
 "}\n"
 "#btn_btn_agregar:pressed{\n"
@@ -125,8 +136,7 @@ class Ui_Nueva_sucursal(object):
 "#btn_btn_eliminar:pressed{\n"
 "background: #B13636;\n"
 "}\n"
-""
-                        "/*QLISTWIDGET*/\n"
+"/*QLISTWIDGET*/\n"
 "QListWidget {\n"
 "    font-family: Arial;\n"
 "    font-size: 14px;\n"
@@ -204,15 +214,32 @@ class Ui_Nueva_sucursal(object):
 
         self.gridLayout_3 = QGridLayout()
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.etiqueta_buscar = QLabel(self.contenedor_lista)
-        self.etiqueta_buscar.setObjectName(u"etiqueta_buscar")
+        self.btn_btn_buscar_sucursal = QPushButton(self.contenedor_lista)
+        self.btn_btn_buscar_sucursal.setObjectName(u"btn_btn_buscar_sucursal")
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_buscar_sucursal.setIcon(icon1)
 
-        self.gridLayout_3.addWidget(self.etiqueta_buscar, 0, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.btn_btn_buscar_sucursal, 0, 1, 1, 1)
 
         self.txt_buscarsucursales = QLineEdit(self.contenedor_lista)
         self.txt_buscarsucursales.setObjectName(u"txt_buscarsucursales")
+        self.txt_buscarsucursales.setMouseTracking(False)
+        self.txt_buscarsucursales.setTabletTracking(False)
+        self.txt_buscarsucursales.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.txt_buscarsucursales.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.txt_buscarsucursales.setAcceptDrops(False)
+        self.txt_buscarsucursales.setFrame(True)
 
-        self.gridLayout_3.addWidget(self.txt_buscarsucursales, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.txt_buscarsucursales, 0, 0, 1, 1)
+
+        self.btn_RefrescarTabla = QPushButton(self.contenedor_lista)
+        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon2)
+
+        self.gridLayout_3.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
 
 
         self.gridLayout_4.addLayout(self.gridLayout_3, 0, 0, 1, 2)
@@ -261,9 +288,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_eliminar = QPushButton(self.contenedor_botones)
         self.btn_btn_eliminar.setObjectName(u"btn_btn_eliminar")
         self.btn_btn_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_eliminar.setIcon(icon1)
+        icon3 = QIcon()
+        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_eliminar.setIcon(icon3)
         self.btn_btn_eliminar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_eliminar)
@@ -271,9 +298,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_actualizar = QPushButton(self.contenedor_botones)
         self.btn_btn_actualizar.setObjectName(u"btn_btn_actualizar")
         self.btn_btn_actualizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_actualizar.setIcon(icon2)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_actualizar.setIcon(icon4)
         self.btn_btn_actualizar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_actualizar)
@@ -281,9 +308,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_agregar = QPushButton(self.contenedor_botones)
         self.btn_btn_agregar.setObjectName(u"btn_btn_agregar")
         self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_agregar.setIcon(icon3)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_agregar.setIcon(icon5)
         self.btn_btn_agregar.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_agregar)
@@ -337,9 +364,9 @@ class Ui_Nueva_sucursal(object):
         self.btn_btn_limpiar = QPushButton(self.contenedor)
         self.btn_btn_limpiar.setObjectName(u"btn_btn_limpiar")
         self.btn_btn_limpiar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiar.setIcon(icon4)
+        icon6 = QIcon()
+        icon6.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiar.setIcon(icon6)
         self.btn_btn_limpiar.setIconSize(QSize(25, 25))
 
         self.gridLayout_2.addWidget(self.btn_btn_limpiar, 0, 3, 1, 1)
@@ -418,11 +445,18 @@ class Ui_Nueva_sucursal(object):
         self.btn_cerrar_encabezado.setText("")
         self.etiquetasubtitulo_sucursales.setText(QCoreApplication.translate("Nueva_sucursal", u"Sucursales", None))
         self.etiquetasubtitulo_departamentosasociados.setText(QCoreApplication.translate("Nueva_sucursal", u"Departamentos", None))
-        self.etiqueta_buscar.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_btn_buscar_sucursal.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Buscar</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_buscar_sucursal.setText("")
 #if QT_CONFIG(tooltip)
         self.txt_buscarsucursales.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Buscar\u00e1 la sucursal que en su nombre coincida con el ingresado en el campo de texto</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
-        self.txt_buscarsucursales.setPlaceholderText(QCoreApplication.translate("Nueva_sucursal", u" Buscar Sucursal", None))
+        self.txt_buscarsucursales.setPlaceholderText(QCoreApplication.translate("Nueva_sucursal", u"Nombre de la sucursal", None))
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Refrescar Tabla</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setText("")
         self.etiqueta_ciudad.setText(QCoreApplication.translate("Nueva_sucursal", u"Ciudad", None))
         self.etiqueta_razonsocial.setText(QCoreApplication.translate("Nueva_sucursal", u"Raz\u00f3n Social", None))
 #if QT_CONFIG(tooltip)
@@ -442,6 +476,9 @@ class Ui_Nueva_sucursal(object):
         self.etiqueta_nombre.setText(QCoreApplication.translate("Nueva_sucursal", u"Nombre", None))
         self.etiqueta_direccion.setText(QCoreApplication.translate("Nueva_sucursal", u"DIRECCI\u00d3N COMPLETA", None))
         self.etiqueta_codigopostal.setText(QCoreApplication.translate("Nueva_sucursal", u"Codigo Postal", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_limpiar.setToolTip(QCoreApplication.translate("Nueva_sucursal", u"<html><head/><body><p><span style=\" font-weight:700;\">Limpiar Campos</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_limpiar.setText("")
         self.etiqueta_pais.setText(QCoreApplication.translate("Nueva_sucursal", u"Pais", None))
         self.etiqueta_estado.setText(QCoreApplication.translate("Nueva_sucursal", u"Estado", None))

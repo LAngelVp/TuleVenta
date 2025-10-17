@@ -385,12 +385,12 @@ p, li { white-space: pre-wrap; }
     
     def agregar_sucursal(self):
         if self.sucursales is None or not self.sucursales.isVisible():
-            self.sucursales = SucursalesController()
-            self.listar_sucursales_signal.connect(self.sucursales.obtener_sucursales)
-            self.sucursales.signal_sucursal_agregada.connect(self.listar_sucursales)
+            self.sucursales = SucursalesController(parent=None)
+            # self.listar_sucursales_signal.connect(self.sucursales.obtener_sucursales)
+            # self.sucursales.signal_sucursal_agregada.connect(self.listar_sucursales)
             self.sucursales.VENTANA_SUCURSALES_CERRADA.connect(self.ventana_sucursales_cerrada)
-            self.listar_sucursales_signal.emit()
-            self.sucursales.setModal(True)
+            # self.listar_sucursales_signal.emit()
+            # self.sucursales.setModal(True)
             self.sucursales.show()
         else:
             self.sucursales.raise_()
@@ -660,7 +660,6 @@ p, li { white-space: pre-wrap; }
                     current_data_rol=current_data_rol,
                     datos=datos
                 )
-                
             except Exception as e:
                 print(f"Error al configurar worker: {str(e)}")
                 # ✅ Limpiar en caso de error

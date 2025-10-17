@@ -203,7 +203,7 @@ class EmpleadosController(QWidget):
             # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_listar_empleados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_empleados)
-            self.mostrar_error_hilo("Error al iniciar el proceso")
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
         
     def mostrar_error(self, error):
         Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")
