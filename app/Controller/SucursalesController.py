@@ -20,7 +20,7 @@ class SucursalesController(QDialog):
         super().__init__(parent)
         
         self._ventanaCentradaSucursales = False
-        self.id_sucursal = None
+        self.idSucursal = None
         self.sucursales = None
         self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         
@@ -221,11 +221,12 @@ class SucursalesController(QDialog):
         if sucursales:
             try:
                 self.ui.lista_sucursales.clear()
+                self.ui.lista_departamentosasociados.clear()
                 for sucursal in sucursales:
                     print(f"Procesando: {sucursal.nombre_sucursal} - {sucursal.id}")
                     item = QListWidgetItem(sucursal.nombre_sucursal)
                     item.setIcon(self.icon)
-                    item.setData(Qt.UserRole, sucursal.id)
+                    item.setData(Qt.UserRole, sucursal)
                     self.ui.lista_sucursales.addItem(item)
                     
             except Exception as e:
@@ -234,36 +235,31 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_informativo("No hay sucursales para mostrar")
 
     def obtenerId(self, item):
-        self.id_sucursal = item.data(Qt.UserRole)
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    sucursal = SucursalesModel(session).obtener_sucursal_por_id(self.id_sucursal)
-                    if sucursal is not None:
-                        self.ui.txt_nombre.setText(sucursal.nombre_sucursal)
-                        self.ui.txt_codigopostal.setText(sucursal.codigo_postal)  # Asegúrate de que sea `codigo_postal`
-                        self.ui.txt_ciudad.setText(sucursal.ciudad)  # Aquí debe ser `ciudad`
-                        self.ui.txt_estado.setText(sucursal.estado)  # Aquí debe ser `estado`
-                        self.ui.txt_pais.setText(sucursal.pais)  # Aquí debe ser `pais`
-                        self.ui.txt_ntelefono.setText(sucursal.num_telefono)  # Aquí debe ser `num_telefono`
-                        self.ui.txt_razonsocial.setText(sucursal.razon_social)
-                        self.ui.txt_rfcsucursal.setText(sucursal.rfc)
-                        self.ui.txtlargo_direccion.setPlainText(sucursal.direccion)
-                        self.listar_departamentos_asignados(sucursal.departamentos)
-                except Exception as e:
-                    Mensaje().mensaje_critico(f'Error al obtener sucursal: {e}')
-
-    def listar_departamentos_asignados(self, departamentos):
+        if item:
+            sucursal = item.data(Qt.UserRole)
+            self.ui.txt_nombre.setText(sucursal.nombre_sucursal)
+            self.ui.txt_codigopostal.setText(sucursal.codigo_postal)  # Asegúrate de que sea `codigo_postal`
+            self.ui.txt_ciudad.setText(sucursal.ciudad)  # Aquí debe ser `ciudad`
+            self.ui.txt_estado.setText(sucursal.estado)  # Aquí debe ser `estado`
+            self.ui.txt_pais.setText(sucursal.pais)  # Aquí debe ser `pais`
+            self.ui.txt_ntelefono.setText(sucursal.num_telefono)  # Aquí debe ser `num_telefono`
+            self.ui.txt_razonsocial.setText(sucursal.razon_social)
+            self.ui.txt_rfcsucursal.setText(sucursal.rfc)
+            self.ui.txtlargo_direccion.setPlainText(sucursal.direccion)
+            self.listar_departamentos_asignados(sucursal.departamentos)
+            self.idSucursal = sucursal.id
+            print(self.idSucursal)
+        
+    def listar_departamentos_asignados(self, departamentos = None):
         if departamentos:
             self.ui.lista_departamentosasociados.clear()
-            for  nombre in departamentos:
+            for  departamento in departamentos:
                 # Crear un QListWidgetItem
-                item = QListWidgetItem(nombre.nombre)
+                item = QListWidgetItem(departamento.nombre)
                 
                 # Establecer el ícono en el ítem
                 item.setIcon(self.icon)
-                item.setData(Qt.UserRole, nombre.id)
+                item.setData(Qt.UserRole, departamento)
                 
                 # Agregar el ítem a la lista
                 self.ui.lista_departamentosasociados.addItem(item)
@@ -271,21 +267,51 @@ class SucursalesController(QDialog):
             self.ui.lista_departamentosasociados.clear()
             
     def eliminar(self):
-        sucursalId = self.id_sucursal
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    sucursal_eliminada = SucursalesModel(session).eliminar(sucursalId)
-                    if sucursal_eliminada:
-                        Mensaje().mensaje_informativo("Sucursal eliminada con éxito")
-                except Exception as e:
-                        Mensaje().mensaje_alerta(f"Error al eliminar la sucursal : {e}")
-
-        self.signal_sucursal_agregada.emit()
-        self.limpiar()
-        self.obtener_sucursales()
-
+        if self.idSucursal == None:
+            Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal")
+            return
+        self.manejadorModal.mostrar_modal(self)
+        try:
+            WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
+            self.id_hilo_eliminar_sucursal = WorkerDB.create_managed_worker(owner_id="eliminar_sucursal_thread")
+            self.consultor_eliminar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_eliminar_sucursal)
+            if not self.consultor_eliminar_sucursal:
+                raise Exception("No se logro hacer la operación para eliminar el registro")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_eliminar_sucursal,
+                resultado_callback=self.mensaje_estado_eliminado,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_eliminar_sucursal.ejecutar(
+                funcion=self.eliminar_sucursal_query,
+                sucursal = self.idSucursal
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_eliminar_sucursal'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+        self.manejadorModal.cerrar_modal()
+        
+    def mensaje_estado_eliminado(self, estado):
+        if estado:
+            Mensaje().mensaje_informativo("Registro eliminado")
+        else:
+            Mensaje().mensaje_informativo("No se logro eliminar el registro")
+        self.idSucursal = None
+        
+    def mostrar_error(self, error):
+        Mensaje().mensaje_alerta(f"Sucedio un error al momento de eliminar el registro : {error}")
+        return
+        
+    def eliminar_sucursal_query(self, session, sucursal):
+        print(sucursal)
+        sucursal_eliminada = SucursalesModel(session).eliminar(sucursal)
+        if sucursal_eliminada:
+            session.commit()
+        return sucursal_eliminada
+    
     def actualizar(self):
         sucursalId = self.id_sucursal
         datos = self.obtener_datos_campos()  # Asumo que esto retorna los campos correctamente

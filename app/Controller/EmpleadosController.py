@@ -130,7 +130,6 @@ class EmpleadosController(QWidget):
         if not self.empleado_actual:
             Mensaje().mensaje_informativo("No haz seleccionado un empleado")
             return
-        print(self.empleado_actual.id)
         self.manejadorModal.mostrar_modal(self)
         try:
             WorkerDB.cleanup_owner_workers("eliminar_empleado_thread")

@@ -1,4 +1,5 @@
-from .BaseDatosModel import Sucursales
+from .BaseDatosModel import Sucursales, Departamentos
+from sqlalchemy.orm import joinedload
 
 class SucursalesModel:
     def __init__(self, session):
@@ -46,7 +47,13 @@ class SucursalesModel:
 
     def obtener_todo(self):
         try:
-            sucursales = self.session.query(Sucursales).all()
+            sucursales = (
+                    self.session.query(Sucursales).options(
+                            joinedload(Sucursales.departamentos)
+                    )
+                    .order_by(Sucursales.nombre_sucursal.asc())
+                    .all()
+                )
             return sucursales, True
         except Exception as e:
             return None, False
@@ -93,7 +100,9 @@ class SucursalesModel:
     def filtrar_nombre(self, texto):
         try:
             texto_busqueda = f"%{texto}%"
-            sucursales = self.session.query(Sucursales).filter(Sucursales.nombre_sucursal.ilike(texto_busqueda)).all()
+            sucursales = self.session.query(Sucursales).options(
+                joinedload(Sucursales.departamentos)
+            ).filter(Sucursales.nombre_sucursal.ilike(texto_busqueda)).all()
             if sucursales:
                 return sucursales, True
             return None, False
