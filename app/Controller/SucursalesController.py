@@ -144,22 +144,18 @@ class SucursalesController(QDialog):
     def agregar(self):
         # Obtener los datos de los campos
         datos = self.obtener_datos_campos()
-
         # Verifica si todos los campos están completos
         if any(value == '' for value in datos.values()):
             Mensaje().mensaje_alerta("Todos los campos deben de estar completos.")
             return  # Salir del método si hay campos vacíos
-
         # Iniciar la conexión a la base de datos
         try:
             self.manejadorModal.mostrar_modal(self)
-            
             WorkerDB.cleanup_owner_workers("agregar_sucursal")
             self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id="agregar_sucursal")
             self.consultor_agregar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_agregar_sucursal)
             if not self.consultor_agregar_sucursal:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
-            
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_sucursal,
                 resultado_callback=self.mostrar_resultado_hilo,
@@ -171,13 +167,9 @@ class SucursalesController(QDialog):
                 datos = datos
                 )
         except Exception as e:
-            print(f"Error al configurar worker: {str(e)}")
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_agregar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_sucursal)
-            Mensaje().mensaje_alerta("Error al iniciar el proceso")
-        # self.obtener_sucursales()
-        # self.limpiar()
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
     
     def agregar_sucursal_query(self, session, datos):
         try:
@@ -281,7 +273,7 @@ class SucursalesController(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_eliminar_sucursal,
                 resultado_callback=self.mensaje_estado_eliminado,
-                error_callback=self.mostrar_error,
+                error_callback=self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_eliminar_sucursal.ejecutar(
@@ -300,10 +292,6 @@ class SucursalesController(QDialog):
         else:
             Mensaje().mensaje_informativo("No se logro eliminar el registro")
         self.idSucursal = None
-        
-    def mostrar_error(self, error):
-        Mensaje().mensaje_alerta(f"Sucedio un error al momento de eliminar el registro : {error}")
-        return
         
     def eliminar_sucursal_query(self, session, sucursal):
         print(sucursal)
@@ -344,6 +332,7 @@ class SucursalesController(QDialog):
         
     def mostrar_resultado_hilo(self, mensaje, estado):
         Mensaje().mensaje_informativo(f'{mensaje}')
+        self.signal_sucursal_agregada.emit()
         
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')

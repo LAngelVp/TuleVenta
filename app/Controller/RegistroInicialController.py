@@ -124,7 +124,7 @@ class Registro_personal_inicial(QDialog):
         self.listar_grupo_permisos_rol()
         self.listar_departamentos()
         self.listar_puestos()
-        self.listar_sucursales()
+        self.obtener_sucursales()
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
@@ -386,15 +386,38 @@ p, li { white-space: pre-wrap; }
     def agregar_sucursal(self):
         if self.sucursales is None or not self.sucursales.isVisible():
             self.sucursales = SucursalesController(parent=None)
-            # self.listar_sucursales_signal.connect(self.sucursales.obtener_sucursales)
-            # self.sucursales.signal_sucursal_agregada.connect(self.listar_sucursales)
+            self.listar_sucursales_signal.connect(self.sucursales.obtener_sucursales)
+            self.sucursales.signal_sucursal_agregada.connect(self.obtener_sucursales)
             self.sucursales.VENTANA_SUCURSALES_CERRADA.connect(self.ventana_sucursales_cerrada)
-            # self.listar_sucursales_signal.emit()
-            # self.sucursales.setModal(True)
+            self.listar_sucursales_signal.emit()
+            self.sucursales.setModal(True)
             self.sucursales.show()
         else:
             self.sucursales.raise_()
             self.sucursales.activateWindow()
+            
+    def obtener_sucursales(self):
+        try:
+            WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
+            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
+            self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
+            if not self.consultor_obtener_sucursal_hilo:
+                raise Exception("No se pudo obtener el worker gestionado al obtener la sucursal")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_sucursales,
+                resultado_callback=self.listar_sucursales
+            )
+            self.consultor_obtener_sucursal_hilo.ejecutar(
+                funcion=self.obtener_sucursales_query
+                )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_obtener_sucursales'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_sucursales)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
+            
+    def obtener_sucursales_query(self, session):
+        sucursales, estado = SucursalesModel(session).obtener_todo()
+        return sucursales, estado
 
     def ventana_sucursales_cerrada(self):
         self.sucursales = None
@@ -434,19 +457,18 @@ p, li { white-space: pre-wrap; }
     def ventana_puestos_cerrada(self):
         self.puestos = None
 
-    def listar_sucursales(self):
+    def listar_sucursales(self, sucursales, estado):
         self.ui.cajaOpciones_sucursales.clear()
-        sucursales = None
         try:
-            with Conexion_base_datos() as db:
-                session = db.session
-                sucursales, estado = SucursalesModel(session).obtener_todo()
             if sucursales:
                 for sucursal in sucursales:
                     self.ui.cajaOpciones_sucursales.addItem(sucursal.nombre_sucursal, sucursal)
                 AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_sucursales)
         except Exception as e:
             Mensaje().mensaje_critico(f"Error al obtener sucursales debido a lo siguiente: {e}")
+            
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
 
     def listar_grupo_permisos_rol(self):
         self.ui.cajaOpciones_rol_usuario.clear()

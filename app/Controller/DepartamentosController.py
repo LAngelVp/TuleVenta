@@ -1,6 +1,9 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+
+from app.Controller.Hilo_consultas import WorkerDB
+from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from ..Source.ibootstrap_rc import  *
 from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import Conexion_base_datos
@@ -44,6 +47,9 @@ class DepartamentosController(QDialog):
         self.departamentos = []
         self.iconSucursal = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         self.iconDepartamento = QIcon(':/Icons/Bootstrap/diagram-2-fill.svg')
+        
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
 
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
@@ -108,31 +114,56 @@ class DepartamentosController(QDialog):
         return True
     
     def guardar(self):
+        datos = self.obtener_contenido_campos()
+        if not self.validar(datos):
+            Mensaje().mensaje_informativo('campos incompletos')
+            return
+        self.manejadorModal.mostrar_modal(self)
         try:
-            datos = self.obtener_contenido_campos()
-            if not self.validar(datos):
-                Mensaje().mensaje_informativo('campos incompletos')
-                return
-
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    departamento, agregado = DepartamentosModel(session).agregar_departamento(**datos)
-                    
-                    if not agregado:
-                        Mensaje().mensaje_informativo('Ya existe un departamento con ese mismo nombre')
-                        return
-
-                    # Agregar sucursales si hay
-                    for sucursal_id in self.sucursales_seleccionadas:
+            WorkerDB.cleanup_owner_workers("agregar_departamento")
+            self.id_hilo_agregar_departamento = WorkerDB.create_managed_worker(owner_id="agregar_departamento")
+            self.consultor_agregar_departamento = WorkerDB.get_managed_worker(self.id_hilo_agregar_departamento)
+            if not self.consultor_agregar_departamento:
+                raise Exception("No se logro obtener el worker gestionado al agregar el departamento")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_departamento,
+                resultado_callback=self.mostrar_resultado_hilo,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_agregar_departamento.ejecutar(
+                    funcion=self.agregar_departamento_query,
+                    datos = datos
+                    )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_agregar_departamento'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_departamento)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+        
+    def agregar_departamento_query(self, session, datos):
+        try:
+            departamento, estado = DepartamentosModel(session).agregar_departamento(**datos)
+            if not estado:
+                if departamento.nombre == datos['nombre']:
+                    session.rollback()
+                    return "El registro que intentas agregar ya existe", False
+        except Exception as e:
+            session.rollback()
+            return "Error al realizar la operaciòn", False
+        
+        for sucursal_id in self.sucursales_seleccionadas:
                         sucursal = SucursalesModel(session).obtener_sucursal_por_id(sucursal_id)
                         if sucursal and sucursal not in departamento.sucursales:
                             departamento.sucursales.append(sucursal)
-
-        except Exception as e:
-            Mensaje().mensaje_critico(f'error al guardar: {e}')
+        session.commit()
+        return "Registro exitoso", True
+    
+    def mostrar_resultado_hilo(self, mensaje, estado):
+        Mensaje().mensaje_informativo(f'{mensaje}')
         self.signal_departamento_agregado.emit()
-        self.limpiar()  # Actualizar la lista de departamentos
+    
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
 
     def eliminar(self):
         departamentoId = self.id_departamento
