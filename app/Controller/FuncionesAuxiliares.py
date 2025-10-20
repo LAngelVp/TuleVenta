@@ -17,27 +17,62 @@ class FuncionesAuxiliaresController:
                     return True
             return False
 
-    def caja_opciones_mover_elemento(self, caja_opciones, elemento_a_mover):
-            elementos = []
-            max_elementos = caja_opciones.count()
-            for i in range(max_elementos):
-                nombre_elemento = caja_opciones.itemText(i)
-                id_elemento = caja_opciones.itemData(i)
-                elementos.append((nombre_elemento, id_elemento if id_elemento else None))
-                
-            elemento_encontrado = False
-            for i, (nombre, id_elemento) in enumerate(elementos):
-                if nombre.lower() == elemento_a_mover.lower():
-                    print(nombre.lower())
-                    print(elemento_a_mover.lower())
-                    elementos.pop(i)
-                    elementos.insert(0, (nombre, id_elemento))
-                    elemento_encontrado = True
-                    break
-            if elemento_encontrado:
-                caja_opciones.clear()
-                for nombre, id_elemento in elementos:
-                    caja_opciones.addItem(nombre, id_elemento)
+    def caja_opciones_mover_elemento(self, caja_opciones, elemento_a_mover, atributo_texto="nombre"):
+        """
+        Mueve un elemento a la posición 0 del QComboBox
+        Maneja tanto objetos con ID como texto plano
+        """
+        if not caja_opciones:
+            print("Error: caja_opciones no está definida")
+            return
+        
+        if elemento_a_mover is None:
+            print("Error: elemento_a_mover es None")
+            return
+        
+        # DETERMINAR EL TIPO DE ELEMENTO
+        es_objeto_con_id = hasattr(elemento_a_mover, 'id')
+        es_string = isinstance(elemento_a_mover, str)
+        
+        if not es_objeto_con_id and not es_string:
+            print(f"Error: elemento_a_mover no es manejable. Tipo: {type(elemento_a_mover)}")
+            return
+        
+        # OBTENER TEXTO PARA MOSTRAR
+        if es_objeto_con_id:
+            # Verificar que tenga el atributo para el texto
+            if not hasattr(elemento_a_mover, atributo_texto):
+                print(f"Error: elemento_a_mover no tiene el atributo '{atributo_texto}'")
+                return
+            texto = getattr(elemento_a_mover, atributo_texto)
+            user_data = elemento_a_mover  # Almacenar objeto completo
+        else:
+            # Es string
+            texto = elemento_a_mover
+            user_data = None  # Sin datos adicionales
+        
+        # BÚSQUEDA Y ELIMINACIÓN
+        indice_encontrado = -1
+        
+        if es_objeto_con_id:
+            # Buscar por ID para objetos
+            for i in range(caja_opciones.count()):
+                item_data = caja_opciones.itemData(i)
+                if item_data and hasattr(item_data, 'id'):
+                    if item_data.id == elemento_a_mover.id:
+                        indice_encontrado = i
+                        break
+        else:
+            # Buscar por texto para strings
+            indice_encontrado = caja_opciones.findText(elemento_a_mover)
+        
+        # ELIMINAR SI SE ENCONTRÓ
+        if indice_encontrado != -1:
+            caja_opciones.removeItem(indice_encontrado)
+        
+        # INSERTAR EN POSICIÓN 0
+        caja_opciones.insertItem(0, texto, userData=user_data)
+        caja_opciones.setCurrentIndex(0)
                     
     @staticmethod
     def centrar_en_padre(ventana: QWidget):

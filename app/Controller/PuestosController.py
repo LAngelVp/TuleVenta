@@ -57,14 +57,14 @@ class PuestosController(QDialog):
         self.ui.cajaopcion_domingo.stateChanged.connect(self.comprobar_caja_verificacion)
         
         # SEÑALES DE ENTER
-        self.ui.txt_buscarpuesto.returnPressed.connect(self.buscar_puesto)
+        self.ui.btn_btn_buscar_puesto.clicked.connect(self.buscar_puesto)
 
         #// señal de seleccion de id
         self.elemento_seleccionado.connect(self.mostrar_datos_elemento)
 
         # // variables globales:
         self.diasLaborales = []
-        self.diccionario_departamentos = set()
+        self.diccionario_departamentos = None
         self.diccionario_puestos = set()
         self.id_departamento = None
         self.puesto_actual = None
@@ -89,14 +89,38 @@ class PuestosController(QDialog):
         event.accept()
         
     def buscar_puesto(self):
-        nombre_puesto = self.ui.txt_buscarpuesto.text()
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                self.puestos, estado = PuestoModel(session).filtrar_por_nombre(nombre_puesto)
-            if estado:
-                self.llenar_tabla(self.puestos)
-
+        nombre_puesto = self.ui.txt_buscarpuesto.text().strip()
+        if not nombre_puesto:
+            Mensaje().mensaje_informativo("No haz ingresado información pora hacer la busqueda")
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("filtrar_puestos_thread")
+            self.id_hilo_filtrar_puestos = WorkerDB.create_managed_worker(owner_id="filtrar_puestos_thread")
+            self.consultor_filtrar_puestos = WorkerDB.get_managed_worker(self.id_hilo_filtrar_puestos)
+            if not self.consultor_filtrar_puestos:
+                raise Exception("No se pudo obtener la lista.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_filtrar_puestos,
+                resultado_callback=self.llenar_tabla,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_filtrar_puestos.ejecutar(
+                self.filtrar_puestos_query,
+                dato = nombre_puesto
+            )
+        except Exception as e:
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_filtrar_puestos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_filtrar_puestos)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            
+    def filtrar_puestos_query(self, session, dato):
+        puestos, estado = PuestoModel(session).filtrar_por_nombre(dato)
+        return puestos, estado
+        
     def roles(self):
         print("en roles")
         self.ventana_roles = ControlRolesController()
@@ -128,6 +152,9 @@ class PuestosController(QDialog):
 
         for cajaTexto in self.findChildren(QLineEdit):
             cajaTexto.clear()
+        
+        for cajaTexto in self.findChildren(QPlainTextEdit):
+            cajaTexto.clear()
 
         for cajaDecimal in self.findChildren(QDoubleSpinBox):
             cajaDecimal.setValue(0)
@@ -138,18 +165,17 @@ class PuestosController(QDialog):
         self.id_departamento = None
         self.id_elemento_seleccionado = None
         self.puestos = None
+        self.reestablecer_orden_original()
 
     def agregar(self):
         diasLaborales = ', '.join(self.diasLaborales)
         datos = self.obtener_contenido_campos()
 
-        departamento_seleccionado = self.ui.cajaOpciones_departamentos.currentText()
+        departamento_seleccionado = self.ui.cajaOpciones_departamentos.currentData()
 
-        if self.diccionario_departamentos:
-            for index, nombre in self.diccionario_departamentos.items():
-                if nombre == departamento_seleccionado:
-                    self.id_departamento = index
-                    break
+        if departamento_seleccionado:
+            self.id_departamento = departamento_seleccionado.id
+            
         campos_vacios, estado_campos_vacios = self.validar(datos)
         if not estado_campos_vacios or not self.diasLaborales:
             lista_vacios = []
@@ -268,13 +294,10 @@ class PuestosController(QDialog):
         diasLaborales = ', '.join(self.diasLaborales)
         datos = self.obtener_contenido_campos()
 
-        departamento_seleccionado = self.ui.cajaOpciones_departamentos.currentText()
+        departamento_seleccionado = self.ui.cajaOpciones_departamentos.currentData()
 
-        if self.diccionario_departamentos:
-            for index, nombre in self.diccionario_departamentos.items():
-                if nombre == departamento_seleccionado:
-                    self.id_departamento = index
-                    break
+        if departamento_seleccionado:
+            id_departamento = departamento_seleccionado.id
                 
         campos_vacios, estado_campos_vacios = self.validar(datos)
         if not estado_campos_vacios or not self.diasLaborales:
@@ -307,13 +330,16 @@ class PuestosController(QDialog):
                             funcion=self.actualizar_puesto_query,
                             puesto = self.puesto_actual,
                             diasLaborales = diasLaborales,
-                            id_departamento = self.id_departamento,
+                            id_departamento = id_departamento,
                             datos = datos
                         )
                 except Exception as e:
                     if hasattr(self, 'id_hilo_actualizar_puesto'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_puesto)
                     Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+        else:
+            Mensaje().mensaje_informativo("No haz seleccionado un elemento para actualizar.")
+            return
                     
     def actualizar_puesto_query(self, session, puesto, diasLaborales, id_departamento, datos):
         try:
@@ -348,23 +374,54 @@ class PuestosController(QDialog):
 
     def listar_departamentos(self):
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    departamentos, estado = DepartamentosModel(session).obtener_todos()
-                    if departamentos is not None:
-                        self.diccionario_departamentos = {
-                            depa.id: depa.nombre for depa in departamentos
-                        }
-                        self.ui.cajaOpciones_departamentos.clear()
-                        self.ui.cajaOpciones_departamentos.addItems(self.diccionario_departamentos.values())
-
+            WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
+            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
+            self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
+            if not self.consultor_listar_departamentos:
+                raise Exception("No se logro hacer la operación para listar")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_listar_departamentos,
+                resultado_callback=self.ingresar_departamentos_opciones,
+                error_callback=self.mostrar_error_hilo
+            )
+            self.consultor_listar_departamentos.ejecutar(
+                funcion=self.obtener_departamentos_query
+            )
         except Exception as e:
-            Mensaje().mensaje_critico(f'Surgio un error al listar los departamentos: {e}')
-
+            if hasattr(self, 'id_hilo_listar_departamentos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            
+    def obtener_departamentos_query(self, session):
+        departamentos, estado = DepartamentosModel(session).obtener_todos()
+        return departamentos, estado
+    
+    def ingresar_departamentos_opciones(self, objetoDepartamentos):
+        if objetoDepartamentos:
+            self.lista_departamentos = list(objetoDepartamentos)
+            self.ui.cajaOpciones_departamentos.clear()
+            
+            # Almacenar el objeto completo para tener acceso a todos los atributos
+            for departamento in objetoDepartamentos:
+                self.ui.cajaOpciones_departamentos.addItem(
+                    departamento.nombre, 
+                    userData=departamento  # Objeto completo
+                )
+    
+    def reestablecer_orden_original(self):
+        """Restablece el orden original de los departamentos"""
+        if hasattr(self, 'lista_departamentos'):
+            self.ui.cajaOpciones_departamentos.clear()
+            for departamento in self.lista_departamentos:
+                self.ui.cajaOpciones_departamentos.addItem(
+                    departamento.nombre, 
+                    userData=departamento
+                )
+    
     def listar_puestos(self):
-        self.manejadorModal.mostrar_modal(self)
         try:
+            self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("listar_puestos_thread")
             self.id_hilo_listar_puestos = WorkerDB.create_managed_worker(owner_id="listar_puestos_thread")
             self.consultor_listar_puestos = WorkerDB.get_managed_worker(self.id_hilo_listar_puestos)
@@ -390,7 +447,7 @@ class PuestosController(QDialog):
         puestos, estado = PuestoModel(session).obtener_todos()
         return puestos, estado
 
-    def llenar_tabla(self, puestos, estado):
+    def llenar_tabla(self, puestos, estado = None):
         if self.ui.tabla_listapuestos is None:
             Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
             return
@@ -459,18 +516,22 @@ class PuestosController(QDialog):
 
 
                 if puesto_seleccionado.departamento:
-                    departamento_nombre = puesto_seleccionado.departamento.nombre
-                    # Obtén una referencia al QComboBox
-                    caja_departamento = self.ui.cajaOpciones_departamentos  # Esto debe ser el objeto QComboBox
-
-                    # Encuentra el índice del departamento en el combo box
-                    indice = caja_departamento.findText(departamento_nombre)
-                    if indice != -1:
-                        # Eliminar el elemento si existe
-                        caja_departamento.removeItem(indice)
-
-                    # Insertar el nuevo departamento en la posición 0
-                    caja_departamento.insertItem(0, departamento_nombre)
+                    departamento = puesto_seleccionado.departamento
+                    caja_departamento = self.ui.cajaOpciones_departamentos
+                    
+                    # Búsqueda manual por ID
+                    indice_encontrado = -1
+                    for i in range(caja_departamento.count()):
+                        item_data = caja_departamento.itemData(i)
+                        if item_data and item_data.id == departamento.id:
+                            indice_encontrado = i
+                            break
+                    
+                    if indice_encontrado != -1:
+                        caja_departamento.removeItem(indice_encontrado)
+                    
+                    # Insertar el nuevo departamento
+                    caja_departamento.insertItem(0, departamento.nombre, userData=departamento)
                     caja_departamento.setCurrentIndex(0)
                     
                 if puesto_seleccionado.dias_laborales is not None:

@@ -172,74 +172,153 @@ class Registro_personal_inicial(QDialog):
                         Mensaje().mensaje_alerta("No se pudo eliminar el usuario del empleado. Por que no tiene uno asignado")
     
     def actualizar_credenciales(self):
-        id_empleado = self.id_empleado
         id_usuario = self.empleado_existente.usuario.id
         usuario = self.ui.txt_usuario_iniciosesion.text()
         password = self.ui.txt_contrasenia_usuario_iniciosesion.text()
         fecha_actualizacion = datetime.now().date()
         rol = self.ui.cajaOpciones_rol_usuario.currentData()
-        if id_empleado is None or (usuario is None and password is None):
+        if self.empleado_existente is None or (usuario is None and password is None):
             Mensaje().mensaje_informativo("Para actualizar las credenciales, debe de contener un nombre de usuario y una contraseña.")
             return
-        try:
-            self.manejadorModal.mostrar_modal(self)
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():  # Inicia una transacción
-                    # Intentamos actualizar el usuario
-                    usuario_actualizado = UsuarioModel(session).actualizar_usuario(
-                        id_usuario , usuario, password, fecha_actualizacion, rol
+        respuesta = Mensaje().mensaje_pregunta("¿Quieres actualizar las credenciales?")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("actualizar_credenciales_usuario")
+                self.id_hilo_actualizar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id="actualizar_credenciales_usuario")
+                self.consultor_actualizar_credenciales = WorkerDB.get_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
+                if not self.consultor_actualizar_credenciales:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actualizar_credenciales_usuario,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_actualizar_credenciales.ejecutar(
+                    funcion=self.actualizar_credenciales_query,
+                    usuario= id_usuario,
+                    nuevo_nombre = usuario,
+                    nueva_password = password,
+                    fecha_actualizacion = fecha_actualizacion,
+                    rol = rol
                     )
-                    
-                    if usuario_actualizado:
-                        Mensaje().mensaje_informativo("Credenciales actualizadas con éxito.")
-                        self.manejadorModal.cerrar_modal()
-                        self.cerrar()  # Cierra la ventana o la acción correspondiente
-                    else:
-                        Mensaje().mensaje_informativo("No se pudo actualizar el usuario. Verifica los datos e intenta de nuevo.")
+            except Exception as e:
+                if hasattr(self, 'id_hilo_actualizar_credenciales_usuario'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+    
+    def actualizar_credenciales_query(self, session, usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
+        try:
+            usuario_actualizado = UsuarioModel(session).actualizar_usuario(
+                        usuario.id , nuevo_nombre, nueva_password, fecha_actualizacion, rol
+                    )
+            if not usuario_actualizado:
+                session.rollback()
+                return {
+                    "exito": usuario_actualizado,
+                    "mensaje" : f"No se logro actualizar el usuario {usuario.usuario}"
+                }
         except Exception as e:
-            # Captura cualquier excepción no controlada durante la transacción
-            print(f"Ocurrió un error al actualizar las credenciales: {e}")
-            Mensaje().mensaje_alerta("Ocurrió un error al intentar actualizar las credenciales. Intenta nuevamente.")
-
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f"Ocurrio un error en el sistema."
+            }
+            
+        session.commit()
+        return {
+            "exito": usuario_actualizado,
+            "mensaje": f"Credenciales actualizadas del usuario {usuario.usuario}"
+        }
+        
     def alta_empleado(self):
         fecha_actual = datetime.now().date().strftime("%Y/%m/%d")
-        if self.id_empleado is None:
+        if self.empleado_existente is None:
             Mensaje().mensaje_informativo("No se logro dar de baja al empleado")
             return
-        self.manejadorModal.mostrar_modal(self)
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                empleado, estatus = EmpleadosModel(session).alta_empleado(self.id_empleado, True, fecha_actual)
-                if estatus:
-                    Mensaje().mensaje_informativo("Empleado dado de alta con exito")
-                    self.manejadorModal.cerrar_modal()
-                    self.cerrar()
-            self.registro_agregado_signal.emit()
-            return
-        Mensaje().mensaje_informativo("Existio un error al dar de alta al empleado.")
+        respuesta = Mensaje().mensaje_pregunta("¿Quieres dar el registro de baja?")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("dar_de_baja_registro_thread")
+                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id="dar_de_baja_registro_thread")
+                self.consultor_dar_de_baja_registro = WorkerDB.get_managed_worker(self.id_hilo_dar_de_baja_registro)
+                if not self.consultor_dar_de_baja_registro:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_dar_de_baja_registro,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_dar_de_baja_registro.ejecutar(
+                    funcion=self.alta_empleado_query,
+                    empleado = self.empleado_existente,
+                    fecha_actual = fecha_actual
+                    )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_dar_de_baja_registro'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_dar_de_baja_registro)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
     
+    def alta_empleado_query(self, session, empleado, fecha_actual):
+        empleado, estado = EmpleadosModel(session).alta_empleado(empleado.id, fecha_actual)
+        if not estado:
+            session.rollback()
+            return {
+                "exito": estado,
+                "mensaje": f"No se logro dar de alta el registro"
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje" : f"Registro {empleado.nombre} dado de baja"
+        }
+        
     def baja_empleado(self):
         fecha_actual = datetime.now().date().strftime("%Y/%m/%d")
         if self.empleado_existente is None:
             Mensaje().mensaje_informativo("No se logro dar de baja al empleado")
             return
-        self.manejadorModal.mostrar_modal(self)
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    empleado, estatus = EmpleadosModel(session).baja_empleado(self.empleado_existente.id, False, fecha_actual)
-                    if estatus:
-                        Mensaje().mensaje_informativo("Empleado dado de baja con exito")
-                        self.cerrar()
-                except Exception as e:
-                    Mensaje().mensaje_critico(f'Surgio un error al dar de baja el registro debido a {e}')
-            self.registro_agregado_signal.emit()
-            return
-        Mensaje().mensaje_informativo("Existio un error al dar de baja al empleado.")
-        self.manejadorModal.cerrar_modal()
+        respuesta = Mensaje().mensaje_pregunta("¿Quieres dar el registro de baja?")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("dar_de_baja_registro_thread")
+                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id="dar_de_baja_registro_thread")
+                self.consultor_dar_de_baja_registro = WorkerDB.get_managed_worker(self.id_hilo_dar_de_baja_registro)
+                if not self.consultor_dar_de_baja_registro:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_dar_de_baja_registro,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_dar_de_baja_registro.ejecutar(
+                    funcion=self.baja_empleado_query,
+                    empleado = self.empleado_existente,
+                    fecha_actual = fecha_actual
+                    )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_dar_de_baja_registro'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_dar_de_baja_registro)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+        
+    def baja_empleado_query(self, session, empleado, fecha_actual):
+        empleado, estado = EmpleadosModel(session).baja_empleado(empleado.id, fecha_actual)
+        if not estado:
+            session.rollback()
+            return {
+                "exito": estado,
+                "mensaje": f"No se logro realizar la operación"
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje": f"El registro {empleado.nombre} fue dado de baja"
+        }
     
     def mostrar_agregar_credenciales(self):
         if self.ui.opcion_usodelsistema.isChecked():
@@ -309,8 +388,9 @@ p, li { white-space: pre-wrap; }
         
 
         if empleado_seleccionado.puesto:
+            objeto = empleado_seleccionado.puesto
             nombre = empleado_seleccionado.puesto.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_puestos, nombre)
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_puestos, objeto, "nombre")
                 
         if empleado_seleccionado.parentesco_contacto:
             nombre = empleado_seleccionado.parentesco_contacto
@@ -329,16 +409,16 @@ p, li { white-space: pre-wrap; }
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_genero, nombre)
             
         if empleado_seleccionado.sucursal:
-            nombre = empleado_seleccionado.sucursal.nombre_sucursal
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_sucursales, nombre)
+            objeto = empleado_seleccionado.sucursal
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_sucursales, objeto, "nombre_sucursal")
         
         if empleado_seleccionado.departamento:
-            nombre = empleado_seleccionado.departamento.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_departamentos, nombre)
+            objeto = empleado_seleccionado.departamento
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_departamentos, objeto, "nombre")
             
         if empleado_seleccionado.usuario and empleado_seleccionado.usuario.rol:
-            nombre = empleado_seleccionado.usuario.rol.nombre
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_rol_usuario, nombre)
+            objeto = empleado_seleccionado.usuario.rol
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_rol_usuario, objeto, "nombre")
             
         if empleado_seleccionado.usuario:
             self.ui.opcion_usodelsistema.setText("Cambiar Creadenciales")
@@ -405,7 +485,8 @@ p, li { white-space: pre-wrap; }
                 raise Exception("No se pudo obtener el worker gestionado al obtener la sucursal")
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_sucursales,
-                resultado_callback=self.listar_sucursales
+                resultado_callback=self.listar_sucursales,
+                error_callback= self.mostrar_error_hilo
             )
             self.consultor_obtener_sucursal_hilo.ejecutar(
                 funcion=self.obtener_sucursales_query
@@ -474,45 +555,94 @@ p, li { white-space: pre-wrap; }
         self.ui.cajaOpciones_rol_usuario.clear()
         grupo_permiso = None
         try:
-            with Conexion_base_datos() as db:
-                session = db.session
-                grupo_permiso, estado = RolesModel(session).obtener_todos()
-            if estado:
-                for grupo in grupo_permiso:
-                    self.ui.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo.id)
-                AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_rol_usuario)
+            WorkerDB.cleanup_owner_workers("obtener_grupos_thread")
+            self.id_hilo_obtener_grupos = WorkerDB.create_managed_worker(owner_id="obtener_grupos_thread")
+            self.consultor_obtener_grupos = WorkerDB.get_managed_worker(self.id_hilo_obtener_grupos)
+            if not self.consultor_obtener_grupos:
+                raise Exception("No se pudo obtener el worker gestionado al obtener registros")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_grupos,
+                resultado_callback=self.listar_grupos_opciones
+            )
+            self.consultor_obtener_grupos.ejecutar(
+                funcion=self.obtener_grupos_query
+                )
         except Exception as e:
-            Mensaje().mensaje_critico(f"Error al obtener grupos permisos roles: {e}")
+            if hasattr(self, 'id_hilo_obtener_grupos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+    
+    def obtener_grupos_query(self, session):
+        grupos, estado = RolesModel(session).obtener_todos()
+        return grupos, estado
+    
+    def listar_grupos_opciones(self, grupos, estado):
+        if estado:
+            for grupo in grupos:
+                self.ui.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo.id)
+            AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_rol_usuario)
 
     def listar_departamentos(self):
         self.ui.cajaOpciones_departamentos.clear()
         departamentos = None
         try:
-            with Conexion_base_datos() as db:
-                session = db.session
-                departamentos, estado = DepartamentosModel(session).obtener_todos()
-            if departamentos:
+            WorkerDB.cleanup_owner_workers("obtener_departamentos_thread")
+            self.id_hilo_obtener_departamentos_lista = WorkerDB.create_managed_worker(owner_id="obtener_departamentos_thread")
+            self.consultor_obtener_departamentos_lista = WorkerDB.get_managed_worker(self.id_hilo_obtener_departamentos_lista)
+            if not self.consultor_obtener_departamentos_lista:
+                raise Exception("No se pudo obtener el worker gestionado al obtener registros")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_departamentos_lista,
+                resultado_callback=self.listar_departamentos_opciones
+            )
+            self.consultor_obtener_departamentos_lista.ejecutar(
+                funcion=self.obtener_departamentos_query
+                )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_obtener_departamentos_lista'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_departamentos_lista)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+            
+    def obtener_departamentos_query(self, session):
+        departamentos, estado = DepartamentosModel(session).obtener_todos()
+        return departamentos, estado
+    
+    def listar_departamentos_opciones(self, departamentos, estado):
+            if estado:
                 for departamento in departamentos:
                     self.ui.cajaOpciones_departamentos.addItem(departamento.nombre, departamento)
                 AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_departamentos)
-        except Exception as e:
-            Mensaje().mensaje_critico(f"Error al obtener departamentos: {e}")
 
     def listar_puestos(self):
         self.ui.cajaOpciones_puestos.clear()
         puestos = None
         try:
-            with Conexion_base_datos() as db:
-                session = db.session
-                with session.begin():
-                    puestos, estado = PuestoModel(session).obtener_todos()
-                if estado:
-                    for puesto in puestos:
-                        self.ui.cajaOpciones_puestos.addItem(puesto.nombre,  puesto)
-                    AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_puestos)
-
+            WorkerDB.cleanup_owner_workers("obtener_puestos_thread")
+            self.id_hilo_obtener_puestos = WorkerDB.create_managed_worker(owner_id="obtener_puestos_thread")
+            self.consultor_obtener_puestos = WorkerDB.get_managed_worker(self.id_hilo_obtener_puestos)
+            if not self.consultor_obtener_puestos:
+                raise Exception("No se pudo obtener el worker gestionado al obtener registros")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_puestos,
+                resultado_callback=self.listar_puestos_opciones
+            )
+            self.consultor_obtener_puestos.ejecutar(
+                funcion=self.obtener_puestos_query
+                )
         except Exception as e:
-            Mensaje().mensaje_critico(f"Error al obtener puestos debido a lo siguiente: {e}")
+            if hasattr(self, 'id_hilo_obtener_puestos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_puestos)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+            
+    def obtener_puestos_query(self, session):
+        puestos, estado = PuestoModel(session).obtener_todos()
+        return puestos, estado
+    
+    def listar_puestos_opciones(self, puestos, estado):
+        if estado:
+            for puesto in puestos:
+                self.ui.cajaOpciones_puestos.addItem(puesto.nombre,  puesto)
+            AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_puestos)
 
     def cargar_imagen(self, event):
         options = QFileDialog.Options()
@@ -695,14 +825,17 @@ p, li { white-space: pre-wrap; }
     def mensaje_error_hilo(self, error):
         Mensaje().mensaje_alerta(f"{error}")
         
-    def mostrar_estado_usuario(self, mensaje, estado):
-        Mensaje().mensaje_informativo(mensaje)
-        if estado:
+    def mostrar_estado_usuario(self, objetoMensaje):
+        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        if objetoMensaje["exito"]:
             self.cerrar()
             self.registro_agregado_signal.emit()
             if self.empleado is None:
                 self.abrir_inicio()
 
+    def mostrar_estado_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        
     def almacenar_informacion_query(self, session, uso_del_sistema, id_empleado, imagen, nombre_usuario, password_usuario, fecha_creacion, fecha_actualizacion, current_data_rol, datos):
         try:
             if uso_del_sistema and id_empleado is None:
@@ -714,7 +847,10 @@ p, li { white-space: pre-wrap; }
                     rol_id=current_data_rol
                 )
                 if not status_usuario:
-                    return "El usuario que estás intentando asignar ya existe.", False
+                    return {
+                        "exito": False,
+                        "mensaje" : f"El usuario {nombre_usuario} que estas intentando asignar ya existe"
+                    }
             else:
                 usuario = None
 
@@ -757,56 +893,68 @@ p, li { white-space: pre-wrap; }
 
             if status_empleado:
                 session.commit()
-                return "Registro exitoso.", True
+                return {
+                        "exito": True,
+                        "mensaje" : f"El registro {datos['nombre']} se registro con exito"
+                    }
             else:
-                return "No se pudo registrar el empleado.", False
+                return  {
+                        "exito": False,
+                        "mensaje" : f"No se pudo registrar el empleado."
+                    }
 
         except Exception as e:
             session.rollback()
             traceback.print_exc()
-            return f"Ocurrió un error inesperado: {str(e)}", False
+            return  {
+                        "exito": False,
+                        "mensaje" : f"Ocurrió un error inesperado: {str(e)}"
+                    }
 
-    def mostrar_estado_usuario_actualizado(self, mensaje, estado):
-        if estado:
+    def mostrar_estado_usuario_actualizado(self, objetoMensaje):
+        if objetoMensaje["exito"]:
+            Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
             self.cerrar()
             self.registro_agregado_signal.emit()
-            
-        Mensaje().mensaje_informativo(mensaje)
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
 
     def actualizar_empleado(self):
         id_empleado = self.empleado_existente.id if self.empleado_existente else None
         datos = self.obtener_datos()
         print(self.empleado_existente, id_empleado)
         if self.validar_datos(datos) and id_empleado is not None:
-            try:
-                self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers(owner_id="actualizar_empleado_thread")
-                self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id="actualizar_empleado_thread")
-                self.consultor_actualizar_empleado = WorkerDB.get_managed_worker(self.id_hilo_actual_actualizar_empleado)
-                if not self.consultor_actualizar_empleado:
-                    raise Exception("No se logro hacer la actualizacion del registro")
-                # conectar señales
-                WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_actual_actualizar_empleado,
-                    resultado_callback= self.mostrar_estado_usuario_actualizado,
-                    error_callback=self.mensaje_error_hilo,
-                    terminado_callback=self.manejadorModal.cerrar_modal
-                )
-                # ejecutar hilo
-                self.consultor_actualizar_empleado.ejecutar(
-                    funcion=self.actualizar_empleado_query,
-                    id_empleado = id_empleado,
-                    imagen = self.file_name,
-                    datos = datos
-                )
-            except Exception as e:
-                print(f"Error al configurar worker: {str(e)}")
-                # ✅ Limpiar en caso de error
-                if hasattr(self, 'id_hilo_actual_actualizar_empleado'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_actual_actualizar_empleado)
-                Mensaje.mensaje_alerta(f"Error al iniciar el proceso {e}")
+            respuesta = Mensaje().mensaje_pregunta("¿Quieres hacer la actualización?")
+            if respuesta == QMessageBox.Yes:
+                try:
+                    self.manejadorModal.mostrar_modal(self)
+                    WorkerDB.cleanup_owner_workers(owner_id="actualizar_empleado_thread")
+                    self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id="actualizar_empleado_thread")
+                    self.consultor_actualizar_empleado = WorkerDB.get_managed_worker(self.id_hilo_actual_actualizar_empleado)
+                    if not self.consultor_actualizar_empleado:
+                        raise Exception("No se logro hacer la actualizacion del registro")
+                    # conectar señales
+                    WorkerDB.connect_managed_signals(
+                        worker_id=self.id_hilo_actual_actualizar_empleado,
+                        resultado_callback= self.mostrar_estado_usuario_actualizado,
+                        error_callback=self.mensaje_error_hilo,
+                        terminado_callback=self.manejadorModal.cerrar_modal
+                    )
+                    # ejecutar hilo
+                    self.consultor_actualizar_empleado.ejecutar(
+                        funcion=self.actualizar_empleado_query,
+                        id_empleado = id_empleado,
+                        imagen = self.file_name,
+                        datos = datos
+                    )
+                except Exception as e:
+                    print(f"Error al configurar worker: {str(e)}")
+                    # ✅ Limpiar en caso de error
+                    if hasattr(self, 'id_hilo_actual_actualizar_empleado'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_actual_actualizar_empleado)
+                    Mensaje.mensaje_alerta(f"Error al iniciar el proceso {e}")
         else:
             Mensaje().mensaje_informativo("Todos los campos deben de estar completos")
+            return
     
     def actualizar_empleado_query(self, session, id_empleado, imagen,  datos):
         try:
@@ -848,13 +996,22 @@ p, li { white-space: pre-wrap; }
         except Exception as e:
             session.rollback()
             mensaje = f"Error al actualizar el empleado: {e}"
-            return mensaje, False
+            return {
+                    "exito": False,
+                    "mensaje": mensaje
+                    }
         if estado:
             session.commit()
-            mensaje = "Registro exitoso"
-            return mensaje, True
+            mensaje = f"Registro exitoso, {datos["nombre"]} fue actualizado"
+            return {
+                    "exito": True,
+                    "mensaje": mensaje
+                    }
         
-        return "no se logro actualizar", False
+        return {
+            "exito": False,
+            "mensaje": f"No se logro hacer la operación"
+            }
             
     def agregar_usuario(self):
         print(self.empleado_existente.id)
@@ -870,29 +1027,67 @@ p, li { white-space: pre-wrap; }
         fecha_actualizacion = datetime.now().date()
         rol = self.ui.cajaOpciones_rol_usuario.currentData()
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    usuario, status_usuario = UsuarioModel(session).crear_usuario(
-                                        usuario = usuario,
-                                        password = password,
-                                        fecha_creacion = fecha_actual,
-                                        fecha_actualizacion = fecha_actual,
-                                        rol_id = rol)
-                    if not status_usuario:
-                        Mensaje().mensaje_alerta("El usuario que intentas crear ya esta ocupado.")
-                        return
-                    
-                    self.empleado_existente.usuario_id = usuario.id
-                    
-                    # Agregar el empleado a la sesión para guardar los cambios
-                    session.add(self.empleado_existente)
-                    
-                    session.commit()
-                    Mensaje().mensaje_informativo("Usuario asignado correctamente al empleado.")
-        except Exception as e:
-            Mensaje.mensaje_alerta(f'Existe un error al momento de agregar el usuario: {e}')
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("agregar_usuario_thread")
+            self.id_hilo_agregar_usuario = WorkerDB.create_managed_worker(owner_id="agregar_usuario_thread")
+            self.consultor_agregar_usuario = WorkerDB.get_managed_worker(self.id_hilo_agregar_usuario)
             
+            if not self.consultor_agregar_usuario:
+                raise Exception("No se pudo obtener el worker gestionado")
+            
+            # ✅ Conectar señales
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_usuario,
+                resultado_callback=self.mostrar_estado_usuario,
+                error_callback=self.mensaje_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            
+            # ✅ Ejecutar
+            self.consultor_agregar_usuario.ejecutar(
+                funcion=self.almacenar_informacion_query,
+                usuario = usuario,
+                password = password,
+                fecha_actual = fecha_actual,
+                fecha_actualizacion = fecha_actual,
+                rol = rol
+            )
+        except Exception as e:
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_agregar_usuario'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_usuario)
+            Mensaje.mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            
+    def agregar_usuario_query(self, session, nombre_usuario, password, fecha_actual, rol):
+        try:
+            usuario, estado = UsuarioModel(session).crear_usuario(
+                                            usuario = usuario,
+                                            password = password,
+                                            fecha_creacion = fecha_actual,
+                                            fecha_actualizacion = fecha_actual,
+                                            rol_id = rol)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f"El usuario {nombre_usuario}, ya esta registrado en el sistema."
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                    "exito": False,
+                    "mensaje": f"Ocurrio un problema con el sistema al agregar el usuario"
+                }
+            
+        self.empleado_existente.usuario_id = usuario.id
+        session.add(self.empleado_existente)
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje" : f"El usuario {usuario.nombre} a sido agregado con exito"
+        }
+        
     def abrir_inicio(self):
         if self.variable_primer_registro:
             from app.Controller.InicioDeSesionController import Login  # Mover la importación aquí

@@ -87,8 +87,8 @@ class EmpleadosModel:
         empleado = self.session.query(Empleados).filter(Empleados.id == id).one_or_none()
         if empleado:
             self.session.delete(empleado)
-            return None, True
-        return None, False
+            return True
+        return False
     
     def filtrar_empleados(self, id=None, nombre=None, tipo_filtro_nombre=None):
         # Base de la consulta
@@ -130,21 +130,28 @@ class EmpleadosModel:
             else:
                 return None, False
     
-    def baja_empleado(self, id_empleado, estatus, fecha_baja):
-        if id_empleado is None or estatus is None:
+    def baja_empleado(self, id_empleado, fecha_baja):
+        try:
+            if not id_empleado:
+                return None, False
+            empleado = self.session.get(Empleados, id_empleado)
+            if empleado:
+                empleado.activo = False
+                empleado.fecha_despido = fecha_baja
+                return empleado, True
             return None, False
-        empleado = self.session.query(Empleados).filter(Empleados.id == id_empleado).first()
-        if empleado:
-            empleado.activo = estatus
-            empleado.fecha_despido = fecha_baja
-            return empleado, True
+            
+        except Exception as e:
+            self.session.rollback()
+            print(f"Error en baja_empleado: {e}")
+            return None, False
         
-    def alta_empleado(self, id_empleado, estatus, fecha_alta):
-        if id_empleado is None or estatus is None:
+    def alta_empleado(self, id_empleado, fecha_alta):
+        if id_empleado is None:
             return None, False
-        empleado = self.session.query(Empleados).filter(Empleados.id == id_empleado).first()
+        empleado = self.session.get(Empleados, id_empleado)
         if empleado:
-            empleado.activo = estatus
+            empleado.activo = True
             empleado.fecha_contratacion = fecha_alta
             empleado.fecha_despido = None
             return empleado, True

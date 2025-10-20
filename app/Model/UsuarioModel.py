@@ -46,7 +46,7 @@ class UsuarioModel:
     def actualizar_usuario(self, id, nuevo_usuario, nuevo_password, fecha_actualizacion, nuevo_rol_id = None):
         # Aquí puedes actualizar los atributos del usuario según los parámetros que quieras cambiar
         if id:
-            usuario = self.session.query(Usuarios).filter_by(id=id).first()
+            usuario = self.session.get(Usuarios, id)
             if usuario:
                 # Actualizar el nombre de usuario si se proporciona un nuevo nombre
                 if nuevo_usuario:
@@ -62,7 +62,7 @@ class UsuarioModel:
 
                 # Si se proporciona un nuevo rol, lo actualizamos
                 if nuevo_rol_id:
-                    rol = self.session.query(Roles).filter_by(id=nuevo_rol_id).first()
+                    rol = self.session.get(Roles, nuevo_rol_id)
                     if rol:
                         usuario.rol = rol  # Actualizamos el rol
                     else:
@@ -73,7 +73,7 @@ class UsuarioModel:
             return False
 
     def eliminar(self, id):
-        usuario = self.session.query(Usuarios).filter_by(id=id).first()
+        usuario = self.session.get(Usuarios, id)
         if usuario:
             self.session.delete(usuario)
             return True

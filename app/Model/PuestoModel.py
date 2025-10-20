@@ -35,13 +35,12 @@ class PuestoModel:
         return None, False
     
     def filtrar_por_nombre(self, txt_nombre):
-        if not txt_nombre:  # Si txt_nombre es None o una cadena vacía
-            puesto = self.session.query(Puestos).all()  # Devuelve todos los registros
-        else:
-            puesto = self.session.query(Puestos).filter(Puestos.nombre.ilike(f"%{txt_nombre}%")).all()
+        puesto = self.session.query(Puestos).options(
+            joinedload(Puestos.departamento),
+            ).filter(Puestos.nombre.ilike(f"%{txt_nombre}%")).all()
         if puesto:
             return puesto, True
-        return None, False
+        return [], False
     
     def obtener_todos(self):
         try:
