@@ -217,7 +217,17 @@ class Ui_Formulario_puestos(object):
 "background-color: #cce4ff;\n"
 "color: black;\n"
 "}\n"
-"")
+"#btn_RefrescarTabla{\n"
+"border-radius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"}\n"
+"#btn_RefrescarTabla:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_RefrescarTabla:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}")
         self.gridLayout_7 = QGridLayout(Formulario_puestos)
         self.gridLayout_7.setSpacing(0)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
@@ -271,7 +281,45 @@ class Ui_Formulario_puestos(object):
         self.contenedor_frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedor_frame.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_2 = QGridLayout(self.contenedor_frame)
+        self.gridLayout_2.setSpacing(5)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.etiqueta_puestosexistentes = QLabel(self.contenedor_frame)
+        self.etiqueta_puestosexistentes.setObjectName(u"etiqueta_puestosexistentes")
+
+        self.horizontalLayout_3.addWidget(self.etiqueta_puestosexistentes)
+
+        self.btn_RefrescarTabla = QPushButton(self.contenedor_frame)
+        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon1)
+
+        self.horizontalLayout_3.addWidget(self.btn_RefrescarTabla, 0, Qt.AlignmentFlag.AlignRight)
+
+
+        self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
+
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.txt_buscarpuesto = QLineEdit(self.contenedor_frame)
+        self.txt_buscarpuesto.setObjectName(u"txt_buscarpuesto")
+
+        self.horizontalLayout_2.addWidget(self.txt_buscarpuesto)
+
+        self.btn_btn_buscar_puesto = QPushButton(self.contenedor_frame)
+        self.btn_btn_buscar_puesto.setObjectName(u"btn_btn_buscar_puesto")
+        icon2 = QIcon()
+        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_buscar_puesto.setIcon(icon2)
+
+        self.horizontalLayout_2.addWidget(self.btn_btn_buscar_puesto)
+
+
+        self.gridLayout_2.addLayout(self.horizontalLayout_2, 1, 0, 1, 1)
+
         self.tabla_listapuestos = QTableView(self.contenedor_frame)
         self.tabla_listapuestos.setObjectName(u"tabla_listapuestos")
         self.tabla_listapuestos.setMinimumSize(QSize(420, 0))
@@ -282,17 +330,7 @@ class Ui_Formulario_puestos(object):
         self.tabla_listapuestos.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_listapuestos.horizontalHeader().setStretchLastSection(False)
 
-        self.gridLayout_2.addWidget(self.tabla_listapuestos, 2, 0, 1, 3)
-
-        self.etiqueta_puestosexistentes = QLabel(self.contenedor_frame)
-        self.etiqueta_puestosexistentes.setObjectName(u"etiqueta_puestosexistentes")
-
-        self.gridLayout_2.addWidget(self.etiqueta_puestosexistentes, 0, 0, 1, 1)
-
-        self.txt_buscarpuesto = QLineEdit(self.contenedor_frame)
-        self.txt_buscarpuesto.setObjectName(u"txt_buscarpuesto")
-
-        self.gridLayout_2.addWidget(self.txt_buscarpuesto, 1, 0, 1, 3)
+        self.gridLayout_2.addWidget(self.tabla_listapuestos, 2, 0, 1, 1)
 
 
         self.gridLayout_6.addWidget(self.contenedor_frame, 1, 1, 1, 1)
@@ -302,9 +340,9 @@ class Ui_Formulario_puestos(object):
         self.btn_btn_limpiar = QPushButton(self.contenedor)
         self.btn_btn_limpiar.setObjectName(u"btn_btn_limpiar")
         self.btn_btn_limpiar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiar.setIcon(icon1)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiar.setIcon(icon3)
         self.btn_btn_limpiar.setIconSize(QSize(25, 25))
 
         self.gridLayout_3.addWidget(self.btn_btn_limpiar, 0, 0, 1, 1)
@@ -316,9 +354,9 @@ class Ui_Formulario_puestos(object):
         self.btn_btn_agregar.setFont(font)
         self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btn_btn_agregar.setAutoFillBackground(False)
-        icon2 = QIcon()
-        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_agregar.setIcon(icon2)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_agregar.setIcon(icon4)
         self.btn_btn_agregar.setIconSize(QSize(16, 16))
 
         self.gridLayout_3.addWidget(self.btn_btn_agregar, 0, 1, 1, 1)
@@ -326,9 +364,9 @@ class Ui_Formulario_puestos(object):
         self.btn_btn_actualizar = QPushButton(self.contenedor)
         self.btn_btn_actualizar.setObjectName(u"btn_btn_actualizar")
         self.btn_btn_actualizar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_actualizar.setIcon(icon3)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_actualizar.setIcon(icon5)
         self.btn_btn_actualizar.setIconSize(QSize(16, 16))
 
         self.gridLayout_3.addWidget(self.btn_btn_actualizar, 0, 2, 1, 1)
@@ -336,9 +374,9 @@ class Ui_Formulario_puestos(object):
         self.btn_btn_eliminar = QPushButton(self.contenedor)
         self.btn_btn_eliminar.setObjectName(u"btn_btn_eliminar")
         self.btn_btn_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_eliminar.setIcon(icon4)
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_eliminar.setIcon(icon6)
         self.btn_btn_eliminar.setIconSize(QSize(16, 16))
 
         self.gridLayout_3.addWidget(self.btn_btn_eliminar, 0, 3, 1, 1)
@@ -538,7 +576,18 @@ class Ui_Formulario_puestos(object):
         self.etiquetaTitulo_administrarpuestos.setText(QCoreApplication.translate("Formulario_puestos", u"PUESTOS", None))
         self.btn_cerrar.setText("")
         self.etiqueta_puestosexistentes.setText(QCoreApplication.translate("Formulario_puestos", u"Puestos Existentes", None))
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Formulario_puestos", u"<html><head/><body><p><span style=\" font-weight:700;\">Refrescar Tabla</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTabla.setText("")
         self.txt_buscarpuesto.setPlaceholderText(QCoreApplication.translate("Formulario_puestos", u"Nombre del puesto", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_buscar_puesto.setToolTip(QCoreApplication.translate("Formulario_puestos", u"<html><head/><body><p><span style=\" font-size:12pt; font-weight:700;\">Buscar</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_buscar_puesto.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_btn_limpiar.setToolTip(QCoreApplication.translate("Formulario_puestos", u"<html><head/><body><p><span style=\" font-size:12pt; font-weight:700;\">Limpiar Campos</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_limpiar.setText("")
 #if QT_CONFIG(accessibility)
         self.btn_btn_agregar.setAccessibleName("")
@@ -565,6 +614,9 @@ class Ui_Formulario_puestos(object):
         self.cajaopcion_viernes.setText(QCoreApplication.translate("Formulario_puestos", u"Viernes", None))
         self.cajaopcion_sabado.setText(QCoreApplication.translate("Formulario_puestos", u"Sabado", None))
         self.cajaopcion_domingo.setText(QCoreApplication.translate("Formulario_puestos", u"Domingo", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_roles.setToolTip(QCoreApplication.translate("Formulario_puestos", u"<html><head/><body><p><span style=\" font-size:12pt; font-weight:700;\">Asignar Permisos</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_btn_roles.setText(QCoreApplication.translate("Formulario_puestos", u"Grupos", None))
     # retranslateUi
 

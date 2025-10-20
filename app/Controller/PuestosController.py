@@ -1,6 +1,10 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+
+from app.Controller.Hilo_consultas import WorkerDB
+from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
+from app.Model.AbstractTableModel import ComprobarModelosTablas
 from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import Conexion_base_datos
 from ..View.UserInterfacePy.UI_ADMINISTRAR_PUESTOS import Ui_Formulario_puestos
@@ -12,7 +16,7 @@ from .FuncionesAuxiliares import FuncionesAuxiliaresController
 
 class PuestosController(QDialog):
     signal_puesto_agregado =  Signal()
-    elemento_seleccionado = Signal(str)
+    elemento_seleccionado = Signal(object)
     VENTANA_PUESTOS_CERRADA = Signal()
     def __init__(self, parent = None, cabecera = True):
         super().__init__(parent)
@@ -22,6 +26,9 @@ class PuestosController(QDialog):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         #//LIMITE CARACTERES
         self.ui.txt_nombrepuesto.setMaxLength(100)
         
@@ -38,6 +45,7 @@ class PuestosController(QDialog):
         self.ui.btn_btn_roles.clicked.connect(self.roles)
         self.ui.btn_btn_actualizar.clicked.connect(self.actualizar)
         self.ui.btn_cerrar.clicked.connect(self.close)
+        self.ui.btn_RefrescarTabla.clicked.connect(self.listar_puestos)
 
         # señales principales:
         self.ui.cajaopcion_lunes.stateChanged.connect(self.comprobar_caja_verificacion)
@@ -59,9 +67,12 @@ class PuestosController(QDialog):
         self.diccionario_departamentos = set()
         self.diccionario_puestos = set()
         self.id_departamento = None
-        self.id_elemento_seleccionado = None
+        self.puesto_actual = None
         self.puestos = None
         self.seleccion_conectada = False
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
 
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
@@ -95,12 +106,17 @@ class PuestosController(QDialog):
         print(state, Qt.Checked.value)
         status_checked = self.sender()
         day_name = status_checked.text()
-        if state == Qt.Checked.value:
-            if status_checked not in self.diasLaborales:
+        is_checked = status_checked.isChecked()
+        if is_checked:
+            if day_name not in self.diasLaborales:
                 self.diasLaborales.append(day_name)
+                print(f"✅ Añadido: {day_name}")
         else:
-            if status_checked in self.diasLaborales:
+            if day_name in self.diasLaborales:
                 self.diasLaborales.remove(day_name)
+                print(f"❌ Removido: {day_name}")
+        
+        print(f"📅 Días laborales actuales: {self.diasLaborales}")
 
     def limpiar(self):
 
@@ -118,6 +134,7 @@ class PuestosController(QDialog):
 
         self.diasLaborales = []
         self.diccionario_puestos.clear()
+        self.puesto_actual = None
         self.id_departamento = None
         self.id_elemento_seleccionado = None
         self.puestos = None
@@ -134,8 +151,6 @@ class PuestosController(QDialog):
                     self.id_departamento = index
                     break
         campos_vacios, estado_campos_vacios = self.validar(datos)
-        print(self.diasLaborales)
-        print(estado_campos_vacios)
         if not estado_campos_vacios or not self.diasLaborales:
             lista_vacios = []
             if estado_campos_vacios is False:
@@ -144,47 +159,112 @@ class PuestosController(QDialog):
             lista_vacios.append("Asignar dia laboral")
             Mensaje().mensaje_alerta(f"No se realizo el registro, falta agregar los campos{lista_vacios}")
             return
-
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    puesto, agregado = PuestoModel(session).crear_puesto(
-                        nombre=datos['nombre'],
-                        salario=datos['salario'],
-                        horas_laborales=datos['horas_laborales'],
-                        dias_laborales=diasLaborales,
-                        descripcion_puesto=datos['descripcion_puesto'],
-                        hora_entrada=datos['hora_entrada'],
-                        hora_salida=datos['hora_salida'],
-                        departamento_id=self.id_departamento
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("agregar_puesto_thread")
+            self.id_hilo_agregar_puesto = WorkerDB.create_managed_worker(owner_id="agregar_puesto_thread")
+            self.consultor_agregar_puesto = WorkerDB.get_managed_worker(self.id_hilo_agregar_puesto)
+            if not self.consultor_agregar_puesto:
+                raise Exception("No se logro obtener el worker gestionado al agregar")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_puesto,
+                resultado_callback=self.mostrar_resultado_hilo,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_agregar_puesto.ejecutar(
+                    funcion=self.agregar_puestos_query,
+                    diasLaborales = diasLaborales,
+                    datos = datos
                     )
-                except Exception as e:
-                    Mensaje().mensaje_critico(f'Surgio un error al agregar el puesto : {e}')
-            if agregado:
-                Mensaje().mensaje_informativo("Se registro con exito")
-                self.listar_puestos()
-            else:
-                Mensaje().mensaje_alerta("No se pudo registrar")
-        self.signal_puesto_agregado.emit()
+        except Exception as e:
+            if hasattr(self, 'id_hilo_agregar_puesto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_puesto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+        
+    def agregar_puestos_query(self, session, diasLaborales, datos):
+        try:
+            puesto, estado = PuestoModel(session).crear_puesto(
+                            nombre=datos['nombre'],
+                            salario=datos['salario'],
+                            horas_laborales=datos['horas_laborales'],
+                            dias_laborales=diasLaborales,
+                            descripcion_puesto=datos['descripcion_puesto'],
+                            hora_entrada=datos['hora_entrada'],
+                            hora_salida=datos['hora_salida'],
+                            departamento_id=self.id_departamento
+                        )
+            if not estado:
+                session.rollback()
+                return {
+                    'exito': estado,
+                    'mensaje': f'No se logro hacer el registro, {datos["nombre"]}'
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                'exito': False,
+                'mensaje': f'Ocurrio un error en el proceso : {e}'
+            }
+        session.commit()
+        return {
+            'exito': estado,
+            'mensaje': f'Registro exitoso, {puesto.nombre} agregado'
+        }
     
     def eliminar(self):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    respuesta = PuestoModel(session).eliminar_puesto(self.id_elemento_seleccionado)
-                    if respuesta == True:
-                        Mensaje().mensaje_informativo("Se elimino con exito")
-                    else:
-                        Mensaje().mensaje_alerta("No se pudo eliminar")
-                except Exception as e:
-                    Mensaje().mensaje_critico(f'Surgio un error al eliminar el puesto : {e}')
-        self.limpiar()
+        if not self.puesto_actual:
+            Mensaje().mensaje_informativo("No se a seleccionado ningun registro para eliminar")
+            return
+        respuesta = Mensaje().mensaje_pregunta("Quieres eliminar el registro")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("eliminar_puesto_thread")
+                self.id_hilo_eliminar_puesto = WorkerDB.create_managed_worker(owner_id="eliminar_puesto_thread")
+                self.consultor_eliminar_puesto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_puesto)
+                if not self.consultor_eliminar_puesto:
+                    raise Exception("No se logro obtener el worker gestionado al eliminar")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_eliminar_puesto,
+                    resultado_callback=self.mensaje_estado_eliminado,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_eliminar_puesto.ejecutar(
+                        funcion=self.eliminar_puesto_query,
+                        puesto_seleccionado = self.puesto_actual
+                        )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_eliminar_puesto'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_puesto)
+                Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
         self.signal_puesto_agregado.emit()
+    
+    def eliminar_puesto_query(self, session, puesto_seleccionado):
+        try:
+            respuesta = PuestoModel(session).eliminar_puesto(puesto_seleccionado
+                                                            .id)
+            if not respuesta:
+                session.rollback()
+                return {
+                    "exito": respuesta,
+                    'mensaje' : f"No se logro realizar la operacion, registro {puesto_seleccionado.nombre} no eliminado"
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                    "exito": False,
+                    'mensaje' : f"Ocurrio un error en la operacion"
+                }
+        session.commit()
+        return {
+            "exito": respuesta,
+            'mensaje' : f"Operacion exitosa, registro {puesto_seleccionado.nombre} eliminado"
+        }
 
     def actualizar(self):
-        id_puesto = self.id_elemento_seleccionado
+        id_puesto = self.puesto_actual
         diasLaborales = ', '.join(self.diasLaborales)
         datos = self.obtener_contenido_campos()
 
@@ -207,25 +287,64 @@ class PuestosController(QDialog):
             return
 
         if id_puesto is not None:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    puesto, estado = PuestoModel(session).actualizar(
-                        id_elemento=id_puesto,
-                        nombre=datos['nombre'],
-                        salario=datos['salario'],
-                        horas_laborales=datos['horas_laborales'],
-                        dias_laborales=diasLaborales,
-                        descripcion_puesto=datos['descripcion_puesto'],
-                        hora_entrada=datos['hora_entrada'],
-                        hora_salida=datos['hora_salida'],
-                        departamento_id=self.id_departamento
-                    )
-                if estado:
-                    self.limpiar()
-                    self.signal_puesto_agregado.emit()
-                    self
-                    return
+            respuesta = Mensaje().mensaje_pregunta("¿Quieres hacer la actualizaciòn?")
+            if respuesta == QMessageBox.Yes:
+                try:
+                        self.manejadorModal.mostrar_modal(self)
+                        WorkerDB.cleanup_owner_workers("actualizar_puesto_threar")
+                        self.id_hilo_actualizar_puesto = WorkerDB.create_managed_worker(owner_id="actualizar_puesto_threar")
+                        self.consultor_actualizar_puesto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_puesto)
+                        if not self.consultor_actualizar_puesto:
+                            raise Exception("No se logro hacer la operación para actualizar")
+                        
+                        WorkerDB.connect_managed_signals(
+                            worker_id=self.id_hilo_actualizar_puesto,
+                            resultado_callback=self.mostrar_resultado_hilo,
+                            error_callback=self.mostrar_error_hilo,
+                            terminado_callback=self.manejadorModal.cerrar_modal
+                        )
+                        self.consultor_actualizar_puesto.ejecutar(
+                            funcion=self.actualizar_puesto_query,
+                            puesto = self.puesto_actual,
+                            diasLaborales = diasLaborales,
+                            id_departamento = self.id_departamento,
+                            datos = datos
+                        )
+                except Exception as e:
+                    if hasattr(self, 'id_hilo_actualizar_puesto'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_puesto)
+                    Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+                    
+    def actualizar_puesto_query(self, session, puesto, diasLaborales, id_departamento, datos):
+        try:
+            puesto, estado = PuestoModel(session).actualizar(
+                id_elemento=puesto.id,
+                nombre=datos['nombre'],
+                salario=datos['salario'],
+                horas_laborales=datos['horas_laborales'],
+                dias_laborales=diasLaborales,
+                descripcion_puesto=datos['descripcion_puesto'],
+                hora_entrada=datos['hora_entrada'],
+                hora_salida=datos['hora_salida'],
+                departamento_id=id_departamento
+            )
+            if not estado:
+                session.rollback()
+                return {
+                    'exito': estado,
+                    "mensaje": f"No se logro hacer la actualizacion de {datos["nombre"]}"
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje" : f"Ocurrio un error en la operacion"
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje": f"Operacion exitosa, registro {puesto.nombre} actualizado"
+        }
 
     def listar_departamentos(self):
         try:
@@ -244,146 +363,122 @@ class PuestosController(QDialog):
             Mensaje().mensaje_critico(f'Surgio un error al listar los departamentos: {e}')
 
     def listar_puestos(self):
+        self.manejadorModal.mostrar_modal(self)
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    self.puestos, estado = PuestoModel(session).obtener_todos()
-                self.llenar_tabla(self.puestos)
+            WorkerDB.cleanup_owner_workers("listar_puestos_thread")
+            self.id_hilo_listar_puestos = WorkerDB.create_managed_worker(owner_id="listar_puestos_thread")
+            self.consultor_listar_puestos = WorkerDB.get_managed_worker(self.id_hilo_listar_puestos)
+            if not self.consultor_listar_puestos:
+                raise Exception("No se pudo obtener la lista.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_listar_puestos,
+                resultado_callback=self.llenar_tabla,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_listar_puestos.ejecutar(
+                self.obtener_puestos_query
+            )
         except Exception as e:
-            Mensaje().mensaje_critico(f'Surgio un error al listar los puestos: {e}')
+            print(f"Error al configurar worker: {str(e)}")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_listar_puestos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_listar_puestos)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            
+    def obtener_puestos_query(self, session):
+        puestos, estado = PuestoModel(session).obtener_todos()
+        return puestos, estado
 
-    def llenar_tabla(self, puestos):
-        try:
-            # Verificar si la tabla está inicializada
-            if self.ui.tabla_listapuestos is None:
-                Mensaje().mensaje_alerta("El widget tabla_puestos no está disponible.")
-                return
-
-            # Inicializar el modelo de la tabla si no existe
-            if not hasattr(self, 'model'):
-                self.model = QStandardItemModel()
-
-
-
-            # Limpiar el modelo antes de llenarlo con nuevos datos
-            self.model.clear()
-            # Verificar si clientes es None o una lista vacía
-            if puestos is None or len(puestos) == 0:
-                self.model.setHorizontalHeaderLabels([
-                    "Nombre",
-                    "Salario",
-                    "Horas Laborales",
-                    "Dias Laborales",
-                    "Descripcion",
-                    "Hora de Entrada",
-                    "Hora de Salida"
-                    ])
-                self.ui.tabla_listapuestos.setModel(self.model)
-                return
-
-            nombre_columnas = [
-                "Id",
-                "Nombre",
-                "Salario",
-                "Horas Laborales",
-                "Dias Laborales",
-                "Descripcion",
-                "Hora de Entrada",
-                "Hora de Salida"
-            ]
-            self.model.setHorizontalHeaderLabels(nombre_columnas)
-
-            # Llenar el modelo con datos de clientes
-            for puesto in puestos:
-                if puesto is not None:
-                    row_data = [
-                        str(puesto.id),
-                        puesto.nombre,
-                        str(puesto.salario),
-                        str(puesto.horas_laborales),
-                        puesto.dias_laborales,
-                        puesto.descripcion_puesto,
-                        puesto.hora_entrada,
-                        puesto.hora_salida
-                    ]
-                else:
-                    # Usar campos vacíos si no hay datos de cliente físico
-                    row_data = [""] * len(nombre_columnas)
-
-                items = [QStandardItem(str(item)) for item in row_data]
-                self.model.appendRow(items)
-
-            # Asignar el modelo a la tabla
-            self.ui.tabla_listapuestos.setModel(self.model)
-            self.ui.tabla_listapuestos.setColumnHidden(0, True)
-
-            # Desconectar la señal antes de conectar
-            if self.seleccion_conectada:
-                self.ui.tabla_listapuestos.selectionModel().currentChanged.disconnect(self.obtener_id_elemento_tabla)
-                self.seleccion_conectada = False  # Actualizar el estado
-
-            # Conectar la señal a la función que obtiene el ID del elemento seleccionado
-            self.ui.tabla_listapuestos.selectionModel().currentChanged.connect(self.obtener_id_elemento_tabla)
-            self.seleccion_conectada = True  # Marcar como conectada
-        except Exception as e:
-            Mensaje().mensaje_critico(f'No se logro hacer mostrar la tabla PUESTOS {e}')
-
-        self.puestos = None
-
-    def obtener_id_elemento_tabla(self, current, previus):
+    def llenar_tabla(self, puestos, estado):
+        if self.ui.tabla_listapuestos is None:
+            Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
+            return
+        cabeceras = [
+            "Nombre",
+            "Salario",
+            "Horas laborales",
+            "Dias laborales",
+            "Descripcion puesto",
+            "Hora entrada",
+            "Hora salida"
+        ]
+        mapeo_de_cabeceras = {
+            "nombre" : lambda p: p.nombre,
+            "salario": lambda p: p.salario,
+            'horas_laborales' : lambda p: p.horas_laborales,
+            "dias_laborales": lambda p: p.dias_laborales,
+            "descripcion_puesto" : lambda p: p.descripcion_puesto,
+            "hora_entrada" : lambda p: p.hora_entrada.strftime("%H:%M") if p.hora_entrada else "",
+            "hora_salida": lambda p: p.hora_salida.strftime("%H:%M") if p.hora_salida else "",
+        }
+        modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_lista_vpuestos",
+            interfazTabla=self.ui.tabla_listapuestos,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_de_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=self.obtener_id_elemento_tabla_puestos
+        )
+        if not estado or not puestos:
+            Mensaje().mensaje_informativo("No hay puestos para mostrar")
+            modelo.clear()
+            return
         
-        # Verifica si la celda seleccionada está en la primera columna
-        if current.column() > 0:  # Verifica si es la primera columna
-            indice_fila = current.row()
-            elemento = self.model.item(indice_fila, 0)
-            if elemento is not None:
-                self.id_elemento_seleccionado = None
-                self.id_elemento_seleccionado = elemento.text()
-                self.elemento_seleccionado.emit(self.id_elemento_seleccionado)
-            else:
-                return
+        modelo.update_data(puestos, reset=True)
+        if hasattr(self, 'seleccion_conectada_puestos') and self.seleccion_conectada_puestos:
+            try:
+                self.ui.tabla_listapuestos.clicked.disconnect(self.obtener_id_elemento_tabla_puestos)
+            except:
+                pass
+        self.ui.tabla_listapuestos.clicked.connect(self.obtener_id_elemento_tabla_puestos)
+        self.seleccion_conectada_puestos = True
 
-    def mostrar_datos_elemento(self, id_elemento_seleccionado):
-        id_elemento = id_elemento_seleccionado
+    def obtener_id_elemento_tabla_puestos(self, current):
+        if current.isValid():
+            fila = current.row()
+            puesto = self.modelo_lista_vpuestos.get_item(current)
+            
+            if puesto:
+                self.puesto_actual = puesto
+                self.elemento_seleccionado.emit(self.puesto_actual)
+
+    def mostrar_datos_elemento(self, puesto_seleccionado):
         datos = self.campos()
         cajas_verificacion = self.cajas_dias_laborales()
-        if id_elemento is not None:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    try:
-                        elemento_seleccionado, estado = PuestoModel(session).obtener_puesto_por_id(id_elemento)
-                        if estado == True:
-                            datos['nombre'].setText(elemento_seleccionado.nombre)
-                            datos['salario'].setValue(float(elemento_seleccionado.salario))
-                            datos['horas_laborales'].setValue(float(elemento_seleccionado.horas_laborales))
-                            datos['descripcion_puesto'].setPlainText(elemento_seleccionado.descripcion_puesto)
-                            datos['hora_entrada'].setTime(QTime(elemento_seleccionado.hora_entrada))
-                            datos['hora_salida'].setTime(QTime(elemento_seleccionado.hora_salida))
+        if puesto_seleccionado is not None:
+            try:
+                datos['nombre'].setText(puesto_seleccionado.nombre)
+                datos['salario'].setValue(float(puesto_seleccionado.salario))
+                datos['horas_laborales'].setValue(float(puesto_seleccionado.horas_laborales))
+                datos['descripcion_puesto'].setPlainText(puesto_seleccionado.descripcion_puesto)
+                datos['hora_entrada'].setTime(QTime(puesto_seleccionado.hora_entrada))
+                datos['hora_salida'].setTime(QTime(puesto_seleccionado.hora_salida))
 
 
-                            if elemento_seleccionado.departamento:
-                                departamento_nombre = elemento_seleccionado.departamento.nombre
-                                # Obtén una referencia al QComboBox
-                                caja_departamento = self.ui.cajaOpciones_departamentos  # Esto debe ser el objeto QComboBox
+                if puesto_seleccionado.departamento:
+                    departamento_nombre = puesto_seleccionado.departamento.nombre
+                    # Obtén una referencia al QComboBox
+                    caja_departamento = self.ui.cajaOpciones_departamentos  # Esto debe ser el objeto QComboBox
 
-                                # Encuentra el índice del departamento en el combo box
-                                indice = caja_departamento.findText(departamento_nombre)
-                                if indice != -1:
-                                    # Eliminar el elemento si existe
-                                    caja_departamento.removeItem(indice)
+                    # Encuentra el índice del departamento en el combo box
+                    indice = caja_departamento.findText(departamento_nombre)
+                    if indice != -1:
+                        # Eliminar el elemento si existe
+                        caja_departamento.removeItem(indice)
 
-                                # Insertar el nuevo departamento en la posición 0
-                                caja_departamento.insertItem(0, departamento_nombre)
-                                caja_departamento.setCurrentIndex(0)
-                                
-                            if elemento_seleccionado.dias_laborales is not None:
-                                for dia, checkbox in cajas_verificacion.items():
-                                    checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in elemento_seleccionado.dias_laborales)
+                    # Insertar el nuevo departamento en la posición 0
+                    caja_departamento.insertItem(0, departamento_nombre)
+                    caja_departamento.setCurrentIndex(0)
+                    
+                if puesto_seleccionado.dias_laborales is not None:
+                    for dia, checkbox in cajas_verificacion.items():
+                        checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in puesto_seleccionado.dias_laborales)
 
-                    except Exception as e:
-                        Mensaje().mensaje_critico(f'Surgio un error al obtener los datos del elemento seleccionado: {(e)}')
+            except Exception as e:
+                Mensaje().mensaje_critico(f'Surgio un error al obtener los datos del elemento seleccionado: {(e)}')
 
     def campos(self):
         return{
@@ -428,3 +523,16 @@ class PuestosController(QDialog):
         if campos_vacios:
             return campos_vacios, False
         return None, True
+    
+    def mostrar_resultado_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(f'{objetoMensaje["mensaje"]}')
+        self.puesto_actual = None
+        self.signal_puesto_agregado.emit()
+        
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
+    
+    def mensaje_estado_eliminado(self, objectoMensaje):
+        Mensaje().mensaje_informativo(f'{objectoMensaje["mensaje"]}')
+        self.puesto_actual = None
+    

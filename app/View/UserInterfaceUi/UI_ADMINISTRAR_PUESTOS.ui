@@ -208,7 +208,17 @@ color: white;
 background-color: #cce4ff;
 color: black;
 }
-</string>
+#btn_RefrescarTabla{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+}
+#btn_RefrescarTabla:hover{
+background: rgb(179, 179, 179);
+}
+#btn_RefrescarTabla:pressed{
+background: #b6ccd8 ;
+}</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_7">
    <property name="leftMargin">
@@ -332,7 +342,72 @@ color: black;
             <enum>QFrame::Shadow::Raised</enum>
            </property>
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="2" column="0" colspan="3">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <property name="spacing">
+             <number>5</number>
+            </property>
+            <item row="0" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QLabel" name="etiqueta_puestosexistentes">
+                <property name="text">
+                 <string>Puestos Existentes</string>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignRight">
+               <widget class="QPushButton" name="btn_RefrescarTabla">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Refrescar Tabla&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../../Source/iconsdvg.qrc">
+                  <normaloff>:/Icons/IconosSVG/base_datos_refresh.png</normaloff>:/Icons/IconosSVG/base_datos_refresh.png</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="1" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QLineEdit" name="txt_buscarpuesto">
+                <property name="placeholderText">
+                 <string>Nombre del puesto</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btn_btn_buscar_puesto">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;Buscar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../../Source/iconosSVG.qrc">
+                  <normaloff>:/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="2" column="0">
              <widget class="QTableView" name="tabla_listapuestos">
               <property name="minimumSize">
                <size>
@@ -360,20 +435,6 @@ color: black;
               </attribute>
              </widget>
             </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="etiqueta_puestosexistentes">
-              <property name="text">
-               <string>Puestos Existentes</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0" colspan="3">
-             <widget class="QLineEdit" name="txt_buscarpuesto">
-              <property name="placeholderText">
-               <string>Nombre del puesto</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </widget>
          </item>
@@ -383,6 +444,9 @@ color: black;
             <widget class="QPushButton" name="btn_btn_limpiar">
              <property name="cursor">
               <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;Limpiar Campos&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string/>
@@ -685,6 +749,9 @@ color: black;
              <widget class="QPushButton" name="btn_btn_roles">
               <property name="cursor">
                <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;Asignar Permisos&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Grupos</string>

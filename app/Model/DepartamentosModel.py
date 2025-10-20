@@ -1,4 +1,5 @@
 from .BaseDatosModel import Departamentos, departamento_sucursal
+from sqlalchemy.orm import joinedload
 
 class DepartamentosModel:
     def __init__(self, session):
@@ -33,13 +34,15 @@ class DepartamentosModel:
 
     def obtener_todos(self):
         try:
-            departamentos =  self.session.query(Departamentos).all()
+            departamentos =  self.session.query(Departamentos).options(
+                joinedload(Departamentos.sucursales),
+                joinedload(Departamentos.puestos)).all()
             if departamentos:
                 return departamentos, True
             else:
-                return None, False
+                return [], False
         except Exception as e:
-            return None
+            return []
 
     def obtener_departamento_por_id(self, id):
         try:
@@ -70,7 +73,7 @@ class DepartamentosModel:
                                 id, 
                                 nombre,
                                 descripcion = None):
-        departamento = self.session.query(Departamentos).filter(id == id).first()
+        departamento = self.session.get(Departamentos, id)
         if departamento:
             departamento.nombre = nombre
             departamento.descripcion = descripcion
@@ -82,9 +85,11 @@ class DepartamentosModel:
     def filtrar_nombre(self, texto):
         try:
             texto_busqueda = f"%{texto}%"
-            resultado = self.session.query(Departamentos).filter(Departamentos.nombre.ilike(texto_busqueda)).all()
+            resultado = self.session.query(Departamentos).options(
+                joinedload(Departamentos.sucursales),
+                joinedload(Departamentos.puestos)).filter(Departamentos.nombre.ilike(texto_busqueda)).all()
             if resultado:
                 return resultado, True
-            return None, False
+            return [], False
         except Exception as e:
-            return None, False
+            return [], False

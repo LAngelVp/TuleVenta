@@ -337,15 +337,15 @@ class Ui_Control_departamentos(object):
         self.txt_buscardepartamento = QLineEdit(self.contenedor_formulario)
         self.txt_buscardepartamento.setObjectName(u"txt_buscardepartamento")
 
-        self.gridLayout_4.addWidget(self.txt_buscardepartamento, 0, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.txt_buscardepartamento, 0, 0, 1, 1)
 
-        self.etiqueta_buscardepartamento = QLabel(self.contenedor_formulario)
-        self.etiqueta_buscardepartamento.setObjectName(u"etiqueta_buscardepartamento")
-        self.etiqueta_buscardepartamento.setPixmap(QPixmap(u":/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg"))
-        self.etiqueta_buscardepartamento.setScaledContents(True)
-        self.etiqueta_buscardepartamento.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.btn_btn_buscar_departamento = QPushButton(self.contenedor_formulario)
+        self.btn_btn_buscar_departamento.setObjectName(u"btn_btn_buscar_departamento")
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_buscar_departamento.setIcon(icon6)
 
-        self.gridLayout_4.addWidget(self.etiqueta_buscardepartamento, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.btn_btn_buscar_departamento, 0, 1, 1, 1)
 
 
         self.gridLayout_5.addLayout(self.gridLayout_4, 0, 4, 1, 2)
@@ -356,9 +356,9 @@ class Ui_Control_departamentos(object):
         self.btn_btn_limpiar = QPushButton(self.contenedor)
         self.btn_btn_limpiar.setObjectName(u"btn_btn_limpiar")
         self.btn_btn_limpiar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon6 = QIcon()
-        icon6.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiar.setIcon(icon6)
+        icon7 = QIcon()
+        icon7.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiar.setIcon(icon7)
         self.btn_btn_limpiar.setIconSize(QSize(25, 25))
 
         self.gridLayout_2.addWidget(self.btn_btn_limpiar, 0, 2, 1, 1)
@@ -408,7 +408,7 @@ class Ui_Control_departamentos(object):
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_desvincular.setText("")
         self.txt_buscardepartamento.setPlaceholderText(QCoreApplication.translate("Control_departamentos", u" Buscar Departamento", None))
-        self.etiqueta_buscardepartamento.setText("")
+        self.btn_btn_buscar_departamento.setText("")
         self.btn_btn_limpiar.setText("")
     # retranslateUi
 

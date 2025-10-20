@@ -22,6 +22,9 @@ class DepartamentosController(QDialog):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         #// LIMITE CARACTERES
         self.ui.txt_nombredepartamento.setMaxLength(70)
 
@@ -36,14 +39,14 @@ class DepartamentosController(QDialog):
 
         # señales:
         self.ui.lista_departamentosexistentes.itemClicked.connect(self.obtenerId)
-        self.ui.txt_buscardepartamento.returnPressed.connect(self.buscar)
+        self.ui.btn_btn_buscar_departamento.clicked.connect(self.buscar)
         
 
         #// variables globales:
         self.sucursales = []
         self.idSucursales = None
-        self.sucursales_seleccionadas = set()
-        self.sucursales_seleccionadas_existentes = set()
+        self.sucursales_seleccionadas = {}
+        self.sucursales_seleccionadas_existentes = {}
         self.departamentos = []
         self.iconSucursal = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         self.iconDepartamento = QIcon(':/Icons/Bootstrap/diagram-2-fill.svg')
@@ -68,13 +71,44 @@ class DepartamentosController(QDialog):
     
     #funciones:
     def buscar(self):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                self.departamentos, estado = DepartamentosModel(session).filtrar_nombre(self.ui.txt_buscardepartamento.text())
-                if estado == True:
-                    self.ui.lista_puestosasignados.clear()
-                    self.listar_departamentos(self.departamentos)
+        nombre = self.ui.txt_buscardepartamento.text().strip()
+        if not nombre:
+            Mensaje().mensaje_informativo("No haz ingresado lo que quieres buscar")
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("buscar_departamento")
+            self.id_hilo_buscar_departamento = WorkerDB.create_managed_worker(owner_id="buscar_departamento")
+            self.consultor_buscar_departamento = WorkerDB.get_managed_worker(self.id_hilo_buscar_departamento)
+            if not self.consultor_buscar_departamento:
+                raise Exception("No se logro obtener el worker gestionado al buscar el departamento")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_buscar_departamento,
+                resultado_callback=self.listar_departamentos,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_buscar_departamento.ejecutar(
+                    funcion=self.buscar_departamento_query,
+                    nombre = nombre
+                    )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_buscar_departamento'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_departamento)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+                    
+    def buscar_departamento_query(self, session, nombre):
+        departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre)
+        if not estado:
+            return departamentos, {
+                'exito': estado,
+                'mensaje' : f'No se encontro ningun registro con {nombre}'
+            }
+        return departamentos, {
+            'exito': estado,
+            'mensaje': f'Valores encontrados {len(departamentos)}'
+        }
+        
     def limpiar(self):
         datos = self.campos()
         for campo in datos.values():
@@ -90,7 +124,7 @@ class DepartamentosController(QDialog):
         self.sucursales_seleccionadas.clear()
         self.sucursales_seleccionadas_existentes.clear()
 
-        self.listar_sucursales_existentes(set())
+        self.listar_sucursales_existentes()
         self.obtener_departamentos()
 
     def campos(self):
@@ -120,8 +154,8 @@ class DepartamentosController(QDialog):
             return
         self.manejadorModal.mostrar_modal(self)
         try:
-            WorkerDB.cleanup_owner_workers("agregar_departamento")
-            self.id_hilo_agregar_departamento = WorkerDB.create_managed_worker(owner_id="agregar_departamento")
+            WorkerDB.cleanup_owner_workers("agregar_departamento_thread")
+            self.id_hilo_agregar_departamento = WorkerDB.create_managed_worker(owner_id="agregar_departamento_thread")
             self.consultor_agregar_departamento = WorkerDB.get_managed_worker(self.id_hilo_agregar_departamento)
             if not self.consultor_agregar_departamento:
                 raise Exception("No se logro obtener el worker gestionado al agregar el departamento")
@@ -146,128 +180,239 @@ class DepartamentosController(QDialog):
             if not estado:
                 if departamento.nombre == datos['nombre']:
                     session.rollback()
-                    return "El registro que intentas agregar ya existe", False
+                    return {
+                        'exito': estado,
+                        'mensaje': "El registro que intentas agregar ya existe"
+                        }
         except Exception as e:
             session.rollback()
-            return "Error al realizar la operaciòn", False
-        
+            return {
+                        'exito': estado,
+                        'mensaje': "Error al realizar la operacion"
+                        }
         for sucursal_id in self.sucursales_seleccionadas:
                         sucursal = SucursalesModel(session).obtener_sucursal_por_id(sucursal_id)
                         if sucursal and sucursal not in departamento.sucursales:
                             departamento.sucursales.append(sucursal)
         session.commit()
-        return "Registro exitoso", True
+        return {
+                'exito': estado,
+                'mensaje': f"Registro exitoso, {departamento.nombre} fue agregado"
+                }
     
-    def mostrar_resultado_hilo(self, mensaje, estado):
-        Mensaje().mensaje_informativo(f'{mensaje}')
-        self.signal_departamento_agregado.emit()
-    
-    def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
-
     def eliminar(self):
-        departamentoId = self.id_departamento
-        if departamentoId is not None:
+        if self.objetoDepartamento is not None:
             try:
                 respuesta = Mensaje().mensaje_pregunta('Estas seguro de eliminar el departamento?')
                 if respuesta == QMessageBox.Yes:
-                    with Conexion_base_datos() as db:
-                        session = db.abrir_sesion()
-                        with session.begin():
-                            departamento_eliminado = DepartamentosModel(session).eliminar_departamento(departamentoId)
-                            if departamento_eliminado:
-                                Mensaje().mensaje_informativo('Departamento eliminado')
-                            else:
-                                Mensaje().mensaje_alerta('no se pudo eliminar el departamento por que no existe')
-                                return
+                            self.manejadorModal.mostrar_modal(self)
+                            WorkerDB.cleanup_owner_workers("eliminar_departamento_thread")
+                            self.id_hilo_eliminar_departamento = WorkerDB.create_managed_worker(owner_id="eliminar_departamento_thread")
+                            self.consultor_eliminar_departamento = WorkerDB.get_managed_worker(self.id_hilo_eliminar_departamento)
+                            if not self.consultor_eliminar_departamento:
+                                raise Exception("No se logro realizar la operaciòn para eliminar el registro")
+                            WorkerDB.connect_managed_signals(
+                                worker_id=self.id_hilo_eliminar_departamento,
+                                resultado_callback=self.mensaje_estado_eliminado,
+                                error_callback=self.mostrar_error_hilo,
+                                terminado_callback=self.manejadorModal.cerrar_modal
+                            )
+                            self.consultor_eliminar_departamento.ejecutar(
+                                funcion=self.eliminar_departamento_query,
+                                departamento = self.objetoDepartamento
+                            )
                 else:
                     return
             except Exception as e:
-                Mensaje().mensaje_critico(f'error al eliminar el departamento: {e}')
-            self.signal_departamento_agregado.emit()
-            self.limpiar()
+                if hasattr(self, 'id_hilo_eliminar_departamento'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_departamento)
+                Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            
+    def eliminar_departamento_query(self, session, departamento):
+        estado = DepartamentosModel(session).eliminar_departamento(departamento.id)
+        if estado:
+            session.commit()
+            return {
+                'exito': estado,
+                'mensaje': f'Operaciòn exitosa, el registro {departamento.nombre} fue eliminado'
+            }
+        return {
+            'exito' : estado,
+            'mensaje': f'No se logro la operaciòn'
+        }
+    
+    def mensaje_estado_eliminado(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        self.objetoDepartamento = None
+        self.signal_departamento_agregado.emit()
+        self.limpiar()
 
     def actualizar(self):
-        departamentoId = self.id_departamento
-        nuevos_datos = self.obtener_contenido_campos()
+        if self.objetoDepartamento:
+            nuevos_datos = self.obtener_contenido_campos()
+            if not self.validar(nuevos_datos):
+                Mensaje().mensaje_alerta('No puedes dejar campos de nombre y descripcion vacios')
+                return
+            sucursales_seleccionadas = self.sucursales_seleccionadas
+            respuesta = Mensaje().mensaje_pregunta('Estas seguro de actualizar el departamento')
+            if respuesta == QMessageBox.Yes:
+                try:
+                    self.manejadorModal.mostrar_modal(self)
+                    WorkerDB.cleanup_owner_workers("actualizar_departamento_thread")
+                    self.id_hilo_actualizar_departamento = WorkerDB.create_managed_worker(owner_id="actualizar_departamento_thread")
+                    self.consultor_actualizar_departamento = WorkerDB.get_managed_worker(self.id_hilo_actualizar_departamento)
+                    if not self.consultor_actualizar_departamento:
+                        raise Exception("No se pudo obtener el worker gestionado al actualizar")
+                    WorkerDB.connect_managed_signals(
+                        worker_id=self.id_hilo_actualizar_departamento,
+                        resultado_callback=self.mostrar_resultado_hilo,
+                        error_callback= self.mostrar_error_hilo,
+                        terminado_callback=self.manejadorModal.cerrar_modal
+                    )
+                    self.consultor_actualizar_departamento.ejecutar(
+                        funcion=self.actualizar_departamento_query,
+                        departamento = self.objetoDepartamento,
+                        sucursales_seleccionadas = sucursales_seleccionadas,
+                        nuevos_datos = nuevos_datos
+                        )
 
-        if not self.validar(nuevos_datos):
-            Mensaje().mensaje_alerta('No puedes dejar campos de nombre y descripcion vacios')
-            return
-        sucursales_seleccionadas = self.sucursales_seleccionadas
-        respuesta = Mensaje().mensaje_pregunta('Estas seguro de actualizar el departamento')
-        if respuesta == QMessageBox.Yes:
-            try:
-                with Conexion_base_datos() as db:
-                    session = db.abrir_sesion()
-                    with session.begin():
-                        departamento_actualizado, respuesta = DepartamentosModel(session).actualizar_departamento(departamentoId, **nuevos_datos)
-                        if respuesta == False:
-                            Mensaje().mensaje_alerta('El departamento no fue encontrado')
-                            return
-                        sucursales_relacionadas = {
-                            sucursal.id for sucursal in departamento_actualizado.sucursales
-                        }
-                        nuevas_sucursales = set(sucursales_seleccionadas)
+                except Exception as e:
+                    if hasattr(self, 'id_hilo_actualizar_departamento'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_departamento)
+                    Mensaje().mensaje_critico(f'Error al actualizar el departamento por lo siguiente: {e}')
+    
+    def actualizar_departamento_query(self, session, departamento, sucursales_seleccionadas, nuevos_datos):
+        try:
+            departamentoActualizado, estado = DepartamentosModel(session).actualizar_departamento(departamento.id, **nuevos_datos)
+            if not estado:
+                session.rollback()
+                objeto = {
+                    'mensaje': f'Operaciòn fallida, el departamento {departamento.nombre} no se logro actualizar',
+                    "resultado" : departamentoActualizado
+                }
+                return objeto, estado
+            # 2. Preparar diccionarios para comparación
+            # Sucursales actualmente relacionadas al departamento
+            sucursales_actuales = {sucursal.id: sucursal for sucursal in departamentoActualizado.sucursales}
+            
+            # Sucursales que el usuario quiere vincular (ya vienen como diccionario)
+            sucursales_deseadas = sucursales_seleccionadas
 
-                        # Añadir las nuevas sucursales que no estaban en la lista actual
-                        for sucursal_id in nuevas_sucursales - sucursales_relacionadas:
-                            sucursal = SucursalesModel(session).obtener_sucursal_por_id(sucursal_id)
-                            if sucursal:
-                                departamento_actualizado.sucursales.append(sucursal)
+            # 3. Calcular diferencias
+            ids_para_agregar = sucursales_deseadas.keys() - sucursales_actuales.keys()
+            ids_para_eliminar = sucursales_actuales.keys() - sucursales_deseadas.keys()
 
-                        # Eliminar las sucursales que ya no están seleccionadas
-                        for sucursal_id in sucursales_relacionadas - nuevas_sucursales:
-                            sucursal = SucursalesModel(session).obtener_sucursal_por_id(sucursal_id)
-                            if sucursal:
-                                departamento_actualizado.sucursales.remove(sucursal)
+            # Contadores para mensaje informativo
+            agregadas = 0
+            eliminadas = 0
 
-            except Exception as e:
-                Mensaje().mensaje_critico(f'Error al actualizar el departamento por lo siguiente: {e}')
+            # 4. AGREGAR nuevas sucursales
+            for sucursal_id in ids_para_agregar:
+                sucursal = sucursales_deseadas.get(sucursal_id)
+                if sucursal and sucursal not in departamentoActualizado.sucursales:
+                    departamentoActualizado.sucursales.append(sucursal)
+                    agregadas += 1
+                    print(f"➕ Agregada sucursal: {sucursal.nombre_sucursal}")
 
-            self.limpiar()# Confirmar los cambios
+            # 5. ELIMINAR sucursales que ya no están seleccionadas
+            for sucursal_id in ids_para_eliminar:
+                sucursal = sucursales_actuales.get(sucursal_id)
+                if sucursal and sucursal in departamentoActualizado.sucursales:
+                    departamentoActualizado.sucursales.remove(sucursal)
+                    eliminadas += 1
+                    print(f"➖ Eliminada sucursal: {sucursal.nombre_sucursal}")
+
+            # 6. Commit de todos los cambios
+            session.commit()
+
+            # 7. Mensaje informativo
+            mensaje = f'Operación realizada con éxito, {departamentoActualizado.nombre} fue actualizado'
+            if agregadas > 0 or eliminadas > 0:
+                mensaje += f' (Sucursales agregadas: {agregadas}, eliminadas: {eliminadas})'
+
+            return {
+                'mensaje': mensaje,
+                'resultado': departamentoActualizado,
+                'sucursales_agregadas': agregadas,
+                'sucursales_eliminadas': eliminadas
+            }, True
+
+        except Exception as e:
+            session.rollback()
+            return {
+                'mensaje': f"Error al realizar la operación: {str(e)}",
+                'resultado': None
+            }, False
 
     def vincular_sucursal(self):
         sucursal_seleccionada = self.ui.lista_sucursalesexistentes.currentItem()
         if sucursal_seleccionada:
-            sucursal_id = sucursal_seleccionada.data(Qt.UserRole)
+            sucursal = sucursal_seleccionada.data(Qt.UserRole)
+            
+            # Verificar que sea un objeto sucursal y tenga id
+            if not hasattr(sucursal, 'id'):
+                Mensaje().mensaje_alerta("Error: Datos de sucursal inválidos")
+                return
+                
+            if sucursal.id not in self.sucursales_seleccionadas:
+                # Agregar al diccionario de seleccionadas
+                self.sucursales_seleccionadas[sucursal.id] = sucursal
+                
+                # Remover del diccionario de existentes
+                if sucursal.id in self.sucursales_seleccionadas_existentes:
+                    del self.sucursales_seleccionadas_existentes[sucursal.id]
 
-            if sucursal_id not in self.sucursales_seleccionadas:
-                self.sucursales_seleccionadas.add(sucursal_id)
-                self.sucursales_seleccionadas_existentes.remove(sucursal_id)
-
-                # Mover a la lista de sucursales vinculadas
+                # Crear elemento para la lista de vinculadas
                 elemento_vinculado = QListWidgetItem(sucursal_seleccionada.text())
                 elemento_vinculado.setIcon(self.iconSucursal)
-                elemento_vinculado.setData(Qt.UserRole, sucursal_id)
+                elemento_vinculado.setData(Qt.UserRole, sucursal)  # Guardar objeto completo
 
+                # Mover entre listas
                 self.ui.lista_sucursalesvinculadas.addItem(elemento_vinculado)
-                self.ui.lista_sucursalesexistentes.takeItem(self.ui.lista_sucursalesexistentes.row(sucursal_seleccionada))
-
-                self.actualizar_sucursales_existentes()
+                self.ui.lista_sucursalesexistentes.takeItem(
+                    self.ui.lista_sucursalesexistentes.row(sucursal_seleccionada)
+                )
+                
+                print(f"✅ Sucursal vinculada: {sucursal.nombre_sucursal} (ID: {sucursal.id})")
+            else:
+                Mensaje().mensaje_informativo("Esta sucursal ya está vinculada")
+        else:
+            Mensaje().mensaje_informativo("Selecciona una sucursal para vincular")
 
     def desvincular_sucursal(self):
         sucursal_seleccionada = self.ui.lista_sucursalesvinculadas.currentItem()
         if sucursal_seleccionada:
-            sucursal_id = sucursal_seleccionada.data(Qt.UserRole)
+            # Obtener el objeto sucursal completo, no solo el ID
+            sucursal = sucursal_seleccionada.data(Qt.UserRole)
             
-            # Verificar si el ID está en la lista antes de intentar eliminarlo
+            # Verificar que sea un objeto sucursal
+            if not hasattr(sucursal, 'id'):
+                Mensaje().mensaje_alerta("Error: Datos de sucursal inválidos")
+                return
+                
+            sucursal_id = sucursal.id
+            
+            # Verificar si el ID está en el diccionario antes de intentar eliminarlo
             if sucursal_id in self.sucursales_seleccionadas:
-                self.sucursales_seleccionadas.remove(sucursal_id)
-                self.sucursales_seleccionadas_existentes.add(sucursal_id)
+                # Remover del diccionario de seleccionadas
+                del self.sucursales_seleccionadas[sucursal_id]
+                
+                # Agregar al diccionario de existentes
+                self.sucursales_seleccionadas_existentes[sucursal_id] = sucursal
 
                 # Devolver a la lista de sucursales existentes
                 item_devolver = QListWidgetItem(sucursal_seleccionada.text())
                 item_devolver.setIcon(self.iconSucursal)
-                item_devolver.setData(Qt.UserRole, sucursal_id)
+                item_devolver.setData(Qt.UserRole, sucursal)  # Guardar objeto completo
 
                 self.ui.lista_sucursalesexistentes.addItem(item_devolver)
-                self.ui.lista_sucursalesvinculadas.takeItem(self.ui.lista_sucursalesvinculadas.row(sucursal_seleccionada))
+                self.ui.lista_sucursalesvinculadas.takeItem(
+                    self.ui.lista_sucursalesvinculadas.row(sucursal_seleccionada)
+                )
 
-                # Actualizar la lista de sucursales existentes
-                self.actualizar_sucursales_existentes()
+                print(f"❌ Sucursal desvinculada: {sucursal.nombre_sucursal} (ID: {sucursal.id})")
             else:
-                Mensaje().mensaje_alerta(f"Sucursal ID {sucursal_id} no encontrado en la lista de seleccionadas.")
+                Mensaje().mensaje_alerta(f"Sucursal ID {sucursal_id} no encontrada en la lista de seleccionadas.")
         else:
             Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal para desvincular.")
 
@@ -285,36 +430,72 @@ class DepartamentosController(QDialog):
             item.setData(Qt.UserRole, sucursal.id)
             self.ui.lista_sucursalesexistentes.addItem(item)
 
-    def listar_sucursales_existentes(self, sucursales_vinculadas = set()):
+    def listar_sucursales_existentes(self):
         self.ui.lista_sucursalesexistentes.clear()
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                self.sucursales, estado = SucursalesModel(session).obtener_todo()  # O ajusta esto a tus necesidades
-                for sucursal in self.sucursales:
-                    if sucursal.id not in sucursales_vinculadas:  # Solo agregar sucursales no vinculadas
-                        self.sucursales_seleccionadas_existentes.add(sucursal.id)
-                        item = QListWidgetItem(sucursal.nombre_sucursal)
-                        item.setIcon(self.iconSucursal)
-                        item.setData(Qt.UserRole, sucursal.id)
-                        self.ui.lista_sucursalesexistentes.addItem(item)
+            WorkerDB.cleanup_owner_workers("listar_sucursales_del_sistema_thread")
+            self.id_hilo_listar_sucursales_del_sistema = WorkerDB.create_managed_worker(owner_id="listar_sucursales_del_sistema_thread")
+            self.consultor_listar_sucursales_del_sistema = WorkerDB.get_managed_worker(self.id_hilo_listar_sucursales_del_sistema)
+            if not self.consultor_listar_sucursales_del_sistema:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_listar_sucursales_del_sistema,
+                resultado_callback=self.lista_sucursales_del_sistema,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_listar_sucursales_del_sistema.ejecutar(
+                funcion=self.listar_sucursales_del_sistema_query
+            )
         except Exception as e:
-            Mensaje().mensaje_critico(f'Error al listar sucursales existentes por lo siguiente: {e}')
+            if hasattr(self, 'id_hilo_listar_sucursales_del_sistema'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_listar_sucursales_del_sistema)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
+            
+    def listar_sucursales_del_sistema_query(self, session):
+        sucursales, estado = SucursalesModel(session).obtener_todo()
+        return sucursales, estado
     
+    def lista_sucursales_del_sistema(self, sucursales):
+        self.sucursales_seleccionadas_existentes.clear()
+        sucursales_vinculadas = {}
+        for sucursal in sucursales:
+            if sucursal.id not in sucursales_vinculadas:  # Solo agregar sucursales no vinculadas
+                self.sucursales_seleccionadas_existentes[sucursal.id] = sucursal
+                item = QListWidgetItem(sucursal.nombre_sucursal)
+                item.setIcon(self.iconSucursal)
+                item.setData(Qt.UserRole, sucursal)
+                self.ui.lista_sucursalesexistentes.addItem(item)
+        
     def obtener_departamentos(self):
         self.ui.lista_departamentosexistentes.clear()
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                try:
-                    self.departamentos, estado = DepartamentosModel(session).obtener_todos()
-                except Exception as e:
-                    Mensaje().mensaje_alerta("Error al obtener departamentos")
-                self.listar_departamentos(self.departamentos)
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
+            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
+            self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
+            if not self.consultor_listar_departamentos:
+                raise Exception("No se logro hacer la operación")
             
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_listar_departamentos,
+                resultado_callback=self.listar_departamentos,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_listar_departamentos.ejecutar(
+                funcion=self.obtener_departamentos_query
+            )
         except Exception as e:
-            Mensaje().mensaje_critico(f'Error al listar las sucursales : {e}')
-
+            if hasattr(self, 'id_hilo_listar_departamentos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
+            
+    def obtener_departamentos_query(self, session):
+        departamentos, estado = DepartamentosModel(session).obtener_todos()
+        return departamentos, estado
+        
     def listar_puestos_asignados(self, puestos):
         if puestos is not None:
             self.ui.lista_puestosasignados.clear()
@@ -331,65 +512,87 @@ class DepartamentosController(QDialog):
                 self.ui.lista_puestosasignados.addItem(item)
         else:
             self.ui.lista_puestosasignados.clear()
-
-
-    def listar_departamentos(self, departamentos):
+    
+    def listar_departamentos(self, departamentos, objetoMensaje = None):
         if departamentos:
-                self.ui.lista_departamentosexistentes.clear()
-                for  departamento in departamentos:
-                    # Crear un QListWidgetItem
-                    item = QListWidgetItem(departamento.nombre)
-                    
-                    # Establecer el ícono en el ítem
-                    item.setIcon(self.iconDepartamento)
-                    item.setData(Qt.UserRole, departamento.id)
-                    
-                    # Agregar el ítem a la lista
-                    self.ui.lista_departamentosexistentes.addItem(item)
+            self.ui.lista_puestosasignados.clear()
+            self.ui.lista_departamentosexistentes.clear()
+            for  departamento in departamentos:
+                # Crear un QListWidgetItem
+                item = QListWidgetItem(departamento.nombre)
+                
+                # Establecer el ícono en el ítem
+                item.setIcon(self.iconDepartamento)
+                item.setData(Qt.UserRole, departamento)
+                
+                # Agregar el ítem a la lista
+                self.ui.lista_departamentosexistentes.addItem(item)
         else:
             self.ui.lista_departamentosexistentes.clear()
 
     def obtenerId(self, item):
-        self.id_departamento = item.data(Qt.UserRole)
-        self.ui.lista_sucursalesvinculadas.clear()
-        self.sucursales_seleccionadas =  set()
-        self.sucursales_seleccionadas_existentes = set()
+        try:
+            self.objetoDepartamento = item.data(Qt.UserRole)
+            
+            # Limpiar interfaces
+            self.ui.lista_sucursalesvinculadas.clear()
+            self.ui.lista_sucursalesexistentes.clear()
+            
+            # Reinicializar diccionarios
+            self.sucursales_seleccionadas = {}
+            self.sucursales_seleccionadas_existentes = {}
+            if not self.objetoDepartamento:
+                Mensaje().mensaje_informativo("Departamento no encontrado")
+                return
 
-        
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                try:
-                    departamento = DepartamentosModel(session).obtener_departamento_por_id(self.id_departamento)
-                    if departamento:
-                        self.ui.txt_nombredepartamento.setText(departamento.nombre)
-                        self.ui.txtlargo_descripciondepartamento.setPlainText(departamento.descripcion)
+            # 1. CARGAR DATOS BÁSICOS DEL DEPARTAMENTO
+            self.ui.txt_nombredepartamento.setText(self.objetoDepartamento.nombre or "")
+            self.ui.txtlargo_descripciondepartamento.setPlainText(self.objetoDepartamento.descripcion or "")
 
-                        # Lista para almacenar IDs de sucursales vinculadas
-                        self.sucursales_seleccionadas = {sucursal.id for sucursal in departamento.sucursales}
-                        
-                        # Actualizar lista de sucursales vinculadas
-                        for sucursal in departamento.sucursales:
-                            item_vinculado = QListWidgetItem(sucursal.nombre_sucursal)
-                            item_vinculado.setIcon(self.iconSucursal)
-                            item_vinculado.setData(Qt.UserRole, sucursal.id)
-                            self.ui.lista_sucursalesvinculadas.addItem(item_vinculado)
-                            
-                            if sucursal.id not in self.sucursales_seleccionadas:
-                                self.sucursales_seleccionadas.add(sucursal.id)
+            # 2. CARGAR SUCURSALES VINCULADAS
+            self._cargar_sucursales_vinculadas(self.objetoDepartamento.sucursales)
 
-                            if sucursal.id in self.sucursales_seleccionadas_existentes:
-                                self.sucursales_seleccionadas_existentes.remove(sucursal.id)
+            # 3. CARGAR SUCURSALES EXISTENTES (excluyendo vinculadas)
+            ids_vinculadas = set(self.sucursales_seleccionadas.keys())
+            self.listar_sucursales_existentes(ids_vinculadas)
 
-                        # Actualizar lista de sucursales existentes
-                        self.ui.lista_sucursalesexistentes.clear()
-                        self.listar_sucursales_existentes(self.sucursales_seleccionadas)
-                        self.listar_puestos_asignados(departamento.puestos)
+            # 4. CARGAR PUESTOS
+            self.listar_puestos_asignados(self.objetoDepartamento.puestos)
 
-                except Exception as e:
-                    Mensaje().mensaje_critico(f'Error al obtener departamento: {e}')
+            print(f"✅ Departamento '{self.objetoDepartamento.nombre}' cargado exitosamente")
+            print(f"📋 Sucursales vinculadas: {len(self.sucursales_seleccionadas)}")
+
+        except Exception as e:
+            Mensaje().mensaje_critico(f'Error al cargar departamento: {e}')
+
+    def _cargar_sucursales_vinculadas(self, sucursales_vinculadas):
+        """Cargar sucursales vinculadas al departamento"""
+        try:
+            # Crear diccionario de sucursales vinculadas
+            self.sucursales_seleccionadas = {
+                sucursal.id: sucursal for sucursal in sucursales_vinculadas
+            }
+            
+            # Limpiar y cargar lista visual
+            self.ui.lista_sucursalesvinculadas.clear()
+            
+            for sucursal in sucursales_vinculadas:
+                item = QListWidgetItem(sucursal.nombre_sucursal)
+                item.setIcon(self.iconSucursal)
+                item.setData(Qt.UserRole, sucursal)  # Objeto completo
+                self.ui.lista_sucursalesvinculadas.addItem(item)
                 
+        except Exception as e:
+            print(f"Error al cargar sucursales vinculadas: {e}")
+            raise
 
+    def mostrar_resultado_hilo(self, mensaje, estado):
+        Mensaje().mensaje_informativo(f'{mensaje["mensaje"]}')
+        self.objetoDepartamento = None
+        self.signal_departamento_agregado.emit()
+
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
 
 
     

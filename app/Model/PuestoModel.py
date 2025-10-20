@@ -2,6 +2,7 @@ from sqlite3 import IntegrityError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .BaseDatosModel import Puestos, Empleados
+from sqlalchemy.orm import joinedload
 
 class PuestoModel:
     def __init__(self,session):
@@ -19,7 +20,7 @@ class PuestoModel:
                 return nuevo_puesto, True
 
     def actualizar(self, id_elemento, nombre,salario,horas_laborales,dias_laborales,descripcion_puesto, hora_entrada, hora_salida, departamento_id):
-        puesto = self.session.query(Puestos).filter_by(id = id_elemento).first()
+        puesto = self.session.get(Puestos, id_elemento)
         if puesto is not None:
             puesto.nombre = nombre
             puesto.salario = salario
@@ -29,6 +30,7 @@ class PuestoModel:
             puesto.hora_entrada = hora_entrada
             puesto.hora_salida = hora_salida
             puesto.departamento_id = departamento_id
+            self.session.flush()
             return puesto, True
         return None, False
     
@@ -43,7 +45,8 @@ class PuestoModel:
     
     def obtener_todos(self):
         try:
-            puestos = self.session.query(Puestos).all()
+            puestos = self.session.query(Puestos).options(
+                joinedload(Puestos.departamento)).all()
             if puestos:
                 return puestos, True
             else:

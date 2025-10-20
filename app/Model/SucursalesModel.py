@@ -56,7 +56,7 @@ class SucursalesModel:
                 )
             return sucursales, True
         except Exception as e:
-            return None, False
+            return [], False
 
     def eliminar(self, id):
         try:

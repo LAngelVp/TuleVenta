@@ -27,7 +27,7 @@ class SucursalesController(QDialog):
         self.ui = Ui_Nueva_sucursal()
         self.ui.setupUi(self)
         
-        self.setWindowModality(Qt.ApplicationModal)  # Bloquea interacción con otras ventanas
+        self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
@@ -151,8 +151,8 @@ class SucursalesController(QDialog):
         # Iniciar la conexión a la base de datos
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_sucursal")
-            self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id="agregar_sucursal")
+            WorkerDB.cleanup_owner_workers("agregar_sucursal_thread")
+            self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id="agregar_sucursal_thread")
             self.consultor_agregar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_agregar_sucursal)
             if not self.consultor_agregar_sucursal:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
@@ -173,16 +173,25 @@ class SucursalesController(QDialog):
     
     def agregar_sucursal_query(self, session, datos):
         try:
-            sucursal, creada = SucursalesModel(session).agregar_sucursal(**datos)
-            if not creada:
+            sucursal, estado = SucursalesModel(session).agregar_sucursal(**datos)
+            if not estado:
                 if sucursal.nombre_sucursal == datos['nombre_sucursal']:
                     session.rollback()
-                    return "La sucursal que intentas agregar ya existe", False
+                    return {
+                        'exito': estado,
+                        'mensaje': f'El registro {datos['nombre_sucursal']} no se almaceno por que ya se encuentra en el sistema'
+                    }
         except Exception as e:
             session.rollback()
-            return "Error al realizar la operacion de agregar sucursal", False
+            return {
+                        'exito': False,
+                        'mensaje': f'Error al realizar la operacion de agregar sucursal'
+                    }
         session.commit()
-        return "Registro de la sucursal, exitoso", True
+        return {
+                    'exito': estado,
+                    'mensaje': f'Registro exitoso, {datos['nombre_sucursal']} fue almacenado'
+                }
                         
     def obtener_sucursales(self):
         self.ui.lista_sucursales.clear()
@@ -215,7 +224,6 @@ class SucursalesController(QDialog):
                 self.ui.lista_sucursales.clear()
                 self.ui.lista_departamentosasociados.clear()
                 for sucursal in sucursales:
-                    print(f"Procesando: {sucursal.nombre_sucursal} - {sucursal.id}")
                     item = QListWidgetItem(sucursal.nombre_sucursal)
                     item.setIcon(self.icon)
                     item.setData(Qt.UserRole, sucursal)
@@ -239,8 +247,7 @@ class SucursalesController(QDialog):
             self.ui.txt_rfcsucursal.setText(sucursal.rfc)
             self.ui.txtlargo_direccion.setPlainText(sucursal.direccion)
             self.listar_departamentos_asignados(sucursal.departamentos)
-            self.idSucursal = sucursal.id
-            print(self.idSucursal)
+            self.idSucursal = sucursal
         
     def listar_departamentos_asignados(self, departamentos = None):
         if departamentos:
@@ -262,29 +269,30 @@ class SucursalesController(QDialog):
         if self.idSucursal == None:
             Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal")
             return
-        self.manejadorModal.mostrar_modal(self)
         try:
-            WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
-            self.id_hilo_eliminar_sucursal = WorkerDB.create_managed_worker(owner_id="eliminar_sucursal_thread")
-            self.consultor_eliminar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_eliminar_sucursal)
-            if not self.consultor_eliminar_sucursal:
-                raise Exception("No se logro hacer la operación para eliminar el registro")
-            
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_eliminar_sucursal,
-                resultado_callback=self.mensaje_estado_eliminado,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            self.consultor_eliminar_sucursal.ejecutar(
-                funcion=self.eliminar_sucursal_query,
-                sucursal = self.idSucursal
-            )
+            respuesta = Mensaje().mensaje_pregunta(f'Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}')
+            if respuesta == QMessageBox.Yes:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
+                self.id_hilo_eliminar_sucursal = WorkerDB.create_managed_worker(owner_id="eliminar_sucursal_thread")
+                self.consultor_eliminar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_eliminar_sucursal)
+                if not self.consultor_eliminar_sucursal:
+                    raise Exception("No se logro hacer la operación para eliminar el registro")
+                
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_eliminar_sucursal,
+                    resultado_callback=self.mensaje_estado_eliminado,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_eliminar_sucursal.ejecutar(
+                    funcion=self.eliminar_sucursal_query,
+                    sucursal = self.idSucursal.id
+                )
         except Exception as e:
             if hasattr(self, 'id_hilo_eliminar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-        self.manejadorModal.cerrar_modal()
         
     def mensaje_estado_eliminado(self, estado):
         if estado:
@@ -294,44 +302,61 @@ class SucursalesController(QDialog):
         self.idSucursal = None
         
     def eliminar_sucursal_query(self, session, sucursal):
-        print(sucursal)
         sucursal_eliminada = SucursalesModel(session).eliminar(sucursal)
         if sucursal_eliminada:
             session.commit()
         return sucursal_eliminada
     
     def actualizar(self):
-        sucursalId = self.id_sucursal
         datos = self.obtener_datos_campos()  # Asumo que esto retorna los campos correctamente
         
         # Verifica que todos los campos estén completos
         if any(value == '' for value in datos.values()):
             Mensaje().mensaje_informativo("Error: Todos los campos deben estar completos")
             return
-        
-        # Iniciar la conexión a la base de datos
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():  # La transacción comienza aquí
+        if self.idSucursal:
+            respuesta = Mensaje().mensaje_pregunta('Estas seguro de actualizar')
+            if respuesta == QMessageBox.Yes:
                 try:
-                    # Actualizar la sucursal sin hacer commit aún
-                    sucursal_actualizada, actualizado = SucursalesModel(session).actualizar(sucursalId, **datos)
-                    
-                    # Validar si la actualización fue exitosa
-                    if actualizado:
-                        Mensaje().mensaje_informativo("Sucursal actualizada con éxito")
-                    else:
-                        Mensaje().mensaje_alerta("No se pudo actualizar la sucursal")
-                    
-                    # Aquí es donde el commit ocurrirá automáticamente si todo sale bien
+                    self.manejadorModal.mostrar_modal(self)
+                    WorkerDB.cleanup_owner_workers("actualizar_sucursal_thread")
+                    self.id_hilo_actualizar_sucursal = WorkerDB.create_managed_worker(owner_id="actualizar_sucursal_thread")
+                    self.consultor_actualizar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_actualizar_sucursal)
+                    if not self.consultor_actualizar_sucursal:
+                        raise Exception("No se pudo obtener el worker gestionado al actualizar")
+                    WorkerDB.connect_managed_signals(
+                        worker_id=self.id_hilo_actualizar_sucursal,
+                        resultado_callback=self.mostrar_resultado_hilo,
+                        error_callback= self.mostrar_error_hilo,
+                        terminado_callback=self.manejadorModal.cerrar_modal
+                    )
+                    self.consultor_actualizar_sucursal.ejecutar(
+                        funcion=self.actualizar_sucursal_query,
+                        sucursal = self.idSucursal,
+                        datos = datos
+                        )
+
                 except Exception as e:
-                    Mensaje().mensaje_critico(f"Error al actualizar la sucursal: {e}")
-                    # Si ocurre una excepción, la transacción se hará rollback automáticamente
-        self.limpiar()
-        self.obtener_sucursales()
+                    if hasattr(self, 'id_hilo_actualizar_sucursal'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_sucursal)
+                    Mensaje().mensaje_critico(f'Error al actualizar: {e}')
         
-    def mostrar_resultado_hilo(self, mensaje, estado):
-        Mensaje().mensaje_informativo(f'{mensaje}')
+    def actualizar_sucursal_query(self, session, sucursal, datos):
+        sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
+        if not estado:
+            session.rollback()
+            return {
+                'exito': estado,
+                'mensaje': f'No se logro completar la operacion'
+            }
+        session.commit()
+        return {
+                'exito': estado,
+                'mensaje': f'Opereacion exitosa, registro {sucursal_actualizada.nombre_sucursal} actualizado'
+            }
+        
+    def mostrar_resultado_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(f'{objetoMensaje['mensaje']}')
         self.signal_sucursal_agregada.emit()
         
     def mostrar_error_hilo(self, error):
