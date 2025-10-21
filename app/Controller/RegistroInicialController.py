@@ -1162,3 +1162,19 @@ p, li { white-space: pre-wrap; }
         # Resetea drag_start_position al soltar el botón del mouse
         self.drag_start_position = None
 
+    def keyPressEvent(self, event):
+        """Sobrescribir el evento de teclado para ignorar Escape y Enter"""
+        if event.key() == Qt.Key_Escape:
+            # Ignorar la tecla Escape
+            event.ignore()
+            print("⚠️ Escape presionado - Diálogo no se cerrará")
+            return
+            
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            # Ignorar Enter/Return
+            event.ignore()
+            print("⚠️ Enter presionado - Diálogo no se cerrará")
+            return
+            
+        # Permitir otras teclas
+        super().keyPressEvent(event)
