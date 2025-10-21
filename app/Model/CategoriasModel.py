@@ -1,12 +1,13 @@
 from .BaseDatosModel import Categorias_productos, Categorias_de_clientes, Categorias_proveedores
 from ..Controller.MensajesAlertasController import Mensaje
+from sqlalchemy import select
 class CategoriasModel:
     def __init__(self, session):
         self.session = session
         
     def agregar(self, tipo_categoria, nombre, descripcion = None):
         modelo = self.__tipo_categoria(tipo_categoria)
-        categoria = self.session.query(modelo).filter(modelo.nombre == nombre).first()
+        categoria = self.session.scalar(select(modelo).where(modelo.nombre == nombre))
         if categoria is not None:
             return categoria, False
         categoria = modelo(nombre=nombre, descripcion=descripcion)

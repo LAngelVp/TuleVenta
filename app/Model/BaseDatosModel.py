@@ -65,6 +65,7 @@ proveedor_categoria = Table(
         primary_key=True,
     ),
 )
+
 departamento_sucursal = Table(
     "departamento_sucursal",
     Base.metadata,
@@ -74,7 +75,6 @@ departamento_sucursal = Table(
     Column("sucursal_id", BigInteger, ForeignKey("Sucursales.id"), primary_key=True),
 )
 
-
 # Apartado de Permisos
 class Permisos(Base):
     __tablename__ = "Permisos"
@@ -83,7 +83,6 @@ class Permisos(Base):
     roles = relationship(
         "Roles", secondary=rol_permiso, back_populates="permisos", 
         )
-
 
 # Apartado de Roles
 class Roles(Base):
@@ -95,7 +94,6 @@ class Roles(Base):
         "Permisos", secondary=rol_permiso, back_populates="roles"
         )
     usuarios = relationship("Usuarios", back_populates="rol")
-
 
 # Apartado de Usuarios
 class Usuarios(Base):
@@ -109,7 +107,6 @@ class Usuarios(Base):
     rol = relationship("Roles", back_populates="usuarios")
     empleado = relationship("Empleados", uselist=False, back_populates="usuario")
     movimientos_inventario = relationship("Movimientos_Inventario", back_populates="usuario")
-
 
 # Apartado de Puestos
 class Puestos(Base):
@@ -129,7 +126,6 @@ class Puestos(Base):
     departamento = relationship(
         "Departamentos", back_populates="puestos", lazy="joined"
     )  # Relación inversa
-
 
 # Apartado de Empleados
 class Empleados(Base):
@@ -197,8 +193,6 @@ class Sucursales(Base):
         "Departamentos", secondary=departamento_sucursal, back_populates="sucursales", 
     )
     empleados = relationship("Empleados", back_populates="sucursal")
-
-
 class Departamentos(Base):
     __tablename__ = "Departamentos"
     id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
@@ -213,7 +207,6 @@ class Departamentos(Base):
     sucursales = relationship(
         "Sucursales", secondary=departamento_sucursal, back_populates="departamentos",  lazy="joined"
     )  # Relación muchos a muchos con Sucursales
-
 class Presentacion_productos(Base):
     __tablename__ = "Presentacion_productos"
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -269,7 +262,6 @@ class Productos(Base):
     detalles_ventas = relationship("Detalles_ventas", back_populates="producto")
     
     movimientos_inventario = relationship("Movimientos_Inventario", back_populates="producto", cascade="all, delete-orphan")
-
 class Movimientos_Inventario(Base):
     __tablename__ = "Movimientos_inventario"
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
