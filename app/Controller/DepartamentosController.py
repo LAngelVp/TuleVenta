@@ -457,11 +457,11 @@ class DepartamentosController(QDialog):
         sucursales, estado = SucursalesModel(session).obtener_todo()
         return sucursales, estado
     
-    def lista_sucursales_del_sistema(self, sucursales):
+    def lista_sucursales_del_sistema(self, sucursales, estado):
         self.sucursales_seleccionadas_existentes.clear()
         sucursales_vinculadas = {}
         for sucursal in sucursales:
-            if sucursal.id not in sucursales_vinculadas:  # Solo agregar sucursales no vinculadas
+            if sucursal.id not in sucursales_vinculadas:
                 self.sucursales_seleccionadas_existentes[sucursal.id] = sucursal
                 item = QListWidgetItem(sucursal.nombre_sucursal)
                 item.setIcon(self.iconSucursal)
@@ -538,9 +538,9 @@ class DepartamentosController(QDialog):
             self.ui.lista_sucursalesvinculadas.clear()
             self.ui.lista_sucursalesexistentes.clear()
             
-            # Reinicializar diccionarios
-            self.sucursales_seleccionadas = {}
-            self.sucursales_seleccionadas_existentes = {}
+            # Reinicializar diccionarios (pero mantener las existentes del sistema)
+            self.sucursales_seleccionadas = {}  # Solo limpiar vinculadas
+            
             if not self.objetoDepartamento:
                 Mensaje().mensaje_informativo("Departamento no encontrado")
                 return
@@ -549,43 +549,108 @@ class DepartamentosController(QDialog):
             self.ui.txt_nombredepartamento.setText(self.objetoDepartamento.nombre or "")
             self.ui.txtlargo_descripciondepartamento.setPlainText(self.objetoDepartamento.descripcion or "")
 
-            # 2. CARGAR SUCURSALES VINCULADAS
+            # 2. CARGAR SUCURSALES VINCULADAS (las que ya tiene el departamento)
             self._cargar_sucursales_vinculadas(self.objetoDepartamento.sucursales)
 
-            # 3. CARGAR SUCURSALES EXISTENTES (excluyendo vinculadas)
-            ids_vinculadas = set(self.sucursales_seleccionadas.keys())
-            self.listar_sucursales_existentes(ids_vinculadas)
+            # 3. FILTRAR SUCURSALES EXISTENTES (quitar las vinculadas)
+            self._cargar_sucursales_existentes()
 
             # 4. CARGAR PUESTOS
             self.listar_puestos_asignados(self.objetoDepartamento.puestos)
 
-            print(f"✅ Departamento '{self.objetoDepartamento.nombre}' cargado exitosamente")
-            print(f"📋 Sucursales vinculadas: {len(self.sucursales_seleccionadas)}")
+            print(f"✅ Departamento '{self.objetoDepartamento.nombre}' cargado")
+            print(f"🔗 Sucursales vinculadas: {len(self.sucursales_seleccionadas)}")
+            print(f"🏢 Sucursales disponibles: {len(self.sucursales_seleccionadas_existentes)}")
 
         except Exception as e:
             Mensaje().mensaje_critico(f'Error al cargar departamento: {e}')
 
     def _cargar_sucursales_vinculadas(self, sucursales_vinculadas):
-        """Cargar sucursales vinculadas al departamento"""
+        """Cargar sucursales vinculadas en diccionario y mostrar en lista"""
         try:
-            # Crear diccionario de sucursales vinculadas
-            self.sucursales_seleccionadas = {
-                sucursal.id: sucursal for sucursal in sucursales_vinculadas
-            }
-            
-            # Limpiar y cargar lista visual
-            self.ui.lista_sucursalesvinculadas.clear()
+            # 1. Limpiar y llenar diccionario de vinculadas
+            self.sucursales_seleccionadas.clear()
             
             for sucursal in sucursales_vinculadas:
-                item = QListWidgetItem(sucursal.nombre_sucursal)
-                item.setIcon(self.iconSucursal)
-                item.setData(Qt.UserRole, sucursal)  # Objeto completo
-                self.ui.lista_sucursalesvinculadas.addItem(item)
-                
+                if not hasattr(sucursal, 'id'):
+                    continue
+                    
+                if sucursal.id not in self.sucursales_seleccionadas:
+                    self.sucursales_seleccionadas[sucursal.id] = sucursal
+            
+            print(f"📦 Sucursales vinculadas en diccionario: {len(self.sucursales_seleccionadas)}")
+            
+            # 2. Mostrar en lista visual
+            self._mostrar_sucursales_vinculadas_en_lista()
+            
         except Exception as e:
             print(f"Error al cargar sucursales vinculadas: {e}")
             raise
 
+    def _mostrar_sucursales_vinculadas_en_lista(self):
+        """Mostrar las sucursales vinculadas en la lista visual"""
+        try:
+            self.ui.lista_sucursalesvinculadas.clear()
+            
+            for sucursal_id, sucursal in self.sucursales_seleccionadas.items():
+                item = QListWidgetItem(sucursal.nombre_sucursal)
+                item.setIcon(self.iconSucursal)
+                item.setData(Qt.UserRole, sucursal)
+                self.ui.lista_sucursalesvinculadas.addItem(item)
+                
+                print(f"🔗 Mostrando sucursal vinculada: {sucursal.nombre_sucursal} (ID: {sucursal_id})")
+            
+            print(f"✅ Sucursales vinculadas mostradas: {self.ui.lista_sucursalesvinculadas.count()}")
+            
+        except Exception as e:
+            print(f"Error al mostrar sucursales vinculadas: {e}")
+            raise
+        
+    def _cargar_sucursales_existentes(self):
+        """Filtrar las sucursales existentes quitando las que ya están vinculadas"""
+        try:
+            # 1. Crear una COPIA del diccionario original de sucursales existentes
+            todas_las_sucursales = self.sucursales_seleccionadas_existentes.copy()
+            
+            # 2. Limpiar el diccionario existente para reconstruirlo filtrado
+            self.sucursales_seleccionadas_existentes.clear()
+            
+            # 3. LLENAR DICCIONARIO solo con sucursales NO VINCULADAS
+            for sucursal_id, sucursal in todas_las_sucursales.items():
+                # Solo agregar si NO está en las sucursales vinculadas del departamento
+                if sucursal_id not in self.sucursales_seleccionadas:
+                    self.sucursales_seleccionadas_existentes[sucursal_id] = sucursal
+            
+            print(f"📦 Sucursales existentes después de filtrar: {len(self.sucursales_seleccionadas_existentes)}")
+            print(f"🚫 Sucursales removidas (vinculadas): {len(todas_las_sucursales) - len(self.sucursales_seleccionadas_existentes)}")
+            
+            # 4. DESPUÉS: Mostrar en la lista visual
+            self._mostrar_sucursales_existentes_en_lista()
+            
+        except Exception as e:
+            print(f"Error al cargar sucursales existentes: {e}")
+            raise
+    def _mostrar_sucursales_existentes_en_lista(self):
+        """Mostrar las sucursales del diccionario existentes en la lista visual"""
+        try:
+            # Limpiar lista visual
+            self.ui.lista_sucursalesexistentes.clear()
+            
+            # Recorrer el diccionario filtrado y mostrar cada sucursal
+            for sucursal_id, sucursal in self.sucursales_seleccionadas_existentes.items():
+                item = QListWidgetItem(sucursal.nombre_sucursal)
+                item.setIcon(self.iconSucursal)
+                item.setData(Qt.UserRole, sucursal)
+                self.ui.lista_sucursalesexistentes.addItem(item)
+                
+                print(f"🏢 Mostrando sucursal disponible: {sucursal.nombre_sucursal} (ID: {sucursal_id})")
+            
+            print(f"✅ Sucursales mostradas en lista existentes: {self.ui.lista_sucursalesexistentes.count()}")
+            
+        except Exception as e:
+            print(f"Error al mostrar sucursales en lista: {e}")
+            raise
+    
     def mostrar_resultado_hilo(self, mensaje, estado):
         Mensaje().mensaje_informativo(f'{mensaje["mensaje"]}')
         self.objetoDepartamento = None

@@ -38,6 +38,7 @@ class Registro_personal_inicial(QDialog):
     tabla_puestos = Signal()
     registro_agregado_signal = Signal()
     VENTANA_REGISTRO_CERRADA = Signal()
+    CAMBIO_DE_ESTADO_CONTRATACION = Signal(object, object)
     def __init__(self, parent = None, empleado = None):
         self.empleado = empleado
         self.estados_civiles = ['SOLTERO/A','CASADO/A','VIUDO/A','DIVORCIADO/A','UNION LIBRE']
@@ -129,6 +130,7 @@ class Registro_personal_inicial(QDialog):
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
 # señales y slots:
+        self.CAMBIO_DE_ESTADO_CONTRATACION.connect(self.mostrar_estatus_empleado)
         
         if empleado is not None:
             self.cargar_datos_empleado()
@@ -172,7 +174,8 @@ class Registro_personal_inicial(QDialog):
                         Mensaje().mensaje_alerta("No se pudo eliminar el usuario del empleado. Por que no tiene uno asignado")
     
     def actualizar_credenciales(self):
-        id_usuario = self.empleado_existente.usuario.id
+        print(self.empleado_existente.usuario.id)
+        id_usuario = self.empleado_existente.usuario
         usuario = self.ui.txt_usuario_iniciosesion.text()
         password = self.ui.txt_contrasenia_usuario_iniciosesion.text()
         fecha_actualizacion = datetime.now().date()
@@ -197,6 +200,7 @@ class Registro_personal_inicial(QDialog):
                 )
                 self.consultor_actualizar_credenciales.ejecutar(
                     funcion=self.actualizar_credenciales_query,
+                    empleado = self.empleado_existente,
                     usuario= id_usuario,
                     nuevo_nombre = usuario,
                     nueva_password = password,
@@ -208,28 +212,29 @@ class Registro_personal_inicial(QDialog):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
     
-    def actualizar_credenciales_query(self, session, usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
+    def actualizar_credenciales_query(self, session, empleado, usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
         try:
             usuario_actualizado = UsuarioModel(session).actualizar_usuario(
-                        usuario.id , nuevo_nombre, nueva_password, fecha_actualizacion, rol
+                        usuario.id , nuevo_nombre, nueva_password, fecha_actualizacion, rol.id
                     )
             if not usuario_actualizado:
                 session.rollback()
                 return {
                     "exito": usuario_actualizado,
-                    "mensaje" : f"No se logro actualizar el usuario {usuario.usuario}"
+                    "mensaje" : f"No se logro actualizar el usuario {empleado.nombre}"
                 }
         except Exception as e:
+            print(e)
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f"Ocurrio un error en el sistema."
+                "mensaje": f"Ocurrio un error en el sistema. {e}"
             }
             
         session.commit()
         return {
             "exito": usuario_actualizado,
-            "mensaje": f"Credenciales actualizadas del usuario {usuario.usuario}"
+            "mensaje": f"Credenciales actualizadas del usuario {empleado.nombre}"
         }
         
     def alta_empleado(self):
@@ -248,7 +253,7 @@ class Registro_personal_inicial(QDialog):
                     raise Exception("No se pudo obtener el worker gestionado")
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_dar_de_baja_registro,
-                    resultado_callback=self.mostrar_estado_hilo,
+                    resultado_callback=self.mostrar_estado_contratacion_hilo,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
@@ -268,12 +273,13 @@ class Registro_personal_inicial(QDialog):
             session.rollback()
             return {
                 "exito": estado,
-                "mensaje": f"No se logro dar de alta el registro"
+                "mensaje": f"No se logro dar de alta el registro",
             }
         session.commit()
         return {
             "exito": estado,
-            "mensaje" : f"Registro {empleado.nombre} dado de baja"
+            "mensaje" : f"Registro {empleado.nombre} dado de baja",
+            "estado" : "activo"
         }
         
     def baja_empleado(self):
@@ -292,7 +298,7 @@ class Registro_personal_inicial(QDialog):
                     raise Exception("No se pudo obtener el worker gestionado")
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_dar_de_baja_registro,
-                    resultado_callback=self.mostrar_estado_hilo,
+                    resultado_callback=self.mostrar_estado_contratacion_hilo,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
@@ -317,7 +323,8 @@ class Registro_personal_inicial(QDialog):
         session.commit()
         return {
             "exito": estado,
-            "mensaje": f"El registro {empleado.nombre} fue dado de baja"
+            "mensaje": f"El registro {empleado.nombre} fue dado de baja",
+            "estado" : "inactivo"
         }
     
     def mostrar_agregar_credenciales(self):
@@ -435,33 +442,54 @@ p, li { white-space: pre-wrap; }
             
         self.mostrar_estatus_empleado(empleado_seleccionado)
                     
-    def mostrar_estatus_empleado(self, empleado_seleccionado = None):
-        if empleado_seleccionado.activo:
-            # Si estatus es verdadero, mostrar el QLabel y aplicar un estilo indicativo de "activo".
-            self.ui.etiqueta_status_empleado.show()
-            self.ui.etiqueta_status_empleado.setText("Estado: Activo")  # Puedes poner un texto visible
-            self.ui.etiqueta_status_empleado.setStyleSheet("""
-                background: #68a67d;  /* Verde para activo */
-                color: white;
-            """)
-            self.ui.fecha_fechadespido.hide()
-            self.ui.etiqueta_fechadespido.hide()
-            return
-        else:
-        # Si estatus es falso, cambiar el estilo y mostrar el QLabel (si es necesario).
-            self.ui.etiqueta_status_empleado.show()
-            self.ui.etiqueta_status_empleado.setText("Estado: Inactivo")  # Texto visible
-            self.ui.etiqueta_status_empleado.setStyleSheet("""
-                background: #EE1D52;  /* Rojo para inactivo */
-                color: white;
-            """)
-            self.ui.fecha_fechadespido.show()
-            self.ui.etiqueta_fechadespido.show()
-            self.ui.fecha_fechadespido.setEnabled(False)
-            if empleado_seleccionado.fecha_despido:
-                self.ui.fecha_fechadespido.setDate(empleado_seleccionado.fecha_despido)
+    def mostrar_estatus_empleado(self, empleado_seleccionado, objetoMensaje = None):
+        """Actualizar la UI con el estado del empleado - versión con objetoMensaje"""
+        try:
+            # Validar que el empleado sea válido
+            if not empleado_seleccionado or not hasattr(empleado_seleccionado, 'activo'):
+                Mensaje().mensaje_informativo("Empleado inválido para mostrar estatus")  
+                return
+            if objetoMensaje and objetoMensaje.get("estado") == "activo":
+                esta_activo = True
+            elif objetoMensaje and objetoMensaje.get("estado") == "inactivo":
+                esta_activo = False
             else:
+                esta_activo = empleado_seleccionado.activo
+            
+            if esta_activo:
+                # Estado: Activo
+                self.ui.etiqueta_status_empleado.show()
+                self.ui.etiqueta_status_empleado.setText("Estado: Activo")
+                self.ui.etiqueta_status_empleado.setStyleSheet("""
+                    background: #68a67d;  /* Verde para activo */
+                    color: white;
+                    padding: 5px;
+                    border-radius: 3px;
+                    font-weight: bold;
+                """)
                 self.ui.fecha_fechadespido.hide()
+                self.ui.etiqueta_fechadespido.hide()
+            else:
+                # Estado: Inactivo
+                self.ui.etiqueta_status_empleado.show()
+                self.ui.etiqueta_status_empleado.setText("Estado: Inactivo")
+                self.ui.etiqueta_status_empleado.setStyleSheet("""
+                    background: #EE1D52;  /* Rojo para inactivo */
+                    color: white;
+                    padding: 5px;
+                    border-radius: 3px;
+                    font-weight: bold;
+                """)
+                self.ui.fecha_fechadespido.show()
+                self.ui.etiqueta_fechadespido.show()
+                self.ui.fecha_fechadespido.setEnabled(False)
+                if (hasattr(empleado_seleccionado, 'fecha_despido') and 
+                    empleado_seleccionado.fecha_despido):
+                    self.ui.fecha_fechadespido.setDate(empleado_seleccionado.fecha_despido)
+                else:
+                    self.ui.fecha_fechadespido.hide()
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Error en mostrar_estatus_empleado: {e}")
     
     def agregar_sucursal(self):
         if self.sucursales is None or not self.sucursales.isVisible():
@@ -833,6 +861,10 @@ p, li { white-space: pre-wrap; }
             if self.empleado is None:
                 self.abrir_inicio()
 
+    def mostrar_estado_contratacion_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        self.CAMBIO_DE_ESTADO_CONTRATACION.emit(self.empleado_existente, objetoMensaje)
+    
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         
