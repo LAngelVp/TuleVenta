@@ -101,7 +101,6 @@ class Inicio_sistema(QObject):
         else:
             self.ventana_principal = Inicio_principal()
             self.ventana_principal.show()
-        # NO llamar app.exec() aquí
     
     def mostrar_error_hilo(self, error):
         """Maneja errores del hilo"""
@@ -109,7 +108,6 @@ class Inicio_sistema(QObject):
         # Mostrar una ventana por defecto en caso de error
         self.login = Login()
         self.login.show()
-        # NO llamar app.exec() aquí
 
 if __name__ == "__main__":
     # Crear la aplicación
