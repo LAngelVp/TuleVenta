@@ -224,7 +224,7 @@ class ProveedoresModel:
 
     def eliminar_proveedor(self, id):
         try:
-            proveedor = self.session.query(Proveedores).filter(Proveedores.id == id).first()
+            proveedor = self.session.get(Proveedores, id)
             if proveedor:
                 self.session.delete(proveedor)
                 return None, True

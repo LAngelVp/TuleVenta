@@ -14,7 +14,8 @@ from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 
 class CategoriasController(QWidget):
     categoria_agregada_signal =  Signal()
-    def __init__(self, tipo_categoria):
+    eliminacion_completada = Signal(dict)
+    def __init__(self, tipo_categoria = None):
         super().__init__()
         self.tipo_categoria = tipo_categoria
         self.ui = Ui_Nueva_categoria()
@@ -78,6 +79,53 @@ class CategoriasController(QWidget):
             "mensaje": f"Registro {nombre} agregado"
         }
     
+    def eliminar(self, objeto):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("eliminar_categoria_thread")
+            self.id_hilo_eliminar_categoria = WorkerDB.create_managed_worker(owner_id="eliminar_categoria_thread")
+            self.consultor_eliminar_categoria = WorkerDB.get_managed_worker(self.id_hilo_eliminar_categoria)
+            if not self.consultor_eliminar_categoria:
+                raise Exception("No se logro obtener el worker gestionado")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_eliminar_categoria,
+                resultado_callback=self.resultado_categoria_eliminada,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_eliminar_categoria.ejecutar(
+                    funcion=self.eliminar_categoria_query,
+                    objeto = objeto
+                    )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_eliminar_categoria'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_categoria)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+    
+    def eliminar_categoria_query(self, session, objeto):
+        try:
+            estado = CategoriasModel(session).eliminar(objeto)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro eliminar la categoria {objeto.nombre}'
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso'
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje": f'La categoria {objeto.nombre} fue eliminada'
+        }
+    
+    def resultado_categoria_eliminada(self, objetoMensaje):
+        self.eliminacion_completada.emit(objetoMensaje)
+        
     def resultado_del_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
         self.categoria_agregada_signal.emit()

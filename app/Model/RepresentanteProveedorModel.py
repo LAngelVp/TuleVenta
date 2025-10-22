@@ -7,7 +7,11 @@ class RepresentanteProveedorModel:
 
     def agregar_representante(self, nombre, apellido_paterno, apellido_materno, correo, telefono, puesto):
         try:
-            representante = self.session.query(Representantes_proveedores).filter(Representantes_proveedores.nombre == nombre, Representantes_proveedores.apellido_paterno == apellido_paterno, Representantes_proveedores.apellido_materno == apellido_materno).first()
+            representante = self.session.query(Representantes_proveedores).filter(
+                Representantes_proveedores.nombre == nombre,
+                Representantes_proveedores.apellido_paterno == apellido_paterno, 
+                Representantes_proveedores.apellido_materno == apellido_materno
+            ).one_or_none()
             if representante:
                 return representante, False
             else:

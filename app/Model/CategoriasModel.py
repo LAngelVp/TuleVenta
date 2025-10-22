@@ -41,15 +41,13 @@ class CategoriasModel:
         except Exception as e:
             Mensaje().mensaje_critico(f'Error al obtener categoría por id: {e}')
     
-    def eliminar(self, tipo_categoria, categoria_obj):
-        modelo = self.__tipo_categoria(tipo_categoria)
+    def eliminar(self, categoria_obj):
+        # modelo = self.__tipo_categoria(tipo_categoria)
         try:
             # Eliminamos la categoría de la base de datos
             self.session.delete(categoria_obj)
-            self.session.commit()
             return True
         except Exception as e:
-            print(f"Error al eliminar categoría: {e}")
             return False
 
     def __tipo_categoria(self, tipo_categoria):
