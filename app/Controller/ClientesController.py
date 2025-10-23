@@ -19,7 +19,7 @@ from ..Model.ClientesFisicosAndMoralesModel import *
 from .MensajesAlertasController import Mensaje
 
 class Clientes(QWidget):
-    cliente_seleccionado = Signal(str)
+    cliente_seleccionado = Signal(object)
     def __init__(self, parent = None):
         super().__init__(parent)
         self.ui = Ui_Control_Clientes()
@@ -255,17 +255,11 @@ class Clientes(QWidget):
             'correo electronico representante' : self.ui.txt_correo_repre_moral,
         }
 
-    def cargar_cliente(self, id):
-        self.id_cliente = id
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
+    def cargar_cliente(self, cliente):
                 try:
                     if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-                        cliente = ClientesFisicosAndMorales(session).obtener_cliente_fisico_por_id(id)
-                        
                         if  cliente:
-                            campo, cliente_fisico = cliente
+                            campo = cliente
                             datos  = self.campos_cliente_fisico()
 
                             datos["nombre"].setText(campo.nombre)
@@ -280,8 +274,6 @@ class Clientes(QWidget):
                             datos["calles"].setText(campo.calles)
                             datos["direccion adicional"].setPlainText(campo.direccion_adicional)
                             datos["entidad legalizada"].setChecked(campo.entidad_legalizada)
-
-                            
                             datos["tiene credito"].setChecked(campo.credito)
                             datos["estado del credito"].setText(campo.estado_credito)
                             datos["limite de credito"].setValue(campo.limite_credito)
@@ -291,8 +283,6 @@ class Clientes(QWidget):
                             datos["credito disponible"].setValue(campo.credito_disponible)
                             datos["credito utilizado"].setValue(campo.credito_utilizado)
                             datos["aplica descuento"].setChecked(campo.aplica_descuento)
-                            
-
                             datos["comentarios"].setPlainText(campo.comentarios)
                             datos["porcentaje de descuento"].setValue(campo.porcentaje_descuento)
                             datos["apellido paterno"].setText(campo.apellido_paterno)
@@ -306,26 +296,21 @@ class Clientes(QWidget):
                             datos["estado civil"].addItem(campo.estado_civil)
                             datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
                             self.foto_cliente = campo.foto
-
                             if campo.categoria:
                                 categoria = campo.categoria.nombre
                                 caja_categoria = datos["categoria del cliente"]
                                 indice = caja_categoria.findText(categoria)
                                 if  indice != -1:
                                     caja_categoria.removeItem(indice)
-
                                 caja_categoria.insertItem(0, categoria)
                                 caja_categoria.setItemData(0, campo.categoria)
                                 caja_categoria.setCurrentIndex(0)
-
-
                             if campo.areas_de_negocios:
                                 categoria = campo.areas_de_negocios.nombre
                                 caja_area = datos["area de negocio"]
                                 indice = caja_area.findText(categoria)
                                 if  indice != -1:
                                     caja_area.removeItem(indice)
-
                                 caja_area.insertItem(0, categoria)
                                 caja_area.setItemData(0, campo.areas_de_negocios)
                                 caja_area.setCurrentIndex(0)
@@ -405,24 +390,10 @@ class Clientes(QWidget):
                     Mensaje().mensaje_critico("Error al obtener proveedor por lo siguiente: " + str(e))
 
     def tabla_listar_clientes(self):
-        self.modal_espera_local()
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             self.obtener_clientes_fisicos_hilo()
         else:
             self.obtener_clientes_morales_hilo()
-        
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
-            
-    def modal_espera_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
             
     def obtener_clientes_fisicos_hilo(self):
         try:
@@ -564,33 +535,51 @@ class Clientes(QWidget):
             print(f"💥 Error al limpiar tabla de clientes: {e}")
     
     def llenar_tabla_clientes(self, resultado):
+        self.comprobar_modelos_tablas.limpiarModelo("modelo_listar_clientes")
         clientes = resultado["data"]
         estado = resultado["exito"]
-        
         if self.ui.tabla_clientes is None:
             Mensaje().mensaje_informativo("La tabla de clientes no está disponible")
             return
         
         # Definir cabeceras y mapeo según el tipo de cliente
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            cabeceras = ["Id", "Nombre", "Apellido Paterno", "Apellido Materno", "RFC", "CURP"]
+            cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
             mapeo_de_cabeceras = {
-                "Id": lambda c: c[0].id if isinstance(c, tuple) and len(c) > 0 else c.id,
-                "Nombre": lambda c: c[0].nombre if isinstance(c, tuple) and len(c) > 0 else c.nombre,
-                "Apellido Paterno": lambda c: c[1].apellido_paterno if isinstance(c, tuple) and len(c) > 1 else "",
-                "Apellido Materno": lambda c: c[1].apellido_materno if isinstance(c, tuple) and len(c) > 1 else "",
-                "RFC": lambda c: c[0].rfc if isinstance(c, tuple) and len(c) > 0 else c.rfc,
-                "CURP": lambda c: c[1].curp if isinstance(c, tuple) and len(c) > 1 else ""
+                "Id": lambda c: c.id,
+                "nombre": lambda c: c.nombre,
+                "apellido_paterno": lambda c: c.apellido_paterno,
+                "apellido_materno": lambda c: c.apellido_materno,
+                "rfc": lambda c: c.rfc,
+                "curp": lambda c: c.curp,
+                "estado_credito": lambda c: c.estado_credito,
+                "credito": lambda c: c.credito,
+                "estado_credito": lambda c:c.estado_credito,
+                "limite_credito": lambda c:c.limite_credito,
+                "credito_disponible": lambda c:c.credito_disponible,
+                "credito_utilizado": lambda c:c.credito_utilizado,
+                "porcentaje_descuento": lambda c:c.porcentaje_descuento,
+                "categoria": lambda c:c.categoria.nombre,
+                "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
+                "ocupacion": lambda c:c.ocupacion
             }
             
         elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            cabeceras = ["Id", "Nombre", "RFC", "Razón Social", "NIF"]
+            cabeceras = ["Id", "Nombre", "RFC", "RazOn_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
             mapeo_de_cabeceras = {
-                "Id": lambda c: c[0].id if isinstance(c, tuple) and len(c) > 0 else c.id,
-                "Nombre": lambda c: c[0].nombre if isinstance(c, tuple) and len(c) > 0 else c.nombre,
-                "RFC": lambda c: c[0].rfc if isinstance(c, tuple) and len(c) > 0 else c.rfc,
-                "Razón Social": lambda c: c[1].razon_social if isinstance(c, tuple) and len(c) > 1 else c.razon_social,
-                "NIF": lambda c: c[1].nif if isinstance(c, tuple) and len(c) > 1 else c.nif
+                "Id": lambda c: c.id,
+                "nombre": lambda c: c.nombre,
+                "rfc": lambda c: c.rfc,
+                "razon_social": lambda c: c.razon_social,
+                "nif": lambda c: c.NIF,
+                "sector": lambda c:c.sector,
+                "telefono": lambda c:c.telefono,
+                "credito": lambda c:c.credito,
+                "estado_credito": lambda c:c.estado_credito,
+                "limite_credito": lambda c:c.limite_credito,
+                "credito_disponible": lambda c:c.credito_disponible,
+                "credito_utilizado": lambda c:c.credito_utilizado,
+                "representante": lambda c:c.representante.nombre
             }
         else:
             Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
@@ -605,7 +594,8 @@ class Clientes(QWidget):
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            signalPersonalizada=self.obtener_id_elemento_tabla
+            signalPersonalizada=self.obtener_id_elemento_tabla,
+            forzarNuevo=True
         )
 
         # Verificar si hay datos para mostrar
@@ -630,12 +620,14 @@ class Clientes(QWidget):
         self.ui.tabla_clientes.selectionModel().currentChanged.connect(self.obtener_id_elemento_tabla)
         self.seleccion_clientes_conectada = True
 
-    def obtener_id_elemento_tabla(self, current, previus):
-        # Verifica si la celda seleccionada está en la primera columna
-        if current.column() >= 1:  # Verifica si es la primera columna
-            indice_fila = current.row()
-            self.id_cliente = self.model_clientes.item(indice_fila, 0).text()  # Obtener el ID del proveedor
-            self.cliente_seleccionado.emit(self.id_cliente)
+    def obtener_id_elemento_tabla(self, current, previus = None):
+        if current.isValid():
+            fila = current.row()
+            cliente = self.modelo_listar_clientes.get_item(current)
+            
+            if cliente:
+                self.clienteSeleccionadoVariable = cliente
+                self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
 
     def autorizar_credito_fisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
@@ -1132,7 +1124,6 @@ class Clientes(QWidget):
                     # self.tabla_listar_clientes()
                 else:
                     Mensaje().mensaje_alerta('No se logro hacer la actualizacion del cliente moral')
-            self.limpiar_campos()
             return
 
     def eliminar_clientes(self):

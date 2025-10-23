@@ -399,7 +399,6 @@ class Compras(Base):
     proveedor = relationship("Proveedores", back_populates="compras")
     metodos_de_pago = relationship("Metodos_pagos", back_populates="compras")
 
-
 class Detalles_compras(Base):
     __tablename__ = "Detalles_compras"
     id = Column(
@@ -413,7 +412,6 @@ class Detalles_compras(Base):
     compra = relationship("Compras", back_populates="detalles")
     producto = relationship("Productos", back_populates="detalles_compras")
 
-
 class Turnos(Base):
     __tablename__ = "Turnos"
     id = Column(
@@ -425,7 +423,6 @@ class Turnos(Base):
     hora_fin = Column(DateTime)
     empleado = relationship("Empleados", back_populates="turnos")
     transacciones = relationship("Transacciones", back_populates="turno")
-
 
 class Transacciones(Base):
     __tablename__ = "Transacciones"
@@ -442,7 +439,6 @@ class Transacciones(Base):
     # Relación con Turnos
     turno = relationship("Turnos", back_populates="transacciones")
 
-
 class Areas_negocios(Base):
     __tablename__ = "Areas_negocios"
     id = Column(
@@ -451,7 +447,6 @@ class Areas_negocios(Base):
     nombre = Column(String(100))
     descripcion = Column(Text)
     clientes = relationship("Clientes", back_populates="areas_de_negocios")
-
 
 class Clientes_fisicos(Clientes):
     __tablename__ = "Clientes_fisicos"
@@ -470,7 +465,6 @@ class Clientes_fisicos(Clientes):
         "polymorphic_identity": "FISICO",
     }
 
-
 class Clientes_morales(Clientes):
     __tablename__ = "Clientes_morales"
     id = Column(Integer, ForeignKey("Clientes.id", ondelete="CASCADE"), primary_key=True)
@@ -488,7 +482,6 @@ class Clientes_morales(Clientes):
         "polymorphic_identity": "MORAL",
     }
 
-
 class Metodos_pagos(Base):
     __tablename__ = "Metodos_pagos"
     id = Column(
@@ -497,7 +490,6 @@ class Metodos_pagos(Base):
     nombre = Column(String(100))
     compras = relationship("Compras", back_populates="metodos_de_pago")
     ventas = relationship("Ventas", back_populates="metodos_de_pago")
-
 
 class Representantes_clientes_morales(Base):
     __tablename__ = "Representantes_clientes_morales"

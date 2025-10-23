@@ -161,17 +161,66 @@ class ComprobarModelosTablas:
         self.ventana_principal = ventanaPrincipal
         self._configuraciones = {}
     
-    def comprobarModeloTabla(self, nombreModelo, interfazTabla, encabezados, mapeoCabecera = None, ordenable = True, editable = False, autoAjustarColumnas = True, signalPersonalizada = None, signalSeleccion = None):
+    def limpiarModelo(self, nombreModelo):
+        """Limpia un modelo existente de manera segura"""
+        try:
+            if hasattr(self.ventana_principal, nombreModelo):
+                modelo = getattr(self.ventana_principal, nombreModelo)
+                if hasattr(modelo, 'clear'):
+                    modelo.clear()
+                elif hasattr(modelo, '_safe_reset'):
+                    modelo._safe_reset()
+                return True
+            return False
+        except Exception as e:
+            print(f"Error al limpiar modelo {nombreModelo}: {e}")
+            return False
+    
+    def actualizarModelo(self, nombreModelo, encabezados, mapeoCabecera):
+        """Actualiza cabeceras y mapeo de un modelo existente"""
+        try:
+            if hasattr(self.ventana_principal, nombreModelo):
+                modelo = getattr(self.ventana_principal, nombreModelo)
+                
+                # Actualizar cabeceras si el método existe
+                if hasattr(modelo, 'set_headers'):
+                    modelo.set_headers(encabezados)
+                
+                # Actualizar mapeo si el método existe  
+                if hasattr(modelo, 'set_attr_map'):
+                    modelo.set_attr_map(mapeoCabecera)
+                
+                # Limpiar datos anteriores
+                self.limpiarModelo(nombreModelo)
+                
+                # Actualizar configuración
+                if nombreModelo in self._configuraciones:
+                    self._configuraciones[nombreModelo].update({
+                        'encabezados': encabezados,
+                        'mapeo_cabecera': mapeoCabecera
+                    })
+                
+                return modelo
+            return None
+        except Exception as e:
+            print(f"Error al actualizar modelo {nombreModelo}: {e}")
+            return None
+    
+    def comprobarModeloTabla(self, nombreModelo, interfazTabla, encabezados, mapeoCabecera=None, ordenable=True, editable=False, autoAjustarColumnas=True, signalPersonalizada=None, signalSeleccion=None, forzarNuevo=False):
         if mapeoCabecera is None:
             mapeoCabecera = {}
-        if not hasattr(self.ventana_principal, nombreModelo):
+        
+        # Si forzamos nuevo modelo o no existe, crear uno nuevo
+        if forzarNuevo or not hasattr(self.ventana_principal, nombreModelo):
             modelo = GenericTableModel(encabezados, mapeoCabecera)
             interfazTabla.setModel(modelo)
             interfazTabla.setSortingEnabled(ordenable)
+            
             if editable:
                 interfazTabla.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
             else:
                 interfazTabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+                
             if autoAjustarColumnas:
                 if signalPersonalizada:
                     modelo.data_updated.connect(signalPersonalizada)
@@ -179,13 +228,13 @@ class ComprobarModelosTablas:
                     modelo.data_updated.connect(
                         lambda: interfazTabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
                     )
+            
             if hasattr(self.ventana_principal, 'consultor') and self.ventana_principal.consultor:
                 if hasattr(self.ventana_principal, 'cleanup_worker'):
                     self.ventana_principal.cleanup_worker()
             
             # Configurar selección si se proporciona
             if signalSeleccion:
-                # Desconectar si ya estaba conectado
                 nombre_conexion = f"seleccion_conectada_{nombreModelo.split('_')[-1]}"
                 if hasattr(self.ventana_principal, nombre_conexion) and getattr(self.ventana_principal, nombre_conexion):
                     try:
@@ -208,4 +257,78 @@ class ComprobarModelosTablas:
             
             return modelo
         else:
-            return getattr(self.ventana_principal, nombreModelo)
+            # Modelo existe - actualizar cabeceras y mapeo
+            return self.actualizarModelo(nombreModelo, encabezados, mapeoCabecera)
+    
+    def eliminarModelo(self, nombreModelo):
+        """Elimina completamente un modelo"""
+        try:
+            if hasattr(self.ventana_principal, nombreModelo):
+                # Limpiar antes de eliminar
+                self.limpiarModelo(nombreModelo)
+                
+                # Eliminar atributo
+                delattr(self.ventana_principal, nombreModelo)
+                
+                # Eliminar configuración
+                if nombreModelo in self._configuraciones:
+                    del self._configuraciones[nombreModelo]
+                
+                return True
+            return False
+        except Exception as e:
+            print(f"Error al eliminar modelo {nombreModelo}: {e}")
+            return False
+    
+    def obtenerModelo(self, nombreModelo):
+        """Obtiene un modelo existente"""
+        return getattr(self.ventana_principal, nombreModelo) if hasattr(self.ventana_principal, nombreModelo) else None
+    
+    # def comprobarModeloTabla(self, nombreModelo, interfazTabla, encabezados, mapeoCabecera = None, ordenable = True, editable = False, autoAjustarColumnas = True, signalPersonalizada = None, signalSeleccion = None):
+    #     if mapeoCabecera is None:
+    #         mapeoCabecera = {}
+    #     if not hasattr(self.ventana_principal, nombreModelo):
+    #         modelo = GenericTableModel(encabezados, mapeoCabecera)
+    #         interfazTabla.setModel(modelo)
+    #         interfazTabla.setSortingEnabled(ordenable)
+    #         if editable:
+    #             interfazTabla.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+    #         else:
+    #             interfazTabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    #         if autoAjustarColumnas:
+    #             if signalPersonalizada:
+    #                 modelo.data_updated.connect(signalPersonalizada)
+    #             else:
+    #                 modelo.data_updated.connect(
+    #                     lambda: interfazTabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    #                 )
+    #         if hasattr(self.ventana_principal, 'consultor') and self.ventana_principal.consultor:
+    #             if hasattr(self.ventana_principal, 'cleanup_worker'):
+    #                 self.ventana_principal.cleanup_worker()
+            
+    #         # Configurar selección si se proporciona
+    #         if signalSeleccion:
+    #             # Desconectar si ya estaba conectado
+    #             nombre_conexion = f"seleccion_conectada_{nombreModelo.split('_')[-1]}"
+    #             if hasattr(self.ventana_principal, nombre_conexion) and getattr(self.ventana_principal, nombre_conexion):
+    #                 try:
+    #                     interfazTabla.clicked.disconnect(signalSeleccion)
+    #                 except:
+    #                     pass
+                
+    #             interfazTabla.clicked.connect(signalSeleccion)
+    #             setattr(self.ventana_principal, nombre_conexion, True)
+            
+    #         # Guardar modelo en la ventana principal
+    #         setattr(self.ventana_principal, nombreModelo, modelo)
+            
+    #         # Guardar configuración para uso futuro
+    #         self._configuraciones[nombreModelo] = { 
+    #             'tabla_ui': interfazTabla,
+    #             'encabezados': encabezados,
+    #             'mapeo_cabecera': mapeoCabecera
+    #         }
+            
+    #         return modelo
+    #     else:
+    #         return getattr(self.ventana_principal, nombreModelo)

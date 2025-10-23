@@ -1,6 +1,7 @@
 from .BaseDatosModel import Clientes_fisicos, Clientes_morales, Clientes, Representantes_clientes_morales, Categorias_de_clientes, Areas_negocios
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, select
+from sqlalchemy.orm import joinedload
 from ..Controller.MensajesAlertasController import Mensaje
 
 class ClientesFisicosAndMorales:
@@ -179,35 +180,34 @@ class ClientesFisicosAndMorales:
 
     def mostrar_clientes_fisicos(self):
         try:
-            #comment: alias de la tabla
-            clientes_fisicos_alias = aliased(Clientes_fisicos, flat=True)
-            #comment: usar el alias en la consulta
             clientes = (
-                self.session.query(Clientes, clientes_fisicos_alias)
-                .filter(Clientes.tipo_cliente == 'FISICO')
-                .join(clientes_fisicos_alias, Clientes.id == clientes_fisicos_alias.id)
-                .all())
+                self.session.query(Clientes_fisicos)
+                .options(joinedload(Clientes_fisicos.areas_de_negocios), joinedload(Clientes_fisicos.categoria))
+                .all()
+            )
+            
             if clientes:
                 return clientes, True
             else:
                 return None, False
         except Exception as e:
+            print(f"Error: {e}")
             return None, False
 
     def mostrar_clientes_morales(self):
         try:
-                # Alias explícito para Clientes_morales
-            clientes_morales_alias = aliased(Clientes_morales, flat=True)
-            
-            # Consulta usando el alias
             clientes = (
-                self.session.query(Clientes, clientes_morales_alias)
-                .filter(Clientes.tipo_cliente == 'MORAL')
-                .join(clientes_morales_alias, Clientes.id == clientes_morales_alias.id)
+                self.session.query(Clientes_morales)
+                .options(joinedload(Clientes_morales.areas_de_negocios), joinedload(Clientes_morales.categoria), joinedload(Clientes_morales.representante))
                 .all()
             )
-            return clientes, True
+            
+            if clientes:
+                return clientes, True
+            else:
+                return None, False
         except Exception as e:
+            print(f"Error: {e}")
             return None, False
 
     def obtener_cliente_fisico_por_id(self, id):
