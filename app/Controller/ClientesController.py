@@ -93,31 +93,104 @@ class Clientes(QWidget):
         
         self.ui.btn_RefrescarTabla.clicked.connect(self.tabla_listar_clientes)
         
+        self.ui.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
+        self.ui.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        self.ui.cajaOpciones_areasnegocio_moral.currentIndexChanged.connect(self.mostrar_descripcion_area)
+        self.ui.cajaOpciones_categoriaMoral.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador = AjustarcajaOpciones()
     #FUNCIONES:-----------------
+    def mostrar_descripcion_area(self):
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            area = self.ui.cajaOpciones_areasnegocio_fisico.currentData()
+            if not area:
+                return
+            self.ui.txtlargo_descripcionAreaCliente.setPlainText(area.descripcion)
+        else:
+            area = self.ui.cajaOpciones_areasnegocio_moral.currentData()
+            if not area:
+                return
+            self.ui.txtlargo_descripcionAreaClienteMoral.setPlainText(area.descripcion)
+            
+    def mostrar_descripcion_categoria(self):
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            categoria = self.ui.cajaOpciones_categoriaFisico.currentData()
+            if not categoria:
+                return
+            self.ui.txtlargo_descripcionCategoriaCliente.setPlainText(categoria.descripcion)
+        else:
+            categoria = self.ui.cajaOpciones_categoriaMoral.currentData()
+            if not categoria:
+                return
+            self.ui.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
+        
     def buscar_cliente(self):
-        tipo_cliente = None
-        modelo_cliente = None
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-                    tipo_cliente = "FISICO"
-                    modelo_cliente = Clientes_fisicos
-                    self.clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
-                        self.ui.txt_buscarcliente.text(), tipo_cliente, modelo_cliente)
-                else:
-                    tipo_cliente = "MORAL"
-                    modelo_cliente = Clientes_morales
-                    self.clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
-                        self.ui.txt_buscarcliente.text(), tipo_cliente, modelo_cliente)
-            if estado:
-                self.llenar_tabla_clientes(self.clientes)
-            self.clientes = None
-
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            cliente_fisico = True
+        else:
+            cliente_fisico = False
+        try:
+            texto = self.ui.txt_buscarcliente.text().strip() 
+            if texto:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
+                self.id_hilo_buscar_clientes_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_thread_vclientes")
+                self.consultor_buscar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_vclientes)
+                if not self.consultor_buscar_clientes_vclientes:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_buscar_clientes_vclientes,
+                    resultado_callback=self.llenar_tabla_clientes,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_buscar_clientes_vclientes.ejecutar(
+                    funcion = self.buscar_clientes_query,
+                    texto = texto,
+                    es_fisico = cliente_fisico
+                )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
+            Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
+            
+    def buscar_clientes_query(self, session, texto, es_fisico = None):
+        try:
+            if es_fisico:
+                clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(texto)
+                print(f"buscando fisico")
+                if not estado:
+                    session.rollback()
+                    return {
+                        "exito": estado,
+                        "mensaje": f'No se logro hacer la operación',
+                        "data": clientes
+                    }
+            else:
+                clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
+                print(f"buscando fisico")
+                if not estado:
+                    session.rollback()
+                    return {
+                        "exito": estado,
+                        "mensaje": f'No se logro hacer la operación',
+                        "data": clientes
+                    }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}'
+            }
+        return {
+            "exito": estado,
+            "mensaje" : f'Se encontraron {len(clientes)} registros',
+            "data": clientes
+        }
+        
     def limpiar_campos(self):
         try:
             if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -146,10 +219,6 @@ class Clientes(QWidget):
                 self.listar_categorias()
                 _translate = QtCore.QCoreApplication.translate
                 self.ui.label_wpc_fotocliente.setText(_translate("Control_Clientes", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>"))
-
-                    
-                    
-
             elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
                 fisicos = self.campos_cliente_moral()
                 for campo in fisicos.values():
@@ -171,15 +240,11 @@ class Clientes(QWidget):
                     # Restablecer QDateEdit a la fecha actual
                     elif isinstance(campo, QDateEdit):
                         campo.setDate(QDate.currentDate())
-
                 self.listar_areas()
                 self.listar_categorias()
         except Exception as e:
             Mensaje().mensaje_critico(f"Error al limpiar campos por lo siguiente: {e}")
-
         self.foto_cliente = None
-        self.clientes = None
-        self.id_cliente = None
 
     def campos_cliente_fisico(self):
         return {
@@ -261,7 +326,6 @@ class Clientes(QWidget):
                         if  cliente:
                             campo = cliente
                             datos  = self.campos_cliente_fisico()
-
                             datos["nombre"].setText(campo.nombre)
                             datos["correo electronico"].setText(campo.correo)
                             datos["rfc"].setText(campo.rfc)
@@ -294,8 +358,14 @@ class Clientes(QWidget):
                             datos["ingresos"].setValue(campo.ingresos)
                             datos["estado civil"].clear()
                             datos["estado civil"].addItem(campo.estado_civil)
-                            datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
-                            self.foto_cliente = campo.foto
+                            if campo.foto is not None and campo.foto != "":
+                                datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
+                                self.foto_cliente = campo.foto
+                            else:
+                                # Si no hay foto, establecer el texto HTML
+                                self.ui.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
+                                self.foto_cliente = None
+                                
                             if campo.categoria:
                                 categoria = campo.categoria.nombre
                                 caja_categoria = datos["categoria del cliente"]
@@ -316,9 +386,8 @@ class Clientes(QWidget):
                                 caja_area.setCurrentIndex(0)
                             
                     elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-                        cliente = ClientesFisicosAndMorales(session).obtener_cliente_moral_por_id(id)
                         if  cliente:
-                            campo, cliente_fisico = cliente
+                            campo = cliente
                             datos  = self.campos_cliente_moral()
 
                             datos["nombre"].setText(campo.nombre)
@@ -565,7 +634,7 @@ class Clientes(QWidget):
             }
             
         elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            cabeceras = ["Id", "Nombre", "RFC", "RazOn_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
+            cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
             mapeo_de_cabeceras = {
                 "Id": lambda c: c.id,
                 "nombre": lambda c: c.nombre,
@@ -579,7 +648,7 @@ class Clientes(QWidget):
                 "limite_credito": lambda c:c.limite_credito,
                 "credito_disponible": lambda c:c.credito_disponible,
                 "credito_utilizado": lambda c:c.credito_utilizado,
-                "representante": lambda c:c.representante.nombre
+                "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
             }
         else:
             Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
@@ -609,25 +678,63 @@ class Clientes(QWidget):
         
         # Ocultar columna ID
         self.ui.tabla_clientes.setColumnHidden(0, True)
-
-        # Conectar señal de selección
-        if hasattr(self, "seleccion_clientes_conectada") and self.seleccion_clientes_conectada:
-            try:
-                self.ui.tabla_clientes.selectionModel().currentChanged.disconnect(self.obtener_id_elemento_tabla)
-            except Exception:
-                pass
-
-        self.ui.tabla_clientes.selectionModel().currentChanged.connect(self.obtener_id_elemento_tabla)
-        self.seleccion_clientes_conectada = True
+        self.conectar_seleccion_tabla()
+        
+    def conectar_seleccion_tabla(self):
+        """Conecta la señal de selección de forma segura"""
+        try:
+            selection_model = self.ui.tabla_clientes.selectionModel()
+            if selection_model:
+                # Desconectar si ya está conectada
+                try:
+                    selection_model.currentChanged.disconnect(self.obtener_id_elemento_tabla)
+                except Exception:
+                    pass
+                
+                # Conectar la señal
+                selection_model.currentChanged.connect(self.obtener_id_elemento_tabla)
+                self.seleccion_clientes_conectada = True
+        except Exception as e:
+            print(f"Error al conectar selección de tabla: {e}")
 
     def obtener_id_elemento_tabla(self, current, previus = None):
-        if current.isValid():
+        """Maneja la selección de elementos en la tabla de forma segura"""
+        try:
+            if not current.isValid():
+                return
+                
             fila = current.row()
+            
+            # Verificar que el modelo existe
+            if not hasattr(self, 'modelo_listar_clientes'):
+                print("Error: modelo_listar_clientes no está definido")
+                return
+                
+            # Obtener el cliente de forma segura
             cliente = self.modelo_listar_clientes.get_item(current)
             
-            if cliente:
-                self.clienteSeleccionadoVariable = cliente
+            if not cliente:
+                print("Error: No se pudo obtener el cliente de la fila seleccionada")
+                return
+                
+            # Asignar el cliente seleccionado
+            self.clienteSeleccionadoVariable = cliente
+            
+            # Emitir señal si existe
+            if hasattr(self, 'cliente_seleccionado'):
                 self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
+                
+            print(f"Cliente seleccionado: {cliente.nombre} (ID: {cliente.id})")
+            
+        except AttributeError as e:
+            print(f"Error de atributo al obtener cliente: {e}")
+            # Debug: mostrar información del objeto cliente
+            if 'cliente' in locals():
+                print(f"Tipo de cliente: {type(cliente)}")
+                print(f"Atributos disponibles: {dir(cliente)}")
+                
+        except Exception as e:
+            print(f"Error inesperado en obtener_id_elemento_tabla: {e}")
 
     def autorizar_credito_fisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
@@ -1010,18 +1117,58 @@ class Clientes(QWidget):
     def actualizar_clientes(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             datos = self.obtener_datos_cliente_fisico()
-
+            area_cliente = self.ui.cajaOpciones_areasnegocio_fisico.currentData()
+            categoria_cliente = self.ui.cajaOpciones_categoriaFisico.currentData()
+            cliente_fisico = True
             if not self.validacion_campos_cliente_fisico(datos):
                 return
+        else:
+            datos = self.obtener_datos_cliente_moral()
+            area_cliente = self.ui.cajaOpciones_areasnegocio_moral.currentData()
+            categoria_cliente = self.ui.cajaOpciones_categoriaMoral.currentData()
+            cliente_fisico = False
+            if not self.validacion_campos_cliente_moral(datos):
+                return
+        respuesta = Mensaje().mensaje_pregunta("¿Quieres actualizar el registro")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("actualizar_cliente_thread")
+                self.id_hilo_actualizar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id="actualizar_cliente_thread")
+                self.consultor_actualizar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_actualizar_cliente_vclientes)
+                
+                if not self.consultor_actualizar_clientes_vclientes:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actualizar_cliente_vclientes,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                # Preparar datos para el worker
+                datos_actualizacion = {
+                    'cliente': self.clienteSeleccionadoVariable,
+                    'datos': datos,
+                    'area': area_cliente,
+                    'categoria': categoria_cliente,
+                    'cliente_fisico': cliente_fisico,
+                    'foto': self.foto_cliente if self.foto_cliente else None
+                }
+                self.consultor_actualizar_clientes_vclientes.ejecutar(
+                    funcion=self.actualizar_clientes_query,
+                    **datos_actualizacion
+                )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_actualizar_cliente_vclientes'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_cliente_vclientes)
+                Mensaje().mensaje_alerta(f"Ocurrió un error en la operación.\n{e}")
 
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    try:
-                        clasificacion = session.merge(datos["clasificacion cliente"])
-                        area = session.merge(datos["area de negocio"])
-                        cliente = ClientesFisicosAndMorales(session).actualizar_cliente_fisico(
-                            id = self.id_cliente,
+    def actualizar_clientes_query(self, session, cliente, datos, area, categoria, cliente_fisico, foto = None):
+        try:
+            if cliente_fisico:
+                estado = ClientesFisicosAndMorales(session).actualizar_cliente_fisico(
+                            id = cliente.id,
                             nombre = datos['nombre'],
                             correo=datos["correo electronico"],
                             rfc=datos["rfc"],
@@ -1034,7 +1181,7 @@ class Clientes(QWidget):
                             codigo_postal=datos["codigo postal"],
                             direccion_adicional=datos["direccion adicional"],
                             entidad_legalizada=datos["entidad legalizada"],
-                            categoria_cliente_id=clasificacion.id,
+                            categoria_cliente_id=categoria.id,
                             credito=datos["credito autorizado"],
                             estado_credito=datos["estado del credito"],
                             limite_credito=datos["limite del credito"],
@@ -1054,35 +1201,11 @@ class Clientes(QWidget):
                             ocupacion=datos["ocupacion"],
                             ingresos=datos["ingresos"],
                             estado_civil=datos["estado civil"],
-                            foto=self.foto_cliente
-                            
+                            foto=foto
                         )
-                    except Exception as e:
-                        print(e)
-                        Mensaje().mensaje_critico(f'No se logro hacer la actualizacion del cliente fisico:  {e}')
-
-                if cliente:
-                    Mensaje().mensaje_informativo("Actualizado con exito")
-                    # self.tabla_listar_clientes()
-                else:
-                    Mensaje().mensaje_alerta('No se logro actualizar el cliente fisico')
-            self.limpiar_campos()
-            return
-
-        elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            datos = self.obtener_datos_cliente_moral()
-
-            if not self.validacion_campos_cliente_moral(datos):
-                return
-            
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    try:
-                        clasificacion = session.merge(datos["clasificacion de cliente"])
-                        area = session.merge(datos["area de negocio"])
-                        cliente = ClientesFisicosAndMorales(session).actualizar_cliente_moral(
-                            id = self.id_cliente,
+            else:
+                estado = ClientesFisicosAndMorales(session).actualizar_cliente_moral(
+                            id = cliente.id,
                             nombre = datos['nombre'],
                             correo=datos["correo electronico empresa"],
                             rfc=datos["rfc"],
@@ -1095,7 +1218,7 @@ class Clientes(QWidget):
                             codigo_postal=datos["codigo postal"],
                             direccion_adicional=datos["direccion adicional"],
                             entidad_legalizada=datos["entidad legalizada"],
-                            categoria_cliente_id=clasificacion.id,
+                            categoria_cliente_id=categoria.id,
                             credito=datos["credito autorizado"],
                             estado_credito=datos["estado del credito"],
                             limite_credito=datos["limite del credito"],
@@ -1117,49 +1240,77 @@ class Clientes(QWidget):
                             correo_representante=datos['correo electronico representante'],
                             puesto_representante=datos['puesto del representante']
                             ) 
-                    except Exception as e:
-                        Mensaje().mensaje_critico(f'No se logro hacer la actualizacion del cliente moral: {e}')
-                if cliente:
-                    Mensaje().mensaje_informativo("Actualizado con exito")
-                    # self.tabla_listar_clientes()
-                else:
-                    Mensaje().mensaje_alerta('No se logro hacer la actualizacion del cliente moral')
-            return
-
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro realizar la actualización de {cliente.nombre}.'
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}'
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje" : f'Se realizo la actualización de {cliente.nombre}'
+        }
+        
     def eliminar_clientes(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            modelo = Clientes_fisicos
-            id = self.id_cliente
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    try:
-                        eliminar = ClientesFisicosAndMorales(session).eliminar_cliente(id, modelo)
-                        if  eliminar:
-                            Mensaje().mensaje_informativo("Se elimino el cliente de manera exitosa!")
-                        else:
-                            Mensaje().mensaje_alerta("No se logro hacer la operacion!")
-                    except Exception as e:
-                        Mensaje().mensaje_critico(f'No se logro eliminar el cliente fisico: {e}')
-
-                # self.tabla_listar_clientes()
-                self.limpiar_campos()
-        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            modelo = Clientes_morales
-            id = self.id_cliente
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    try:
-                        eliminar = ClientesFisicosAndMorales(session).eliminar_cliente(id, modelo)
-                        if  eliminar:
-                            Mensaje().mensaje_informativo("Se elimino el cliente de manera exitosa!")
-                        else:
-                            Mensaje().mensaje_alerta("No se logro hacer la operacion!")
-                    except Exception as e:
-                        Mensaje().mensaje_critico(f'No se logro eliminar el cliente fisico por lo siguiente: {e}')
-                self.tabla_listar_clientes()
-                self.limpiar_campos()
+        if not self.clienteSeleccionadoVariable:
+            Mensaje().mensaje_informativo("No haz seleccionado ningun registro a eliminar")
+            return
+        respuesta = Mensaje().mensaje_pregunta("Quieres eliminar el registro")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("eliminar_cliente_thread")
+                self.id_hilo_eliminar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id="eliminar_cliente_thread")
+                self.consultor_eliminar_cliente_vclientes = WorkerDB.get_managed_worker(self.id_hilo_eliminar_cliente_vclientes)
+                if not self.consultor_eliminar_cliente_vclientes:
+                    raise Exception("No se logro obtener el worker gestionado al eliminar")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_eliminar_cliente_vclientes,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+                    modelodb = Clientes_fisicos
+                else:
+                    modelodb = Clientes_morales
+                self.consultor_eliminar_cliente_vclientes.ejecutar(
+                        funcion=self.eliminar_cliente_query,
+                        cliente = self.clienteSeleccionadoVariable,
+                        modelo = modelodb
+                        )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_eliminar_cliente_vclientes'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_cliente_vclientes)
+                Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+                
+    def eliminar_cliente_query(self, session, cliente, modelo):
+        try:
+            estado = ClientesFisicosAndMorales(session).eliminar_cliente(cliente.id, modelo)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro eliminar al cliente {cliente.nombre}',
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un error en el proceso',
+            }
+        session.commit()
+        return {
+                "exito": estado,
+                "mensaje": f'El cliente {cliente.nombre} fue eliminado',
+            }
 
     def nueva_area_cliente_fisico(self):
         self.ui_area_cliente_fisico =  AreaNegocioClientesController("Fisico")
@@ -1177,21 +1328,56 @@ class Clientes(QWidget):
         else:
             self.ui.cajaOpciones_areasnegocio_moral.clear()
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                areas = AreaNegocioClientesModel(session).obtener_areas()
-                if areas:
-                    if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-                        for a in areas:
-                            self.ui.cajaOpciones_areasnegocio_fisico.addItem(a.nombre, a) 
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_fisico)
-                    else:
-                        for a in areas:
-                            self.ui.cajaOpciones_areasnegocio_moral.addItem(a.nombre, a)
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_moral)
+            WorkerDB.cleanup_owner_workers("obtener_areas_negocio_thread")
+            self.id_hilo_obtener_areas_negocio = WorkerDB.create_managed_worker(owner_id="obtener_areas_negocio_thread")
+            self.consultor_obtener_areas_negocio = WorkerDB.get_managed_worker(self.id_hilo_obtener_areas_negocio)
+            if not self.consultor_obtener_areas_negocio:
+                raise Exception("No se logro hacer la operación para listar")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_areas_negocio,
+                resultado_callback=self.listar_areas_negocio,
+                error_callback=self.mostrar_error_hilo
+            )
+            self.consultor_obtener_areas_negocio.ejecutar(
+                funcion=self.obtener_areas_negocio_query
+            )
         except Exception as e:
             Mensaje().mensaje_critico(f'No se logro listar las areas por lo siguiente: {e}')
-
+    
+    def obtener_areas_negocio_query(self, session):
+        try:
+            areas, estado = AreaNegocioClientesModel(session).obtener_areas()
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se obtuvieron resultados',
+                    "data": areas
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": estado,
+                "mensaje": f'Ocurrio un problema en el proceso',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Areas de negocio en lista',
+            "data": areas
+        }
+        
+    def listar_areas_negocio(self, data):
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            for area in data["data"]:
+                self.ui.cajaOpciones_areasnegocio_fisico.addItem(area.nombre, area)
+            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_fisico)
+        else:
+            for area in data["data"]:
+                self.ui.cajaOpciones_areasnegocio_moral.addItem(area.nombre, area)
+            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_moral)
+                
     def nueva_categoria(self):
         self.ui_categoria = CategoriasController(tipo_categoria="clientes")
         self.ui_categoria.show()
@@ -1217,19 +1403,67 @@ class Clientes(QWidget):
                         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaMoral)
         except Exception as e:
             Mensaje().mensaje_critico(f'No se logro listar las categorias por lo siguiente: {e}')
+            try:
+                WorkerDB.cleanup_owner_workers("obtener_categorias_thread")
+                self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id="obtener_categorias_thread")
+                self.consultor_obtener_categorias_cliente = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_cliente)
+                if not self.consultor_obtener_categorias_cliente:
+                    raise Exception("No se logro hacer la operación para listar")
+                
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_obtener_categorias_cliente,
+                    resultado_callback=self.listar_categorias_clientes,
+                    error_callback=self.mostrar_error_hilo
+                )
+                self.consultor_obtener_categorias_cliente.ejecutar(
+                    funcion=self.obtener_categorias_clientes
+                )
+            except Exception as e:
+                Mensaje().mensaje_critico(f'No se logro listar las areas por lo siguiente: {e}')
+                
+    def obtener_categorias_clientes(self, session, tipo_categoria):
+        try:
+            categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="clientes")
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se obtuvieron resultados',
+                    "data": categorias
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": estado,
+                "mensaje": f'Ocurrio un problema en el proceso',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Categorias de negocio en lista',
+            "data": categorias
+        }
+        
+    def listar_categorias_clientes(self, data):
+        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            for categoria in data["data"]:
+                self.ui.cajaOpciones_categoriaFisico.addItem(categoria.nombre, categoria)
+            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaFisico)
+        else:
+            for categoria in data["data"]:
+                self.ui.cajaOpciones_categoriaMoral.addItem(categoria.nombre, categoria)
+            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaMoral)
 
     def mostrar_contenedor_cliente_moral(self):
         if self.ui.btnRadio_wpc_clienteMoral.isChecked():
             self.listar_areas()
             self.listar_categorias()
-            # self.tabla_listar_clientes()
             self.ui.wpc_contenedor_pila.setCurrentIndex(1)
 
     def mostrar_contenedor_cliente_fisico(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             self.listar_areas()
             self.listar_categorias()
-            # self.tabla_listar_clientes()
             self.ui.wpc_contenedor_pila.setCurrentIndex(0)
 
     def activar_creditofisico(self):

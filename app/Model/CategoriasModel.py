@@ -19,7 +19,7 @@ class CategoriasModel:
         modelo = self.__tipo_categoria(tipo_categoria)
         categorias = self.session.query(modelo).all()
         if not categorias:
-            return None, False
+            return [], False
         return categorias, True
     
     def obtener_id_por_nombre(self, tipo_categoria, nombre):

@@ -22,11 +22,11 @@ class AreaNegocioClientesModel:
         try:
             areas = self.session.query(Areas_negocios).all()
             if areas:
-                return areas
+                return areas, bool(areas)
             else:
-                return None
+                return [], bool(areas)
         except Exception as e:
-            Mensaje().mensaje_critico(f'error al obtener {e}')
+            return [], bool(areas)
 
     def obtener_id_area(self, nombre):
         try:

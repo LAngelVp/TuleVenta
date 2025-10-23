@@ -238,48 +238,54 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             return None
 
-    def filtrar_clientes_fisicos_por_nombre(self, valor_buscado, tipo_cliente, modelo_tipo_cliente):
+    def filtrar_clientes_fisicos_por_nombre(self, valor_buscado):
         try:
-            clientes_tabla_alias = aliased(modelo_tipo_cliente)  # Usar el modelo, no una cadena
-            clientes = (self.session.query(Clientes, clientes_tabla_alias)
-                        .join(clientes_tabla_alias, Clientes.id == clientes_tabla_alias.id, isouter=True)
-                        .filter(Clientes.tipo_cliente == tipo_cliente)
-                        .filter(
-                            or_(
-                                Clientes.nombre.ilike(f'%{valor_buscado}%'),
-                                clientes_tabla_alias.apellido_paterno.ilike(f'%{valor_buscado}%'),
-                                clientes_tabla_alias.apellido_materno.ilike(f'%{valor_buscado}%'),
-                                clientes_tabla_alias.curp.ilike(f'%{valor_buscado}%')
-                            )
-                        )
-                        .all()
+            clientes = (
+                self.session.query(Clientes_fisicos)
+                .options(
+                    joinedload(Clientes_fisicos.areas_de_negocios),
+                    joinedload(Clientes_fisicos.categoria)
+                )
+                .filter(
+                    or_(
+                        Clientes_fisicos.nombre.ilike(f'%{valor_buscado}%'),
+                        Clientes_fisicos.apellido_paterno.ilike(f'%{valor_buscado}%'),
+                        Clientes_fisicos.apellido_materno.ilike(f'%{valor_buscado}%'),
+                        Clientes_fisicos.curp.ilike(f'%{valor_buscado}%')
                     )
+                )
+                .all()
+            )
         except Exception as e:
+            print(f"💥 Error en filtrar_clientes_fisicos_por_nombre: {e}")
             return None, False
-        if not clientes:
-            return None, False
-        else:
-            return clientes, True
+        
+        return clientes, bool(clientes)
     
-    def filtrar_clientes_morales_por_nombre(self, valor_buscado, tipo_cliente, modelo_tipo_cliente):
+    def filtrar_clientes_morales_por_nombre(self, valor_buscado):
         try:
-            clientes_tabla_alias = aliased(modelo_tipo_cliente)  # Usar el modelo, no una cadena
-            clientes = (self.session.query(Clientes, clientes_tabla_alias)
-                        .join(clientes_tabla_alias, Clientes.id == clientes_tabla_alias.id, isouter=True)
-                        .filter(Clientes.tipo_cliente == tipo_cliente)
-                        .filter(
-                            or_(
-                                Clientes.nombre.ilike(f'%{valor_buscado}%')
-                            )
-                        )
-                        .all()
+            clientes = (
+                self.session.query(Clientes_morales)
+                .options(
+                    joinedload(Clientes_morales.areas_de_negocios),
+                    joinedload(Clientes_morales.categoria),
+                    joinedload(Clientes_morales.representante)
+                )
+                .filter(
+                    or_(
+                        Clientes_morales.nombre.ilike(f'%{valor_buscado}%'),
+                        Clientes_morales.razon_social.ilike(f'%{valor_buscado}%'),
+                        Clientes_morales.rfc.ilike(f'%{valor_buscado}%'),
+                        Clientes_morales.NIF.ilike(f'%{valor_buscado}%')
                     )
+                )
+                .all()
+            )
         except Exception as e:
+            print(f"💥 Error en filtrar_clientes_morales_por_nombre: {e}")
             return None, False
-        if not clientes:
-            return None, False
-        else:
-            return clientes, True
+        
+        return clientes, bool(clientes)
 
     def actualizar_cliente_fisico(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
         try: 

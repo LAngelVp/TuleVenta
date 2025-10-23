@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1400</width>
-    <height>590</height>
+    <width>1462</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -397,7 +397,7 @@ QCalendarWidget QAbstractItemView::item:hover {
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>1388</width>
+              <width>1450</width>
               <height>1104</height>
              </rect>
             </property>
@@ -625,6 +625,283 @@ QCalendarWidget QAbstractItemView::item:hover {
                        <property name="spacing">
                         <number>0</number>
                        </property>
+                       <item row="1" column="0">
+                        <spacer name="verticalSpacer_2">
+                         <property name="orientation">
+                          <enum>Qt::Orientation::Vertical</enum>
+                         </property>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>20</width>
+                           <height>40</height>
+                          </size>
+                         </property>
+                        </spacer>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QFrame" name="contenedor_izquierda">
+                         <property name="frameShape">
+                          <enum>QFrame::Shape::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Shadow::Raised</enum>
+                         </property>
+                         <layout class="QGridLayout" name="gridLayout_6">
+                          <property name="leftMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="spacing">
+                           <number>0</number>
+                          </property>
+                          <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
+                           <widget class="QLabel" name="label_wpc_fotocliente">
+                            <property name="minimumSize">
+                             <size>
+                              <width>202</width>
+                              <height>202</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>52</width>
+                              <height>52</height>
+                             </size>
+                            </property>
+                            <property name="font">
+                             <font/>
+                            </property>
+                            <property name="cursor">
+                             <cursorShape>PointingHandCursor</cursorShape>
+                            </property>
+                            <property name="text">
+                             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Icons/IconosSVG/subir_imagen.png&quot; width=&quot;90&quot; height=&quot;80&quot;/&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:bold;font-family:Arial;&quot;&gt;Cargar Imagen&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            </property>
+                            <property name="alignment">
+                             <set>Qt::AlignmentFlag::AlignCenter</set>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QWidget" name="wpc_clientes_autorizacredito" native="true">
+                            <layout class="QFormLayout" name="formLayout">
+                             <item row="0" column="0" colspan="2">
+                              <widget class="QCheckBox" name="casillaverificacion_wpc_credito_autorizado">
+                               <property name="text">
+                                <string>Autoriza crédito</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="1" column="0">
+                              <widget class="QLabel" name="etiqueta_wpc_limitecredito">
+                               <property name="text">
+                                <string>Limite:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="1" column="1">
+                              <widget class="QDoubleSpinBox" name="cajaDecimal_wpc_limite_credito">
+                               <property name="toolTip">
+                                <string>Limite de crédito</string>
+                               </property>
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                               <property name="prefix">
+                                <string>$ </string>
+                               </property>
+                               <property name="maximum">
+                                <double>99999999.989999994635582</double>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="2" column="0">
+                              <widget class="QLabel" name="etiqueta_creditodisponible_fisico">
+                               <property name="text">
+                                <string>Disponible:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="2" column="1">
+                              <widget class="QDoubleSpinBox" name="cajaDecimal_creditodisponible_fisico">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="toolTip">
+                                <string>Crédito disponible</string>
+                               </property>
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                               <property name="prefix">
+                                <string>$ </string>
+                               </property>
+                               <property name="maximum">
+                                <double>99999999.989999994635582</double>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="3" column="0">
+                              <widget class="QLabel" name="etiqueta_creditoutilizado_fisico">
+                               <property name="text">
+                                <string>Utilizado:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="3" column="1">
+                              <widget class="QDoubleSpinBox" name="cajaDecimal_creditoutilizado_fisico">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="toolTip">
+                                <string>Crédito utilizado</string>
+                               </property>
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                               <property name="prefix">
+                                <string>$ </string>
+                               </property>
+                               <property name="maximum">
+                                <double>99999999.989999994635582</double>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="4" column="0" colspan="2">
+                              <widget class="QLabel" name="etiqueta_estadodelcredito_fisico">
+                               <property name="text">
+                                <string>Estado del Crédito</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="5" column="0" colspan="2">
+                              <widget class="QLineEdit" name="txt_estadodelcredito_fisico">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="6" column="0">
+                              <widget class="QLabel" name="etiqueta_porcentajeintereses_fisico">
+                               <property name="text">
+                                <string>% Interes:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="6" column="1">
+                              <widget class="QDoubleSpinBox" name="cajaDecimal_interesesaplicados_fisico">
+                               <property name="toolTip">
+                                <string>Interes sobre la deuda</string>
+                               </property>
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                               <property name="suffix">
+                                <string> %</string>
+                               </property>
+                               <property name="maximum">
+                                <double>99999999.989999994635582</double>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="7" column="0" colspan="2">
+                              <widget class="QCheckBox" name="casillaverificacion_aplicadescuento_fisico">
+                               <property name="toolTip">
+                                <string>Descuento sobre la compra</string>
+                               </property>
+                               <property name="text">
+                                <string>Aplica descuento</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="8" column="0">
+                              <widget class="QLabel" name="etiqueta_porcentajedescuento_fisico">
+                               <property name="text">
+                                <string>% Descuento</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="8" column="1">
+                              <widget class="QDoubleSpinBox" name="cajaDecimal_porcentajedescuento_fisico">
+                               <property name="toolTip">
+                                <string>Descuento sobre la compra</string>
+                               </property>
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                               <property name="suffix">
+                                <string> %</string>
+                               </property>
+                               <property name="maximum">
+                                <double>99999999.989999994635582</double>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="9" column="0" colspan="2">
+                              <widget class="Line" name="line_2">
+                               <property name="orientation">
+                                <enum>Qt::Orientation::Horizontal</enum>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="10" column="0" colspan="2">
+                              <widget class="QLabel" name="etiqueta_entidadlegalizada_fisico">
+                               <property name="text">
+                                <string>Entidad Legalizada:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="11" column="0" colspan="2">
+                              <widget class="QCheckBox" name="casillaverificacion_entidadlegalizada_fisico">
+                               <property name="text">
+                                <string>Si</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="13" column="0">
+                              <widget class="QLabel" name="etiqueta_fechaultimoreporte_fisico">
+                               <property name="text">
+                                <string>Último reporte:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="13" column="1">
+                              <widget class="QDateEdit" name="fecha_ultimoreporte_fisico">
+                               <property name="buttonSymbols">
+                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="14" column="0" colspan="2">
+                              <spacer name="verticalSpacer">
+                               <property name="orientation">
+                                <enum>Qt::Orientation::Vertical</enum>
+                               </property>
+                               <property name="sizeType">
+                                <enum>QSizePolicy::Policy::Expanding</enum>
+                               </property>
+                               <property name="sizeHint" stdset="0">
+                                <size>
+                                 <width>149</width>
+                                 <height>117</height>
+                                </size>
+                               </property>
+                              </spacer>
+                             </item>
+                            </layout>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
                        <item row="0" column="0">
                         <widget class="QWidget" name="wpc_clientes_clienteFisico" native="true">
                          <property name="minimumSize">
@@ -1174,285 +1451,28 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </property>
                            </widget>
                           </item>
-                         </layout>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="contenedor_izquierda">
-                         <property name="frameShape">
-                          <enum>QFrame::Shape::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Shadow::Raised</enum>
-                         </property>
-                         <layout class="QGridLayout" name="gridLayout_6">
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="spacing">
-                           <number>0</number>
-                          </property>
-                          <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
-                           <widget class="QLabel" name="label_wpc_fotocliente">
-                            <property name="minimumSize">
-                             <size>
-                              <width>202</width>
-                              <height>202</height>
-                             </size>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>52</width>
-                              <height>52</height>
-                             </size>
-                            </property>
-                            <property name="font">
-                             <font/>
-                            </property>
-                            <property name="cursor">
-                             <cursorShape>PointingHandCursor</cursorShape>
-                            </property>
+                          <item row="13" column="1">
+                           <widget class="QPlainTextEdit" name="txtlargo_descripcionAreaCliente"/>
+                          </item>
+                          <item row="13" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_descripcionAreaCliente">
                             <property name="text">
-                             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Icons/IconosSVG/subir_imagen.png&quot; width=&quot;90&quot; height=&quot;80&quot;/&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:bold;font-family:Arial;&quot;&gt;Cargar Imagen&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                            </property>
-                            <property name="alignment">
-                             <set>Qt::AlignmentFlag::AlignCenter</set>
+                             <string>Descripción Area</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="1" column="0">
-                           <widget class="QWidget" name="wpc_clientes_autorizacredito" native="true">
-                            <layout class="QFormLayout" name="formLayout">
-                             <item row="0" column="0" colspan="2">
-                              <widget class="QCheckBox" name="casillaverificacion_wpc_credito_autorizado">
-                               <property name="text">
-                                <string>Autoriza crédito</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="1" column="0">
-                              <widget class="QLabel" name="etiqueta_wpc_limitecredito">
-                               <property name="text">
-                                <string>Limite:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="1" column="1">
-                              <widget class="QDoubleSpinBox" name="cajaDecimal_wpc_limite_credito">
-                               <property name="toolTip">
-                                <string>Limite de crédito</string>
-                               </property>
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                               <property name="prefix">
-                                <string>$ </string>
-                               </property>
-                               <property name="maximum">
-                                <double>99999999.989999994635582</double>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="2" column="0">
-                              <widget class="QLabel" name="etiqueta_creditodisponible_fisico">
-                               <property name="text">
-                                <string>Disponible:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="2" column="1">
-                              <widget class="QDoubleSpinBox" name="cajaDecimal_creditodisponible_fisico">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="toolTip">
-                                <string>Crédito disponible</string>
-                               </property>
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                               <property name="prefix">
-                                <string>$ </string>
-                               </property>
-                               <property name="maximum">
-                                <double>99999999.989999994635582</double>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="3" column="0">
-                              <widget class="QLabel" name="etiqueta_creditoutilizado_fisico">
-                               <property name="text">
-                                <string>Utilizado:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="3" column="1">
-                              <widget class="QDoubleSpinBox" name="cajaDecimal_creditoutilizado_fisico">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="toolTip">
-                                <string>Crédito utilizado</string>
-                               </property>
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                               <property name="prefix">
-                                <string>$ </string>
-                               </property>
-                               <property name="maximum">
-                                <double>99999999.989999994635582</double>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="4" column="0" colspan="2">
-                              <widget class="QLabel" name="etiqueta_estadodelcredito_fisico">
-                               <property name="text">
-                                <string>Estado del Crédito</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="5" column="0" colspan="2">
-                              <widget class="QLineEdit" name="txt_estadodelcredito_fisico">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="6" column="0">
-                              <widget class="QLabel" name="etiqueta_porcentajeintereses_fisico">
-                               <property name="text">
-                                <string>% Interes:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="6" column="1">
-                              <widget class="QDoubleSpinBox" name="cajaDecimal_interesesaplicados_fisico">
-                               <property name="toolTip">
-                                <string>Interes sobre la deuda</string>
-                               </property>
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                               <property name="suffix">
-                                <string> %</string>
-                               </property>
-                               <property name="maximum">
-                                <double>99999999.989999994635582</double>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="7" column="0" colspan="2">
-                              <widget class="QCheckBox" name="casillaverificacion_aplicadescuento_fisico">
-                               <property name="toolTip">
-                                <string>Descuento sobre la compra</string>
-                               </property>
-                               <property name="text">
-                                <string>Aplica descuento</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="8" column="0">
-                              <widget class="QLabel" name="etiqueta_porcentajedescuento_fisico">
-                               <property name="text">
-                                <string>% Descuento</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="8" column="1">
-                              <widget class="QDoubleSpinBox" name="cajaDecimal_porcentajedescuento_fisico">
-                               <property name="toolTip">
-                                <string>Descuento sobre la compra</string>
-                               </property>
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                               <property name="suffix">
-                                <string> %</string>
-                               </property>
-                               <property name="maximum">
-                                <double>99999999.989999994635582</double>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="9" column="0" colspan="2">
-                              <widget class="Line" name="line_2">
-                               <property name="orientation">
-                                <enum>Qt::Orientation::Horizontal</enum>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="10" column="0" colspan="2">
-                              <widget class="QLabel" name="etiqueta_entidadlegalizada_fisico">
-                               <property name="text">
-                                <string>Entidad Legalizada:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="11" column="0" colspan="2">
-                              <widget class="QCheckBox" name="casillaverificacion_entidadlegalizada_fisico">
-                               <property name="text">
-                                <string>Si</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="13" column="0">
-                              <widget class="QLabel" name="etiqueta_fechaultimoreporte_fisico">
-                               <property name="text">
-                                <string>Último reporte:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="13" column="1">
-                              <widget class="QDateEdit" name="fecha_ultimoreporte_fisico">
-                               <property name="buttonSymbols">
-                                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="14" column="0" colspan="2">
-                              <spacer name="verticalSpacer">
-                               <property name="orientation">
-                                <enum>Qt::Orientation::Vertical</enum>
-                               </property>
-                               <property name="sizeType">
-                                <enum>QSizePolicy::Policy::Expanding</enum>
-                               </property>
-                               <property name="sizeHint" stdset="0">
-                                <size>
-                                 <width>149</width>
-                                 <height>117</height>
-                                </size>
-                               </property>
-                              </spacer>
-                             </item>
-                            </layout>
+                          <item row="13" column="2">
+                           <widget class="QLabel" name="etiqueta_wpc_descripcionCategoriaCliente">
+                            <property name="text">
+                             <string>Descripción Categoria</string>
+                            </property>
                            </widget>
+                          </item>
+                          <item row="13" column="3">
+                           <widget class="QPlainTextEdit" name="txtlargo_descripcionCategoriaCliente"/>
                           </item>
                          </layout>
                         </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <spacer name="verticalSpacer_2">
-                         <property name="orientation">
-                          <enum>Qt::Orientation::Vertical</enum>
-                         </property>
-                         <property name="sizeHint" stdset="0">
-                          <size>
-                           <width>20</width>
-                           <height>40</height>
-                          </size>
-                         </property>
-                        </spacer>
                        </item>
                       </layout>
                      </widget>
@@ -1671,8 +1691,25 @@ QCalendarWidget QAbstractItemView::item:hover {
                           </size>
                          </property>
                          <layout class="QGridLayout" name="gridLayout_15">
-                          <item row="4" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_rfc_moral">
+                          <item row="6" column="0">
+                           <widget class="QLabel" name="etiqueta_pais_moral">
+                            <property name="text">
+                             <string>Pais</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="7" column="4">
+                           <widget class="QLineEdit" name="txt_codigopostal_moral"/>
+                          </item>
+                          <item row="7" column="0">
+                           <widget class="QLabel" name="etiqueta_ciudad_moral">
+                            <property name="text">
+                             <string>Ciudad</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="4" column="3">
+                           <widget class="QLabel" name="etiqueta_wpc_sector_moral">
                             <property name="minimumSize">
                              <size>
                               <width>0</width>
@@ -1680,22 +1717,32 @@ QCalendarWidget QAbstractItemView::item:hover {
                              </size>
                             </property>
                             <property name="text">
-                             <string>RFC</string>
+                             <string>Sector</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="2" column="4">
-                           <widget class="QLineEdit" name="txt_calles_empre_moral">
+                          <item row="13" column="3">
+                           <widget class="QLabel" name="etiqueta_wpc_puesto_representante_moral">
                             <property name="minimumSize">
                              <size>
-                              <width>200</width>
-                              <height>17</height>
+                              <width>0</width>
+                              <height>0</height>
                              </size>
+                            </property>
+                            <property name="text">
+                             <string>Puesto</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="7" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_ciudad_moral"/>
+                          <item row="6" column="4">
+                           <widget class="QLineEdit" name="txt_estado_moral"/>
+                          </item>
+                          <item row="6" column="3">
+                           <widget class="QLabel" name="etiqueta_estado_moral">
+                            <property name="text">
+                             <string>Estado</string>
+                            </property>
+                           </widget>
                           </item>
                           <item row="5" column="4">
                            <layout class="QGridLayout" name="gridLayout_13">
@@ -1747,12 +1794,52 @@ QCalendarWidget QAbstractItemView::item:hover {
                            </layout>
                           </item>
                           <item row="13" column="4">
-                           <widget class="QLineEdit" name="txt_correo_repre_moral">
+                           <widget class="QLineEdit" name="txt_puesto_repre_moral">
                             <property name="minimumSize">
                              <size>
                               <width>200</width>
                               <height>17</height>
                              </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="5" column="3">
+                           <widget class="QLabel" name="etiqueta_categoriaMoral">
+                            <property name="text">
+                             <string>Clasificación Cliente</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_correo_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Correo Electronico</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="7" column="3">
+                           <widget class="QLabel" name="etiqueta_codigopostal_moral">
+                            <property name="text">
+                             <string>Codigo Postal</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="13" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_representante_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Nombre representante</string>
                             </property>
                            </widget>
                           </item>
@@ -1805,8 +1892,8 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </item>
                            </layout>
                           </item>
-                          <item row="3" column="3">
-                           <widget class="QLabel" name="etiqueta_wpc_fechaconst_moral">
+                          <item row="14" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_telefono_representante_moral">
                             <property name="minimumSize">
                              <size>
                               <width>0</width>
@@ -1814,25 +1901,32 @@ QCalendarWidget QAbstractItemView::item:hover {
                              </size>
                             </property>
                             <property name="text">
-                             <string>Fecha de constitución</string>
+                             <string>Telefono</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="6" column="4">
-                           <widget class="QLineEdit" name="txt_estado_moral"/>
+                          <item row="12" column="0" colspan="5">
+                           <widget class="Line" name="line">
+                            <property name="orientation">
+                             <enum>Qt::Orientation::Horizontal</enum>
+                            </property>
+                           </widget>
                           </item>
-                          <item row="7" column="4">
-                           <widget class="QLineEdit" name="txt_codigopostal_moral"/>
-                          </item>
-                          <item row="6" column="3">
-                           <widget class="QLabel" name="etiqueta_estado_moral">
+                          <item row="3" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_avenidas_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="text">
-                             <string>Estado</string>
+                             <string>Avenida o entre avenidas</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="4" column="4">
-                           <widget class="QLineEdit" name="txt_sector_empre_moral">
+                          <item row="2" column="4">
+                           <widget class="QLineEdit" name="txt_calles_empre_moral">
                             <property name="minimumSize">
                              <size>
                               <width>200</width>
@@ -1841,11 +1935,18 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </property>
                            </widget>
                           </item>
-                          <item row="10" column="2" colspan="3">
-                           <widget class="QPlainTextEdit" name="txtlargo_comentarios_cliente_moral"/>
+                          <item row="1" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_razonsocial_moral"/>
                           </item>
-                          <item row="4" column="3">
-                           <widget class="QLabel" name="etiqueta_wpc_sector_moral">
+                          <item row="8" column="0">
+                           <widget class="QLabel" name="etiqueta_areanegocio_moral">
+                            <property name="text">
+                             <string>Area de Negocio</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="4" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_rfc_moral">
                             <property name="minimumSize">
                              <size>
                               <width>0</width>
@@ -1853,7 +1954,37 @@ QCalendarWidget QAbstractItemView::item:hover {
                              </size>
                             </property>
                             <property name="text">
-                             <string>Sector</string>
+                             <string>RFC</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="9" column="0">
+                           <widget class="QLabel" name="etiqueta_direccionadicional_moral">
+                            <property name="text">
+                             <string>Direcció Adicional</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="13" column="2">
+                           <widget class="QLineEdit" name="txt_nombre_repre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="4">
+                           <widget class="QLineEdit" name="txt_nif_moral"/>
+                          </item>
+                          <item row="14" column="4">
+                           <widget class="QLineEdit" name="txt_correo_repre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>17</height>
+                             </size>
                             </property>
                            </widget>
                           </item>
@@ -1870,248 +2001,8 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </property>
                            </widget>
                           </item>
-                          <item row="12" column="2">
-                           <widget class="QLineEdit" name="txt_nombre_repre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="12" column="4">
-                           <widget class="QLineEdit" name="txt_puesto_repre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>17</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="12" column="3">
-                           <widget class="QLabel" name="etiqueta_wpc_puesto_representante_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Puesto</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="3">
-                           <widget class="QLabel" name="etiqueta_nif_moral">
-                            <property name="text">
-                             <string>NIF</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="12" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_representante_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Nombre representante</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="6" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_pais_moral"/>
-                          </item>
-                          <item row="1" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_razonsocial_moral"/>
-                          </item>
-                          <item row="7" column="3">
-                           <widget class="QLabel" name="etiqueta_codigopostal_moral">
-                            <property name="text">
-                             <string>Codigo Postal</string>
-                            </property>
-                           </widget>
-                          </item>
                           <item row="3" column="1" colspan="2">
                            <widget class="QLineEdit" name="txt_avenidas_empre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="10" column="0">
-                           <widget class="QLabel" name="etiqueta_comentarios_cliente_moral">
-                            <property name="text">
-                             <string>Comentarios</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="3">
-                           <widget class="QLabel" name="etiqueta_wpc_telefono_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Num. Telefono</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="6" column="0">
-                           <widget class="QLabel" name="etiqueta_pais_moral">
-                            <property name="text">
-                             <string>Pais</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="8" column="0">
-                           <widget class="QLabel" name="etiqueta_areanegocio_moral">
-                            <property name="text">
-                             <string>Area de Negocio</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="11" column="0" colspan="5">
-                           <widget class="Line" name="line">
-                            <property name="orientation">
-                             <enum>Qt::Orientation::Horizontal</enum>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="3" column="4">
-                           <widget class="QDateEdit" name="fecha_fechaconstitucion">
-                            <property name="calendarPopup">
-                             <bool>true</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="5" column="3">
-                           <widget class="QLabel" name="etiqueta_categoriaMoral">
-                            <property name="text">
-                             <string>Clasificación Cliente</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_nombre_empre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="9" column="2" colspan="3">
-                           <widget class="QPlainTextEdit" name="txtlargo_direccionadicional_moral"/>
-                          </item>
-                          <item row="2" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_correo_empre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="4">
-                           <widget class="QLineEdit" name="txt_telefono_empre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>17</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="0">
-                           <widget class="QLabel" name="etiqueta_razonsocial_moral">
-                            <property name="text">
-                             <string>Razón Social</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_nombre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Nombre</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="4" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_rfc_empre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="4">
-                           <widget class="QLineEdit" name="txt_nif_moral"/>
-                          </item>
-                          <item row="7" column="0">
-                           <widget class="QLabel" name="etiqueta_ciudad_moral">
-                            <property name="text">
-                             <string>Ciudad</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="13" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_telefono_representante_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Telefono</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="2" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_correo_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                            <property name="text">
-                             <string>Correo Electronico</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="13" column="2">
-                           <widget class="QLineEdit" name="txt_telefono_repre_moral">
-                            <property name="minimumSize">
-                             <size>
-                              <width>200</width>
-                              <height>0</height>
-                             </size>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="5" column="1" colspan="2">
-                           <widget class="QLineEdit" name="txt_pagina_empre_moral">
                             <property name="minimumSize">
                              <size>
                               <width>200</width>
@@ -2133,8 +2024,54 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </property>
                            </widget>
                           </item>
-                          <item row="3" column="0">
-                           <widget class="QLabel" name="etiqueta_wpc_avenidas_moral">
+                          <item row="7" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_ciudad_moral"/>
+                          </item>
+                          <item row="1" column="3">
+                           <widget class="QLabel" name="etiqueta_nif_moral">
+                            <property name="text">
+                             <string>NIF</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="4">
+                           <widget class="QLineEdit" name="txt_telefono_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>17</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="9" column="2" colspan="3">
+                           <widget class="QPlainTextEdit" name="txtlargo_direccionadicional_moral"/>
+                          </item>
+                          <item row="10" column="2" colspan="3">
+                           <widget class="QPlainTextEdit" name="txtlargo_comentarios_cliente_moral"/>
+                          </item>
+                          <item row="4" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_rfc_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="4" column="4">
+                           <widget class="QLineEdit" name="txt_sector_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>17</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_nombre_moral">
                             <property name="minimumSize">
                              <size>
                               <width>0</width>
@@ -2142,18 +2079,81 @@ QCalendarWidget QAbstractItemView::item:hover {
                              </size>
                             </property>
                             <property name="text">
-                             <string>Avenida o entre avenidas</string>
+                             <string>Nombre</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="9" column="0">
-                           <widget class="QLabel" name="etiqueta_direccionadicional_moral">
+                          <item row="6" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_pais_moral"/>
+                          </item>
+                          <item row="3" column="4">
+                           <widget class="QDateEdit" name="fecha_fechaconstitucion">
+                            <property name="calendarPopup">
+                             <bool>true</bool>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="14" column="2">
+                           <widget class="QLineEdit" name="txt_telefono_repre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_correo_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="5" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_pagina_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="3">
+                           <widget class="QLabel" name="etiqueta_wpc_telefono_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="text">
-                             <string>Direcció Adicional</string>
+                             <string>Num. Telefono</string>
                             </property>
                            </widget>
                           </item>
-                          <item row="13" column="3">
+                          <item row="0" column="1" colspan="2">
+                           <widget class="QLineEdit" name="txt_nombre_empre_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>200</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QLabel" name="etiqueta_razonsocial_moral">
+                            <property name="text">
+                             <string>Razón Social</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="14" column="3">
                            <widget class="QLabel" name="etiqueta_wpc_correo_repre_moral">
                             <property name="minimumSize">
                              <size>
@@ -2163,6 +2163,46 @@ QCalendarWidget QAbstractItemView::item:hover {
                             </property>
                             <property name="text">
                              <string>Correo electronico</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="10" column="0">
+                           <widget class="QLabel" name="etiqueta_comentarios_cliente_moral">
+                            <property name="text">
+                             <string>Comentarios</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="3">
+                           <widget class="QLabel" name="etiqueta_wpc_fechaconst_moral">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>Fecha de constitución</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="11" column="2">
+                           <widget class="QPlainTextEdit" name="txtlargo_descripcionAreaClienteMoral"/>
+                          </item>
+                          <item row="11" column="0">
+                           <widget class="QLabel" name="etiqueta_wpc_descripcionAreaClienteMoral">
+                            <property name="text">
+                             <string>Descripción Area</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="11" column="4">
+                           <widget class="QPlainTextEdit" name="txtlargo_descripcionCategoriaClienteMoral"/>
+                          </item>
+                          <item row="11" column="3">
+                           <widget class="QLabel" name="etiqueta_wpc_descripcionCategoriaClienteMoral">
+                            <property name="text">
+                             <string>Descripción Categoria</string>
                             </property>
                            </widget>
                           </item>

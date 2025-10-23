@@ -480,41 +480,42 @@ class Control_proveedores(QWidget):
         if not hasattr(self, 'proveedor_seleccionado') or not self.proveedor_seleccionado:
             Mensaje().mensaje_alerta(cuerpo="No hay un proveedor seleccionado para actualizar.")
             return
-
-        try:
-            self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("actualizar_proveedor_thread")
-            self.id_hilo_actualizar_proveedor = WorkerDB.create_managed_worker(owner_id="actualizar_proveedor_thread")
-            self.consultor_actualizar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_actualizar_proveedor)
-            
-            if not self.consultor_actualizar_proveedor:
-                raise Exception("No se pudo obtener el worker gestionado")
-            
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_actualizar_proveedor,
-                resultado_callback=self.mostrar_estado_hilo,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            
-            # Preparar datos para el worker
-            datos_actualizacion = {
-                'proveedor_id': self.proveedor_seleccionado.id,
-                'categoria': categoria,
-                'datos_proveedor': datos_proveedor,
-                'tiene_representante': self.ui.btnradio_representantetrue.isChecked(),
-                'datos_representante': datos_representante if self.ui.btnradio_representantetrue.isChecked() else None
-            }
-            
-            self.consultor_actualizar_proveedor.ejecutar(
-                funcion=self.actualizar_proveedor_query,
-                **datos_actualizacion
-            )
-            
-        except Exception as e:
-            if hasattr(self, 'id_hilo_actualizar_proveedor'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_proveedor)
-            Mensaje().mensaje_alerta(f"Ocurrió un error en la operación.\n{e}")
+        respuesta = Mensaje().mensaje_pregunta("¿Quieres actualizar el registro")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal()
+                WorkerDB.cleanup_owner_workers("actualizar_proveedor_thread")
+                self.id_hilo_actualizar_proveedor = WorkerDB.create_managed_worker(owner_id="actualizar_proveedor_thread")
+                self.consultor_actualizar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_actualizar_proveedor)
+                
+                if not self.consultor_actualizar_proveedor:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actualizar_proveedor,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                
+                # Preparar datos para el worker
+                datos_actualizacion = {
+                    'proveedor_id': self.proveedor_seleccionado.id,
+                    'categoria': categoria,
+                    'datos_proveedor': datos_proveedor,
+                    'tiene_representante': self.ui.btnradio_representantetrue.isChecked(),
+                    'datos_representante': datos_representante if self.ui.btnradio_representantetrue.isChecked() else None
+                }
+                
+                self.consultor_actualizar_proveedor.ejecutar(
+                    funcion=self.actualizar_proveedor_query,
+                    **datos_actualizacion
+                )
+                
+            except Exception as e:
+                if hasattr(self, 'id_hilo_actualizar_proveedor'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_proveedor)
+                Mensaje().mensaje_alerta(f"Ocurrió un error en la operación.\n{e}")
             
     def actualizar_proveedor_query(self, session, proveedor_id, categoria, datos_proveedor, tiene_representante, datos_representante=None):
         try:
