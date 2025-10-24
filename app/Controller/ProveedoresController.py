@@ -401,7 +401,6 @@ class Control_proveedores(QWidget):
         estado = resultado["exito"]
         if self.ui.tabla_proveedores is None:
             Mensaje().mensaje_informativo("La tabla de los proveedores no esta disponible")
-            
             return
         cabeceras = [
             "Nombre",
@@ -428,14 +427,14 @@ class Control_proveedores(QWidget):
             "representante": lambda p: p.representante.nombre
         }
         modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listart_proveedores_vproveedores",
+            nombreModelo="modelo_listar_proveedores_vproveedores",
             interfazTabla=self.ui.tabla_proveedores,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            signalPersonalizada=self.obtener_proveedor_seleccionado_tabla
+            signalPersonalizada=self.obtener_proveedor_seleccionado_tabla,
         )
         if not estado or not proveedores:
             Mensaje().mensaje_informativo("No hay información para listar")
@@ -454,7 +453,7 @@ class Control_proveedores(QWidget):
         self.limpiar_campos()
         if current.isValid():
             fila = current.row()
-            proveedor = self.modelo_listart_proveedores_vproveedores.get_item(current)
+            proveedor = self.modelo_listar_proveedores_vproveedores.get_item(current)
             
             if proveedor:
                 self.proveedor_seleccionado = proveedor

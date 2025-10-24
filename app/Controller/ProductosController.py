@@ -10,7 +10,7 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.CategoriasModel import CategoriasModel
 from ..Model.ProductosModel import ProductosModel
-from ..Model.AbstractTableModel import GenericTableModel
+from ..Model.AbstractTableModel import ComprobarModelosTablas, GenericTableModel
 from .MensajesAlertasController import Mensaje
 from .CategoriasController import CategoriasController
 from ..View.UserInterfacePy.UI_CONTROL_PRODUCTOS import Ui_Control_Productos
@@ -195,6 +195,11 @@ class Admin_productosController(QWidget):
         self.ui.entero_margenProducto.editingFinished.connect(self.calcular_precio_venta)
         self.ui.opcion_TieneCaducidad.stateChanged.connect(self.mostrar_fechas_caducidad)
         self.ui.btn_btn_addProduct_cerrar.clicked.connect(self.close)
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.ajustador = AjustarcajaOpciones()
+        self.__configurar_tabla_productos()
         
 #FUNCIONES-VENTANAS EMERGENTES: 
     def agregar_presentacion(self):
@@ -244,8 +249,7 @@ class Admin_productosController(QWidget):
                 for categoria in categorias:
                     self.ui.cajaOpciones_categoriaProducto.addItem(categoria.nombre, categoria)
                 AjustarcajaOpciones(CategoriasModel(session), 'productos').ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaProducto)
-                
-    
+
 #########################
 #FUNCIONES-INTERACCION CON EL PRODUCTO
     def mostrar_fechas_caducidad(self, state):
@@ -348,62 +352,161 @@ class Admin_productosController(QWidget):
         return datos
         
     def __agregar_producto(self):
-        datos = self.datos_campos()
-        if not datos["codigo_barras"]:
-            Mensaje().mensaje_alerta("El campo Código de Barras es obligatorio")
-            return
-        self.comprobar_existencia_modelo_tabla()
-
-        self.modelo_tabla_productos.setHorizontalHeaderLabels([
-            "Proveedor", "Código de Barras", "Nombre", "Categoría", "Marca", "Modelo", "Color", 
-            "Material", "Unidad de Medida", "Presentación", "Costo Inicial","Costo Final", "Margen Porcentaje", "Precio Venta", 
-            "Existencia", "Existencia Min", "Existencia Max", "Peso", 
-            "Largo Dimensiones", "Alto Dimensiones", "Ancho Dimensiones", 
-            "Descripción", "Notas", "Fecha Vencimiento", "Fecha Fabricación", "Imagen"
-        ])
-        self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
+        """Agrega un nuevo producto con los valores actuales de los campos a la tabla"""
+        try:
+            # Obtener datos actuales de los campos
+            datos = self.datos_campos()
+            
+            # Validar campo obligatorio
+            if not datos["codigo_barras"]:
+                Mensaje().mensaje_alerta("El campo Código de Barras es obligatorio")
+                return
+            
+            # Crear el producto con los datos actuales
+            nuevo_producto = {
+                "proveedor": datos["proveedor"],
+                "codigo_barras": datos["codigo_barras"],
+                "nombre": datos["nombre"],
+                "categoria": datos["categoria_producto"].nombre if datos["categoria_producto"] else "",
+                "marca": datos["marca_producto"],
+                "modelo": datos["modelo_producto"],
+                "color": datos["color_producto"],
+                "material": datos["material_producto"],
+                "unidad_medida": datos["unidad_medida_producto"].nombre if datos["unidad_medida_producto"] else "",
+                "presentacion": datos["presentacion_producto"].nombre if datos["presentacion_producto"] else "",
+                "costo_inicial": datos["costo_inicial_producto"],
+                "precio_venta": datos["precio_venta_producto"],
+                "margen_porcentaje": datos["margen_porcentaje"],
+                "costo_final": datos["costo_final_producto"],
+                "existencia": datos["existencia_producto"],
+                "existencia_min": datos["existencia_min_producto"],
+                "existencia_max": datos["existencia_max_producto"],
+                "peso": datos["peso_producto"],
+                "largo_dimensiones": datos["largo_dimensiones"],
+                "alto_dimensiones": datos["alto_dimensiones"],
+                "ancho_dimensiones": datos["ancho_dimensiones"],
+                "descripcion": datos["descripcion_producto"],
+                "notas": datos["notas_producto"],
+                "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else "N/A",
+                "fecha_fabricacion": datos["fecha_fabricacion_producto"],
+                "imagen": self.imagenProducto  
+            }
+            
+            # Verificar si el producto ya existe en la lista
+            producto_existente = any(
+                p["codigo_barras"] == nuevo_producto["codigo_barras"] 
+                for p in self.lista_productos
+            )
+            
+            if producto_existente:
+                Mensaje().mensaje_alerta(f"El producto con código {nuevo_producto['codigo_barras']} ya existe")
+                return
+            
+            # Agregar a la lista interna
+            self.lista_productos.append(nuevo_producto)
+            
+            # Asegurar que el modelo de tabla existe
+            if not hasattr(self, 'modelo_tabla_productos'):
+                self.__configurar_tabla_productos()
+            
+            # Agregar a la tabla visual
+            self.modelo_tabla_productos.append_data([nuevo_producto])
+            
+            # Limpiar campos para nuevo ingreso
+            # self.__limpiar_campos()
+            
+            # Mostrar confirmación
+            Mensaje().mensaje_correcto(f"Producto '{nuevo_producto['nombre']}' agregado correctamente")
+            
+            # Debug: mostrar productos agregados
+            print(f"Total productos en lista: {len(self.lista_productos)}")
+            
+        except Exception as e:
+            Mensaje().mensaje_error(f"Error al agregar producto: {str(e)}")
+            print(f"Error detallado: {e}")
+            
+    def __configurar_tabla_productos(self):
+        """Configura la tabla para mostrar los productos"""
+        cabeceras = [
+            "Código Barras", "Nombre", "Categoría", "Marca", "Modelo", 
+            "Precio Venta", "Existencia", "Proveedor"
+        ]
         
-        # Crear un diccionario con los datos del producto
-        nuevo_producto = {
-            "proveedor": datos["proveedor"],
-            "codigo_barras": datos["codigo_barras"],
-            "nombre": datos["nombre"],
-            "categoria": datos["categoria_producto"].nombre,
-            "marca": datos["marca_producto"],
-            "modelo": datos["modelo_producto"],
-            "color": datos["color_producto"],
-            "material": datos["material_producto"],
-            "unidad_medida": datos["unidad_medida_producto"].nombre,
-            "presentacion": datos["presentacion_producto"].nombre,
-            "costo_inicial": datos["costo_inicial_producto"],
-            "precio_venta": datos["precio_venta_producto"],
-            "margen_porcentaje": datos["margen_porcentaje"],
-            "costo_final": datos["costo_final_producto"],
-            "existencia": datos["existencia_producto"],
-            "existencia_min": datos["existencia_min_producto"],
-            "existencia_max": datos["existencia_max_producto"],
-            "peso": datos["peso_producto"],
-            "largo_dimensiones": datos["largo_dimensiones"],
-            "alto_dimensiones": datos["alto_dimensiones"],
-            "ancho_dimensiones": datos["ancho_dimensiones"],
-            "descripcion": datos["descripcion_producto"],
-            "notas": datos["notas_producto"],
-            "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else None,
-            "fecha_fabricacion": datos["fecha_fabricacion_producto"],
-            "imagen": self.imagenProducto  
+        mapeo_cabeceras = {
+            'codigo_barras': lambda p: p.get('codigo_barras', ''),
+            'nombre': lambda p: p.get('nombre', ''),
+            'categoria': lambda p: p.get('categoria', ''),
+            'marca': lambda p: p.get('marca', ''),
+            'modelo': lambda p: p.get('modelo', ''),
+            'precio_venta': lambda p: f"${p.get('precio_venta', 0):.2f}",
+            'existencia': lambda p: p.get('existencia', 0),
+            'proveedor': lambda p: p.get('proveedor', '')
         }
         
-        producto_existente = any(p["codigo_barras"] == nuevo_producto["codigo_barras"] for p in self.lista_productos)
-        if not producto_existente:
-            self.lista_productos.append(nuevo_producto)
-        else:
-            Mensaje().mensaje_alerta(f"El producto con código de barras {nuevo_producto['codigo_barras']} que intentas agregar ya existe en la lista")
-            return
+        self.modelo_tabla_productos = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_tabla_productos",
+            interfazTabla=self.ui.tabla_productos,  # Ajusta al nombre real de tu tabla
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True
+        )
         
-        nueva_fila = list(nuevo_producto.values())
-        self._agregar_fila_a_tabla(nueva_fila)
-        self.__limpiar_campos()
-
+        return self.modelo_tabla_productos
+        
+    def llenar_tabla_productos(self, productos):
+        if not productos:
+            return
+        if self.ui.tabla_productos is None:
+            Mensaje().mensaje_informativo("La tabla de los productos no esta disponible")
+            return
+        cabeceras = [
+            "Codigo_upc",
+            "Nombre_producto",
+            "Descripcion_producto",            
+            "Precio",
+            "Existencia",
+            "Marca",
+            "Modelo",
+            "Notas",
+            "Presentacion",
+            "Unidad_de_medida",
+            "Categoria",
+            "Descripcion_categoria",
+            "Proveedores"
+        ]
+        mapeo_cabeceras = {
+            "codigo_upc": lambda p: p.codigo_up,
+            "nombre_producto": lambda p: p.nombre_producto,
+            "descripcion_producto": lambda p: p.descripcion_producto,
+            "precio": lambda p:p.precio,
+            "existencia": lambda p:p.existencia,
+            "marca": lambda p:p.marca,
+            "modelo": lambda p:p.modelo,
+            "notas": lambda p: p.notas,
+            "presentacion": lambda p:p.presentacion_productos.nombre,
+            "unidad_de_medida": lambda p:p.unidad_medida_productos.nombre,
+            "categoria": lambda p:p.categoria.nombre,
+            "descripcion_categoria": lambda p: p.categoria.descripcion,
+            "proveedores": lambda p: p.proveedores.nombre
+        }
+        modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_tabla_productos_a_agregar",
+            interfazTabla=self.ui.tabla_productos,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            # signalPersonalizada=self.obtener_proveedor_seleccionado_tabla
+        )
+        if productos:
+            Mensaje().mensaje_informativo("No hay información para listar")
+            modelo.clear()
+            return
+        modelo.update_data(productos, reset=True)
+        
     def _agregar_fila_a_tabla(self, fila):
         # Convertir cada elemento de la fila en un QStandardItem y añadirlo al modelo
         items = [QStandardItem(str(dato)) for dato in fila]
@@ -1108,7 +1211,10 @@ class Admin_productosController(QWidget):
     def closeEvent(self, event):
         self.closed.emit()  # Emitir señal antes de cerrar
         super().closeEvent(event)
-        
+    
+    def mostrar_estado_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+    
 # TERMINA LA CLASE - ADMINISTRACION DE PRODUCTOS -----------------
 class Productos(QWidget):
 # SEÑALES:
@@ -1148,7 +1254,11 @@ class Productos(QWidget):
         self.ui.btn_btn_adminProductos_ExistenciaProducto.clicked.connect(self.existencia_productos)
         self.ui.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla)
         self.ui.btn_RefrescarTabla_paginar.clicked.connect(self.cargar_mas_productos)
-        # self.comprobar_modelo_tabla_productos()
+        
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.ajustador = AjustarcajaOpciones()
         
 
 # FUNCION : FILTRAR PRODUCTOS
@@ -1197,6 +1307,7 @@ class Productos(QWidget):
             nombre_producto=self.nombre_producto,
             codigo_del_producto=self.codigo_del_producto
         )
+    
     def buscar_producto_query(self, session, nombre_producto, codigo_del_producto):
         if nombre_producto:
             datos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre_producto, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
@@ -1230,6 +1341,7 @@ class Productos(QWidget):
         else:
             self.AdminProductos.raise_()
             self.AdminProductos.activateWindow()
+    
     def ventana_productos_cerrada(self):
         self.AdminProductos = None
         self.producto_actual = None
