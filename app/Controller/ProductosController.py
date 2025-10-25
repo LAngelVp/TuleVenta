@@ -385,7 +385,7 @@ class Admin_productosController(QWidget):
                 "largo_dimensiones": datos["largo_dimensiones"],
                 "alto_dimensiones": datos["alto_dimensiones"],
                 "ancho_dimensiones": datos["ancho_dimensiones"],
-                "descripcion": datos["descripcion_producto"],
+                "descripcion_producto": datos["descripcion_producto"],
                 "notas": datos["notas_producto"],
                 "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else "N/A",
                 "fecha_fabricacion": datos["fecha_fabricacion_producto"],
@@ -416,25 +416,27 @@ class Admin_productosController(QWidget):
             # self.__limpiar_campos()
             
             # Mostrar confirmación
-            Mensaje().mensaje_correcto(f"Producto '{nuevo_producto['nombre']}' agregado correctamente")
+            Mensaje().mensaje_informativo(f"Producto '{nuevo_producto['nombre']}' agregado correctamente")
             
             # Debug: mostrar productos agregados
             print(f"Total productos en lista: {len(self.lista_productos)}")
             
         except Exception as e:
-            Mensaje().mensaje_error(f"Error al agregar producto: {str(e)}")
+            Mensaje().mensaje_alerta(f"Error al agregar producto: {str(e)}")
             print(f"Error detallado: {e}")
             
     def __configurar_tabla_productos(self):
         """Configura la tabla para mostrar los productos"""
         cabeceras = [
-            "Código Barras", "Nombre", "Categoría", "Marca", "Modelo", 
-            "Precio Venta", "Existencia", "Proveedor"
+            "Codigo_barras", "Nombre", "Descripcion_producto", "Notas", "Categoria", "Marca", "Modelo", 
+            "Precio_venta", "Existencia", "Proveedor"
         ]
         
         mapeo_cabeceras = {
             'codigo_barras': lambda p: p.get('codigo_barras', ''),
             'nombre': lambda p: p.get('nombre', ''),
+            'descripcion_producto': lambda p:p.get('descripcion_producto', ''),
+            'notas': lambda p:p.get('notas',''),
             'categoria': lambda p: p.get('categoria', ''),
             'marca': lambda p: p.get('marca', ''),
             'modelo': lambda p: p.get('modelo', ''),
@@ -445,7 +447,7 @@ class Admin_productosController(QWidget):
         
         self.modelo_tabla_productos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_productos",
-            interfazTabla=self.ui.tabla_productos,  # Ajusta al nombre real de tu tabla
+            interfazTabla=self.ui.tabla_productos, 
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabeceras,
             ordenable=True,
@@ -506,17 +508,6 @@ class Admin_productosController(QWidget):
             modelo.clear()
             return
         modelo.update_data(productos, reset=True)
-        
-    def _agregar_fila_a_tabla(self, fila):
-        # Convertir cada elemento de la fila en un QStandardItem y añadirlo al modelo
-        items = [QStandardItem(str(dato)) for dato in fila]
-        
-        for item in items:
-            item.setTextAlignment(Qt.AlignCenter)
-
-        # Añadir la fila al modelo de datos
-        self.modelo_tabla_productos.appendRow(items)
-        self.ui.tabla_productos.resizeColumnsToContents()
         
     def agregar_productos_en_bd(self):
         self.modal_espera_local()
@@ -1087,22 +1078,60 @@ class Admin_productosController(QWidget):
             del self.lista_proveedores_a_asignar[proveedor_id]  # Eliminarlo del diccionario de proveedores a asignar
 
     def __leer_archivo_csv(self):
-        documento, _ = QFileDialog.getOpenFileName(self, "Selecciona un documento de Excel", "", "Archivos Excel (*.csv)")
+        documento, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona un documento CSV", "", "Archivos CSV (*.csv)"
+        )
+        
         if not documento:
             return
+            
         self.modal_espera_local()
-        self.consultor = ProcesadorArchivo()
-        self.consultor.error.connect(self.mensaje_error_docuemnto_xlsx)
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado_productos_masivos_excel.connect(self.resultado_documento_excel)
-        self.consultor.ejecutar(documento, self.lista_productos)
+        
+        # Crear worker gestionado
+        self.worker_id = ProcesadorArchivoWorker.create_managed_worker("productos_controller")
+        
+        # Conectar señales
+        ProcesadorArchivoWorker.connect_managed_signals(
+            self.worker_id,
+            resultado_callback=self.resultado_documento_excel,
+            error_callback=self.mensaje_error_docuemnto_xlsx,
+            terminado_callback=self.cargando_cerrar
+        )
+        
+        # Ejecutar procesamiento
+        ProcesadorArchivoWorker.ejecutar_managed_processing(
+            self.worker_id, documento, self.lista_productos
+        )
 
+    def cargando_cerrar(self):
+        """Limpia el worker cuando termina el procesamiento"""
+        if hasattr(self, 'worker_id'):
+            ProcesadorArchivoWorker.cleanup_managed_worker(self.worker_id)
+
+    def closeEvent(self, event):
+        """Limpia todos los workers al cerrar la ventana"""
+        ProcesadorArchivoWorker.cleanup_owner_workers("productos_controller")
+        super().closeEvent(event)
+        
     def resultado_documento_excel(self, lista_nuevos_productos, duplicados):
+        # Agregar productos y actualizar tabla
         self.lista_productos.extend(lista_nuevos_productos)
-        self.__cargar_datos_en_tabla(self.lista_productos)
-
+        
+        # Actualizar el modelo existente en lugar de recrearlo
+        self.__actualizar_tabla_productos()
+        
+        # Mostrar mensaje si hay duplicados
         if duplicados:
-            Mensaje().mensaje_informativo("Se encontraron registros duplicados que no fueron agregados.\nSolo se agregaron los registros sin duplicar.")
+            Mensaje().mensaje_informativo(
+                f"Se encontraron {len(duplicados)} registros duplicados que no fueron agregados.\n"
+                f"Solo se agregaron {len(lista_nuevos_productos)} registros sin duplicar."
+            )
+
+    def __actualizar_tabla_productos(self):
+        """Actualiza la tabla con los datos actuales de lista_productos"""
+        # El modelo ya está configurado, solo necesita actualizar los datos
+        self.modelo_tabla_productos.update_data(self.lista_productos)
+        self.ui.tabla_productos.resizeColumnsToContents()
 
     def mensaje_error_docuemnto_xlsx(self, error):
         print(error)

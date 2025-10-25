@@ -986,6 +986,9 @@ class Ui_contenedorModal_agregar_productos(object):
         self.tabla_productos.setAlternatingRowColors(True)
         self.tabla_productos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_productos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_productos.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_productos.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_productos.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_2.addWidget(self.tabla_productos, 7, 0, 1, 3)
 
