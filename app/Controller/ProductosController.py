@@ -647,20 +647,34 @@ class Admin_productosController(QWidget):
             caducidad = self.ui.fecha_vencimientoProducto.date().toPyDate()
         else:
             caducidad = None
-        
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.error.connect(self.__mostrar_error)
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.mensaje_producto_actualizado)
-        self.consultor.ejecutar(
-            funcion = self.__actualizar_producto_query,
-            id_producto = self.producto.id,
-            todos_los_proveedores = todos_los_proveedores,
-            imagen = self.imagenProducto,
-            caducidad = caducidad,
-            datos_producto = datos_producto
-        )
+        respuesta = Mensaje().mensaje_pregunta("¿Quierez actualizar el registro?")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("actualizar_producto_vagregarproducto")
+                self.id_hilo_actualizar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id="actualizar_producto_vagregarproducto")
+                self.consultor_actualizar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
+                if not self.consultor_actualizar_producto_vagregarproducto:
+                    raise Exception("No se pudo obtener el resultado de actualizar producto.")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actualizar_producto_vagregarproducto,
+                    resultado_callback=self.mostrar_estado_hilo,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_actualizar_producto_vagregarproducto.ejecutar(
+                    self.__actualizar_producto_query,
+                    id_producto = self.producto.id,
+                    todos_los_proveedores = todos_los_proveedores,
+                    imagen = self.imagenProducto,
+                    caducidad = caducidad,
+                    datos_producto = datos_producto
+                )
+            except Exception as e:
+                # ✅ Limpiar en caso de error
+                if hasattr(self, 'id_hilo_actualizar_producto_vagregarproducto'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
+                Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
         
     def __actualizar_producto_query(self, session, id_producto, todos_los_proveedores, dimensiones, imagen, caducidad, datos_producto):
         try:
