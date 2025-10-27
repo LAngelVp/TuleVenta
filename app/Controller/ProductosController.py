@@ -279,9 +279,9 @@ class Admin_productosController(QWidget):
             "existencia_min_producto": self.ui.decimal_existenciaMinProducto,
             "existencia_max_producto": self.ui.decimal_existenciaMaxProducto,
             "peso_producto": self.ui.decimal_pesoProducto,
-            "largo_dimensiones": self.ui.decimal_largoDimensiones,
-            "alto_dimensiones": self.ui.decimal_altoDimensiones,
-            "ancho_dimensiones": self.ui.decimal_anchoDimensiones,
+            "alto_cm": self.ui.decimal_altoDimensiones,
+            "largo_cm": self.ui.decimal_largoDimensiones,
+            "ancho_cm": self.ui.decimal_anchoDimensiones,
             "descripcion_producto": self.ui.txtlargo_descripcionProducto,
             "notas_producto": self.ui.txtlargo_notasProducto,
             "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto,
@@ -341,9 +341,9 @@ class Admin_productosController(QWidget):
             "existencia_min_producto": self.ui.decimal_existenciaMinProducto.value(),
             "existencia_max_producto": self.ui.decimal_existenciaMaxProducto.value(),
             "peso_producto": self.ui.decimal_pesoProducto.value(),
-            "largo_dimensiones": self.ui.decimal_largoDimensiones.value(),
-            "alto_dimensiones": self.ui.decimal_altoDimensiones.value(),
-            "ancho_dimensiones": self.ui.decimal_anchoDimensiones.value(),
+            "largo_cm": self.ui.decimal_largoDimensiones.value(),
+            "alto_cm": self.ui.decimal_altoDimensiones.value(),
+            "ancho_cm": self.ui.decimal_anchoDimensiones.value(),
             "descripcion_producto": self.ui.txtlargo_descripcionProducto.toPlainText(),
             "notas_producto": self.ui.txtlargo_notasProducto.toPlainText(),
             "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto.date().toPython(),
@@ -382,9 +382,9 @@ class Admin_productosController(QWidget):
                 "existencia_min": datos["existencia_min_producto"],
                 "existencia_max": datos["existencia_max_producto"],
                 "peso": datos["peso_producto"],
-                "largo_dimensiones": datos["largo_dimensiones"],
-                "alto_dimensiones": datos["alto_dimensiones"],
-                "ancho_dimensiones": datos["ancho_dimensiones"],
+                "alto_cm": datos["alto_cm"],
+                "largo_cm": datos["largo_cm"],
+                "ancho_cm": datos["ancho_cm"],
                 "descripcion_producto": datos["descripcion_producto"],
                 "notas": datos["notas_producto"],
                 "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else "N/A",
@@ -510,12 +510,27 @@ class Admin_productosController(QWidget):
         modelo.update_data(productos, reset=True)
         
     def agregar_productos_en_bd(self):
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.resultado.connect(self.productos_agregados_finalizado)
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.error.connect(self.__mostrar_error)
-        self.consultor.ejecutar(funcion=self.agregar_productos_query)
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("guardar_producto_thread_vagregarproducto")
+            self.id_hilo_agregar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id="guardar_producto_thread_vagregarproducto")
+            self.consultor_agregar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_agregar_producto_vagregarproducto)
+            if not self.consultor_agregar_producto_vagregarproducto:
+                raise Exception("No se pudo obtener el resultado de agregar producto.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_producto_vagregarproducto,
+                resultado_callback=self.productos_agregados_finalizado,
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_agregar_producto_vagregarproducto.ejecutar(
+                self.agregar_productos_query
+            )
+        except Exception as e:
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_agregar_producto_vagregarproducto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_producto_vagregarproducto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
         
     def __mostrar_error(self, mensaje_error):
         Mensaje().mensaje_informativo(f"Ocurrió un error: {mensaje_error}")
@@ -526,14 +541,13 @@ class Admin_productosController(QWidget):
             Mensaje().mensaje_informativo(f"{len(productos_agregados)} productos agregados con éxito.")
             # Podrías actualizar la UI o limpiar el formulario, por ejemplo
         else:
-            Mensaje().mensaje_advertencia("No se pudieron agregar productos.")
+            Mensaje().mensaje_informativo("No se pudieron agregar productos.")
             
     def agregar_productos_query(self, session):
             productos_no_agregados = []
             productos_agregados = []
 
             for producto in self.lista_productos:
-                dimensiones = f"{producto['largo_dimensiones']}-{producto['alto_dimensiones']}-{producto['ancho_dimensiones']}"
                 nombre_proveedor = producto["proveedor"].strip()
                 nombre_presentacion = producto["presentacion"].strip()
                 nombre_unidad_de_medida = producto["unidad_medida"].strip()
@@ -558,7 +572,7 @@ class Admin_productosController(QWidget):
                 producto_obj, estatus_producto = ProductosModel(session).agregar_producto(
                     codigo_upc=producto["codigo_barras"],
                     nombre_producto=producto["nombre"],
-                    descripcion_producto=producto["descripcion"],
+                    descripcion_producto=producto["descripcion_producto"],
                     costo_inicial=producto["costo_inicial"],
                     costo_final=producto["costo_final"],
                     margen_porcentaje=f'{producto["margen_porcentaje"]}%',
@@ -569,7 +583,9 @@ class Admin_productosController(QWidget):
                     marca=producto["marca"],
                     modelo=producto["modelo"],
                     peso=producto["peso"],
-                    dimensiones=dimensiones,
+                    alto_cm = producto["alto_cm"],
+                    largo_cm = producto["largo_cm"],
+                    ancho_cm = producto["ancho_cm"],
                     color=producto["color"],
                     material=producto["material"],
                     fecha_fabricacion=producto["fecha_fabricacion"],
@@ -626,7 +642,6 @@ class Admin_productosController(QWidget):
         ]
         # Combinar los proveedores vinculados con los no repetidos
         todos_los_proveedores = proveedores_vinculados + proveedores_no_repetidos
-        dimensiones = str(datos_producto["largo_dimensiones"]) + "-" + str(datos_producto["alto_dimensiones"]) + "-" + str(datos_producto["ancho_dimensiones"])
         
         if self.ui.opcion_TieneCaducidad.isChecked():
             caducidad = self.ui.fecha_vencimientoProducto.date().toPyDate()
@@ -642,7 +657,6 @@ class Admin_productosController(QWidget):
             funcion = self.__actualizar_producto_query,
             id_producto = self.producto.id,
             todos_los_proveedores = todos_los_proveedores,
-            dimensiones = dimensiones,
             imagen = self.imagenProducto,
             caducidad = caducidad,
             datos_producto = datos_producto
@@ -665,7 +679,9 @@ class Admin_productosController(QWidget):
                 marca = datos_producto["marca_producto"],
                 modelo = datos_producto["modelo_producto"],
                 peso = datos_producto["peso_producto"],
-                dimensiones = dimensiones,
+                largo_cm = datos_producto["largo_cm"],
+                alto_cm = datos_producto["alto_cm"],
+                ancho_cm = datos_producto["ancho_cm"],
                 color = datos_producto["color_producto"],
                 material = datos_producto["material_producto"],
                 fecha_fabricacion = datos_producto["fecha_fabricacion_producto"],
@@ -754,12 +770,15 @@ class Admin_productosController(QWidget):
             self.ui.decimal_existenciaMinProducto.setValue(float(self.producto.existencia_minima))
             self.ui.decimal_existenciaMaxProducto.setValue(float(self.producto.existencia_maxima))
             self.ui.decimal_pesoProducto.setValue(float(self.producto.peso))
+            self.ui.decimal_altoDimensiones.setValue(float(self.producto.alto_cm))
+            self.ui.decimal_largoDimensiones.setValue(float(self.producto.largo_cm))
+            self.ui.decimal_anchoDimensiones.setValue(float(self.producto.ancho_cm))
 
             # Fechas
             self._cargar_fechas_producto()
 
             # Dimensiones
-            self._cargar_dimensiones_producto()
+            # self._cargar_dimensiones_producto()
 
             # Categorías y unidades
             self._cargar_opciones_seleccionadas()
@@ -890,15 +909,24 @@ class Admin_productosController(QWidget):
                 
     def obtener_proveedores(self):
         try:
-            self.cleanup_worker()
-            self.consultor = WorkerDB()
-            if self.consultor:
-                self.consultor.resultado.connect(self.__almacenar_proveedores_del_sistema)
-                self.consultor.ejecutar(funcion=self.__obtener_proveedores_query)
+            WorkerDB.cleanup_owner_workers("obtener_proveedores_thread_vagregarproducto")
+            self.id_hilo_obtener_proveedores_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_proveedores_thread_vagregarproducto")
+            self.consultor_obtener_proveedores_vagregarproductos = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores_vagregarproducto)
+            if not self.consultor_obtener_proveedores_vagregarproductos:
+                raise Exception("No se pudo obtener el resultado de la consulta de proveedores.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_proveedores_vagregarproducto,
+                resultado_callback=self.__almacenar_proveedores_del_sistema,
+                error_callback= self.mostrar_estado_hilo,
+            )
+            self.consultor_obtener_proveedores_vagregarproductos.ejecutar(
+                self.__obtener_proveedores_query
+            )
         except Exception as e:
-            print(f"Error en consultar_productos_db: {str(e)}")
-            self.cleanup_worker()
-            self.mostrar_error_db("Error al iniciar la consulta")
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_obtener_proveedores_vagregarproducto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_proveedores_vagregarproducto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
     
     def __obtener_proveedores_query(self, session):
         proveedores, estado = ProveedoresModel(session).obtener_proveedores()
@@ -908,12 +936,13 @@ class Admin_productosController(QWidget):
         self.proveedores_generales_del_sistema_dict = {p.id: p for p in (proveedores if proveedores else [])}
         completar = QCompleter([proveedor.nombre for proveedor in self.proveedores_generales_del_sistema_dict.values()])
         completar.setCaseSensitivity(Qt.CaseInsensitive)
+        completar.setFilterMode(Qt.MatchContains)
+        completar.setCompletionMode(QCompleter.PopupCompletion)
         self.ui.txt_proveedor.textChanged.connect(self.__proveedor_seleccionado)
         self.ui.txt_proveedor.setCompleter(completar)
         self.__proveedores_desvinculados()
         
     def __proveedores_desvinculados(self):
-        """Calcula y muestra proveedores no vinculados"""
         if not hasattr(self, 'proveedores_vinculados'):
             self.proveedores_vinculados = {}
         
@@ -1085,7 +1114,7 @@ class Admin_productosController(QWidget):
         if not documento:
             return
             
-        self.modal_espera_local()
+        self.manejadorModal.mostrar_modal(self)
         
         # Crear worker gestionado
         self.worker_id = ProcesadorArchivoWorker.create_managed_worker("productos_controller")
@@ -1095,7 +1124,7 @@ class Admin_productosController(QWidget):
             self.worker_id,
             resultado_callback=self.resultado_documento_excel,
             error_callback=self.mensaje_error_docuemnto_xlsx,
-            terminado_callback=self.cargando_cerrar
+            terminado_callback=self.manejadorModal.cerrar_modal
         )
         
         # Ejecutar procesamiento
@@ -1143,7 +1172,7 @@ class Admin_productosController(QWidget):
             "Proveedor", "Código de Barras", "Nombre", "Categoría", "Marca", "Modelo", "Color",
             "Material", "Unidad de Medida", "Presentación", "Costo Inicial", "Costo Final", "Margen Porcentaje", "Precio Venta",
             "Existencia", "Existencia Min", "Existencia Max", "Peso",
-            "Largo Dimensiones", "Alto Dimensiones", "Ancho Dimensiones",
+            "Alto_cm", "Largo_cm", "Ancho_cm",
             "Descripción", "Notas", "Fecha Vencimiento", "Fecha Fabricación", "Imagen"
         ])
 
@@ -1161,7 +1190,7 @@ class Admin_productosController(QWidget):
     def comprobar_existencia_modelo_tabla(self):
         if not hasattr(self, 'modelo_tabla_productos'):
             encabezados = [
-                "Proveedor", "Código de Barras", "Nombre", "Categoría", "Marca", "Modelo", "Color", "Material", "Unidad de Medida", "Presentación", "Costo Inicial","Costo Final", "Margen Porcentaje", "Precio Venta", "Existencia", "Existencia Min", "Existencia Max", "Peso", "Largo Dimensiones", "Alto Dimensiones", "Ancho Dimensiones", "Descripción", "Notas", "Fecha Vencimiento", "Fecha Fabricación", "Imagen"
+                "Proveedor", "Código de Barras", "Nombre", "Categoría", "Marca", "Modelo", "Color", "Material", "Unidad de Medida", "Presentación", "Costo Inicial","Costo Final", "Margen Porcentaje", "Precio Venta", "Existencia", "Existencia Min", "Existencia Max", "Peso", "Alto_cm", "largo_cm", "Ancho_cm", "Descripción", "Notas", "Fecha Vencimiento", "Fecha Fabricación", "Imagen"
             ]
             mapeo_encabezados = {
                 "proveedor":  lambda p: p.proveedores.nombre
@@ -1243,6 +1272,9 @@ class Admin_productosController(QWidget):
     
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+    
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_informativo(error)
     
 # TERMINA LA CLASE - ADMINISTRACION DE PRODUCTOS -----------------
 class Productos(QWidget):
@@ -1553,10 +1585,10 @@ class Productos(QWidget):
     def comprobar_modelo_tabla_productos(self):
     #// MAPEO DE LOS NOMBRE DE LAS COLUMNAS
         if not hasattr(self, 'modelo_tabla_productos'):
-            encabezados = ['Nombre', 'Descripción', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
+            encabezados = ['Nombre', 'Descripcion_producto', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
             mapeo_cabecera = {
                 'nombre': lambda p: p.nombre_producto,
-                'descripción': lambda p: p.descripcion_producto or "",
+                'descripcion_producto': lambda p: p.descripcion_producto or "",
                 'precio': lambda p: f"${p.precio:.2f}",
                 'existencia': lambda p: p.existencia,
                 'categoría': lambda p: p.categoria.nombre if p.categoria else "Sin categoría",

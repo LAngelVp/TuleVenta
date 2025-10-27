@@ -179,6 +179,7 @@ class WorkerDB(QObject):
                     self.resultado.emit(result, True)
                     
         except Exception as e:
+            logging.error(f"Error en WorkerDB: {str(e)}", exc_info=True)
             self.error.emit(f"Error en WorkerDB: {str(e)}")
         finally:
             self.terminado.emit()
@@ -386,6 +387,7 @@ class ProcesadorArchivoWorker(QObject):
             
         try:
             df = pd.read_csv(self._documento, na_filter=False)
+            print(df.dtypes)
             
             # Verificar columnas mínimas requeridas
             columnas_requeridas = ["codigo_upc", "nombre_producto"]
@@ -411,29 +413,36 @@ class ProcesadorArchivoWorker(QObject):
                     continue
 
                 producto = {
-                    "codigo_barras": codigo,
-                    "nombre": str(row["nombre_producto"]).strip(),
-                    "descripcion_producto": str(row.get("descripcion_producto", "")).strip(),
-                    "notas": str(row.get("notas", "")).strip(),
-                    "categoria": "",
-                    "marca": str(row.get("marca", "")).strip(),
-                    "modelo": str(row.get("modelo", "")).strip(),
-                    "precio_venta": self._convertir_a_float(row.get("precio", 0)),
-                    "existencia": self._convertir_a_float(row.get("existencia", 0)),
-                    "proveedor": "",
-                    "color": str(row.get("color", "")).strip(),
-                    "material": str(row.get("material", "")).strip(),
-                    "costo_inicial": self._convertir_a_float(row.get("costo_inicial", 0)),
-                    "costo_final": self._convertir_a_float(row.get("costo_final", 0)),
-                    "margen_porcentaje": self._convertir_a_entero(row.get("margen_porcentaje", 0)),
-                    "existencia_min": self._convertir_a_float(row.get("existencia_minima", 0)),
-                    "existencia_max": self._convertir_a_float(row.get("existencia_maxima", 0)),
-                    "peso": self._convertir_a_float(row.get("peso", 0)),
-                    "dimensiones": str(row.get("dimensiones", "")).strip(),
-                    "fecha_vencimiento": str(row.get("fecha_vencimiento", "")).strip(),
-                    "fecha_fabricacion": str(row.get("fecha_fabricacion", "")).strip(),
-                    "imagen": str(row.get("imagen", "")).strip()
-                }
+                        # Columnas que SÍ están en el Excel
+                        "codigo_barras": codigo,
+                        "nombre": str(row["nombre_producto"]).strip(),
+                        "marca": str(row.get("marca", "")).strip(),
+                        "modelo": str(row.get("modelo", "")).strip(),
+                        "precio_venta": self._convertir_a_float(row.get("precio", 0)),
+                        "existencia": self._convertir_a_float(row.get("existencia", 0)),
+                        "color": str(row.get("color", "")).strip(),
+                        "material": str(row.get("material", "")).strip(),
+                        "costo_inicial": self._convertir_a_float(row.get("costo_inicial", 0)),
+                        "costo_final": self._convertir_a_float(row.get("costo_final", 0)),
+                        "margen_porcentaje": self._convertir_a_entero(row.get("margen_porcentaje", 0)),
+                        "existencia_min": self._convertir_a_float(row.get("existencia_minima", 0)),
+                        "existencia_max": self._convertir_a_float(row.get("existencia_maxima", 0)),
+                        "peso": self._convertir_a_float(row.get("peso", 0)),
+                        "alto_cm": self._convertir_a_float(row.get("alto_cm", 0)),
+                        "largo_cm": self._convertir_a_float(row.get("largo_cm", 0)),
+                        "ancho_cm": self._convertir_a_float(row.get("ancho_cm", 0)),
+                        "fecha_vencimiento": str(row.get("fecha_vencimiento", "")).strip(),
+                        "fecha_fabricacion": str(row.get("fecha_fabricacion", "")).strip(),
+                        "imagen": str(row.get("imagen", "")).strip(),
+                        
+                        # Columnas que la BD espera pero el Excel NO tiene - valores por defecto
+                        "descripcion_producto": "",  # No en Excel
+                        "notas": "",  # No en Excel
+                        "categoria": "",  # No en Excel - se mapeará a categoria_id después
+                        "proveedor": "",  # No en Excel
+                        "presentacion": "",  # No en Excel - se mapeará a presentacion_producto_id después
+                        "unidad_medida": ""  # No en Excel - se mapeará a unidad_medida_productos_id después
+                    }
                 productos_nuevos.append(producto)
                 codigos_existentes.add(codigo)
 

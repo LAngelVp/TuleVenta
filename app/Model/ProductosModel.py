@@ -172,7 +172,9 @@ class ProductosModel:
         marca,
         modelo,
         peso,
-        dimensiones,
+        alto_cm,
+        largo_cm,
+        ancho_cm,
         color,
         material,
         fecha_fabricacion,
@@ -204,7 +206,9 @@ class ProductosModel:
                 marca=marca,
                 modelo=modelo,
                 peso=peso,
-                dimensiones=dimensiones,
+                alto_cm = alto_cm,
+                largo_cm = largo_cm,
+                ancho_cm = ancho_cm,
                 color=color,
                 material=material,
                 fecha_fabricacion=fecha_fabricacion,
@@ -241,7 +245,9 @@ class ProductosModel:
                             marca,
                             modelo,
                             peso,
-                            dimensiones,
+                            largo_cm,
+                            alto_cm,
+                            ancho_cm,
                             color,
                             material,
                             fecha_fabricacion,
@@ -270,7 +276,9 @@ class ProductosModel:
         producto_actual.marca = marca
         producto_actual.modelo = modelo
         producto_actual.peso = peso
-        producto_actual.dimensiones = dimensiones
+        producto_actual.largo_cm = largo_cm
+        producto_actual.alto_cm = alto_cm
+        producto_actual.ancho_cm = ancho_cm
         producto_actual.color = color
         producto_actual.material = material
         producto_actual.fecha_fabricacion = fecha_fabricacion
