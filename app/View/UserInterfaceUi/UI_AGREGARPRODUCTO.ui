@@ -628,7 +628,7 @@ color: black;
                   <string/>
                  </property>
                  <property name="suffix">
-                  <string>  Alto</string>
+                  <string>  cm (Largo)</string>
                  </property>
                  <property name="maximum">
                   <double>10000000000.000000000000000</double>
@@ -648,7 +648,7 @@ color: black;
                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                  </property>
                  <property name="suffix">
-                  <string>  Largo</string>
+                  <string>  cm (Alto)</string>
                  </property>
                  <property name="maximum">
                   <double>10000000000.000000000000000</double>
@@ -668,7 +668,7 @@ color: black;
                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                  </property>
                  <property name="suffix">
-                  <string>  Ancho</string>
+                  <string>  cm (Ancho)</string>
                  </property>
                  <property name="maximum">
                   <double>10000000000.000000000000000</double>

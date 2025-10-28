@@ -387,8 +387,8 @@ class Admin_productosController(QWidget):
                 "ancho_cm": datos["ancho_cm"],
                 "descripcion_producto": datos["descripcion_producto"],
                 "notas": datos["notas_producto"],
-                "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else "N/A",
-                "fecha_fabricacion": datos["fecha_fabricacion_producto"],
+                "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else None,
+                "fecha_fabricacion": datos["fecha_fabricacion_producto"] if datos["fecha_fabricacion_producto"] else None,
                 "imagen": self.imagenProducto  
             }
             
@@ -420,6 +420,7 @@ class Admin_productosController(QWidget):
             
             # Debug: mostrar productos agregados
             print(f"Total productos en lista: {len(self.lista_productos)}")
+            self.imagenProducto = None
             
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al agregar producto: {str(e)}")
@@ -575,7 +576,7 @@ class Admin_productosController(QWidget):
                     descripcion_producto=producto["descripcion_producto"],
                     costo_inicial=producto["costo_inicial"],
                     costo_final=producto["costo_final"],
-                    margen_porcentaje=f'{producto["margen_porcentaje"]}%',
+                    margen_porcentaje=f'{producto["margen_porcentaje"]}',
                     precio=producto["precio_venta"],
                     existencia=producto["existencia"],
                     existencia_minima=producto["existencia_min"],
@@ -589,7 +590,7 @@ class Admin_productosController(QWidget):
                     color=producto["color"],
                     material=producto["material"],
                     fecha_fabricacion=producto["fecha_fabricacion"],
-                    fecha_vencimiento=producto["fecha_vencimiento"] if self.ui.opcion_TieneCaducidad.isChecked() else None,
+                    fecha_vencimiento=producto["fecha_vencimiento"] if self.ui.opcion_TieneCaducidad.isChecked() or producto["fecha_vencimiento"] else None,
                     imagen=self.imagenProducto if self.imagenProducto else producto["imagen"],
                     notas=producto["notas"],
                     presentacion_producto_id=presentacion.id if presentacion else None,
@@ -644,7 +645,7 @@ class Admin_productosController(QWidget):
         todos_los_proveedores = proveedores_vinculados + proveedores_no_repetidos
         
         if self.ui.opcion_TieneCaducidad.isChecked():
-            caducidad = self.ui.fecha_vencimientoProducto.date().toPyDate()
+            caducidad = self.ui.fecha_vencimientoProducto.date().toPython()
         else:
             caducidad = None
         respuesta = Mensaje().mensaje_pregunta("¿Quierez actualizar el registro?")
@@ -676,8 +677,9 @@ class Admin_productosController(QWidget):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
         
-    def __actualizar_producto_query(self, session, id_producto, todos_los_proveedores, dimensiones, imagen, caducidad, datos_producto):
+    def __actualizar_producto_query(self, session, id_producto, todos_los_proveedores, imagen, caducidad, datos_producto):
         try:
+            print(f'estye es el id del producto: {id_producto}')
             datos, estado = ProductosModel(session).actualizar_producto(
                 id_producto = id_producto,
                 codigo_upc = datos_producto["codigo_barras"],
@@ -685,7 +687,7 @@ class Admin_productosController(QWidget):
                 descripcion_producto = datos_producto["descripcion_producto"],
                 costo_inicial = datos_producto["costo_inicial_producto"],
                 costo_final = datos_producto["costo_final_producto"],
-                margen_porcentaje=f'{datos_producto["margen_porcentaje"]}%',
+                margen_porcentaje=f'{datos_producto["margen_porcentaje"]}',
                 precio = datos_producto["precio_venta_producto"],
                 existencia = datos_producto["existencia_producto"],
                 existencia_minima = datos_producto["existencia_min_producto"],
@@ -693,8 +695,8 @@ class Admin_productosController(QWidget):
                 marca = datos_producto["marca_producto"],
                 modelo = datos_producto["modelo_producto"],
                 peso = datos_producto["peso_producto"],
-                largo_cm = datos_producto["largo_cm"],
                 alto_cm = datos_producto["alto_cm"],
+                largo_cm = datos_producto["largo_cm"],
                 ancho_cm = datos_producto["ancho_cm"],
                 color = datos_producto["color_producto"],
                 material = datos_producto["material_producto"],
@@ -712,8 +714,15 @@ class Admin_productosController(QWidget):
                 session.commit()
         except Exception as e:
             session.rollback()
-            return None, False, f"No se logro la actualizacion: {e}"
-        return datos, estado
+            return {
+            "exito": False,
+            "mensaje": f'Ocurrio un problema en el proceso {e}'
+        }
+        return {
+            "exito": estado,
+            "mensaje": f'Registro {datos_producto["nombre"]} actualizado',
+            "data": datos
+        }
     
     def mensaje_producto_actualizado(self, datos, estado, mensaje=""):
         if estado:
@@ -885,19 +894,22 @@ class Admin_productosController(QWidget):
             if hasattr(self.producto, 'categoria') and self.producto.categoria:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
                     self.ui.cajaOpciones_categoriaProducto, 
-                    self.producto.categoria.nombre
+                    self.producto.categoria,
+                    "nombre"
                 )
             
             if hasattr(self.producto, 'unidad_medida_productos') and self.producto.unidad_medida_productos:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
                     self.ui.cajaOpciones_unidadMedidaProducto,
-                    self.producto.unidad_medida_productos.nombre
+                    self.producto.unidad_medida_productos,
+                    "nombre"
                 )
             
             if hasattr(self.producto, 'presentacion_productos') and self.producto.presentacion_productos:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
                     self.ui.cajaOpciones_presentacionProducto,
-                    self.producto.presentacion_productos.nombre
+                    self.producto.presentacion_productos,
+                    "nombre"
                 )
         except Exception as e:
             print(f"Error cargando opciones: {str(e)}")
@@ -1122,7 +1134,7 @@ class Admin_productosController(QWidget):
 
     def __leer_archivo_csv(self):
         documento, _ = QFileDialog.getOpenFileName(
-            self, "Selecciona un documento CSV", "", "Archivos CSV (*.csv)"
+            self, "Selecciona un documento CSV", "", "Archivos CSV (*.xlsx)"
         )
         
         if not documento:
@@ -1515,6 +1527,7 @@ class Productos(QWidget):
         except Exception as e:
             print(f"error: {e}")
             self.ui.btn_RefrescarTabla.setEnabled(True)
+            
     def consultar_productos_db(self, reset_paginacion=False):
         """Versión final segura para consultar productos"""
         try:
@@ -1546,6 +1559,7 @@ class Productos(QWidget):
             print(f"Error en consultar_productos_db: {str(e)}")
             self.cleanup_worker()
             self.mostrar_error_db("Error al iniciar la consulta")
+    
     def obtener_productos_query(self, session):
         productos, estado = ProductosModel(session).obtener_productos(
             offset=self.cantidad_inicial_consulta,

@@ -245,8 +245,8 @@ class ProductosModel:
                             marca,
                             modelo,
                             peso,
-                            largo_cm,
                             alto_cm,
+                            largo_cm,
                             ancho_cm,
                             color,
                             material,
@@ -260,7 +260,8 @@ class ProductosModel:
                             sucursales,
                             proveedores
                         ):
-        producto_actual = self.session.query(Productos).filter(Productos.codigo_upc == codigo_upc).first()
+        producto_actual = self.session.get(Productos, id_producto)
+        print(producto_actual)
         if not producto_actual:
             return None, False
         
@@ -276,8 +277,8 @@ class ProductosModel:
         producto_actual.marca = marca
         producto_actual.modelo = modelo
         producto_actual.peso = peso
-        producto_actual.largo_cm = largo_cm
         producto_actual.alto_cm = alto_cm
+        producto_actual.largo_cm = largo_cm
         producto_actual.ancho_cm = ancho_cm
         producto_actual.color = color
         producto_actual.material = material

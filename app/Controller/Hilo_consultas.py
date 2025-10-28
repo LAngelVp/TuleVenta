@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject, Signal, QThread
 from ..DataBase.conexionBD import Conexion_base_datos
 from contextlib import contextmanager
 from typing import Optional, Callable, Dict, Any
+import chardet
 import logging
 
 class WorkerDBManager:
@@ -384,11 +385,10 @@ class ProcesadorArchivoWorker(QObject):
         """Método que se ejecuta en el hilo secundario"""
         if not self._activo:
             return
-            
+        # encoding_detectado = self.detectar_encoding(self._documento)
+        # print(f"Codificación detectada: {encoding_detectado}")
         try:
-            df = pd.read_csv(self._documento, na_filter=False)
-            print(df.dtypes)
-            
+            df = pd.read_excel(self._documento, na_filter=False)
             # Verificar columnas mínimas requeridas
             columnas_requeridas = ["codigo_upc", "nombre_producto"]
             columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
@@ -431,17 +431,17 @@ class ProcesadorArchivoWorker(QObject):
                         "alto_cm": self._convertir_a_float(row.get("alto_cm", 0)),
                         "largo_cm": self._convertir_a_float(row.get("largo_cm", 0)),
                         "ancho_cm": self._convertir_a_float(row.get("ancho_cm", 0)),
-                        "fecha_vencimiento": str(row.get("fecha_vencimiento", "")).strip(),
                         "fecha_fabricacion": str(row.get("fecha_fabricacion", "")).strip(),
+                        "fecha_vencimiento": str(row.get("fecha_vencimiento", "")).strip(),
                         "imagen": str(row.get("imagen", "")).strip(),
                         
                         # Columnas que la BD espera pero el Excel NO tiene - valores por defecto
-                        "descripcion_producto": "",  # No en Excel
-                        "notas": "",  # No en Excel
-                        "categoria": "",  # No en Excel - se mapeará a categoria_id después
-                        "proveedor": "",  # No en Excel
-                        "presentacion": "",  # No en Excel - se mapeará a presentacion_producto_id después
-                        "unidad_medida": ""  # No en Excel - se mapeará a unidad_medida_productos_id después
+                        "descripcion_producto": str(row.get("descripcion_producto", "")).strip(),  # No en Excel
+                        "notas": str(row.get("notas", "")).strip(),  # No en Excel
+                        "categoria": str(row.get("categoria", "")).strip(),  # No en Excel - se mapeará a categoria_id después
+                        "proveedor": str(row.get("proveedor", "")).strip(),  # No en Excel
+                        "presentacion": str(row.get("presentacion", "")).strip(),  # No en Excel - se mapeará a presentacion_producto_id después
+                        "unidad_medida": str(row.get("unidad_medida", "")).strip()  # No en Excel - se mapeará a unidad_medida_productos_id después
                     }
                 productos_nuevos.append(producto)
                 codigos_existentes.add(codigo)
