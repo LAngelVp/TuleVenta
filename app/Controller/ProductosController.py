@@ -198,13 +198,18 @@ class Admin_productosController(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.ajustador = AjustarcajaOpciones()
+        self.ajustador_presentacion_producto = AjustarcajaOpciones()
+        self.ajustador_presentacion_producto.elemento_eliminado_signal.connect(self.listar_presentaciones_productos)
+        self.ajustador_unidad_medida_producto = AjustarcajaOpciones()
+        self.ajustador_unidad_medida_producto.elemento_eliminado_signal.connect(self.listar_unidades_medida)
+        self.ajustador_categoria_producto = AjustarcajaOpciones()
+        self.ajustador_categoria_producto.elemento_eliminado_signal.connect(self.listar_categorias)
         self.__configurar_tabla_productos()
         
 #FUNCIONES-VENTANAS EMERGENTES: 
     def agregar_presentacion(self):
         self.ui_presentacion = PresentacionProductos()
-        self.ui_presentacion.SYGNAL_PRESENTACION_AGREGADA.connect(self.listar_presentaciones_productos)
+        self.ui_presentacion.presentacion_producto_agregada_signal.connect(self.listar_presentaciones_productos)
         self.ui_presentacion.show()
 
     def agregar_unidad_medida(self):
@@ -218,37 +223,160 @@ class Admin_productosController(QWidget):
         self.categoria.show()
 
     def listar_presentaciones_productos(self):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                datos, estatus = ProductosModel(session).obtener_presentaciones()
-            if estatus:
-                self.ui.cajaOpciones_presentacionProducto.clear()
-                for presentacion in datos:
-                    self.ui.cajaOpciones_presentacionProducto.addItem(presentacion.nombre, presentacion)
-                AjustarcajaOpciones(ProductosModel(session)).ajustar_cajadeopciones(self.ui.cajaOpciones_presentacionProducto)
+        try:
+            WorkerDB.cleanup_owner_workers("obtener_presentaciones_thread_vagregarproducto")
+            self.id_hilo_obtener_presentaciones_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_presentaciones_thread_vagregarproducto")
+            self.consultor_obtener_presentaciones_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_presentaciones_vagregarproducto)
+            if not self.consultor_obtener_presentaciones_vagregarproducto:
+                raise Exception("No se pudo obtener el resultado.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_presentaciones_vagregarproducto,
+                resultado_callback=self.listar_presentaciones_cajaopciones,
+                error_callback= self.mostrar_error_hilo,
+            )
+            self.consultor_obtener_presentaciones_vagregarproducto.ejecutar(
+                self.obtener_presentaciones_query
+            )
+        except Exception as e:
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_obtener_presentaciones_vagregarproducto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_presentaciones_vagregarproducto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+    
+    def obtener_presentaciones_query(self, session):
+        try:
+            datos, estado = ProductosModel(session).obtener_presentaciones()
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje" : f'No se obtuvieron las presenatciones',
+                    "data": datos
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Obtivimos resultados',
+            "data": datos
+        }
 
+    def listar_presentaciones_cajaopciones(self, resultado):
+        if resultado["exito"]:
+            self.ui.cajaOpciones_presentacionProducto.clear()
+            for presentacion in resultado["data"]:
+                self.ui.cajaOpciones_presentacionProducto.addItem(presentacion.nombre, presentacion)
+            self.ajustador_presentacion_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_presentacionProducto)
+            self.ajustador_presentacion_producto.elemento_eliminado_signal.connect(self.listar_presentaciones_productos)
+            
     def listar_unidades_medida(self):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                datos, estatus = ProductosModel(session).obtener_unidades_medida()
-            if estatus:
+        try:
+            WorkerDB.cleanup_owner_workers("obtener_unidades_medida_thread_vagregarproducto")
+            self.id_hilo_obtener_unidades_medida_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_unidades_medida_thread_vagregarproducto")
+            self.consultor_obtener_unidades_medida_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_unidades_medida_vagregarproducto)
+            if not self.consultor_obtener_unidades_medida_vagregarproducto:
+                raise Exception("No se pudo obtener el resultado.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_unidades_medida_vagregarproducto,
+                resultado_callback=self.listar_unidades_medida_cajaopciones,
+                error_callback= self.mostrar_error_hilo,
+            )
+            self.consultor_obtener_unidades_medida_vagregarproducto.ejecutar(
+                self.obtener_unidaddes_medida_query
+            )
+        except Exception as e:
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_obtener_unidades_medida_vagregarproducto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_unidades_medida_vagregarproducto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+                
+    def obtener_unidaddes_medida_query(self, session):
+        try:
+            datos, estado = ProductosModel(session).obtener_unidades_medida()
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No obtuvimos resultados',
+                    "data": datos
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Obtuvimos resultados',
+            "data": datos
+        }
+        
+    def listar_unidades_medida_cajaopciones(self, resultado):
+        if resultado["exito"]:
                 self.ui.cajaOpciones_unidadMedidaProducto.clear()
-                for unidad in datos:
+                for unidad in resultado["data"]:
                     self.ui.cajaOpciones_unidadMedidaProducto.addItem(unidad.nombre, unidad)
-                AjustarcajaOpciones(ProductosModel(session)).ajustar_cajadeopciones(self.ui.cajaOpciones_unidadMedidaProducto)
-
+                self.ajustador_unidad_medida_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_unidadMedidaProducto)
+                self.ajustador_unidad_medida_producto.elemento_eliminado_signal.connect(self.listar_unidades_medida)
+                
     def listar_categorias(self):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                categorias, estatus = CategoriasModel(session).obtener_todo(tipo_categoria="productos")
-            if estatus:
-                self.ui.cajaOpciones_categoriaProducto.clear()
-                for categoria in categorias:
-                    self.ui.cajaOpciones_categoriaProducto.addItem(categoria.nombre, categoria)
-                AjustarcajaOpciones(CategoriasModel(session), 'productos').ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaProducto)
+        try:
+            WorkerDB.cleanup_owner_workers("obtener_categorias_producto_vagregarproducto")
+            self.id_hilo_obtener_categorias_productos_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_categorias_producto_vagregarproducto")
+            self.consultor_obtener_categorias_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_productos_vagregarproducto)
+            if not self.consultor_obtener_categorias_producto_vagregarproducto:
+                raise Exception("No se pudo obtener el resultado.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_categorias_productos_vagregarproducto,
+                resultado_callback=self.listar_categorias_cajaopciones,
+                error_callback= self.mostrar_error_hilo,
+            )
+            self.consultor_obtener_categorias_producto_vagregarproducto.ejecutar(
+                self.obtener_categorias_query
+            )
+        except Exception as e:
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_obtener_categorias_productos_vagregarproducto'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_categorias_productos_vagregarproducto)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+                
+    def obtener_categorias_query(self, session):
+        try:
+            datos, estado = CategoriasModel(session).obtener_todo(tipo_categoria="productos")
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No obtuvimos resultados',
+                    "data": datos
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un error en el proceso: {e}',
+                "data": []
+            }
+        return{
+            "exito": estado,
+            "mensaje": f'Obtuvimos resultados',
+            "data": datos
+        }
+
+    def listar_categorias_cajaopciones(self, resultado):
+        if resultado["exito"]:
+            self.ui.cajaOpciones_categoriaProducto.clear()
+            for categoria in resultado["data"]:
+                self.ui.cajaOpciones_categoriaProducto.addItem(categoria.nombre, categoria)
+            self.ajustador_categoria_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaProducto)
+            self.ajustador_categoria_producto.elemento_eliminado_signal.connect(self.listar_categorias)
 
 #########################
 #FUNCIONES-INTERACCION CON EL PRODUCTO

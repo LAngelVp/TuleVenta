@@ -44,7 +44,6 @@ class CategoriasModel:
     def eliminar(self, categoria_obj):
         # modelo = self.__tipo_categoria(tipo_categoria)
         try:
-            # Eliminamos la categoría de la base de datos
             self.session.delete(categoria_obj)
             return True
         except Exception as e:

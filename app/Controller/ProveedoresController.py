@@ -63,8 +63,8 @@ class Control_proveedores(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.ajustador = AjustarcajaOpciones()
-        self.ajustador.elemento_eliminado_signal.connect(self.mostrar_categorias_proveedor)
+        self.ajustador_categoria_proveedor = AjustarcajaOpciones()
+        self.ajustador_categoria_proveedor.elemento_eliminado_signal.connect(self.mostrar_categorias_proveedor)
 
     def validaciones(self):
         self.ui.txt_nombre.setMaxLength(150)
@@ -165,12 +165,11 @@ class Control_proveedores(QWidget):
                 self.ui.cajaOpciones_categorias.clear()
                 for categoria in categorias:
                     self.ui.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
-                self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
+                self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
         else:
-            print(resultado)
             for categoria in resultado:
                 self.ui.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
-            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
+            self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
             
     def mostrar_descripcion_categoria(self):
         categoria = self.ui.cajaOpciones_categorias.currentData()

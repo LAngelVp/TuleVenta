@@ -7,11 +7,11 @@ from ..Model.CategoriasModel import CategoriasModel
 from ..Model.ProductosModel import ProductosModel
 from .MensajesAlertasController import Mensaje
 from .CategoriasController import CategoriasController
+from .PresentacionProductosController import PresentacionProductos
 class AjustarcajaOpciones(QObject):
     elemento_eliminado_signal = Signal()
-    def __init__(self, modelo=None, tipo_categoria=None):
+    def __init__(self, tipo_categoria=None):
         super().__init__()
-        self.modelo = modelo
         self.tipo_categoria = tipo_categoria
 
     def ajustar_cajadeopciones(self, caja_opciones):
@@ -99,3 +99,8 @@ class AjustarcajaOpciones(QObject):
             estado = self.categorias_controller.eliminar(objeto=elemento)
             self.categorias_controller.eliminacion_completada.connect(self.on_eliminacion_completada)
             return estado
+        # elif elemento and self.tipo_categoria == "presentacion_producto":
+        #     self.presentacion_producto = PresentacionProductos()
+        #     estado = self.presentacion_producto.eliminar(objeto=elemento)
+        #     self.presentacion_producto.eliminacion_producto_completada.connect(self.on_eliminacion_completada)
+        #     return estado

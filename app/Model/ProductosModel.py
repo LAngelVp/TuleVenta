@@ -116,7 +116,7 @@ class ProductosModel:
         if presentaciones:
             return presentaciones, True
         else:
-            return None, False
+            return [], False
         
     def eliminar_presentacion_producto(self, presentacion_obj):
         try:
@@ -143,7 +143,7 @@ class ProductosModel:
         if unidades_medida:
             return unidades_medida, True
         else:
-            return None, False
+            return [], False
     
     def eliminar_unidad_medida(self, unidad_obj):
         try:
