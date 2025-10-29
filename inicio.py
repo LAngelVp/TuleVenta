@@ -95,6 +95,8 @@ class Inicio_sistema(QObject):
         
     def mostrar_resultado_hilo(self, objetoMensaje):
         """Muestra la ventana correspondiente cuando el hilo termina"""
+        if hasattr(self, 'id_hilo_consultar_cantidad_usuarios'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
         if objetoMensaje["exito"]:
             self.login = Login()
             self.login.show()

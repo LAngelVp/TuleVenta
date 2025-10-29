@@ -605,6 +605,8 @@ p, li { white-space: pre-wrap; }
         return grupos, estado
     
     def listar_grupos_opciones(self, grupos, estado):
+        if hasattr(self, 'id_hilo_obtener_grupos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
         if estado:
             for grupo in grupos:
                 self.ui.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo.id)

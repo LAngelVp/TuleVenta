@@ -130,6 +130,7 @@ class WorkerDBManager:
     def cleanup_all_workers(cls):
         """Limpia todos los workers activos"""
         for worker_id in list(cls._workers.keys()):
+            print(f'hilos eliminados: {worker_id}')
             cls.cleanup_worker(worker_id)
         
         if cls._instance:

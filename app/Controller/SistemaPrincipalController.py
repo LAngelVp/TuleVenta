@@ -2,6 +2,8 @@ import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget, QDialog
+
+from app.Controller.Hilo_consultas import WorkerDB, WorkerDBManager
 from ..View.UserInterfacePy.UI_SISTEMA_PRINCIPAL import Ui_Principal_sistema
 from ..Controller.ClientesController import Clientes
 from ..Controller.PerfilUsuarioController import Perfil
@@ -46,7 +48,7 @@ class SistemaPrincipal(QWidget):
         self.ui.btn_laterales_clientes.clicked.connect(self.mostrar_clientes)
         self.ui.btn_laterales_productos.clicked.connect(self.mostrar_productos)
 
-        self.ui.btc_cerrar_2.clicked.connect(lambda: sys.exit())
+        self.ui.btc_cerrar_2.clicked.connect(self.cerrar_sistema)
         self.ui.btc_minimizar_2.clicked.connect(lambda: self.showMinimized())
         
         self.ventana_sucursales = None
@@ -132,3 +134,7 @@ class SistemaPrincipal(QWidget):
             
         # Permitir otras teclas
         super().keyPressEvent(event)
+        
+    def cerrar_sistema(self):
+        WorkerDBManager.cleanup_all_workers()
+        sys.exit()
