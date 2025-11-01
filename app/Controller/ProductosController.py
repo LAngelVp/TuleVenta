@@ -42,6 +42,9 @@ class ExistenciasClase(QWidget):
         self.ui.btn_existenciaProducto_cerrar.clicked.connect(self.close)
         self.RECIBIR_PRODUCTO_ID_EXISTENCIA.connect(self.mostrar_datos_en_ui)
         
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentrada:
@@ -66,19 +69,32 @@ class ExistenciasClase(QWidget):
         notas = self.ui.txtlargo_NotasProducto.toPlainText()
         id_usuario = self.datos_usuario["id_empleado"]
         if cant_existencia != 0:
-            self.modal_espera_local()
-            self.consultor = WorkerDB()
-            self.consultor.terminado.connect(self.cargando_cerrar)
-            self.consultor.error.connect(self.mensaje_error)
-            self.consultor.resultado.connect(self.mensaje_estado_resultado)
-            self.consultor.ejecutar(
-                funcion=self.ejecutar_existencia_query,
-                cant_existencia = cant_existencia,
-                tipo_de_movimiento = tipo_movimiento,
-                fecha_de_movimiento = fecha_movimiento,
-                notas = notas,
-                id_empleado_realizo_operacion = id_usuario
-            )
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("actualizar_existencia_productos_vexistencia")
+                self.id_hilo_actualizar_existencia_producto_vexistencia = WorkerDB.create_managed_worker(owner_id="actualizar_existencia_productos_vexistencia")
+                self.consultor_actualizar_existencia_producto_vexistencia = WorkerDB.get_managed_worker(self.id_hilo_actualizar_existencia_producto_vexistencia)
+                if not self.consultor_actualizar_existencia_producto_vexistencia:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_actualizar_existencia_producto_vexistencia,
+                    resultado_callback=self.mensaje_estado_resultado,
+                    error_callback= self.mensaje_error,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_actualizar_existencia_producto_vexistencia.ejecutar(
+                    funcion=self.ejecutar_existencia_query,
+                    cant_existencia = cant_existencia,
+                    tipo_de_movimiento = tipo_movimiento,
+                    fecha_de_movimiento = fecha_movimiento,
+                    notas = notas,
+                    id_empleado_realizo_operacion = id_usuario
+                    )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_actualizar_existencia_producto_vexistencia'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_existencia_producto_vexistencia)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+    
     def ejecutar_existencia_query(self, session, cant_existencia, tipo_de_movimiento, fecha_de_movimiento, notas, id_empleado_realizo_operacion):
         datos, estado = ProductosModel(session).ejecutar_movimiento(
             producto_id=self.producto.id,
@@ -101,19 +117,7 @@ class ExistenciasClase(QWidget):
             Mensaje().mensaje_informativo("Operación exitosa")
         else:
             Mensaje().mensaje_informativo(mensaje)
-            
-    def modal_espera_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(parent=self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
-            
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
+
 class Admin_productosController(QWidget):
 #SEÑALES:
     PRODUCTOS_AGREGADOS = Signal()
@@ -1458,8 +1462,6 @@ class Productos(QWidget):
             Mensaje().mensaje_informativo("Solo puedes buscar por nombre o por código")
             return
         
-        self.modal_espera_local()
-        
         if not hasattr(self, 'cantidad_inicial_consulta'):
             self.cantidad_inicial_consulta = 0
         else:
@@ -1475,13 +1477,29 @@ class Productos(QWidget):
         if busqueda_nueva and hasattr(self, 'modelo_lista_productos_principal'):
             self.modelo_lista_productos_principal.clear()
             
-        self.consultor = WorkerDB()
-        self.consultor.resultado.connect(self.listar_productos)
-        self.consultor.ejecutar(
-            funcion=self.buscar_producto_query,
-            nombre_producto=self.nombre_producto,
-            codigo_del_producto=self.codigo_del_producto
-        )
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("filtrar_productos_vprincipal")
+            self.id_hilo_filtrar_productos_vprincipal = WorkerDB.create_managed_worker(owner_id="filtrar_productos_vprincipal")
+            self.consultor_filtrar_productos_vprincipal = WorkerDB.get_managed_worker(self.id_hilo_filtrar_productos_vprincipal)
+            if not self.consultor_filtrar_productos_vprincipal:
+                raise Exception("No se pudo obtener el resultado.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_filtrar_productos_vprincipal,
+                resultado_callback=self.listar_productos,
+                error_callback= self.mostrar_error_consulta,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_filtrar_productos_vprincipal.ejecutar(
+                self.buscar_producto_query,
+                nombre_producto = self.nombre_producto,
+                codigo_del_producto = self.codigo_del_producto
+            )
+        except Exception as e:
+            # ✅ Limpiar en caso de error
+            if hasattr(self, 'id_hilo_filtrar_productos_vprincipal'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_filtrar_productos_vprincipal)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
     
     def buscar_producto_query(self, session, nombre_producto, codigo_del_producto):
         if nombre_producto:
@@ -1534,9 +1552,11 @@ class Productos(QWidget):
         self.consultor.ejecutar(
             funcion=self.eliminar_producto_query
             )
+    
     def eliminar_producto_query(self, session):
         producto, estado = ProductosModel(session).eliminar_producto(codigo_producto=self.producto_actual.codigo_upc)
         return producto, estado
+    
     def mensaje_hilo(self, resultado, estado):
         if estado:
             self.producto_actual = None
@@ -1551,6 +1571,7 @@ class Productos(QWidget):
             Mensaje().mensaje_informativo("No has seleccionado un producto de la tabla para proceder a modificarlo")
             return
         self.enviar_produto_al_ui(self.producto_actual)
+    
     def enviar_produto_al_ui(self, producto):
         if self.AdminProductos is None:
             # Crear nueva instancia
@@ -1581,6 +1602,7 @@ class Productos(QWidget):
             self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
         
         self.codigo_upc_producto = None
+    
     def __ventana_destruida(self):
         self.AdminProductos = None
         self.producto_actual = None
@@ -1791,6 +1813,7 @@ class Productos(QWidget):
             signalSeleccion=self.obtener_id_elemento_tabla_productos
         )
         return self.modelo_lista_productos_principal
+    
     def obtener_id_elemento_tabla_productos(self, index):
         try:
             if not index.isValid():
@@ -1805,16 +1828,6 @@ class Productos(QWidget):
             producto = self.modelo_tabla_productos.data(index, Qt.UserRole)
             self.producto_actual = producto
             print("producto: ",self.producto_actual)
-            
-            # if not producto:
-            #     return None
-                
-            # Verificar si es un objeto producto válido
-            # if hasattr(producto, 'id'):
-            #     print(producto.id)
-            #     return producto.id
-                
-            # return None
             
         except Exception as e:
             print(f"Error al obtener ID del producto: {str(e)}")
@@ -1832,6 +1845,7 @@ class Productos(QWidget):
             self.ventana_existencia_productos.RECIBIR_PRODUCTO_ID_EXISTENCIA.emit(self.producto_actual)
             self.MOSTRAR_DATOS_EXISTENCIAS.emit()
             self.ventana_existencia_productos.show()
+    
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
