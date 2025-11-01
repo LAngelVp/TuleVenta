@@ -308,20 +308,33 @@ class ProductosModel:
         return producto_actual, True
         
     def obtener_productos(self, offset=0, limit=100):
-        productos = (
-            self.session.query(Productos)
-            .options(
-                joinedload(Productos.proveedores),
-                joinedload(Productos.categoria),
-                joinedload(Productos.unidad_medida_productos),
-                joinedload(Productos.presentacion_productos)
+        try:
+            productos = (
+                self.session.query(Productos)
+                .options(
+                    joinedload(Productos.proveedores),
+                    joinedload(Productos.categoria),
+                    joinedload(Productos.unidad_medida_productos),
+                    joinedload(Productos.presentacion_productos)
+                )
+                .order_by(Productos.nombre_producto.asc())
+                .offset(offset)
+                .limit(limit)
+                .all()
             )
-            .order_by(Productos.nombre_producto.asc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
-        return productos, bool(productos)
+            
+            # LÓGICA MEJORADA DE PAGINACIÓN:
+            # Si no hay productos Y el offset es mayor a 0, significa que no hay más registros
+            if not productos and offset > 0:
+                return [], False  # No hay más registros disponibles
+            
+            # Si hay productos pero son menos que el límite, es la última página
+            # (aún devolvemos los productos pero el frontend sabe que es el final)
+            return productos, bool(productos)
+            
+        except Exception as e:
+            print(f"Error en obtener_productos: {e}")
+            return [], False
         
     def eliminar_producto(self, codigo_producto):
         producto = self.session.query(Productos).filter(Productos.codigo_upc == codigo_producto).first()
@@ -345,25 +358,31 @@ class ProductosModel:
             return None, False
     
     def consultar_por_nombre(self, nombre, cantidad_inicial=0, cantidad_final=100):
-        productos = (
-            self.session.query(Productos)
-            .options(
-                joinedload(Productos.categoria),
-                joinedload(Productos.proveedores),
-                joinedload(Productos.unidad_medida_productos),
-                joinedload(Productos.presentacion_productos)
+        try:
+            productos = (
+                self.session.query(Productos)
+                .options(
+                    joinedload(Productos.proveedores),
+                    joinedload(Productos.categoria),
+                    joinedload(Productos.unidad_medida_productos),
+                    joinedload(Productos.presentacion_productos)
+                )
+                .filter(Productos.nombre_producto.ilike(f"%{nombre}%"))
+                .order_by(Productos.nombre_producto.asc())
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
+                .all()
             )
-            .filter(Productos.nombre_producto.ilike(f"%{nombre}%"))
-            .order_by(Productos.nombre_producto.asc())
-            .offset(cantidad_inicial)
-            .limit(cantidad_final)
-            .all()
-        )
-
-        if productos:
-            return productos, True
-        else:
-            return None, False
+            
+            # Misma lógica de paginación
+            if not productos and cantidad_inicial > 0:
+                return [], False  # No hay más registros disponibles
+                
+            return productos, bool(productos)
+            
+        except Exception as e:
+            print(f"Error en consultar_por_nombre: {e}")
+            return [], False
         
     def consultar_producto_por_codigoUPC(self, codigo_upc):
         produto = self.session.query(Productos).options(

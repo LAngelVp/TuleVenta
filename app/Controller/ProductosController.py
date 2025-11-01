@@ -655,10 +655,10 @@ class Admin_productosController(QWidget):
             productos_agregados = []
 
             for producto in self.lista_productos:
-                nombre_proveedor = producto["proveedor"].strip()
-                nombre_presentacion = producto["presentacion"].strip()
-                nombre_unidad_de_medida = producto["unidad_medida"].strip()
-                nombre_categoria = producto["categoria"].strip()
+                nombre_proveedor = producto["proveedor"].strip() if producto["proveedor"] else ""
+                nombre_presentacion = producto["presentacion"].strip() if producto["presentacion"] else ""
+                nombre_unidad_de_medida = producto["unidad_medida"].strip() if producto["unidad_medida"] else ""
+                nombre_categoria = producto["categoria"].strip() if producto["categoria"] else ""
 
                 proveedor = None
                 presentacion = None
@@ -1038,7 +1038,8 @@ class Admin_productosController(QWidget):
             self.ui.lista_proveedores_vinculados.addItem(item)
     
     def __limpiar_tabla_productos(self):
-        self.modelo_tabla_productos.removeRows(0, self.modelo_tabla_productos.rowCount())
+        if hasattr(self, 'modelo_tabla_productos') and self.modelo_tabla_productos:
+            self.modelo_tabla_productos.clear()
         self.lista_productos = []
                 
     def obtener_proveedores(self):
@@ -1432,6 +1433,7 @@ class Productos(QWidget):
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador = AjustarcajaOpciones()
+        self.__configurar_tabla_productos_principal()
         
 
 # FUNCION : FILTRAR PRODUCTOS
@@ -1466,13 +1468,13 @@ class Productos(QWidget):
         # Reiniciar paginación solo si es una búsqueda nueva
         if busqueda_nueva:
             self.cantidad_inicial_consulta = 0
+            self.no_hay_mas_registros = False  # Resetear el flag
             self.busqueda_realizada = True
         
         # Limpiar tabla solo para búsqueda nueva
-        if busqueda_nueva and hasattr(self, 'modelo_tabla_productos'):
-            self.modelo_tabla_productos.clear()
+        if busqueda_nueva and hasattr(self, 'modelo_lista_productos_principal'):
+            self.modelo_lista_productos_principal.clear()
             
-        self.comprobar_modelo_tabla_productos() 
         self.consultor = WorkerDB()
         self.consultor.resultado.connect(self.listar_productos)
         self.consultor.ejecutar(
@@ -1592,13 +1594,12 @@ class Productos(QWidget):
             if not estado or not productos:
                 self.refrescar_tabla()
                 return
-            self.cantidad_inicial_consulta = 0 if self.cantidad_inicial_consulta == 0 else self. cantidad_inicial_consulta + len(productos)
             # Asegúrate que el modelo existe
             if not hasattr(self, 'modelo_tabla_productos'):
-                self.comprobar_modelo_tabla_productos()
+                self.__configurar_tabla_productos_principal()
             
             # Actualiza los datos (siempre reset para búsquedas)
-            self.modelo_tabla_productos.update_data(productos, reset=True)
+            self.modelo_lista_productos_principal.update_data(productos, reset=True)
             
             print(f"Tabla actualizada: {len(productos)} productos")
             
@@ -1608,10 +1609,14 @@ class Productos(QWidget):
             # Mensaje().mensaje_informativo("Error", "No se pudieron cargar los productos")
         finally:
             self.cargando_cerrar()
-    
+
     def refrescar_tabla(self):
         try:
             # self.ui.btn_RefrescarTabla.setEnabled(False)
+            self.cantidad_inicial_consulta = 0
+            self.no_hay_mas_registros = False  # Resetear el flag de fin de datos
+            if hasattr(self, 'ultima_carga_cantidad'):
+                del self.ultima_carga_cantidad
             self.consultar_productos_db(reset_paginacion = True)
         except Exception as e:
             print(f"error: {e}")
@@ -1621,51 +1626,68 @@ class Productos(QWidget):
         """Versión final segura para consultar productos"""
         try:
             # Manejo de paginación
-            if reset_paginacion or not hasattr(self, 'cantidad_inicial_consulta'):
+            # or not hasattr(self, 'cantidad_inicial_consulta'):
+            if reset_paginacion:
                 self.cantidad_inicial_consulta = 0
+                print("DEBUG - Paginación reiniciada")
                 
-                try:
-                    self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("obtener_productos_tablaproductos_thread")
-                    self.id_hilo_obtener_productos_tabla_productos = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
-                    self.consultor_obtener_productos_tabla_productos = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
-                    if not self.consultor_obtener_productos_tabla_productos:
-                        raise Exception("No se pudo obtener el worker gestionado")
-                    WorkerDB.connect_managed_signals(
-                        worker_id=self.id_hilo_obtener_productos_tabla_productos,
-                        resultado_callback=self.listar_productos,
-                        error_callback= self.mostrar_error_db,
-                        terminado_callback=self.manejadorModal.cerrar_modal
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("obtener_productos_tablaproductos_thread")
+                self.id_hilo_obtener_productos_tabla_productos = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
+                self.consultor_obtener_productos_tabla_productos = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
+                if not self.consultor_obtener_productos_tabla_productos:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_obtener_productos_tabla_productos,
+                    resultado_callback=self.listar_productos,
+                    error_callback= self.mostrar_error_db,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_obtener_productos_tabla_productos.ejecutar(
+                    funcion=self.obtener_productos_query
                     )
-                    self.consultor_obtener_productos_tabla_productos.ejecutar(
-                        funcion=self.obtener_productos_query
-                        )
-                except Exception as e:
-                    if hasattr(self, 'id_hilo_obtener_productos_tabla_productos'):
-                        WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
-                    Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+            except Exception as e:
+                if hasattr(self, 'id_hilo_obtener_productos_tabla_productos'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
             
         except Exception as e:
             print(f"Error en consultar_productos_db: {str(e)}")
             self.mostrar_error_db("Error al iniciar la consulta")
     
     def obtener_productos_query(self, session):
+        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+        
         productos, estado = ProductosModel(session).obtener_productos(
             offset=self.cantidad_inicial_consulta,
             limit=self.cantidad_final_consulta
         )
+        
         print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
-        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
-        self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        print(f"DEBUG - Estado de la consulta: {estado}")
+        
+        # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
+        if (not hasattr(self, '_is_refreshing') or not self._is_refreshing) and productos:
+            # Incrementar por el límite, no por la cantidad recibida
+            # Esto mantiene la paginación consistente
+            self.cantidad_inicial_consulta += self.cantidad_final_consulta
+            print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_consulta}")
+        elif not productos:
+            print("DEBUG - No se obtuvieron productos, offset no incrementado")
         
         return productos, estado
 # TERMINA - LISTAR PRODUCTOS +++++++++++++++++++
 
 # FUNCION : AGREGAR MAS PRODUCTOS A LA VISTA DE LA TABLA
     def cargar_mas_productos(self):
+        self._is_refreshing = False
+        if hasattr(self, 'no_hay_mas_registros') and self.no_hay_mas_registros:
+            Mensaje().mensaje_informativo("No hay más productos por mostrar")
+            return
         """Carga los siguientes productos manteniendo los actuales"""
         if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
-            print(f'Busqueda realizada')
+            print('Cargando más productos sin filtro')
             # Si no hay búsqueda previa, cargar productos normales
             try:
                 self.manejadorModal.mostrar_modal(self)
@@ -1689,7 +1711,7 @@ class Productos(QWidget):
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
         else:
             # Si hay búsqueda previa, paginar los filtros
-            print("PAGINANDO")
+            print("Paginar resultados filtrados")
             self.consulta_hilo_paginar_productos()
             
     def consulta_hilo_paginar_productos(self):
@@ -1715,59 +1737,60 @@ class Productos(QWidget):
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
             
     def paginar_busqueda_por_filtros(self, session):
+        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+        
+        datos = []
+        estado = False
+        
         if self.nombre_producto:
             datos, estado = ProductosModel(session).consultar_por_nombre(
                 nombre=self.nombre_producto,
                 cantidad_inicial=self.cantidad_inicial_consulta,
                 cantidad_final=self.cantidad_final_consulta
             )
-            print(f"DEBUG - Obtenidos: {len(datos) if datos else 0} registros")
-            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
-            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+            print(f"DEBUG - Obtenidos filtrados: {len(datos) if datos else 0} registros")
+            
+            # Solo incrementar si se obtuvieron registros
+            if datos:
+                self.cantidad_inicial_consulta += len(datos)
+                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_consulta}")
+        
         return datos, estado
             
     def agregar_productos_en_tabla(self, nuevos_productos, estado):
-        if hasattr(self, 'id_hilo_obtener_productos_paginados'):
-            WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_paginados)
+        # if hasattr(self, 'id_hilo_obtener_productos_paginados'):
+        #     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_paginados)
         """Agrega nuevos productos al modelo existente"""
         if not estado or not nuevos_productos:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
+            self.no_hay_mas_registros = True
             return
-        # Agrega los nuevos productos al modelo
-        self.modelo_tabla_productos.update_data(nuevos_productos, reset=False)
-        QTimer.singleShot(0, self.cargando_cerrar)
-#TERMINA - PAGINAR PRODUCTOS EN TABLA +++++++++++++++++++
-
-# FUNCION : COMPROBACION DEL MODELO DE LA TABLA DE PRODUCTOS
-    def comprobar_modelo_tabla_productos(self):
-    #// MAPEO DE LOS NOMBRE DE LAS COLUMNAS
-        if not hasattr(self, 'modelo_tabla_productos'):
-            encabezados = ['Codigo_upc', 'Nombre', 'Descripcion_producto', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
-            mapeo_cabecera = {
-                "codigo_upc": lambda p:p.codigo_upc,
-                'nombre': lambda p: p.nombre_producto,
-                'descripcion_producto': lambda p: p.descripcion_producto or "",
-                'precio': lambda p: f"${p.precio:.2f}",
-                'existencia': lambda p: p.existencia,
-                'categoría': lambda p: p.categoria.nombre if p.categoria else "Sin categoría",
-                'descripción categoría': lambda p: p.categoria.descripcion if p.categoria else ""
-            }
-            self.modelo_tabla_productos = GenericTableModel(encabezados, mapeo_cabecera)
-        # // CONFIGURACION DE LA TABLA
-            self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
-            self.ui.tabla_productos.setSortingEnabled(True)
-            self.ui.tabla_productos.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # // CONEXION A SEÑALES
-            self.modelo_tabla_productos.data_updated.connect(
-                lambda: self.ui.tabla_productos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch))
-            if hasattr(self, 'consultor') and self.consultor:
-                self.cleanup_worker()
-        #  // CONFIGURACION DE SELECCION
-            if hasattr(self, 'seleccion_conectada_productos') and self.seleccion_conectada_productos:
-                self.ui.tabla_productos.clicked.disconnect(self.obtener_id_elemento_tabla_productos)
-            self.ui.tabla_productos.clicked.connect(self.obtener_id_elemento_tabla_productos)
-            self.seleccion_conectada_productos = True
-            
+        self.modelo_lista_productos_principal.update_data(nuevos_productos, reset=False)
+        self.ultima_carga_cantidad = len(nuevos_productos)
+        
+    def __configurar_tabla_productos_principal(self):
+        cabeceras = ['Codigo_upc', 'Nombre', 'Descripcion_producto', 'Precio', 'Existencia', 'Categoría', 'Descripción Categoría']
+        mapeo_cabecera = {
+            "codigo_upc": lambda p:p.codigo_upc,
+            'nombre': lambda p: p.nombre_producto,
+            'descripcion_producto': lambda p: p.descripcion_producto or "",
+            'precio': lambda p: f"${p.precio:.2f}",
+            'existencia': lambda p: p.existencia,
+            'categoría': lambda p: p.categoria.nombre if p.categoria else "Sin categoría",
+            'descripción categoría': lambda p: p.categoria.descripcion if p.categoria else ""
+        }
+        # Usar ComprobarModelosTablas para crear/obtener el modelo
+        self.modelo_lista_productos_principal = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo='modelo_empleados_vproductos_principal',
+            interfazTabla=self.ui.tabla_productos,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabecera,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalSeleccion=self.obtener_id_elemento_tabla_productos
+        )
+        return self.modelo_lista_productos_principal
     def obtener_id_elemento_tabla_productos(self, index):
         try:
             if not index.isValid():

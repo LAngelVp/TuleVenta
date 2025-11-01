@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QWidget, QDialog
+from PySide6.QtWidgets import QWidget, QDialog, QMessageBox
 
 from app.Controller.Hilo_consultas import WorkerDB, WorkerDBManager
 from ..View.UserInterfacePy.UI_SISTEMA_PRINCIPAL import Ui_Principal_sistema
@@ -136,5 +136,10 @@ class SistemaPrincipal(QWidget):
         super().keyPressEvent(event)
         
     def cerrar_sistema(self):
-        WorkerDBManager.cleanup_all_workers()
-        sys.exit()
+        try:
+            respuesta = Mensaje().mensaje_pregunta("¿Quieres cerrar el sistema?")
+            if respuesta == QMessageBox.Yes:
+                WorkerDBManager.cleanup_all_workers()
+                sys.exit()
+        except Exception as e:
+            return
