@@ -249,11 +249,11 @@ class ProveedoresModel:
             if productos:
                 return productos, True
             else:
-                return None, False
+                return [], False
 
         except Exception as e:
             print(f"Error al filtrar productos exactos: {e}")
-            return None, False
+            return [], False
         
     def filtrar_productos_del_proveedor_contenga_nombre(self, proveedor_id, nombre):
         try:
@@ -271,19 +271,19 @@ class ProveedoresModel:
             if productos:
                 return productos, True
             else:
-                return None, False
+                return [], False
 
         except Exception as e:
             print(f"Error al filtrar productos que contengan nombre: {e}")
-            return None, False
+            return [], False
     
     def actualizar_productos_al_proveedor(self, proveedor_id,  lista_productos):
         if not lista_productos or not proveedor_id:
-            return None, False
+            return [], False
         try:
             proveedor = self.session.query(Proveedores).filter_by(id=proveedor_id).first()
             if not proveedor:
-                return None, False
+                return [], False
 
             productos_a_agregar = []
             for producto in lista_productos:
@@ -298,4 +298,4 @@ class ProveedoresModel:
 
         except Exception as e:
             print(f"error al meter el producto {e}")
-            return None, False
+            return [], False

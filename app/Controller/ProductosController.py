@@ -1343,39 +1343,6 @@ class Admin_productosController(QWidget):
         precio_venta = costo_final + (costo_final * margen)
         self.ui.decimal_precioVentaProducto.setValue(precio_venta)
     
-    def cleanup_worker(self):
-        """Limpia el worker de manera completamente segura"""
-        if not hasattr(self, 'consultor') or self.consultor is None:
-            return
-        try:
-            # Desconectar señales de manera segura
-            try:
-                if self.consultor is not None:
-                    self.consultor.resultado.disconnect()
-                    self.consultor.error.disconnect()
-                    self.consultor.terminado.disconnect()
-            except (RuntimeError, AttributeError):
-                pass  # Las señales ya estaban desconectadas o el objeto es inválido
-            
-            # Detener el hilo de manera segura
-            try:
-                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
-                    if self.consultor.thread.isRunning():
-                        self.consultor.thread.quit()
-                        self.consultor.thread.wait(500)  # Esperar máximo 500ms
-            except (RuntimeError, AttributeError):
-                pass
-            
-            # Eliminar el worker
-            try:
-                self.consultor.deleteLater()
-            except RuntimeError:
-                pass
-            
-        finally:
-            # Asegurarse de eliminar la referencia
-            self.consultor = None
-    
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentradaProductoExistente:
@@ -1384,6 +1351,7 @@ class Admin_productosController(QWidget):
 
     def closeEvent(self, event):
         ProcesadorArchivoWorker.cleanup_all_managed_workers()
+        WorkerDB.cleanup_all_managed_workers()
         self.closed.emit()  # Emitir señal antes de cerrar
         super().closeEvent(event)
     
@@ -1631,7 +1599,7 @@ class Productos(QWidget):
             # Mensaje().mensaje_informativo("Error", "No se pudieron cargar los productos")
         finally:
             self.cargando_cerrar()
-
+            
     def refrescar_tabla(self):
         try:
             # self.ui.btn_RefrescarTabla.setEnabled(False)
@@ -1677,7 +1645,7 @@ class Productos(QWidget):
         except Exception as e:
             print(f"Error en consultar_productos_db: {str(e)}")
             self.mostrar_error_db("Error al iniciar la consulta")
-    
+
     def obtener_productos_query(self, session):
         print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
         

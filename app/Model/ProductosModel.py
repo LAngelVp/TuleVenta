@@ -346,23 +346,34 @@ class ProductosModel:
             return None, False
     
     def consultar_por_nombre_exacto(self, nombre):
-        productos = (
-            self.session.query(Productos)
-            .filter(Productos.nombre_producto.ilike(nombre))
-            .order_by(Productos.nombre_producto.asc())
-            .all()
-        )
-        if productos:
-            return productos, True
-        else:
-            return None, False
+        try:
+            productos = (
+                self.session.query(Productos)
+                .options(
+                    joinedload(Productos.producto_proveedor_asociaciones),
+                    joinedload(Productos.categoria),
+                    joinedload(Productos.unidad_medida_productos),
+                    joinedload(Productos.presentacion_productos)
+                )
+                .filter(Productos.nombre_producto.ilike(nombre)).all
+            )
+            
+            # Misma lógica de paginación
+            if not productos:
+                return [], False  # No hay más registros disponibles
+                
+            return productos, bool(productos)
+            
+        except Exception as e:
+            print(f"Error en consultar_por_nombre: {e}")
+            return [], False
     
     def consultar_por_nombre(self, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
                 self.session.query(Productos)
                 .options(
-                    joinedload(Productos.proveedores),
+                    joinedload(Productos.producto_proveedor_asociaciones),
                     joinedload(Productos.categoria),
                     joinedload(Productos.unidad_medida_productos),
                     joinedload(Productos.presentacion_productos)
