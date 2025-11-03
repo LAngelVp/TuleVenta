@@ -312,7 +312,7 @@ class ProductosModel:
             productos = (
                 self.session.query(Productos)
                 .options(
-                    joinedload(Productos.proveedores),
+                    joinedload(Productos.producto_proveedor_asociaciones),
                     joinedload(Productos.categoria),
                     joinedload(Productos.unidad_medida_productos),
                     joinedload(Productos.presentacion_productos)

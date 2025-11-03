@@ -1,6 +1,6 @@
 from sqlalchemy.orm import joinedload
 from sqlalchemy import select
-from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, producto_proveedor
+from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, ProductoProveedor
 import logging
 
 class ProveedoresModel:
@@ -110,7 +110,7 @@ class ProveedoresModel:
     def obtener_proveedores(self):
         proveedores = (self.session.query(Proveedores).options(
             joinedload(Proveedores.categoria),  # Carga anticipada de las categorías
-            joinedload(Proveedores.productos),   # Carga anticipada de los productos
+            joinedload(Proveedores.producto_proveedor_asociaciones),   # Carga anticipada de los productos
             joinedload(Proveedores.representante),  # Carga anticipada del representante
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
         )
@@ -127,7 +127,7 @@ class ProveedoresModel:
         # Realizar la consulta utilizando ilike() para búsqueda insensible a mayúsculas
         proveedores = self.session.query(Proveedores).options(
             joinedload(Proveedores.categoria),  # Carga anticipada de las categorías
-            joinedload(Proveedores.productos),   # Carga anticipada de los productos
+            joinedload(Proveedores.producto_proveedor_asociaciones),   # Carga anticipada de los productos
             joinedload(Proveedores.representante),  # Carga anticipada del representante
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
         ).filter(Proveedores.nombre.ilike(texto_busqueda)).all()
@@ -234,33 +234,47 @@ class ProveedoresModel:
             return None, False
 
     def filtrar_productos_del_proveedor_exacto_nombre(self, proveedor_id, nombre):
-        productos = self.session.query(Productos, producto_proveedor.c.precio_venta).join(
-            producto_proveedor, Productos.id == producto_proveedor.c.producto_id
-        ).join(
-            Proveedores, Proveedores.id == producto_proveedor.c.proveedor_id
-        ).filter(
-            Productos.nombre_producto.ilike(nombre),
-            Proveedores.id == proveedor_id
-        ).all()
-        
-        if productos:
-            return productos, True
-        else:
+        try:
+            productos = (
+                self.session.query(ProductoProveedor)
+                .join(ProductoProveedor.producto)
+                .join(ProductoProveedor.proveedor)
+                .filter(
+                    Productos.nombre_producto.ilike(nombre),
+                    Proveedores.id == proveedor_id
+                )
+                .all()
+            )
+
+            if productos:
+                return productos, True
+            else:
+                return None, False
+
+        except Exception as e:
+            print(f"Error al filtrar productos exactos: {e}")
             return None, False
         
     def filtrar_productos_del_proveedor_contenga_nombre(self, proveedor_id, nombre):
-        productos = self.session.query(Productos, producto_proveedor.c.precio_venta).join(
-            producto_proveedor, Productos.id == producto_proveedor.c.producto_id
-        ).join(
-            Proveedores, Proveedores.id == producto_proveedor.c.proveedor_id
-        ).filter(
-            Productos.nombre_producto.ilike(f"%{nombre}%"),
-            Proveedores.id == proveedor_id
-        ).all()
-        
-        if productos:
-            return productos, True
-        else:
+        try:
+            productos = (
+                self.session.query(ProductoProveedor)
+                .join(ProductoProveedor.producto)
+                .join(ProductoProveedor.proveedor)
+                .filter(
+                    Productos.nombre_producto.ilike(f"%{nombre}%"),
+                    Proveedores.id == proveedor_id
+                )
+                .all()
+            )
+
+            if productos:
+                return productos, True
+            else:
+                return None, False
+
+        except Exception as e:
+            print(f"Error al filtrar productos que contengan nombre: {e}")
             return None, False
     
     def actualizar_productos_al_proveedor(self, proveedor_id,  lista_productos):

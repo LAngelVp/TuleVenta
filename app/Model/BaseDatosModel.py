@@ -46,14 +46,6 @@ sucursal_producto = Table(
     Column("producto_id", Integer, ForeignKey("Productos.id"), primary_key=True),
 )
 
-producto_proveedor = Table(
-    "producto_proveedor",
-    Base.metadata,
-    Column("producto_id", Integer, ForeignKey("Productos.id", ondelete='CASCADE'), primary_key=True),
-    Column("proveedor_id", Integer, ForeignKey("Proveedores.id"), primary_key=True),
-    Column("precio_venta", Float),
-)
-
 proveedor_categoria = Table(
     "proveedor_categoria",
     Base.metadata,
@@ -255,9 +247,7 @@ class Productos(Base):
     sucursales = relationship(
         "Sucursales", secondary=sucursal_producto, back_populates="productos", 
     )
-    proveedores = relationship(
-        "Proveedores", secondary=producto_proveedor, back_populates="productos", lazy="joined"
-    )
+    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="producto")
     
     detalles_compras = relationship("Detalles_compras", back_populates="producto")
     
@@ -311,10 +301,17 @@ class Proveedores(Base):
     categoria_id = Column(Integer, ForeignKey("Categorias_proveedores.id"))
     categoria = relationship("Categorias_proveedores", back_populates="proveedores")
     representante = relationship("Representantes_proveedores", back_populates="proveedores")  # Relación
-    productos = relationship(
-        "Productos", secondary=producto_proveedor, back_populates="proveedores", 
-    )
+    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="proveedor")
     compras = relationship("Compras", back_populates="proveedor")
+    
+class ProductoProveedor(Base):
+    __tablename__ = "producto_proveedor"
+    producto_id = Column(Integer, ForeignKey("Productos.id", ondelete='CASCADE'), primary_key=True)
+    proveedor_id = Column(Integer, ForeignKey("Proveedores.id"), primary_key=True)
+    precio_venta = Column(Float)
+    producto = relationship("Productos", back_populates="producto_proveedor_asociaciones")
+    proveedor = relationship("Proveedores", back_populates="producto_proveedor_asociaciones")
+
 
 class Representantes_proveedores(Base):
     __tablename__ = "Representantes_proveedores"

@@ -315,21 +315,10 @@ class EmpleadosController(QWidget):
     def obtener_id_elemento_tabla_empleados(self, current, previus = None):
         if current.isValid():
             fila = current.row()
-            
-            # OPCIÓN 1: Usando get_item() de GenericTableModel (Recomendado)
             empleado = self.modelo_empleados_vempleados.get_item(current)
-            
-            # OPCIÓN 2: Usando data() con Qt.UserRole
-            # empleado = self.modelo_empleados_vempleados.data(current, Qt.UserRole)
-            
-            # OPCIÓN 3: Obteniendo por índice de fila
-            # empleado = self.modelo_empleados_vempleados.get_item_by_row(fila)
             
             if empleado:
                 self.empleado_actual = empleado
-                # También puedes acceder al ID si lo necesitas:
-                # id_empleado = empleado.id
-                # print(f"Empleado seleccionado: {empleado.nombre} {empleado.apellido_paterno}")
 
     def obtencion_segura(atributo, default='Sin dato'):
         """Función auxiliar para obtener atributos de manera segura."""

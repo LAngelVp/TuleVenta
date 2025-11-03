@@ -1814,20 +1814,14 @@ class Productos(QWidget):
         )
         return self.modelo_lista_productos_principal
     
-    def obtener_id_elemento_tabla_productos(self, index):
+    def obtener_id_elemento_tabla_productos(self, current, previus = None):
         try:
-            if not index.isValid():
-                print(3)
-                return None
+            if current.isValid():
+                fila = current.row()
+                producto = self.modelo_lista_productos_principal.get_item(current)
                 
-            if not hasattr(self, 'modelo_tabla_productos'):
-                print(4)
-                return None
-                
-            # Obtener el producto completo
-            producto = self.modelo_tabla_productos.data(index, Qt.UserRole)
-            self.producto_actual = producto
-            print("producto: ",self.producto_actual)
+                if producto:
+                    self.producto_actual = producto
             
         except Exception as e:
             print(f"Error al obtener ID del producto: {str(e)}")

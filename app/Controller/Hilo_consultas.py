@@ -3,7 +3,6 @@ from PySide6.QtCore import QObject, Signal, QThread
 from ..DataBase.conexionBD import Conexion_base_datos
 from contextlib import contextmanager
 from typing import Optional, Callable, Dict, Any
-import chardet
 import logging
 
 class WorkerDBManager:

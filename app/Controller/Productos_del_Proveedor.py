@@ -10,6 +10,7 @@ from ..View.UserInterfacePy.CAMBIO_PRECIO_PRODUCTO_PROVEEDOR import Ui_PreciosPr
 from .AjustarCajaOpcionesGlobal import *
 from .MensajesAlertasController import Mensaje
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from app.Model.AbstractTableModel import ComprobarModelosTablas
 from .Ventana_espera import *
 from .Hilo_consultas import *
 class Productos_de_proveedorController(QWidget):
@@ -34,6 +35,12 @@ class Productos_de_proveedorController(QWidget):
         
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema)
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.__configurar_tabla_productos_proveedor()
+        self.__configurar_tabla_productos_del_sistema()
+        
         
         self.proveedor = proveedor
         self.cargando =  None
@@ -43,16 +50,14 @@ class Productos_de_proveedorController(QWidget):
         self.producto_seleccionado_sistema=None
         self.producto_seleccionado_a_vincular = None
         self.seleccion_conectada_productos_a_vincular = False
-        self.lista_productos_para_vincular = set()
+        self.lista_productos_para_vincular = None
         self._ventanaCentradaProductosProveedores = False
-        # self._ventanaCerradaPrecioProducto = False
         self.ventana_precio_producto = None
-        # self.productos_de_sistema()
         
         if not self.proveedor:
             return
         
-        self.ui.etiqueta_nombre_del_proveedor.setText(f'Nombre del Proveedor: {self.proveedor.nombre}')
+        self.ui.etiqueta_nombre_del_proveedor.setText(f'Nombre del Proveedor: {self.proveedor.nombre.upper()}')
         
         self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.connect(self.vincular_producto_al_proveedor_signal)
         self.PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL.connect(self.quitar_de_tabla_vinculacion_producto_al_proveedor_signal)
@@ -86,217 +91,361 @@ class Productos_de_proveedorController(QWidget):
         if self.producto_seleccionado is None:
             Mensaje().mensaje_informativo("No se realizo la selección de un producto para poder eliminarlo del proveedor.")
             return
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                estado = Proveedores_productoModel(session).desvincular_producto_del_proveedor(proveedor_id=self.proveedor.id, producto_id=self.producto_seleccionado.id)
-            if not estado:
-                Mensaje().mensaje_alerta("No se logro realizar la operación.")
-                return
-            Mensaje().mensaje_informativo("Operación realizada con éxito.")
-    
-    def obtener_productos_proveedor_hilo(self):
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.productos_proveedores_tabla)
-        self.consultor.ejecutar(funcion=self.obtener_productos_proveedor_query)
-    
-    def modal_espera_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("desvincular_producto_del_proveedor_thread")
+            self.id_desvincular_producto_del_proveedor = WorkerDB.create_managed_worker(owner_id="desvincular_producto_del_proveedor_thread")
+            self.consultor_desvincular_producto_del_proveedor = WorkerDB.get_managed_worker(self.id_desvincular_producto_del_proveedor)
+            if not self.consultor_desvincular_producto_del_proveedor:
+                raise Exception("No se logro hacer la operación")
             
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_desvincular_producto_del_proveedor,
+                resultado_callback=self.mostrar_estado,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_desvincular_producto_del_proveedor.ejecutar(
+                funcion=self.productos_del_proveedor_query,
+                proveedor = self.proveedor,
+                producto= self.producto_seleccionado
+            )
+        except Exception as e:
+            if hasattr(self, 'id_desvincular_producto_del_proveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_desvincular_producto_del_proveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            
+    def productos_del_proveedor_query(self, session, proveedor, producto):
+        try:
+            estado = Proveedores_productoModel(session).desvincular_producto_del_proveedor(proveedor_id=proveedor.id, producto_id=producto.id)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro hacer la operacion',
+                    "data": None
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurio un problema critico en el proceso: {e}',
+                "data": None
+            }
+        session.commit()
+        return {
+            "exito": estado,
+            "mensaje": f'Operacion exitosa',
+            "data": None
+        }
+            
+    def obtener_productos_proveedor_hilo(self):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_productos_del_proveedor_thread")
+            self.id_obtener_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_proveedor_thread")
+            self.consultor_obtener_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_obtener_productos_del_proveedor)
+            if not self.consultor_obtener_productos_del_proveedor:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_productos_del_proveedor,
+                resultado_callback=self.mostrar_estado,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_productos_del_proveedor.ejecutar(
+                funcion=self.obtener_productos_proveedor_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_productos_del_proveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_proveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             
     def obtener_productos_proveedor_query(self, session):
-            productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor(id_proveedor=self.proveedor.id)
-            return productos, estado
-
-    def productos_proveedores_tabla(self, productos, estado):
-        if not estado:
-            Mensaje().mensaje_informativo("No hay datos para mostrar")
-            return
         try:
-            if self.ui.tabla_productos_del_proveedor is None:
-                return
-            # Inicializar el modelo correctamente
-            if not hasattr(self, 'modelo_tabla_productos_del_proveedor'):
-                self.modelo_tabla_productos_del_proveedor = QStandardItemModel()
-            
-            # Limpiar el modelo y resetear cabeceras
-            self.modelo_tabla_productos_del_proveedor.clear()
-            self.modelo_tabla_productos_del_proveedor.setHorizontalHeaderLabels(["Codigo", "Nombre","Descripción", "Precio Proveedor"])
-            
-            if not productos:
-                print("No hay productos para mostrar")
-                self.ui.tabla_productos_del_proveedor.setModel(self.modelo_tabla_productos_del_proveedor)
-                return
-            
-            # Rellenar la tabla con los productos
-            for producto, precio_venta in productos:
-                if producto is not None:
-                    # Crear los datos para cada fila
-                    fila = [
-                        str(producto.codigo_upc),
-                        producto.nombre_producto,
-                        producto.descripcion_producto,
-                        f"{precio_venta:.2f}" if precio_venta is not None else ""
-                    ]
-                    print(producto.nombre_producto)
-                    # Crear los QStandardItems para la fila
-                    items = [QStandardItem(item) for item in fila]
-                    for item in items:
-                        item.setData(producto, Qt.UserRole)
-                    self.modelo_tabla_productos_del_proveedor.appendRow(items)
-            
-            self.ui.tabla_productos_del_proveedor.setModel(self.modelo_tabla_productos_del_proveedor)
-
-            # Desconectar la señal antes de conectar
-            if self.seleccion_conectada_productos:
-                self.ui.tabla_productos_del_proveedor.clicked.disconnect(self.obtener_elemento_seleccionado_productos)
-            
-            self.ui.tabla_productos_del_proveedor.clicked.connect(self.obtener_elemento_seleccionado_productos)
-            self.seleccion_conectada_productos = True
-            
+            productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor(id_proveedor=self.proveedor.id)
+            if not estado:
+                return {
+                    "exito": estado,
+                    "mensaje": f'Sin productos vinculados',
+                    "data": productos
+                }
         except Exception as e:
-            print(f'Error en productos_proveedores_tabla: {e}')
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Se encontraron {(productos)} registros',
+            "data": productos
+        }
+
+    def __configurar_tabla_productos_proveedor(self):
+        cabeceras = ["Codigo_upc", "Nombre","Descripción", "Precio_proveedor"]
+        mapeo_cabecera = {
+            "codigo_upc": lambda p:p.codigo_upc,
+            'nombre': lambda p: p.nombre_producto,
+            'descripcion_producto': lambda p: p.descripcion_producto or "",
+            'precio': lambda p: f"${p.precio_venta:.2f}"
+        }
+        # Usar ComprobarModelosTablas para crear/obtener el modelo
+        self.modelo_productos_del_proveedor_vproveedor = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo='modelo_productos_del_proveedor_vproveedor',
+            interfazTabla=self.ui.tabla_productos_del_proveedor,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabecera,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalSeleccion=self.obtener_elemento_seleccionado_productos
+        )
+        return self.modelo_productos_del_proveedor_vproveedor
+    
+    def productos_proveedores_tabla(self, resultado):
+        if not resultado["exito"]:
+            self.modelo_productos_del_proveedor_vproveedor.clear()
+            Mensaje().mensaje_informativo("No hay productos vinculados al proveedor")
+            return
+        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=True)
             
     def obtener_elemento_seleccionado_productos(self, current, previus=None):
         # Verifica si la celda seleccionada está en la primera columna
-        if current.column() >= 0:  # Verifica si es la primera columna
-            indice_fila = current.row()
-            elemento = self.modelo_tabla_productos_del_proveedor.item(indice_fila, 0)
-            if elemento is not None:
-                producto = elemento.data(Qt.UserRole)
-                if producto:
-                    self.producto_seleccionado = producto
-                    # self.PRODUCTO_DE_PROVEEDOR_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado)
-            else:
-                return
+        if current.isValid():
+            fila = current.row()
+            producto = self.modelo_productos_del_proveedor_vproveedor.get_item(current)
+            
+            if producto:
+                self.producto_seleccionado = producto
+                self.PRODUCTO_DE_PROVEEDOR_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado)
     
     def filtrar_productos_de_proveedor(self):
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.productos_proveedores_tabla)
-        if self.ui.cajaOpciones_filtro_nombre.currentText() .lower()== "igual a":
-            self.consultor.ejecutar(funcion=self.filtrar_productos_del_proveedor_exacto_query)
-        else:
-            self.consultor.ejecutar(funcion=self.filtrar_productos_del_proveedor_query)
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("filtrar_productos_del_proveedor_vproveedor")
+            self.id_filtrar_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="filtrar_productos_del_proveedor_vproveedor")
+            self.consultar_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_filtrar_productos_del_proveedor)
+            if not self.consultar_productos_del_proveedor:
+                raise Exception("No se logro hacer la operación")
             
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_filtrar_productos_del_proveedor,
+                resultado_callback=self.productos_proveedores_tabla,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            if self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "igual a":
+                self.consultar_productos_del_proveedor.ejecutar(
+                    funcion=self.filtrar_productos_del_proveedor_exacto_query
+                )
+            self.consultar_productos_del_proveedor.ejecutar(
+                funcion=self.filtrar_productos_del_proveedor_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_filtrar_productos_del_proveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_proveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
         
     def filtrar_productos_del_proveedor_exacto_query(self, session):
         nombre_producto = self.ui.txt_nombre_producto.text().strip()
         id_proveedor = self.proveedor.id
-        productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_exacto_nombre(proveedor_id=id_proveedor, nombre=nombre_producto)
-        return productos, estado
+        try:
+            productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_exacto_nombre(proveedor_id=id_proveedor, nombre=nombre_producto)
+            if not estado:
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se encontraron registros',
+                    "data": productos
+                }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico: {e}',
+                "data": []
+            }
+        return {
+                "exito": estado,
+                "mensaje": f'Se encontraron registros',
+                "data": productos
+            }
     
     def filtrar_productos_del_proveedor_query(self, session):
         nombre_producto = self.ui.txt_nombre_producto.text().strip()
         id_proveedor = self.proveedor.id
-        productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_contenga_nombre(proveedor_id=id_proveedor, nombre=nombre_producto)
-        return productos, estado
+        try:
+            productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_contenga_nombre(proveedor_id=id_proveedor, nombre=nombre_producto)
+            if not estado:
+                    return {
+                        "exito": estado,
+                        "mensaje": f'No se encontraron registros',
+                        "data": productos
+                    }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico: {e}',
+                "data": []
+            }
+        return {
+                "exito": estado,
+                "mensaje": f'Se encontraron registros',
+                "data": productos
+            }
     
     def filtrar_productos_sistema(self):
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.productos_del_sistema_tabla)
-        print(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText())
-        if self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText() .lower()== "es igual":
-            self.consultor.ejecutar(funcion=self.filtrar_productos_del_sistema_exacto_query)
-        else:
-            self.consultor.ejecutar(funcion=self.filtrar_productos_del_sistema_query)
-    
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("filtrar_productos_del_sistema_vproveedor")
+            self.id_filtrar_productos_del_sistema_vproveedor = WorkerDB.create_managed_worker(owner_id="filtrar_productos_del_sistema_vproveedor")
+            self.consultor_filtrar_productos_del_sistema_vproveedor = WorkerDB.get_managed_worker(self.id_filtrar_productos_del_sistema_vproveedor)
+            if not self.consultor_filtrar_productos_del_sistema_vproveedor:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_filtrar_productos_del_sistema_vproveedor,
+                resultado_callback=self.productos_del_sistema_tabla,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            if self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText() .lower()== "es igual":
+                self.consultor_filtrar_productos_del_sistema_vproveedor.ejecutar(
+                    funcion=self.filtrar_productos_del_sistema_exacto_query
+                )
+            self.consultor_filtrar_productos_del_sistema_vproveedor.ejecutar(
+                funcion=self.filtrar_productos_del_sistema_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_filtrar_productos_del_sistema_vproveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_sistema_vproveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
                 
     # comment: filtrar los productos con el nombre exacto
     def filtrar_productos_del_sistema_exacto_query(self, session):
         nombre = self.ui.txt_nombre_productodelsistema.text().strip()
-        productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre)
-        return productos, estado
+        try:
+            productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre)
+            if not estado:
+                        return {
+                            "exito": estado,
+                            "mensaje": f'No se encontraron registros',
+                            "data": productos
+                        }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico: {e}',
+                "data": []
+            }
+        return {
+                "exito": estado,
+                "mensaje": f'Se encontraron registros',
+                "data": productos
+            }
     
     #comment: filtrar por lo que en nombre contenga
     def filtrar_productos_del_sistema_query(self, session):
         nombre = self.ui.txt_nombre_productodelsistema.text().strip()
-        productos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre)
-        return productos, estado
+        try:
+            productos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre)
+            if not estado:
+                        return {
+                            "exito": estado,
+                            "mensaje": f'No se encontraron registros',
+                            "data": productos
+                        }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico: {e}',
+                "data": []
+            }
+        return {
+                "exito": estado,
+                "mensaje": f'Se encontraron registros',
+                "data": productos
+            }
     
     def obtener_productos_de_sistema_hilo(self):
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.productos_del_sistema_tabla)
-        self.consultor.ejecutar(funcion=self.obtener_productos_de_sistema_query)
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_productos_del_sistema_vproveedores")
+            self.id_obtener_productos_del_sistema_vproveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_sistema_vproveedores")
+            self.consultor_obtener_productos_del_sistema_vproveedores = WorkerDB.get_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
+            if not self.consultor_obtener_productos_del_sistema_vproveedores:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_productos_del_sistema_vproveedor,
+                resultado_callback=self.productos_del_sistema_tabla,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_productos_del_sistema_vproveedores.ejecutar(
+                funcion=self.obtener_productos_de_sistema_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_productos_del_sistema_vproveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
         
     def obtener_productos_de_sistema_query(self, session):
+        try:
             productos_del_sistema, estado = ProductosModel(session).obtener_productos()
-            return productos_del_sistema, estado
+            if not estado:
+                        return {
+                            "exito": estado,
+                            "mensaje": f'No se encontraron registros',
+                            "data": productos_del_sistema
+                        }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico: {e}',
+                "data": []
+            }
+        return {
+                "exito": estado,
+                "mensaje": f'Se encontraron registros',
+                "data": productos_del_sistema
+            }
                 
-    def productos_del_sistema_tabla(self, productos):
-        if productos is None:
+    def productos_del_sistema_tabla(self, resultado):
+        if not resultado["exito"]:
+            self.modelo_tabla_productos_del_sistema_vproveedor.clear()
             Mensaje().mensaje_informativo("No hay datos para mostrar")
             return
-        try:
-            if self.ui.tabla_productos_del_sistema is None:
-                return
-            # Inicializar el modelo correctamente
-            if not hasattr(self, 'modelo_tabla_productos_del_sistema'):
-                self.modelo_tabla_productos_del_sistema = QStandardItemModel()
+        self.modelo_tabla_productos_del_sistema_vproveedor.update_data(resultado["data"], reset=True)
             
-            # Limpiar el modelo y resetear cabeceras
-            self.modelo_tabla_productos_del_sistema.clear()
-            self.modelo_tabla_productos_del_sistema.setHorizontalHeaderLabels(["Codigo", "Nombre","Descripción"])
-            
-            # if not hasattr(self.proveedor, 'productos') or not self.proveedor.productos:
-            #     self.ui.tabla_productos_del_sistema.setModel(self.modelo_tabla_productos_del_sistema)
-            #     return
-            
-            # Rellenar la tabla con los productos
-            for producto in productos:
-                if producto is not None:
-                    # Crear los datos para cada fila
-                    fila = [
-                        str(producto.codigo_upc),
-                        producto.nombre_producto,
-                        producto.descripcion_producto,
-                    ]
-                    
-                    # Crear los QStandardItems para la fila
-                    items = [QStandardItem(item) for item in fila]
-                    for item in items:
-                        item.setData(producto, Qt.UserRole)
-                    self.modelo_tabla_productos_del_sistema.appendRow(items)
-            
-            self.ui.tabla_productos_del_sistema.setModel(self.modelo_tabla_productos_del_sistema)
-
-            # Desconectar la señal antes de conectar
-            if self.seleccion_conectada_productos_sistema:
-                self.ui.tabla_productos_del_sistema.clicked.disconnect(self.obtener_elemento_seleccionado_productos_sistema)
-            
-            self.ui.tabla_productos_del_sistema.clicked.connect(self.obtener_elemento_seleccionado_productos_sistema)
-            self.seleccion_conectada_productos_sistema = True
-            
-        except Exception as e:
-            print(f'Error en productos_proveedores_tabla: {e}')
+    def __configurar_tabla_productos_del_sistema(self):
+        cabeceras = ["Codigo_upc", "Nombre","Descripción", "Precio_proveedor"]
+        mapeo_cabecera = {
+            "codigo_upc": lambda p:p.codigo_upc,
+            'nombre': lambda p: p.nombre_producto,
+            'descripcion_producto': lambda p: p.descripcion_producto or ""
+        }
+        # Usar ComprobarModelosTablas para crear/obtener el modelo
+        self.modelo_tabla_productos_del_sistema_vproveedor = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo='modelo_tabla_productos_del_sistema_vproveedor',
+            interfazTabla=self.ui.tabla_productos_del_sistema,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabecera,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalSeleccion=self.obtener_elemento_seleccionado_productos_sistema
+        )
+        return self.modelo_tabla_productos_del_sistema_vproveedor
     
     def obtener_elemento_seleccionado_productos_sistema(self, current, previus = None):
-        if current.column() >= 0:  # Verifica si es la primera columna
-            indice_fila = current.row()
-            elemento = self.modelo_tabla_productos_del_sistema.item(indice_fila, 0)
-            if elemento is not None:
-                producto = elemento.data(Qt.UserRole)
-                if producto:
-                    self.producto_seleccionado_sistema = producto
-                    self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado_sistema)
-            else:
-                return
+        if current.isValid():
+            fila = current.row()
+            producto = self.modelo_tabla_productos_del_sistema_vproveedor.get_item(current)
+            
+            if producto:
+                self.producto_seleccionado_sistema = producto
+                self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado_sistema)
     
     def vincular_producto_al_proveedor_signal(self, producto):
         if not producto:
@@ -383,6 +532,12 @@ class Productos_de_proveedorController(QWidget):
                     Mensaje().mensaje_informativo("Se ha vinculado correctamente el producto al proveedor.")
         except Exception as e:
             print(f"error: {e}")
+        
+    def mostrar_estado(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        
+    def mostrar_error(self, mensaje):
+        Mensaje().mensaje_alerta(mensaje)
 
 class CambioPreciosProductosProveedores(QDialog):
     VENTANA_CERRADA_PRECIO_PRODUCTO = Signal()
@@ -425,3 +580,9 @@ class CambioPreciosProductosProveedores(QDialog):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
+        
+    def mostrar_estado(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        
+    def mostrar_error(self, mensaje):
+        Mensaje().mensaje_alerta(mensaje)
