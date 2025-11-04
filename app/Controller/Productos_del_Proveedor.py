@@ -221,7 +221,7 @@ class Productos_de_proveedorController(QWidget):
                 "data": []
             }
         # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
-        if (not hasattr(self, '_is_refreshing_productos_del_proveedor') or not self._is_refreshing_productos_del_proveedor) and productos:
+        if (not hasattr(self, '_is_refreshing_productos_proveedor') or not self._is_refreshing_productos_proveedor) and productos:
             # Incrementar por el límite, no por la cantidad recibida
             # Esto mantiene la paginación consistente
             self.cantidad_inicial_consulta_productos_del_proveedor += self.cantidad_final_consulta_productos_del_proveedor
@@ -328,7 +328,6 @@ class Productos_de_proveedorController(QWidget):
     
     def productos_proveedores_tabla(self, resultado):
         if not resultado["exito"]:
-            self.modelo_productos_del_proveedor_vproveedor.clear()
             Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado["mensaje"]}")
             self.no_hay_mas_registros_productos_proveedor = True
             return
