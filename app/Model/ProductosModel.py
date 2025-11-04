@@ -345,7 +345,7 @@ class ProductosModel:
         else:
             return None, False
     
-    def consultar_por_nombre_exacto(self, nombre):
+    def consultar_por_nombre_exacto(self, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
                 self.session.query(Productos)
@@ -355,7 +355,10 @@ class ProductosModel:
                     joinedload(Productos.unidad_medida_productos),
                     joinedload(Productos.presentacion_productos)
                 )
-                .filter(Productos.nombre_producto.ilike(nombre)).all
+                .filter(Productos.nombre_producto.ilike(nombre))
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
+                .all()
             )
             
             # Misma lógica de paginación

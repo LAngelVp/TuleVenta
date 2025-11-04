@@ -158,7 +158,7 @@ class Productos_de_proveedorController(QWidget):
             
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_obtener_productos_del_proveedor,
-                resultado_callback=self.mostrar_estado,
+                resultado_callback=self.productos_proveedores_tabla,
                 error_callback=self.mostrar_error,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
@@ -363,7 +363,7 @@ class Productos_de_proveedorController(QWidget):
     # comment: filtrar los productos con el nombre exacto
     def filtrar_productos_del_sistema_exacto_query(self, session, nombre):
         try:
-            productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre)
+            productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
             if not estado:
                         return {
                             "exito": estado,
@@ -377,6 +377,8 @@ class Productos_de_proveedorController(QWidget):
                 "data": []
             }
         self.busqueda_realizada = True
+        print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
+        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
         self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
         return {
                 "exito": estado,
@@ -627,12 +629,12 @@ class Productos_de_proveedorController(QWidget):
             return
         self.lista_productos_para_vincular.discard(producto)
         self.producto_para_vincular_tabla(self.lista_productos_para_vincular)
-        print(f"lista sin el producto : {self.lista_productos_para_vincular}")
         
     def producto_para_vincular_tabla(self, productos):
         try:
             """Agrega nuevos productos al modelo existente"""
             if not productos:
+                self.modelo_tabla_Productos_A_VincularProveedor.clear()
                 return
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
             self.modelo_tabla_Productos_A_VincularProveedor.update_data(productos, reset=False)
@@ -660,7 +662,7 @@ class Productos_de_proveedorController(QWidget):
         )
         return self.modelo_tabla_Productos_A_VincularProveedor
 
-    def obtener_elemento_seleccionado_a_vicular(self, current, previus):
+    def obtener_elemento_seleccionado_a_vicular(self, current, previus=None):
         if current.isValid():  # Verifica si es la primera columna
             fila = current.row()
             elemento = self.modelo_tabla_Productos_A_VincularProveedor.get_item(current)

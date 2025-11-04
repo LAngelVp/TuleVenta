@@ -6,22 +6,16 @@ class Proveedores_productoModel:
         self.session = session
     
     def consultar_productos_del_proveedor(self, id_proveedor):
-        proveedor = (
-            self.session.query(Proveedores)
-            .options(
-                joinedload(Proveedores.producto_proveedor_asociaciones)
-                .joinedload(ProductoProveedor.producto)
-            )
-            .filter(Proveedores.id == id_proveedor)
-            .first()
+        productos = (
+            self.session.query(ProductoProveedor)
+            .options(joinedload(ProductoProveedor.producto))
+            .filter(ProductoProveedor.proveedor_id == id_proveedor)
+            .all()
         )
 
-        if proveedor and proveedor.producto_proveedor_asociaciones:
-            # Tiene productos asociados
-            return proveedor, True
-        else:
-            # No tiene productos
-            return [], False
+        if productos:
+            return productos, True
+        return [], False
         
     def desvincular_producto_del_proveedor(self, proveedor_id, producto_id):
         try:

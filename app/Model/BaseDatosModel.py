@@ -247,7 +247,13 @@ class Productos(Base):
     sucursales = relationship(
         "Sucursales", secondary=sucursal_producto, back_populates="productos", 
     )
-    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="producto", collection_class=set)
+    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="producto", cascade="all, delete-orphan", collection_class=set)
+    
+    proveedores = relationship(
+        "Proveedores",
+        secondary="producto_proveedor",
+        viewonly=True
+    )
     
     detalles_compras = relationship("Detalles_compras", back_populates="producto")
     
@@ -301,7 +307,12 @@ class Proveedores(Base):
     categoria_id = Column(Integer, ForeignKey("Categorias_proveedores.id"))
     categoria = relationship("Categorias_proveedores", back_populates="proveedores")
     representante = relationship("Representantes_proveedores", back_populates="proveedores")  # Relación
-    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="proveedor", collection_class=set)
+    producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="proveedor", cascade="all, delete-orphan", collection_class=set)
+    productos = relationship(
+        "Productos",
+        secondary="producto_proveedor",
+        viewonly=True
+    )
     compras = relationship("Compras", back_populates="proveedor")
     
 class ProductoProveedor(Base):

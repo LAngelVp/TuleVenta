@@ -277,25 +277,45 @@ class ProveedoresModel:
             print(f"Error al filtrar productos que contengan nombre: {e}")
             return [], False
     
-    def actualizar_productos_al_proveedor(self, proveedor_id,  lista_productos):
+    def actualizar_productos_al_proveedor(self, proveedor_id, lista_productos):
         if not lista_productos or not proveedor_id:
             return [], False
+
         try:
-            proveedor = self.session.query(Proveedores).filter_by(id=proveedor_id).first()
+            proveedor = (
+                self.session.query(Proveedores)
+                .filter_by(id=proveedor_id)
+                .first()
+            )
             if not proveedor:
                 return [], False
 
-            productos_a_agregar = []
             for producto in lista_productos:
-                producto_db = self.session.get(Productos, producto.id)  # importante
-                if producto_db and producto_db not in proveedor.productos:
-                    productos_a_agregar.append(producto_db)
+                producto_db = self.session.get(Productos, producto.id)
+                if not producto_db:
+                    continue
 
-            if productos_a_agregar:
-                proveedor.productos.extend(productos_a_agregar)
+                # Verificar si ya existe una relación
+                relacion_existente = (
+                    self.session.query(ProductoProveedor)
+                    .filter_by(proveedor_id=proveedor_id, producto_id=producto_db.id)
+                    .first()
+                )
 
+                # Si no existe, la creamos
+                if not relacion_existente:
+                    nueva_relacion = ProductoProveedor(
+                        proveedor_id=proveedor_id,
+                        producto_id=producto_db.id,
+                        precio_venta=producto.precio if hasattr(producto, 'precio') else None
+                    )
+                    self.session.add(nueva_relacion)
+
+            self.session.commit()
             return proveedor, True
 
         except Exception as e:
-            print(f"error al meter el producto {e}")
+            self.session.rollback()
+            print(f"⚠️ Error al vincular producto al proveedor: {e}")
             return [], False
+
