@@ -1,7 +1,7 @@
 from .Convertir_a_diccionariosModel import *
 from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 class ProductosModel:
     def __init__(self, session):
@@ -355,7 +355,7 @@ class ProductosModel:
                     joinedload(Productos.unidad_medida_productos),
                     joinedload(Productos.presentacion_productos)
                 )
-                .filter(Productos.nombre_producto.ilike(nombre))
+                .filter(func.lower(Productos.nombre_producto) == func.lower(nombre)) 
                 .offset(cantidad_inicial)
                 .limit(cantidad_final)
                 .all()

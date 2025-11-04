@@ -5,11 +5,13 @@ class Proveedores_productoModel:
     def __init__(self, session):
         self.session = session
     
-    def consultar_productos_del_proveedor(self, id_proveedor):
+    def consultar_productos_del_proveedor(self, id_proveedor, cantidad_inicial=0, cantidad_final=100):
         productos = (
             self.session.query(ProductoProveedor)
             .options(joinedload(ProductoProveedor.producto))
             .filter(ProductoProveedor.proveedor_id == id_proveedor)
+            .offset(cantidad_inicial)
+            .limit(cantidad_final)
             .all()
         )
 

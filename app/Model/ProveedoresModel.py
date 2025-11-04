@@ -1,5 +1,5 @@
 from sqlalchemy.orm import joinedload
-from sqlalchemy import select
+from sqlalchemy import select, func
 from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, ProductoProveedor
 import logging
 
@@ -233,16 +233,19 @@ class ProveedoresModel:
         except Exception as e:
             return None, False
 
-    def filtrar_productos_del_proveedor_exacto_nombre(self, proveedor_id, nombre):
+    def filtrar_productos_del_proveedor_exacto_nombre(self, proveedor_id, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
                 self.session.query(ProductoProveedor)
+                .options(joinedload(ProductoProveedor.producto))
                 .join(ProductoProveedor.producto)
                 .join(ProductoProveedor.proveedor)
                 .filter(
-                    Productos.nombre_producto.ilike(nombre),
+                    func.lower(Productos.nombre_producto) == func.lower(nombre),
                     Proveedores.id == proveedor_id
                 )
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
 
@@ -255,16 +258,19 @@ class ProveedoresModel:
             print(f"Error al filtrar productos exactos: {e}")
             return [], False
         
-    def filtrar_productos_del_proveedor_contenga_nombre(self, proveedor_id, nombre):
+    def filtrar_productos_del_proveedor_contenga_nombre(self, proveedor_id, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
                 self.session.query(ProductoProveedor)
+                .options(joinedload(ProductoProveedor.producto))
                 .join(ProductoProveedor.producto)
                 .join(ProductoProveedor.proveedor)
                 .filter(
                     Productos.nombre_producto.ilike(f"%{nombre}%"),
                     Proveedores.id == proveedor_id
                 )
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
 

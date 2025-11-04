@@ -100,11 +100,11 @@ class Control_proveedores(QWidget):
         if self.proveedor_seleccionado:
             if self.ventana_productos_precios is None or self.ventana_productos_precios.isVisible():
                 self.ventana_productos_precios = Productos_de_proveedorController(parent=self, proveedor=self.proveedor_seleccionado)
-                self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.connect(self.ventana_productos_precios.obtener_productos_proveedor_hilo)
+                # self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.connect(self.ventana_productos_precios.obtener_productos_proveedor_hilo)
                 self.ventana_productos_precios.VENTANA_CERRADA_PRODUCTOS_DEL_PROVEEDOR.connect(self.ventana_cerrada_productos_proveedor)
                 self.LIMPIAR_CAMPOS_INTERNOS.connect(self.limpiar_campos)
                 self.LIMPIAR_CAMPOS_INTERNOS.emit()
-                self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.emit()
+                # self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.emit()
                 self.ventana_productos_precios.show()
             else:
                 self.ventana_productos_precios.raise_()

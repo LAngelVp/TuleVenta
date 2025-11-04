@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'PRODUCTOS_PROVEEDORES.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.0
+## Created by: Qt User Interface Compiler version 6.9.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -415,11 +415,11 @@ class Ui_contenedorModal_productos_proveedores(object):
         self.tabla_productos_del_proveedor.setAlternatingRowColors(True)
         self.tabla_productos_del_proveedor.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_productos_del_proveedor.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_productos_del_proveedor.setGridStyle(Qt.PenStyle.DashLine)
+        self.tabla_productos_del_proveedor.setGridStyle(Qt.PenStyle.NoPen)
         self.tabla_productos_del_proveedor.horizontalHeader().setMinimumSectionSize(150)
         self.tabla_productos_del_proveedor.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_productos_del_proveedor.horizontalHeader().setStretchLastSection(True)
-        self.tabla_productos_del_proveedor.verticalHeader().setVisible(False)
+        self.tabla_productos_del_proveedor.verticalHeader().setVisible(True)
         self.tabla_productos_del_proveedor.verticalHeader().setStretchLastSection(False)
 
         self.gridLayout_5.addWidget(self.tabla_productos_del_proveedor, 2, 0, 1, 1)
@@ -526,11 +526,12 @@ class Ui_contenedorModal_productos_proveedores(object):
         self.tabla_productos_del_sistema.setAlternatingRowColors(True)
         self.tabla_productos_del_sistema.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_productos_del_sistema.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_productos_del_sistema.setGridStyle(Qt.PenStyle.DashLine)
+        self.tabla_productos_del_sistema.setGridStyle(Qt.PenStyle.NoPen)
+        self.tabla_productos_del_sistema.setSortingEnabled(False)
         self.tabla_productos_del_sistema.horizontalHeader().setMinimumSectionSize(150)
         self.tabla_productos_del_sistema.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_productos_del_sistema.horizontalHeader().setStretchLastSection(True)
-        self.tabla_productos_del_sistema.verticalHeader().setVisible(False)
+        self.tabla_productos_del_sistema.verticalHeader().setVisible(True)
 
         self.gridLayout_8.addWidget(self.tabla_productos_del_sistema, 2, 0, 1, 1)
 
@@ -557,6 +558,7 @@ class Ui_contenedorModal_productos_proveedores(object):
         self.tabla_Productos_A_VincularProveedor.setAlternatingRowColors(True)
         self.tabla_Productos_A_VincularProveedor.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_Productos_A_VincularProveedor.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_Productos_A_VincularProveedor.setGridStyle(Qt.PenStyle.NoPen)
         self.tabla_Productos_A_VincularProveedor.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_6.addWidget(self.tabla_Productos_A_VincularProveedor, 1, 0, 1, 1)
