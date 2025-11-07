@@ -27,10 +27,10 @@ class Productos_de_proveedorController(QWidget):
         self.ui.btn_filtrarProductosSistema.clicked.connect(self.filtrar_productos_sistema)
         self.ui.btn_filtrarProductosProveedor.clicked.connect(self.filtrar_productos_de_proveedor)
         self.ui.btn_producto_del_proveedor_para_agregar.clicked.connect(self.vincular_producto_al_proveedor_funcion)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_productos_del_proveedor_funcion)
         self.ui.btn_producto_del_proveedor_cerrar.clicked.connect(self.close)
         self.ui.btn_producto_del_proveedor_eliminar.clicked.connect(self.desvincular_producto)
         self.ui.btn_producto_del_proveedor_editar.clicked.connect(self.editar_precio_producto)
+        self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_productos_del_proveedor_funcion)
         self.ui.btn_RefrescarTablaProductos.clicked.connect(self.obtener_productos_de_sistema_hilo)
         self.ui.btn_paginarProductosDelProveedor.clicked.connect(self.paginar_productos_del_proveedor)
         self.ui.btn_paginarProductosSistema.clicked.connect(self.paginar_productos_del_sistema)
@@ -163,9 +163,8 @@ class Productos_de_proveedorController(QWidget):
             print(f"error: {e}")
             self.ui.btn_RefrescarTabla.setEnabled(True)
     
-    def obtener_productos_del_proveedor_funcion(self, reset_paginacion_productos_proveedor=True):
+    def obtener_productos_del_proveedor_funcion(self):
         try:
-            self._is_refreshing_productos_proveedor = True
             # self.ui.btn_RefrescarTabla.setEnabled(False)
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
             self.no_hay_mas_registros_productos_proveedor = False  # Resetear el flag de fin de datos
@@ -177,10 +176,11 @@ class Productos_de_proveedorController(QWidget):
             self.ui.btn_RefrescarTabla.setEnabled(True)
             
     def obtener_productos_proveedor_hilo(self, reset_paginacion_productos_proveedor=False):
-        if reset_paginacion_productos_proveedor:
-            self.cantidad_inicial_consulta_productos_del_proveedor = 0
-            print("DEBUG - Paginación reiniciada")
         try:
+            if reset_paginacion_productos_proveedor:
+                self.cantidad_inicial_consulta_productos_del_proveedor = 0
+                print("DEBUG - Paginación reiniciada")
+                
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_productos_del_proveedor_thread")
             self.id_obtener_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_proveedor_thread")
@@ -203,49 +203,43 @@ class Productos_de_proveedorController(QWidget):
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             
     def obtener_productos_proveedor_query(self, session):
+        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
+        
         try:
             productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor(
                 id_proveedor=self.proveedor.id,
                 cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor,
                 cantidad_final=self.cantidad_final_consulta_productos_del_proveedor
-                )
-            print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
+            )
+            print(f"DEBUG - Obtenidos proveedor: {len(productos) if productos else 0} registros")
             print(f"DEBUG - Estado de la consulta: {estado}")
-            if not estado:
-                return {
-                    "exito": estado,
-                    "mensaje": f'Sin productos vinculados',
-                    "data": productos
-                }
+            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
+            if (not hasattr(self, '_is_refreshing_productos_proveedor') or not self._is_refreshing_productos_proveedor) and productos:
+                # Incrementar por el límite, no por la cantidad recibida
+                # Esto mantiene la paginación consistente
+                self.cantidad_inicial_consulta_productos_del_proveedor += self.cantidad_final_consulta_productos_del_proveedor
+                print(f"DEBUG - Nuevo offset proveedor: {self.cantidad_inicial_consulta_productos_del_proveedor}")
+            elif not productos:
+                print("DEBUG - No se obtuvieron productos, offset no incrementado")
         except Exception as e:
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
                 "data": []
             }
-        # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
-        if (not hasattr(self, '_is_refreshing_productos_proveedor') or not self._is_refreshing_productos_proveedor) and productos:
-            # Incrementar por el límite, no por la cantidad recibida
-            # Esto mantiene la paginación consistente
-            self.cantidad_inicial_consulta_productos_del_proveedor += self.cantidad_final_consulta_productos_del_proveedor
-            print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_consulta_productos_del_proveedor}")
-        elif not productos:
-            print("DEBUG - No se obtuvieron productos, offset no incrementado")
-            
         return {
             "exito": estado,
-            "mensaje": f'Se encontraron {(productos)} registros',
+            "mensaje": f'Se encontraron {len(productos) if productos else 0} registros',
             "data": productos
         }
     
     def productos_proveedores_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado["mensaje"]}")
-            self.no_hay_mas_registros_productos_proveedor = True
+            self.obtener_productos_del_proveedor_funcion()
             return
-        reset = getattr(self, "_is_refreshing_productos_proveedor", False)
-        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=reset)
-        self.ultima_carga_cantidad_productos_del_proveedor = len(resultado["data"] if resultado["data"] else 0)
+        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=True)
+        print(f"Tabla actualizada: {len(resultado["data"])} productos")
         
     def paginar_productos_del_proveedor(self):
         self._is_refreshing_productos_proveedor = False
@@ -254,10 +248,43 @@ class Productos_de_proveedorController(QWidget):
             return
         if not hasattr(self, 'busqueda_realizada_productos_proveedor') or not self.busqueda_realizada_productos_proveedor:
             print('Cargando más productos sin filtro del proveedor')
-            self.obtener_productos_proveedor_hilo()
+            self.obtener_productos_proveedor_hilo_paginacion()
         else:
             print("Paginar resultados filtrados")
             self.consulta_paginacion_productos_del_proveedor()
+            
+    def obtener_productos_proveedor_hilo_paginacion(self):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_productos_del_proveedor_thread")
+            self.id_obtener_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_proveedor_thread")
+            self.consultor_obtener_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_obtener_productos_del_proveedor)
+            if not self.consultor_obtener_productos_del_proveedor:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_productos_del_proveedor,
+                resultado_callback=self.agregar_productos_proveedor_tabla,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_productos_del_proveedor.ejecutar(
+                funcion=self.obtener_productos_proveedor_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_productos_del_proveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_proveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            
+    def agregar_productos_proveedor_tabla(self, resultado):
+        if not resultado["exito"]:
+            Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
+            self.no_hay_mas_registros_productos_proveedor = True
+            return
+        
+        # ✅ SOLO agregar, NUNCA limpiar
+        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=False)
+        self.ultima_carga_cantidad_productos_del_proveedor = len(resultado["data"] if resultado["data"] else 0)
     
     def consulta_paginacion_productos_del_proveedor(self):
         try:
@@ -273,6 +300,10 @@ class Productos_de_proveedorController(QWidget):
                 error_callback= self.mostrar_error,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
+            if self.nombre_producto_proveedor and self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual":
+                self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
+                    funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query
+                    )
             self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
                 funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query
                 )
@@ -332,7 +363,7 @@ class Productos_de_proveedorController(QWidget):
             Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
             return
         
-        if not hasattr(self, 'cantidad_inicial_consulta'):
+        if not hasattr(self, 'cantidad_inicial_consulta_productos_del_proveedor'):
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
         else:
             self.cantidad_inicial_consulta_productos_del_proveedor = 0  # Reinicia para nueva consulta
@@ -378,22 +409,16 @@ class Productos_de_proveedorController(QWidget):
     def filtrar_productos_del_proveedor_exacto_query(self, session, proveedor, nombre):
         try:
             productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_exacto_nombre(proveedor_id=proveedor.id, nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor, cantidad_final=self.cantidad_final_consulta_productos_del_proveedor)
-            if not estado:
-                return {
-                    "exito": estado,
-                    "mensaje": f'No se encontraron registros',
-                    "data": productos
-                }
+            self.busqueda_realizada_productos_proveedor = True
+            print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
+            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
+            self.cantidad_inicial_consulta_productos_del_proveedor = self.cantidad_inicial_consulta_productos_del_proveedor + self.cantidad_final_consulta_productos_del_proveedor
         except Exception as e:
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
             }
-        self.busqueda_realizada_productos_proveedor = True
-        print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
-        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
-        self.cantidad_inicial_consulta_productos_del_proveedor = self.cantidad_inicial_consulta_productos_del_proveedor + self.cantidad_final_consulta_productos_del_proveedor
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
@@ -403,22 +428,16 @@ class Productos_de_proveedorController(QWidget):
     def filtrar_productos_del_proveedor_query(self, session, proveedor, nombre):
         try:
             productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_contenga_nombre(proveedor_id=proveedor.id, nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor, cantidad_final=self.cantidad_final_consulta_productos_del_proveedor)
-            if not estado:
-                    return {
-                        "exito": estado,
-                        "mensaje": f'No se encontraron registros',
-                        "data": productos
-                    }
+            self.busqueda_realizada_productos_proveedor = True
+            print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
+            print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
+            self.cantidad_inicial_consulta_productos_del_proveedor = self.cantidad_inicial_consulta_productos_del_proveedor + self.cantidad_final_consulta_productos_del_proveedor
         except Exception as e:
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
             }
-        self.busqueda_realizada_productos_proveedor = True
-        print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
-        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
-        self.cantidad_inicial_consulta_productos_del_proveedor = self.cantidad_inicial_consulta_productos_del_proveedor + self.cantidad_final_consulta_productos_del_proveedor
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
