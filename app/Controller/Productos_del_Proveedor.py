@@ -168,6 +168,9 @@ class Productos_de_proveedorController(QWidget):
             # self.ui.btn_RefrescarTabla.setEnabled(False)
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
             self.no_hay_mas_registros_productos_proveedor = False  # Resetear el flag de fin de datos
+            self.nombre_producto_proveedor = None
+            self.busqueda_realizada_productos_proveedor = None
+            self.ui.txt_nombre_producto.clear()
             if hasattr(self, 'ultima_carga_cantidad_productos_del_proveedor'):
                 del self.ultima_carga_cantidad_productos_del_proveedor
             self.obtener_productos_proveedor_hilo(reset_paginacion_productos_proveedor = True)
@@ -236,7 +239,6 @@ class Productos_de_proveedorController(QWidget):
     def productos_proveedores_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado["mensaje"]}")
-            self.obtener_productos_del_proveedor_funcion()
             return
         self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=True)
         print(f"Tabla actualizada: {len(resultado["data"])} productos")
@@ -251,7 +253,8 @@ class Productos_de_proveedorController(QWidget):
             self.obtener_productos_proveedor_hilo_paginacion()
         else:
             print("Paginar resultados filtrados")
-            self.consulta_paginacion_productos_del_proveedor()
+            if self.proveedor:
+                self.consulta_paginacion_productos_del_proveedor()
             
     def obtener_productos_proveedor_hilo_paginacion(self):
         try:
@@ -300,27 +303,35 @@ class Productos_de_proveedorController(QWidget):
                 error_callback= self.mostrar_error,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
-            if self.nombre_producto_proveedor and self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual":
+            if self.nombre_producto_proveedor:
+                if self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual":
+                    self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
+                        funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query,
+                        proveedor = self.proveedor,
+                        nombre = self.nombre_producto_proveedor,
+                        busqueda_exacta = True
+                        )
                 self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
-                    funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query
+                    funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query,
+                    proveedor = self.proveedor,
+                    nombre = self.nombre_producto_proveedor,
                     )
-            self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
-                funcion=self.paginar_busqueda_por_filtros_productos_del_proveedor_query
-                )
         except Exception as e:
             if hasattr(self, 'id_hilo_obtener_productos_del_proveedor_paginados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_del_proveedor_paginados)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
             
-    def paginar_busqueda_por_filtros_productos_del_proveedor_query(self, session):
+    def paginar_busqueda_por_filtros_productos_del_proveedor_query(self, session, proveedor, nombre, busqueda_exacta = False):
         print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
         
         datos = []
         estado = False
         
         if self.nombre_producto_proveedor:
-            datos, estado = ProductosModel(session).consultar_por_nombre(
-                nombre=self.nombre_producto_proveedor,
+            datos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
+                id_proveedor=proveedor.id,
+                nombre_producto=nombre,
+                busqueda_exacta= busqueda_exacta,
                 cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor,
                 cantidad_final=self.cantidad_final_consulta_productos_del_proveedor
             )
@@ -390,12 +401,15 @@ class Productos_de_proveedorController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             if self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual":
+                print("filtro con igual")
                 self.consultar_productos_del_proveedor.ejecutar(
                     funcion=self.filtrar_productos_del_proveedor_exacto_query,
                     proveedor = self.proveedor,
-                    nombre=nuevo_nombre
+                    nombre=nuevo_nombre,
+                    busqueda_exacta=True
                 )
             else:
+                print("filtro con contenga")
                 self.consultar_productos_del_proveedor.ejecutar(
                     funcion=self.filtrar_productos_del_proveedor_query,
                     proveedor = self.proveedor,
@@ -406,9 +420,15 @@ class Productos_de_proveedorController(QWidget):
                 WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
         
-    def filtrar_productos_del_proveedor_exacto_query(self, session, proveedor, nombre):
+    def filtrar_productos_del_proveedor_exacto_query(self, session, proveedor, nombre, busqueda_exacta=False):
         try:
-            productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_exacto_nombre(proveedor_id=proveedor.id, nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor, cantidad_final=self.cantidad_final_consulta_productos_del_proveedor)
+            productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
+                id_proveedor=proveedor.id,
+                nombre_producto=nombre,
+                busqueda_exacta= busqueda_exacta,
+                cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor,
+                cantidad_final=self.cantidad_final_consulta_productos_del_proveedor
+            )
             self.busqueda_realizada_productos_proveedor = True
             print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
             print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")
@@ -425,9 +445,15 @@ class Productos_de_proveedorController(QWidget):
                 "data": productos
             }
     
-    def filtrar_productos_del_proveedor_query(self, session, proveedor, nombre):
+    def filtrar_productos_del_proveedor_query(self, session, proveedor, nombre, busqueda_exacta=False):
         try:
-            productos, estado = ProveedoresModel(session).filtrar_productos_del_proveedor_contenga_nombre(proveedor_id=proveedor.id, nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor, cantidad_final=self.cantidad_final_consulta_productos_del_proveedor)
+            productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
+                id_proveedor=proveedor.id,
+                nombre_producto=nombre,
+                busqueda_exacta= busqueda_exacta,
+                cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor,
+                cantidad_final=self.cantidad_final_consulta_productos_del_proveedor
+            )
             self.busqueda_realizada_productos_proveedor = True
             print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
             print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_del_proveedor}, limit={self.cantidad_final_consulta_productos_del_proveedor}")

@@ -18,6 +18,38 @@ class Proveedores_productoModel:
         if productos:
             return productos, True
         return [], False
+    
+    def consultar_productos_del_proveedor_por_nombre(self, id_proveedor, nombre_producto, busqueda_exacta=False, cantidad_inicial=0, cantidad_final=100):
+        try:
+            query = (
+                self.session.query(ProductoProveedor)
+                .options(joinedload(ProductoProveedor.producto))
+                .filter(ProductoProveedor.proveedor_id == id_proveedor)
+            )
+            
+            # Aplicar filtro por nombre según el tipo de búsqueda
+            if busqueda_exacta:
+                # Búsqueda exacta (case sensitive)
+                query = query.filter(ProductoProveedor.producto.has(Productos.nombre_producto == nombre_producto))
+            else:
+                # Búsqueda que contiene (case insensitive)
+                query = query.filter(ProductoProveedor.producto.has(Productos.nombre_producto.ilike(f'%{nombre_producto}%')))
+            
+            # Aplicar paginación
+            productos = (
+                query
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
+                .all()
+            )
+
+            if productos:
+                return productos, True
+            return [], False
+            
+        except Exception as e:
+            print(f"Error en consultar_productos_del_proveedor_por_nombre: {e}")
+            return [], False
         
     def desvincular_producto_del_proveedor(self, proveedor_id, producto_id):
         try:
