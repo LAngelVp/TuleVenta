@@ -100,7 +100,7 @@ class Productos_de_proveedorController(QWidget):
         event.accept()
     
     def desvincular_producto(self):
-        if self.producto_seleccionado is None:
+        if self.relacion_producto_proveedor_seleccionado is None:
             Mensaje().mensaje_informativo("No se realizo la selección de un producto para poder eliminarlo del proveedor.")
             return
         try:
@@ -119,17 +119,21 @@ class Productos_de_proveedorController(QWidget):
             )
             self.consultor_desvincular_producto_del_proveedor.ejecutar(
                 funcion=self.productos_del_proveedor_query,
-                proveedor = self.proveedor,
-                producto= self.producto_seleccionado
+                relacion = self.relacion_producto_proveedor_seleccionado
             )
         except Exception as e:
             if hasattr(self, 'id_desvincular_producto_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_desvincular_producto_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             
-    def productos_del_proveedor_query(self, session, proveedor, producto):
+    def productos_del_proveedor_query(self, session, relacion):
         try:
-            estado = Proveedores_productoModel(session).desvincular_producto_del_proveedor(proveedor_id=proveedor.id, producto_id=producto.id)
+            proveedor_id = relacion['proveedor_id']
+            producto_id = relacion['producto_id']
+            nombre_producto = relacion['nombre_producto']
+            print(f"ESTE ES EL PROVEEDOR: {proveedor_id}")
+            print(f"ESTE ES EL PRODUCTO: {producto_id}")
+            estado = Proveedores_productoModel(session).desvincular_producto_del_proveedor(proveedor_id=proveedor_id, producto_id=producto_id)
             if not estado:
                 session.rollback()
                 return {
@@ -495,11 +499,17 @@ class Productos_de_proveedorController(QWidget):
         # Verifica si la celda seleccionada está en la primera columna
         if current.isValid():
             fila = current.row()
-            producto = self.modelo_productos_del_proveedor_vproveedor.get_item(current)
+            relacion = self.modelo_productos_del_proveedor_vproveedor.get_item(current)
             
-            if producto:
-                self.producto_seleccionado = producto
-                # self.PRODUCTO_DE_PROVEEDOR_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado)
+            if relacion:
+                datos_desvinculacion = {
+                    'proveedor_id': relacion.proveedor_id,  # ID directo de la relación
+                    'producto_id': relacion.producto_id,    # ID directo de la relación
+                    'nombre_producto': relacion.producto.nombre_producto if relacion.producto else "Producto desconocido"
+                }
+                self.relacion_producto_proveedor_seleccionado = datos_desvinculacion
+                print(f"Esta es la seleccion del producto: {self.relacion_producto_proveedor_seleccionado}")
+                # self.desvincular_producto(relacion_producto_proveedor=self.relacion_producto_proveedor_seleccionado)
     
     def filtrar_productos_sistema(self):
         # Obtener valores actuales de los campos de búsqueda

@@ -54,15 +54,17 @@ class Proveedores_productoModel:
     def desvincular_producto_del_proveedor(self, proveedor_id, producto_id):
         try:
             relacion = (
-                            self.session.query(ProductoProveedor)
-                            .filter_by(proveedor_id=proveedor_id, producto_id=producto_id)
-                            .first()
-                        )
+                self.session.query(ProductoProveedor)
+                .filter_by(proveedor_id=proveedor_id, producto_id=producto_id)
+                .first()
+            )
             if not relacion:
                 return False
+            self.session.delete(relacion)
+            return True
         except:
             return False
-        return True
+    
     def establecer_precio_producto_del_proveedor(self, proveedor_id, producto_id, precio):
         try:
             # Buscar la relación existente
