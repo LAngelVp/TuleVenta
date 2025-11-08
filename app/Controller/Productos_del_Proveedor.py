@@ -56,13 +56,13 @@ class Productos_de_proveedorController(QWidget):
         self.lista_productos_para_vincular = set()
         self._ventanaCentradaProductosProveedores = False
         self.ventana_precio_producto = None
-        self.cantidad_inicial_consulta = 0
-        self.cantidad_final_consulta = 100
+        self.cantidad_inicial_consulta_productos_sistema = 0
+        self.cantidad_final_consulta_productos_sistema = 100
         self.cantidad_inicial_consulta_productos_del_proveedor = 0
         self.cantidad_final_consulta_productos_del_proveedor = 100
-        self.busqueda_realizada = False
+        self.busqueda_realizada_productos_sistema = False
         self.busqueda_realizada_productos_proveedor = False
-        self.nombre_producto = None
+        self.nombre_producto_sistema = None
         self.nombre_producto_proveedor=None
         self.codigo_upc = None
         
@@ -506,26 +506,26 @@ class Productos_de_proveedorController(QWidget):
         nuevo_nombre = self.ui.txt_nombre_productodelsistema.text().strip()
         
         # Verificar si los parámetros de búsqueda cambiaron
-        busqueda_nueva = (nuevo_nombre != self.nombre_producto)
+        busqueda_nueva = (nuevo_nombre != self.nombre_producto_sistema)
         
         # Actualizar los valores
-        self.nombre_producto = nuevo_nombre
+        self.nombre_producto_sistema = nuevo_nombre
         
         # Validaciones
-        if not self.nombre_producto:
+        if not self.nombre_producto_sistema:
             Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
             return
         
         if not hasattr(self, 'cantidad_inicial_consulta'):
-            self.cantidad_inicial_consulta = 0
+            self.cantidad_inicial_consulta_productos_sistema = 0
         else:
-            self.cantidad_inicial_consulta = 0  # Reinicia para nueva consulta
+            self.cantidad_inicial_consulta_productos_sistema = 0  # Reinicia para nueva consulta
         
         # Reiniciar paginación solo si es una búsqueda nueva
         if busqueda_nueva:
-            self.cantidad_inicial_consulta = 0
-            self.no_hay_mas_registros = False  # Resetear el flag
-            self.busqueda_realizada = True
+            self.cantidad_inicial_consulta_productos_sistema = 0
+            self.no_hay_mas_registros_productos_sistema = False  # Resetear el flag
+            self.busqueda_realizada_productos_sistema = True
         if busqueda_nueva and hasattr(self, 'modelo_tabla_productos_del_sistema_vproveedor'):
             self.modelo_tabla_productos_del_sistema_vproveedor.clear()
         try:
@@ -545,12 +545,12 @@ class Productos_de_proveedorController(QWidget):
             if self.ui.cajaOpciones_filtro_nombre_productos_del_sistema.currentText() .lower()== "es igual":
                 self.consultor_filtrar_productos_del_sistema_vproveedor.ejecutar(
                     funcion=self.filtrar_productos_del_sistema_exacto_query,
-                    nombre = self.nombre_producto
+                    nombre = self.nombre_producto_sistema
                 )
             else:
                 self.consultor_filtrar_productos_del_sistema_vproveedor.ejecutar(
                     funcion=self.filtrar_productos_del_sistema_query,
-                    nombre = self.nombre_producto
+                    nombre = self.nombre_producto_sistema
                 )
         except Exception as e:
             if hasattr(self, 'id_filtrar_productos_del_sistema_vproveedor'):
@@ -560,7 +560,7 @@ class Productos_de_proveedorController(QWidget):
     # comment: filtrar los productos con el nombre exacto
     def filtrar_productos_del_sistema_exacto_query(self, session, nombre):
         try:
-            productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
+            productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_sistema, cantidad_final=self.cantidad_final_consulta_productos_sistema)
             if not estado:
                         return {
                             "exito": estado,
@@ -573,10 +573,10 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
             }
-        self.busqueda_realizada = True
+        self.busqueda_realizada_productos_sistema = True
         print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
-        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
-        self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_sistema}, limit={self.cantidad_final_consulta_productos_sistema}")
+        self.cantidad_inicial_consulta_productos_sistema = self.cantidad_inicial_consulta_productos_sistema + self.cantidad_final_consulta_productos_sistema
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
@@ -586,7 +586,7 @@ class Productos_de_proveedorController(QWidget):
     #comment: filtrar por lo que en nombre contenga
     def filtrar_productos_del_sistema_query(self, session, nombre):
         try:
-            productos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre,cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
+            productos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre,cantidad_inicial=self.cantidad_inicial_consulta_productos_sistema, cantidad_final=self.cantidad_final_consulta_productos_sistema)
             if not estado:
                 return {
                     "exito": estado,
@@ -599,31 +599,31 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
             }
-        self.busqueda_realizada = True
+        self.busqueda_realizada_productos_sistema = True
         print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
-        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
-        self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+        print(f"DEBUG - Antes: offset={self.cantidad_inicial_consulta_productos_sistema}, limit={self.cantidad_final_consulta_productos_sistema}")
+        self.cantidad_inicial_consulta_productos_sistema = self.cantidad_inicial_consulta_productos_sistema + self.cantidad_final_consulta_productos_sistema
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
     
-    def obtener_productos_de_sistema_hilo(self, reset_paginacion = True):
+    def obtener_productos_de_sistema_hilo(self):
         try:
             # self.ui.btn_RefrescarTabla.setEnabled(False)
-            self.cantidad_inicial_consulta = 0
-            self.no_hay_mas_registros = False  # Resetear el flag de fin de datos
-            if hasattr(self, 'ultima_carga_cantidad'):
-                del self.ultima_carga_cantidad
-            self.consultar_productos_db(reset_paginacion= reset_paginacion)
+            self.cantidad_inicial_consulta_productos_sistema = 0
+            self.no_hay_mas_registros_productos_sistema = False  # Resetear el flag de fin de datos
+            if hasattr(self, 'ultima_carga_cantidad_productos_sistema'):
+                del self.ultima_carga_cantidad_productos_sistema
+            self.consultar_productos_db_sistema(reset_paginacion= True)
         except Exception as e:
             print(f"error: {e}")
             self.ui.btn_RefrescarTablaProductos.setEnabled(True)
             
-    def consultar_productos_db(self, reset_paginacion=False):
+    def consultar_productos_db_sistema(self, reset_paginacion=False):
         if reset_paginacion:
-            self.cantidad_inicial_consulta = 0
+            self.cantidad_inicial_consulta_productos_sistema = 0
             print("DEBUG - Paginación reiniciada")
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -648,35 +648,28 @@ class Productos_de_proveedorController(QWidget):
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
         
     def obtener_productos_de_sistema_query(self, session):
-        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_productos_sistema}, limit={self.cantidad_final_consulta_productos_sistema}")
         try:
             productos, estado = ProductosModel(session).obtener_productos(
-                offset=self.cantidad_inicial_consulta,
-                limit=self.cantidad_final_consulta
+                offset=self.cantidad_inicial_consulta_productos_sistema,
+                limit=self.cantidad_final_consulta_productos_sistema
                 )
             print(f"DEBUG - Obtenidos: {len(productos) if productos else 0} registros")
             print(f"DEBUG - Estado de la consulta: {estado}")
-            if not estado:
-                return {
-                    "exito": estado,
-                    "mensaje": f'No se encontraron registros',
-                    "data": productos
-                }
+            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
+            if (not hasattr(self, '_is_refreshing_productos_sistema') or not self._is_refreshing_productos_sistema) and productos:
+                # Incrementar por el límite, no por la cantidad recibida
+                # Esto mantiene la paginación consistente
+                self.cantidad_inicial_consulta_productos_sistema += self.cantidad_final_consulta_productos_sistema
+                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_consulta_productos_sistema}")
+            elif not productos:
+                print("DEBUG - No se obtuvieron productos, offset no incrementado")
         except Exception as e:
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
-            }
-        # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
-        if (not hasattr(self, '_is_refreshing') or not self._is_refreshing) and productos:
-            # Incrementar por el límite, no por la cantidad recibida
-            # Esto mantiene la paginación consistente
-            self.cantidad_inicial_consulta += self.cantidad_final_consulta
-            print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_consulta}")
-        elif not productos:
-            print("DEBUG - No se obtuvieron productos, offset no incrementado")
-            
+            }    
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
@@ -687,23 +680,45 @@ class Productos_de_proveedorController(QWidget):
         """Agrega nuevos productos al modelo existente"""
         if not resultado["exito"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
-            self.no_hay_mas_registros = True
             return
-        self.modelo_tabla_productos_del_sistema_vproveedor.update_data(resultado["data"], reset=False)
-        self.ultima_carga_cantidad = len(resultado["data"] if resultado["data"] else 0)
+        self.modelo_tabla_productos_del_sistema_vproveedor.update_data(resultado["data"], reset=True)
+        # self.ultima_carga_cantidad = len(resultado["data"] if resultado["data"] else 0)
         
     def paginar_productos_del_sistema(self):
-        self._is_refreshing = False
-        if hasattr(self, 'no_hay_mas_registros') and self.no_hay_mas_registros:
+        self._is_refreshing_productos_sistema = False
+        if hasattr(self, 'no_hay_mas_registros_productos_sistema') and self.no_hay_mas_registros_productos_sistema:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
             return
-        if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
+        if not hasattr(self, 'busqueda_realizada_productos_sistema') or not self.busqueda_realizada_productos_sistema:
             print('Cargando más productos sin filtro')
-            self.consultar_productos_db()
+            self.consultar_productos_db_sistema_paginacion()
         else:
             # Si hay búsqueda previa, paginar los filtros
             print("Paginar resultados filtrados")
             self.consulta_paginacion_productos_del_sistema()
+            
+    def consultar_productos_db_sistema_paginacion(self):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_productos_del_sistema_vproveedores")
+            self.id_obtener_productos_del_sistema_vproveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_sistema_vproveedores")
+            self.consultor_obtener_productos_del_sistema_vproveedores = WorkerDB.get_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
+            if not self.consultor_obtener_productos_del_sistema_vproveedores:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_productos_del_sistema_vproveedor,
+                resultado_callback=self.agregar_productos_del_sistema_en_tabla,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_productos_del_sistema_vproveedores.ejecutar(
+                funcion=self.obtener_productos_de_sistema_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_productos_del_sistema_vproveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             
     def consulta_paginacion_productos_del_sistema(self):
         try:
@@ -728,23 +743,23 @@ class Productos_de_proveedorController(QWidget):
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
     
     def paginar_busqueda_por_filtros_del_sistema(self, session):
-        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_consulta}, limit={self.cantidad_final_consulta}")
+        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_consulta_productos_sistema}, limit={self.cantidad_final_consulta_productos_sistema}")
         
         datos = []
         estado = False
         
-        if self.nombre_producto:
+        if self.nombre_producto_sistema:
             datos, estado = ProductosModel(session).consultar_por_nombre(
-                nombre=self.nombre_producto,
-                cantidad_inicial=self.cantidad_inicial_consulta,
-                cantidad_final=self.cantidad_final_consulta
+                nombre=self.nombre_producto_sistema,
+                cantidad_inicial=self.cantidad_inicial_consulta_productos_sistema,
+                cantidad_final=self.cantidad_final_consulta_productos_sistema
             )
             print(f"DEBUG - Obtenidos filtrados: {len(datos) if datos else 0} registros")
             
             # Solo incrementar si se obtuvieron registros
             if datos:
-                self.cantidad_inicial_consulta += len(datos)
-                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_consulta}")
+                self.cantidad_inicial_consulta_productos_sistema += len(datos)
+                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_consulta_productos_sistema}")
         
         return {
             "exito": estado,
@@ -758,10 +773,10 @@ class Productos_de_proveedorController(QWidget):
         """Agrega nuevos productos al modelo existente"""
         if not resultado["exito"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
-            self.no_hay_mas_registros = True
+            self.no_hay_mas_registros_productos_sistema = True
             return
         self.modelo_tabla_productos_del_sistema_vproveedor.update_data(resultado["data"], reset=False)
-        self.ultima_carga_cantidad = len(resultado["data"])
+        self.ultima_carga_cantidad_productos_sistema = len(resultado["data"])
             
     def __configurar_tabla_productos_del_sistema(self):
         cabeceras = ["Codigo_upc", "Nombre","Descripción"]
