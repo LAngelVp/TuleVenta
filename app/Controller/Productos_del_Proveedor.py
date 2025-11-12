@@ -75,9 +75,11 @@ class Productos_de_proveedorController(QWidget):
         self.PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL.connect(self.quitar_de_tabla_vinculacion_producto_al_proveedor_signal)
         
     def editar_precio_producto(self):
-        if self.producto_seleccionado is not None:
+        proveedor = self.objetoCompletoProveedorProductos.proveedor
+        producto = self.objetoCompletoProveedorProductos.producto
+        if self.objetoCompletoProveedorProductos is not None:
             if self.ventana_precio_producto is None or self.ventana_precio_producto.isVisible():
-                self.ventana_precio_producto = CambioPreciosProductosProveedores(parent = self, producto = self.producto_seleccionado, proveedor = self.proveedor)
+                self.ventana_precio_producto = CambioPreciosProductosProveedores(parent = self, producto = producto, proveedor = proveedor)
                 self.ventana_precio_producto.VENTANA_CERRADA_PRECIO_PRODUCTO.connect(self.cerrar_precio_productos)
                 self.ventana_precio_producto.show()
             else:
@@ -475,12 +477,12 @@ class Productos_de_proveedorController(QWidget):
             }
     
     def __configurar_tabla_productos_proveedor(self):
-        cabeceras = ["Codigo_upc", "Nombre","Descripción", "Precio_proveedor"]
+        cabeceras = ["Codigo_upc", "Nombre","Descripcion_producto", "Precio_venta"]
         mapeo_cabecera = {
             "codigo_upc": lambda p:p.producto.codigo_upc,
             'nombre': lambda p: p.producto.nombre_producto,
             'descripcion_producto': lambda p: p.producto.descripcion_producto or "",
-            'precio': lambda p: f"${p.producto.precio_venta:.2f}"
+            'Precio_venta': lambda p: f"${p.precio_venta:.2f}"
         }
         # Usar ComprobarModelosTablas para crear/obtener el modelo
         self.modelo_productos_del_proveedor_vproveedor = self.comprobar_modelos_tablas.comprobarModeloTabla(
@@ -508,6 +510,7 @@ class Productos_de_proveedorController(QWidget):
                     'nombre_producto': relacion.producto.nombre_producto if relacion.producto else "Producto desconocido"
                 }
                 self.relacion_producto_proveedor_seleccionado = datos_desvinculacion
+                self.objetoCompletoProveedorProductos = relacion
                 print(f"Esta es la seleccion del producto: {self.relacion_producto_proveedor_seleccionado}")
                 # self.desvincular_producto(relacion_producto_proveedor=self.relacion_producto_proveedor_seleccionado)
     
@@ -789,7 +792,7 @@ class Productos_de_proveedorController(QWidget):
         self.ultima_carga_cantidad_productos_sistema = len(resultado["data"])
             
     def __configurar_tabla_productos_del_sistema(self):
-        cabeceras = ["Codigo_upc", "Nombre","Descripción"]
+        cabeceras = ["Codigo_upc", "Nombre","Descripcion_producto"]
         mapeo_cabecera = {
             "codigo_upc": lambda p:p.codigo_upc,
             'nombre': lambda p: p.nombre_producto,
@@ -844,7 +847,7 @@ class Productos_de_proveedorController(QWidget):
             print(f'Error en productos_proveedores_tabla: {e}')
             
     def __congigurar_tabla_productos_a_vincular(self):
-        cabeceras = ["Codigo_upc", "Nombre","Descripción"]
+        cabeceras = ["Codigo_upc", "Nombre","Descripcion_producto"]
         mapeo_cabecera = {
             "codigo_upc": lambda p:p.codigo_upc,
             'nombre': lambda p: p.nombre_producto,
@@ -954,21 +957,62 @@ class CambioPreciosProductosProveedores(QDialog):
         self.ui.txt_nombre_producto.setText(self.producto.nombre_producto)
         self.ui.etiqueta_nombre_del_proveedor.setText(self.proveedor.nombre)
         
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        
     def cambiar_precio(self):
         precio = self.ui.decimal_costo_venta_proveedor.value()
         if precio <= 0:
             Mensaje().mensaje_informativo("El precio del producto debe ser mayor a 0")
             return
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            with session.begin():
-                estatdo_del_cambio = Proveedores_productoModel(session).establecer_precio_producto_del_proveedor(proveedor_id=self.proveedor.id, producto_id=self.producto.id, precio=precio)
-            if not estatdo_del_cambio:
-                Mensaje().mensaje_alerta("No se logro realizar la operación.")
-                return
-        Mensaje().mensaje_informativo("Operación exitosa")
-        return
-        
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("actualizar_precio_del_producto_del_proveedor_thread")
+            self.id_hilo_actualizar_precio_producto_del_proveedor = WorkerDB.create_managed_worker(owner_id="actualizar_precio_del_producto_del_proveedor_thread")
+            self.consultor_actualizar_precio_producto_del_proveedor = WorkerDB.get_managed_worker(self.id_hilo_actualizar_precio_producto_del_proveedor)
+            if not self.consultor_actualizar_precio_producto_del_proveedor:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_actualizar_precio_producto_del_proveedor,
+                resultado_callback=self.mostrar_estado,
+                error_callback=self.mostrar_error,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_actualizar_precio_producto_del_proveedor.ejecutar(
+                funcion=self.cambiar_precio_producto_query,
+                proveedor = self.proveedor,
+                producto = self.producto,
+                nuevo_precio = precio
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_actualizar_precio_producto_del_proveedor'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_precio_producto_del_proveedor)
+            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+    
+    def cambiar_precio_producto_query(self, session, proveedor, producto, nuevo_precio):
+        try:
+            estado = Proveedores_productoModel(session).establecer_precio_producto_del_proveedor(proveedor_id=proveedor.id, producto_id=producto.id, precio=nuevo_precio)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro hacer la actualización del precio del registro.',
+                    "data": []
+                }
+            session.commit()
+            return {
+                "exito": estado,
+                "mensaje": f'Precio del producto {producto.nombre_producto} actualizado.',
+                "data": []
+            }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso {e}.',
+                "data": []
+            }
     def closeEvent(self, event):
         self.VENTANA_CERRADA_PRECIO_PRODUCTO.emit()
         event.accept()

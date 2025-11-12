@@ -8,7 +8,10 @@ class Proveedores_productoModel:
     def consultar_productos_del_proveedor(self, id_proveedor, cantidad_inicial=0, cantidad_final=100):
         productos = (
             self.session.query(ProductoProveedor)
-            .options(joinedload(ProductoProveedor.producto))
+            .options(
+                joinedload(ProductoProveedor.producto),
+                joinedload(ProductoProveedor.proveedor)
+            )
             .filter(ProductoProveedor.proveedor_id == id_proveedor)
             .offset(cantidad_inicial)
             .limit(cantidad_final)
