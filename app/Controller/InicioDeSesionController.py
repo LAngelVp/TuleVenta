@@ -132,7 +132,7 @@ class SaludoIngreso(QWidget):
         if self.usuario is None:
             Mensaje().mensaje_informativo("No hay informacion del usuario")
             return
-        self.ui.etiquetaNombreUsuario.setText(self.usuario["nombre_empleado"])
+        self.ui.etiquetaNombreUsuario.setText(self.usuario["nombre_empleado"].upper())
         tiempo = self.diferenciar_tiempo_dia()
         self.ui.etiquetaBuendia.setText(f"Excelente {tiempo}")
         
