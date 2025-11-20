@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1462</width>
-    <height>768</height>
+    <width>1525</width>
+    <height>947</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -397,8 +397,8 @@ QCalendarWidget QAbstractItemView::item:hover {
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>1450</width>
-              <height>1104</height>
+              <width>1525</width>
+              <height>1242</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_11">
@@ -502,27 +502,28 @@ QCalendarWidget QAbstractItemView::item:hover {
                 <item row="2" column="0">
                  <widget class="QWidget" name="wpc_buscar_clientes" native="true">
                   <layout class="QGridLayout" name="gridLayout_12">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="etiqueta_titulo_tabla">
-                     <property name="text">
-                      <string>LISTADO DE CLIENTES</string>
-                     </property>
-                    </widget>
+                   <item row="1" column="0" colspan="4">
+                    <layout class="QGridLayout" name="gridLayout_8">
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="etiqueta_iconobuscar">
+                       <property name="text">
+                        <string/>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QLineEdit" name="txt_buscarcliente">
+                       <property name="placeholderText">
+                        <string>Nombre del cliente</string>
+                       </property>
+                       <property name="clearButtonEnabled">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
                    </item>
-                   <item row="0" column="1">
-                    <spacer name="horizontalSpacer_6">
-                     <property name="orientation">
-                      <enum>Qt::Orientation::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>1154</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item row="0" column="2">
+                   <item row="0" column="3">
                     <widget class="QPushButton" name="btn_RefrescarTabla">
                      <property name="cursor">
                       <cursorShape>PointingHandCursor</cursorShape>
@@ -539,7 +540,14 @@ QCalendarWidget QAbstractItemView::item:hover {
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="0" colspan="3">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="etiqueta_titulo_tabla">
+                     <property name="text">
+                      <string>LISTADO DE CLIENTES</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0" colspan="4">
                     <widget class="QTableView" name="tabla_clientes">
                      <property name="editTriggers">
                       <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
@@ -567,26 +575,41 @@ QCalendarWidget QAbstractItemView::item:hover {
                      </attribute>
                     </widget>
                    </item>
-                   <item row="1" column="0" colspan="3">
-                    <layout class="QGridLayout" name="gridLayout_8">
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="etiqueta_iconobuscar">
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="1">
-                      <widget class="QLineEdit" name="txt_buscarcliente">
-                       <property name="placeholderText">
-                        <string>Nombre del cliente</string>
-                       </property>
-                       <property name="clearButtonEnabled">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
+                   <item row="0" column="1">
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Orientation::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>1154</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QPushButton" name="btn_btn_paginarClientesClientes">
+                     <property name="cursor">
+                      <cursorShape>PointingHandCursor</cursorShape>
+                     </property>
+                     <property name="toolTip">
+                      <string>Paginar</string>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="../../Source/iconosSVG.qrc">
+                       <normaloff>:/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>20</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>

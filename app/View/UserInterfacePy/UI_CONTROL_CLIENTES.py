@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_CLIENTES.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -29,7 +29,7 @@ class Ui_Control_Clientes(object):
     def setupUi(self, Control_Clientes):
         if not Control_Clientes.objectName():
             Control_Clientes.setObjectName(u"Control_Clientes")
-        Control_Clientes.resize(1462, 768)
+        Control_Clientes.resize(1525, 947)
         Control_Clientes.setMinimumSize(QSize(0, 0))
         Control_Clientes.setStyleSheet(u"#Control_Clientes{\n"
 "background: #fffefb;\n"
@@ -372,7 +372,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1450, 1104))
+        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1525, 1242))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -417,37 +417,6 @@ class Ui_Control_Clientes(object):
         self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
         self.gridLayout_12 = QGridLayout(self.wpc_buscar_clientes)
         self.gridLayout_12.setObjectName(u"gridLayout_12")
-        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
-
-        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
-
-        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
-
-        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
-        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
-        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon = QIcon()
-        icon.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon)
-
-        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
-
-        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
-        self.tabla_clientes.setObjectName(u"tabla_clientes")
-        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tabla_clientes.setAlternatingRowColors(True)
-        self.tabla_clientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
-        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
-
-        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 3)
-
         self.gridLayout_8 = QGridLayout()
         self.gridLayout_8.setObjectName(u"gridLayout_8")
         self.etiqueta_iconobuscar = QLabel(self.wpc_buscar_clientes)
@@ -462,7 +431,48 @@ class Ui_Control_Clientes(object):
         self.gridLayout_8.addWidget(self.txt_buscarcliente, 0, 1, 1, 1)
 
 
-        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 3)
+        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 4)
+
+        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
+        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
+        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon = QIcon()
+        icon.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon)
+
+        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 3, 1, 1)
+
+        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
+        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
+
+        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
+
+        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
+        self.tabla_clientes.setObjectName(u"tabla_clientes")
+        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientes.setAlternatingRowColors(True)
+        self.tabla_clientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
+
+        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 4)
+
+        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
+
+        self.btn_btn_paginarClientesClientes = QPushButton(self.wpc_buscar_clientes)
+        self.btn_btn_paginarClientesClientes.setObjectName(u"btn_btn_paginarClientesClientes")
+        self.btn_btn_paginarClientesClientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_paginarClientesClientes.setIcon(icon1)
+        self.btn_btn_paginarClientesClientes.setIconSize(QSize(20, 20))
+
+        self.gridLayout_12.addWidget(self.btn_btn_paginarClientesClientes, 0, 2, 1, 1)
 
 
         self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
@@ -663,9 +673,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaFisico = QPushButton(self.wpc_clientes_clienteFisico)
         self.btn_btn_nuevacategoriaFisico.setObjectName(u"btn_btn_nuevacategoriaFisico")
         self.btn_btn_nuevacategoriaFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_nuevacategoriaFisico.setIcon(icon1)
+        icon2 = QIcon()
+        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_nuevacategoriaFisico.setIcon(icon2)
         self.btn_btn_nuevacategoriaFisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout_2.addWidget(self.btn_btn_nuevacategoriaFisico)
@@ -820,7 +830,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevaareanegocio_fisico.setObjectName(u"btn_btn_nuevaareanegocio_fisico")
         self.btn_btn_nuevaareanegocio_fisico.setMaximumSize(QSize(16777215, 16777215))
         self.btn_btn_nuevaareanegocio_fisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon1)
+        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon2)
         self.btn_btn_nuevaareanegocio_fisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_nuevaareanegocio_fisico)
@@ -1128,7 +1138,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaMoral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_nuevacategoriaMoral.setObjectName(u"btn_btn_nuevacategoriaMoral")
         self.btn_btn_nuevacategoriaMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevacategoriaMoral.setIcon(icon1)
+        self.btn_btn_nuevacategoriaMoral.setIcon(icon2)
         self.btn_btn_nuevacategoriaMoral.setIconSize(QSize(20, 20))
 
         self.gridLayout_13.addWidget(self.btn_btn_nuevacategoriaMoral, 0, 1, 1, 1)
@@ -1179,7 +1189,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_areasnegocio_moral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_areasnegocio_moral.setObjectName(u"btn_btn_areasnegocio_moral")
         self.btn_btn_areasnegocio_moral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_areasnegocio_moral.setIcon(icon1)
+        self.btn_btn_areasnegocio_moral.setIcon(icon2)
         self.btn_btn_areasnegocio_moral.setIconSize(QSize(20, 20))
 
         self.gridLayout_2.addWidget(self.btn_btn_areasnegocio_moral, 1, 1, 1, 1)
@@ -1458,9 +1468,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_limpiarcampos = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_limpiarcampos.setObjectName(u"btn_btn_limpiarcampos")
         self.btn_btn_limpiarcampos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiarcampos.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiarcampos.setIcon(icon3)
         self.btn_btn_limpiarcampos.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_limpiarcampos, 0, 4, 1, 1)
@@ -1468,9 +1478,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_eliminar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_eliminar.setObjectName(u"btn_btn_cliente_eliminar")
         self.btn_btn_cliente_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_eliminar.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_eliminar.setIcon(icon4)
         self.btn_btn_cliente_eliminar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_eliminar, 0, 1, 1, 1)
@@ -1478,9 +1488,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_agregar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_agregar.setObjectName(u"btn_btn_cliente_agregar")
         self.btn_btn_cliente_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_agregar.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_agregar.setIcon(icon5)
         self.btn_btn_cliente_agregar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_agregar, 0, 0, 1, 1)
@@ -1488,9 +1498,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_modificar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_modificar.setObjectName(u"btn_btn_cliente_modificar")
         self.btn_btn_cliente_modificar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon5 = QIcon()
-        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_modificar.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_modificar.setIcon(icon6)
         self.btn_btn_cliente_modificar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_modificar, 0, 3, 1, 1)
@@ -1582,13 +1592,17 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_tipo_cliente.setText(QCoreApplication.translate("Control_Clientes", u"Tipo de cliente", None))
         self.btnRadio_wpc_clienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Fisico", None))
         self.btnRadio_wpc_clienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Moral", None))
-        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
+        self.etiqueta_iconobuscar.setText("")
+        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setText("")
-        self.etiqueta_iconobuscar.setText("")
-        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
+        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesClientes.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesClientes.setText("")
         self.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
         self.casillaverificacion_wpc_credito_autorizado.setText(QCoreApplication.translate("Control_Clientes", u"Autoriza cr\u00e9dito", None))
         self.etiqueta_wpc_limitecredito.setText(QCoreApplication.translate("Control_Clientes", u"Limite:", None))

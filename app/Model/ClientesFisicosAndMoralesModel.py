@@ -178,21 +178,22 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             return None
 
-    def mostrar_clientes_fisicos(self):
+    def mostrar_clientes_fisicos(self, cantidad_inicial=0, cantidad_final = 100):
         try:
             clientes = (
                 self.session.query(Clientes_fisicos)
                 .options(joinedload(Clientes_fisicos.areas_de_negocios), joinedload(Clientes_fisicos.categoria))
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
             
             if clientes:
                 return clientes, True
             else:
-                return None, False
+                return [], False
         except Exception as e:
-            print(f"Error: {e}")
-            return None, False
+            return [], False
 
     def mostrar_clientes_morales(self):
         try:
