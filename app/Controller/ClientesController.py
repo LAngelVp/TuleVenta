@@ -39,6 +39,8 @@ class Clientes(QWidget):
         self.ui.fecha_fechanacimiento.setDate(QDate.currentDate())
         self.ui.fecha_ultimoreporte_fisico.setDate(QDate.currentDate())
         self.ui.fecha_ultimoreporte_moral.setDate(QDate.currentDate())
+        self.ui.contenedor_clientesMorales.hide()
+        self.ui.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
         #//: VARIABLES GLOBALES
         self.foto_cliente = None
         self.seleccion_conectada = None
@@ -86,7 +88,8 @@ class Clientes(QWidget):
         self.ui.btn_btn_limpiarcampos.clicked.connect(self.limpiar_campos)
         #------------------------------
 #//: BUSCAR CLIENTES
-        self.ui.txt_buscarcliente.returnPressed.connect(self.buscar_cliente)
+        # self.ui.txt_buscarclienteFisico.returnPressed.connect(self.buscar_cliente)
+        self.ui.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente)
         #------------------------------
 #//: ACTUALIZAR CLIENTES
         self.ui.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
@@ -94,8 +97,8 @@ class Clientes(QWidget):
 #// : eliminar clientes
         self.ui.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
         
-        self.ui.btn_RefrescarTabla.clicked.connect(self.tabla_listar_clientes)
-        self.ui.btn_btn_paginarClientesClientes.clicked.connect(self.cargar_mas_clientes)
+        self.ui.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes)
+        self.ui.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes)
         
         self.ui.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
         self.ui.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
@@ -137,7 +140,7 @@ class Clientes(QWidget):
         else:
             cliente_fisico = False
         try:
-            texto = self.ui.txt_buscarcliente.text().strip() 
+            texto = self.ui.txt_buscarclienteFisico.text().strip() 
             if texto:
                 self.manejadorModal.mostrar_modal()
                 WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
@@ -1588,12 +1591,18 @@ class Clientes(QWidget):
             self.listar_areas()
             self.listar_categorias()
             self.ui.wpc_contenedor_pila.setCurrentIndex(1)
+            self.ui.etiqueta_titulo_tabla.setText("Listado de clientes morales")
+            self.ui.contenedor_clientesFisicos.hide()
+            self.ui.contenedor_clientesMorales.show()
 
     def mostrar_contenedor_cliente_fisico(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             self.listar_areas()
             self.listar_categorias()
             self.ui.wpc_contenedor_pila.setCurrentIndex(0)
+            self.ui.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
+            self.ui.contenedor_clientesMorales.hide()
+            self.ui.contenedor_clientesFisicos.show()
 
     def activar_creditofisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():

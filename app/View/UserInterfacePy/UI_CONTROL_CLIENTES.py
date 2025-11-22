@@ -20,7 +20,8 @@ from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication
     QFrame, QGridLayout, QHBoxLayout, QHeaderView,
     QLabel, QLayout, QLineEdit, QPlainTextEdit,
     QPushButton, QRadioButton, QScrollArea, QSizePolicy,
-    QSpacerItem, QStackedWidget, QTableView, QWidget)
+    QSpacerItem, QStackedWidget, QTableView, QVBoxLayout,
+    QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconsdvg_rc
 from ...Source import iconosSVG_rc
@@ -29,7 +30,7 @@ class Ui_Control_Clientes(object):
     def setupUi(self, Control_Clientes):
         if not Control_Clientes.objectName():
             Control_Clientes.setObjectName(u"Control_Clientes")
-        Control_Clientes.resize(1525, 947)
+        Control_Clientes.resize(1594, 1435)
         Control_Clientes.setMinimumSize(QSize(0, 0))
         Control_Clientes.setStyleSheet(u"#Control_Clientes{\n"
 "background: #fffefb;\n"
@@ -74,20 +75,15 @@ class Ui_Control_Clientes(object):
 "#wpc_buscar_clientes{\n"
 "min-width:300px;\n"
 "}\n"
-"#etiqueta_iconobuscar{\n"
-"image: url(:/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg);\n"
-"min-width:35px;\n"
-"min-height:25px;\n"
-"}\n"
-"[objectName"
-                        "^=\"btn_btn_\"]{\n"
+"[objectName^=\"btn_btn_\"]{\n"
 "background-color: #023375;\n"
 "border-radius: 3px;\n"
 "color: #fffefb;\n"
 "font-weight: bold;\n"
 "font-family: Arial;\n"
-"font-size: 16px;\n"
-"padding: 2px; \n"
+"font-"
+                        "size: 16px;\n"
+"padding: 2px 4px; \n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
 "background-color: #2196F3;\n"
@@ -98,15 +94,15 @@ class Ui_Control_Clientes(object):
 "#btn_btn_cliente_eliminar:hover{\n"
 "	background: #EE1D52;\n"
 "}\n"
-"#btn_RefrescarTabla{\n"
+"[objectName*=\"RefrescarTabla\"]{\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
 "padding: 5px;\n"
 "}\n"
-"#btn_RefrescarTabla:hover{\n"
+"[objectName*=\"RefrescarTabla\"]:hover{\n"
 "background: rgb(179, 179, 179);\n"
 "}\n"
-"#btn_RefrescarTabla:pressed{\n"
+"[objectName*=\"RefrescarTabla\"]:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
 "[objectName*=\"etiqueta_\"]{\n"
@@ -125,13 +121,13 @@ class Ui_Control_Clientes(object):
 "font-size: 15px;\n"
 "border: none;\n"
 "border-bottom: 1px solid rgb(0, 0, 0);\n"
-""
-                        "background: #F5F5F5;\n"
+"background: #F5F5F5;\n"
 "border-radius: 2px;\n"
 "color: #1d1c1c;\n"
 "min-width: 200px;\n"
 "}\n"
-"[objectName*=\"txt_\"]::focus{\n"
+"[objectN"
+                        "ame*=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName*=\"txtlargo_\"]{\n"
@@ -168,12 +164,12 @@ class Ui_Control_Clientes(object):
 "    border-bottom: 1px solid #787878 ;\n"
 "    padding: 2px ;\n"
 "    background-color: #F5F5F5 ;\n"
-"    font"
-                        "-size: 14px ;\n"
+"    font-size: 14px ;\n"
 "    min-width: 200px ;\n"
 "    font-family: \"Arial\" ;\n"
 "    color: #1d1c1c ;\n"
-"	selection-background-color: #4791F5; \n"
+"	s"
+                        "election-background-color: #4791F5; \n"
 "}\n"
 "\n"
 "/* ESTILO DEL DROPDOWN (LISTA) */\n"
@@ -205,14 +201,14 @@ class Ui_Control_Clientes(object):
 "    height: 17% ;\n"
 "    padding-left: 5px ;\n"
 "    padding-right: 5px ;\n"
-"}"
-                        "\n"
+"}\n"
 "/*TABLA*/\n"
 "\n"
 "[objectName*=\"tabla_\"] {\n"
 "font-family: Arial;\n"
 "font-size: 14px;\n"
-"background: #E3E3E3;\n"
+"backg"
+                        "round: #E3E3E3;\n"
 "border: 1px solid #4791F5;\n"
 "min-height: 400px;\n"
 "}\n"
@@ -250,14 +246,14 @@ class Ui_Control_Clientes(object):
 "font-family:Arial;\n"
 "font-size: 14px;\n"
 "color:#1d1c1c;\n"
-"font-weig"
-                        "ht: bold;\n"
+"font-weight: bold;\n"
 "}\n"
 "#wpc_clientes_contenedordatos{\n"
 "max-width:800px;\n"
 "background: #fffefb;\n"
 "}\n"
-"#label_wpc_fotocliente{\n"
+""
+                        "#label_wpc_fotocliente{\n"
 "min-height:200px;\n"
 "min-width:200px;\n"
 "background: #F5F5F5;\n"
@@ -296,12 +292,12 @@ class Ui_Control_Clientes(object):
 "width: 17%;\n"
 "height: 17%;\n"
 "padding-left:5px;\n"
-"padding-ri"
-                        "ght:5px;\n"
+"padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
 "*[objectName*=\"fecha_\"]::focus{\n"
-"border-bottom: 2px solid #00668c;\n"
+"border-bottom: 2px solid "
+                        "#00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
@@ -335,12 +331,12 @@ class Ui_Control_Clientes(object):
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
 "    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
-""
-                        "    selection-color: white;\n"
+"    selection-color: white;\n"
 "}\n"
 "\n"
 "/* D\u00cdAS DE OTROS MESES */\n"
-"QCalendarWidget QAbstractItemView:disabled {\n"
+"QCalendarWidget QAbstractIt"
+                        "emView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
@@ -372,7 +368,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1525, 1242))
+        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1594, 1787))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -413,70 +409,6 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_4.addWidget(self.contenedor_opcionesclientes, 0, 0, 1, 1)
 
-        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
-        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
-        self.gridLayout_12 = QGridLayout(self.wpc_buscar_clientes)
-        self.gridLayout_12.setObjectName(u"gridLayout_12")
-        self.gridLayout_8 = QGridLayout()
-        self.gridLayout_8.setObjectName(u"gridLayout_8")
-        self.etiqueta_iconobuscar = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_iconobuscar.setObjectName(u"etiqueta_iconobuscar")
-
-        self.gridLayout_8.addWidget(self.etiqueta_iconobuscar, 0, 0, 1, 1)
-
-        self.txt_buscarcliente = QLineEdit(self.wpc_buscar_clientes)
-        self.txt_buscarcliente.setObjectName(u"txt_buscarcliente")
-        self.txt_buscarcliente.setClearButtonEnabled(True)
-
-        self.gridLayout_8.addWidget(self.txt_buscarcliente, 0, 1, 1, 1)
-
-
-        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 4)
-
-        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
-        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
-        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon = QIcon()
-        icon.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon)
-
-        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 3, 1, 1)
-
-        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
-
-        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
-
-        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
-        self.tabla_clientes.setObjectName(u"tabla_clientes")
-        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tabla_clientes.setAlternatingRowColors(True)
-        self.tabla_clientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
-        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
-
-        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 4)
-
-        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
-
-        self.btn_btn_paginarClientesClientes = QPushButton(self.wpc_buscar_clientes)
-        self.btn_btn_paginarClientesClientes.setObjectName(u"btn_btn_paginarClientesClientes")
-        self.btn_btn_paginarClientesClientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_paginarClientesClientes.setIcon(icon1)
-        self.btn_btn_paginarClientesClientes.setIconSize(QSize(20, 20))
-
-        self.gridLayout_12.addWidget(self.btn_btn_paginarClientesClientes, 0, 2, 1, 1)
-
-
-        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
-
         self.wpc_contenedor_pila = QStackedWidget(self.wpc_clientes_datos)
         self.wpc_contenedor_pila.setObjectName(u"wpc_contenedor_pila")
         self.wpc_pagina_clientefisico = QWidget()
@@ -491,154 +423,6 @@ class Ui_Control_Clientes(object):
         self.gridLayout_7.setSpacing(0)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.gridLayout_7.setContentsMargins(0, 0, 0, 0)
-        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.gridLayout_7.addItem(self.verticalSpacer_2, 1, 0, 1, 1)
-
-        self.contenedor_izquierda = QFrame(self.wpc_contenedor_clientfisico)
-        self.contenedor_izquierda.setObjectName(u"contenedor_izquierda")
-        self.contenedor_izquierda.setFrameShape(QFrame.Shape.StyledPanel)
-        self.contenedor_izquierda.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout_6 = QGridLayout(self.contenedor_izquierda)
-        self.gridLayout_6.setSpacing(0)
-        self.gridLayout_6.setObjectName(u"gridLayout_6")
-        self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
-        self.label_wpc_fotocliente = QLabel(self.contenedor_izquierda)
-        self.label_wpc_fotocliente.setObjectName(u"label_wpc_fotocliente")
-        self.label_wpc_fotocliente.setMinimumSize(QSize(202, 202))
-        self.label_wpc_fotocliente.setMaximumSize(QSize(52, 52))
-        font = QFont()
-        self.label_wpc_fotocliente.setFont(font)
-        self.label_wpc_fotocliente.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.label_wpc_fotocliente.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.gridLayout_6.addWidget(self.label_wpc_fotocliente, 0, 0, 1, 1, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignTop)
-
-        self.wpc_clientes_autorizacredito = QWidget(self.contenedor_izquierda)
-        self.wpc_clientes_autorizacredito.setObjectName(u"wpc_clientes_autorizacredito")
-        self.formLayout = QFormLayout(self.wpc_clientes_autorizacredito)
-        self.formLayout.setObjectName(u"formLayout")
-        self.casillaverificacion_wpc_credito_autorizado = QCheckBox(self.wpc_clientes_autorizacredito)
-        self.casillaverificacion_wpc_credito_autorizado.setObjectName(u"casillaverificacion_wpc_credito_autorizado")
-
-        self.formLayout.setWidget(0, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_wpc_credito_autorizado)
-
-        self.etiqueta_wpc_limitecredito = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_wpc_limitecredito.setObjectName(u"etiqueta_wpc_limitecredito")
-
-        self.formLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.etiqueta_wpc_limitecredito)
-
-        self.cajaDecimal_wpc_limite_credito = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
-        self.cajaDecimal_wpc_limite_credito.setObjectName(u"cajaDecimal_wpc_limite_credito")
-        self.cajaDecimal_wpc_limite_credito.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.cajaDecimal_wpc_limite_credito.setMaximum(99999999.989999994635582)
-
-        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_wpc_limite_credito)
-
-        self.etiqueta_creditodisponible_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_creditodisponible_fisico.setObjectName(u"etiqueta_creditodisponible_fisico")
-
-        self.formLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.etiqueta_creditodisponible_fisico)
-
-        self.cajaDecimal_creditodisponible_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
-        self.cajaDecimal_creditodisponible_fisico.setObjectName(u"cajaDecimal_creditodisponible_fisico")
-        self.cajaDecimal_creditodisponible_fisico.setEnabled(False)
-        self.cajaDecimal_creditodisponible_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.cajaDecimal_creditodisponible_fisico.setMaximum(99999999.989999994635582)
-
-        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_creditodisponible_fisico)
-
-        self.etiqueta_creditoutilizado_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_creditoutilizado_fisico.setObjectName(u"etiqueta_creditoutilizado_fisico")
-
-        self.formLayout.setWidget(3, QFormLayout.ItemRole.LabelRole, self.etiqueta_creditoutilizado_fisico)
-
-        self.cajaDecimal_creditoutilizado_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
-        self.cajaDecimal_creditoutilizado_fisico.setObjectName(u"cajaDecimal_creditoutilizado_fisico")
-        self.cajaDecimal_creditoutilizado_fisico.setEnabled(False)
-        self.cajaDecimal_creditoutilizado_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.cajaDecimal_creditoutilizado_fisico.setMaximum(99999999.989999994635582)
-
-        self.formLayout.setWidget(3, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_creditoutilizado_fisico)
-
-        self.etiqueta_estadodelcredito_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_estadodelcredito_fisico.setObjectName(u"etiqueta_estadodelcredito_fisico")
-
-        self.formLayout.setWidget(4, QFormLayout.ItemRole.SpanningRole, self.etiqueta_estadodelcredito_fisico)
-
-        self.txt_estadodelcredito_fisico = QLineEdit(self.wpc_clientes_autorizacredito)
-        self.txt_estadodelcredito_fisico.setObjectName(u"txt_estadodelcredito_fisico")
-        self.txt_estadodelcredito_fisico.setEnabled(False)
-
-        self.formLayout.setWidget(5, QFormLayout.ItemRole.SpanningRole, self.txt_estadodelcredito_fisico)
-
-        self.etiqueta_porcentajeintereses_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_porcentajeintereses_fisico.setObjectName(u"etiqueta_porcentajeintereses_fisico")
-
-        self.formLayout.setWidget(6, QFormLayout.ItemRole.LabelRole, self.etiqueta_porcentajeintereses_fisico)
-
-        self.cajaDecimal_interesesaplicados_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
-        self.cajaDecimal_interesesaplicados_fisico.setObjectName(u"cajaDecimal_interesesaplicados_fisico")
-        self.cajaDecimal_interesesaplicados_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.cajaDecimal_interesesaplicados_fisico.setMaximum(99999999.989999994635582)
-
-        self.formLayout.setWidget(6, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_interesesaplicados_fisico)
-
-        self.casillaverificacion_aplicadescuento_fisico = QCheckBox(self.wpc_clientes_autorizacredito)
-        self.casillaverificacion_aplicadescuento_fisico.setObjectName(u"casillaverificacion_aplicadescuento_fisico")
-
-        self.formLayout.setWidget(7, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_aplicadescuento_fisico)
-
-        self.etiqueta_porcentajedescuento_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_porcentajedescuento_fisico.setObjectName(u"etiqueta_porcentajedescuento_fisico")
-
-        self.formLayout.setWidget(8, QFormLayout.ItemRole.LabelRole, self.etiqueta_porcentajedescuento_fisico)
-
-        self.cajaDecimal_porcentajedescuento_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
-        self.cajaDecimal_porcentajedescuento_fisico.setObjectName(u"cajaDecimal_porcentajedescuento_fisico")
-        self.cajaDecimal_porcentajedescuento_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.cajaDecimal_porcentajedescuento_fisico.setMaximum(99999999.989999994635582)
-
-        self.formLayout.setWidget(8, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_porcentajedescuento_fisico)
-
-        self.line_2 = QFrame(self.wpc_clientes_autorizacredito)
-        self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.Shape.HLine)
-        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.formLayout.setWidget(9, QFormLayout.ItemRole.SpanningRole, self.line_2)
-
-        self.etiqueta_entidadlegalizada_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_entidadlegalizada_fisico.setObjectName(u"etiqueta_entidadlegalizada_fisico")
-
-        self.formLayout.setWidget(10, QFormLayout.ItemRole.SpanningRole, self.etiqueta_entidadlegalizada_fisico)
-
-        self.casillaverificacion_entidadlegalizada_fisico = QCheckBox(self.wpc_clientes_autorizacredito)
-        self.casillaverificacion_entidadlegalizada_fisico.setObjectName(u"casillaverificacion_entidadlegalizada_fisico")
-
-        self.formLayout.setWidget(11, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_entidadlegalizada_fisico)
-
-        self.etiqueta_fechaultimoreporte_fisico = QLabel(self.wpc_clientes_autorizacredito)
-        self.etiqueta_fechaultimoreporte_fisico.setObjectName(u"etiqueta_fechaultimoreporte_fisico")
-
-        self.formLayout.setWidget(13, QFormLayout.ItemRole.LabelRole, self.etiqueta_fechaultimoreporte_fisico)
-
-        self.fecha_ultimoreporte_fisico = QDateEdit(self.wpc_clientes_autorizacredito)
-        self.fecha_ultimoreporte_fisico.setObjectName(u"fecha_ultimoreporte_fisico")
-        self.fecha_ultimoreporte_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-
-        self.formLayout.setWidget(13, QFormLayout.ItemRole.FieldRole, self.fecha_ultimoreporte_fisico)
-
-        self.verticalSpacer = QSpacerItem(149, 117, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.formLayout.setItem(14, QFormLayout.ItemRole.SpanningRole, self.verticalSpacer)
-
-
-        self.gridLayout_6.addWidget(self.wpc_clientes_autorizacredito, 1, 0, 1, 1)
-
-
-        self.gridLayout_7.addWidget(self.contenedor_izquierda, 0, 1, 1, 1)
-
         self.wpc_clientes_clienteFisico = QWidget(self.wpc_contenedor_clientfisico)
         self.wpc_clientes_clienteFisico.setObjectName(u"wpc_clientes_clienteFisico")
         self.wpc_clientes_clienteFisico.setMinimumSize(QSize(0, 0))
@@ -673,9 +457,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaFisico = QPushButton(self.wpc_clientes_clienteFisico)
         self.btn_btn_nuevacategoriaFisico.setObjectName(u"btn_btn_nuevacategoriaFisico")
         self.btn_btn_nuevacategoriaFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_nuevacategoriaFisico.setIcon(icon2)
+        icon = QIcon()
+        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_nuevacategoriaFisico.setIcon(icon)
         self.btn_btn_nuevacategoriaFisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout_2.addWidget(self.btn_btn_nuevacategoriaFisico)
@@ -830,7 +614,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevaareanegocio_fisico.setObjectName(u"btn_btn_nuevaareanegocio_fisico")
         self.btn_btn_nuevaareanegocio_fisico.setMaximumSize(QSize(16777215, 16777215))
         self.btn_btn_nuevaareanegocio_fisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon2)
+        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon)
         self.btn_btn_nuevaareanegocio_fisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_nuevaareanegocio_fisico)
@@ -964,6 +748,154 @@ class Ui_Control_Clientes(object):
 
 
         self.gridLayout_7.addWidget(self.wpc_clientes_clienteFisico, 0, 0, 1, 1)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_7.addItem(self.verticalSpacer_2, 1, 0, 1, 1)
+
+        self.contenedor_izquierda = QFrame(self.wpc_contenedor_clientfisico)
+        self.contenedor_izquierda.setObjectName(u"contenedor_izquierda")
+        self.contenedor_izquierda.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_izquierda.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_6 = QGridLayout(self.contenedor_izquierda)
+        self.gridLayout_6.setSpacing(0)
+        self.gridLayout_6.setObjectName(u"gridLayout_6")
+        self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.label_wpc_fotocliente = QLabel(self.contenedor_izquierda)
+        self.label_wpc_fotocliente.setObjectName(u"label_wpc_fotocliente")
+        self.label_wpc_fotocliente.setMinimumSize(QSize(202, 202))
+        self.label_wpc_fotocliente.setMaximumSize(QSize(52, 52))
+        font = QFont()
+        self.label_wpc_fotocliente.setFont(font)
+        self.label_wpc_fotocliente.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.label_wpc_fotocliente.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gridLayout_6.addWidget(self.label_wpc_fotocliente, 0, 0, 1, 1, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignTop)
+
+        self.wpc_clientes_autorizacredito = QWidget(self.contenedor_izquierda)
+        self.wpc_clientes_autorizacredito.setObjectName(u"wpc_clientes_autorizacredito")
+        self.formLayout = QFormLayout(self.wpc_clientes_autorizacredito)
+        self.formLayout.setObjectName(u"formLayout")
+        self.casillaverificacion_wpc_credito_autorizado = QCheckBox(self.wpc_clientes_autorizacredito)
+        self.casillaverificacion_wpc_credito_autorizado.setObjectName(u"casillaverificacion_wpc_credito_autorizado")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_wpc_credito_autorizado)
+
+        self.etiqueta_wpc_limitecredito = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_wpc_limitecredito.setObjectName(u"etiqueta_wpc_limitecredito")
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.etiqueta_wpc_limitecredito)
+
+        self.cajaDecimal_wpc_limite_credito = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
+        self.cajaDecimal_wpc_limite_credito.setObjectName(u"cajaDecimal_wpc_limite_credito")
+        self.cajaDecimal_wpc_limite_credito.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.cajaDecimal_wpc_limite_credito.setMaximum(99999999.989999994635582)
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_wpc_limite_credito)
+
+        self.etiqueta_creditodisponible_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_creditodisponible_fisico.setObjectName(u"etiqueta_creditodisponible_fisico")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.etiqueta_creditodisponible_fisico)
+
+        self.cajaDecimal_creditodisponible_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
+        self.cajaDecimal_creditodisponible_fisico.setObjectName(u"cajaDecimal_creditodisponible_fisico")
+        self.cajaDecimal_creditodisponible_fisico.setEnabled(False)
+        self.cajaDecimal_creditodisponible_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.cajaDecimal_creditodisponible_fisico.setMaximum(99999999.989999994635582)
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_creditodisponible_fisico)
+
+        self.etiqueta_creditoutilizado_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_creditoutilizado_fisico.setObjectName(u"etiqueta_creditoutilizado_fisico")
+
+        self.formLayout.setWidget(3, QFormLayout.ItemRole.LabelRole, self.etiqueta_creditoutilizado_fisico)
+
+        self.cajaDecimal_creditoutilizado_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
+        self.cajaDecimal_creditoutilizado_fisico.setObjectName(u"cajaDecimal_creditoutilizado_fisico")
+        self.cajaDecimal_creditoutilizado_fisico.setEnabled(False)
+        self.cajaDecimal_creditoutilizado_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.cajaDecimal_creditoutilizado_fisico.setMaximum(99999999.989999994635582)
+
+        self.formLayout.setWidget(3, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_creditoutilizado_fisico)
+
+        self.etiqueta_estadodelcredito_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_estadodelcredito_fisico.setObjectName(u"etiqueta_estadodelcredito_fisico")
+
+        self.formLayout.setWidget(4, QFormLayout.ItemRole.SpanningRole, self.etiqueta_estadodelcredito_fisico)
+
+        self.txt_estadodelcredito_fisico = QLineEdit(self.wpc_clientes_autorizacredito)
+        self.txt_estadodelcredito_fisico.setObjectName(u"txt_estadodelcredito_fisico")
+        self.txt_estadodelcredito_fisico.setEnabled(False)
+
+        self.formLayout.setWidget(5, QFormLayout.ItemRole.SpanningRole, self.txt_estadodelcredito_fisico)
+
+        self.etiqueta_porcentajeintereses_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_porcentajeintereses_fisico.setObjectName(u"etiqueta_porcentajeintereses_fisico")
+
+        self.formLayout.setWidget(6, QFormLayout.ItemRole.LabelRole, self.etiqueta_porcentajeintereses_fisico)
+
+        self.cajaDecimal_interesesaplicados_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
+        self.cajaDecimal_interesesaplicados_fisico.setObjectName(u"cajaDecimal_interesesaplicados_fisico")
+        self.cajaDecimal_interesesaplicados_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.cajaDecimal_interesesaplicados_fisico.setMaximum(99999999.989999994635582)
+
+        self.formLayout.setWidget(6, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_interesesaplicados_fisico)
+
+        self.casillaverificacion_aplicadescuento_fisico = QCheckBox(self.wpc_clientes_autorizacredito)
+        self.casillaverificacion_aplicadescuento_fisico.setObjectName(u"casillaverificacion_aplicadescuento_fisico")
+
+        self.formLayout.setWidget(7, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_aplicadescuento_fisico)
+
+        self.etiqueta_porcentajedescuento_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_porcentajedescuento_fisico.setObjectName(u"etiqueta_porcentajedescuento_fisico")
+
+        self.formLayout.setWidget(8, QFormLayout.ItemRole.LabelRole, self.etiqueta_porcentajedescuento_fisico)
+
+        self.cajaDecimal_porcentajedescuento_fisico = QDoubleSpinBox(self.wpc_clientes_autorizacredito)
+        self.cajaDecimal_porcentajedescuento_fisico.setObjectName(u"cajaDecimal_porcentajedescuento_fisico")
+        self.cajaDecimal_porcentajedescuento_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.cajaDecimal_porcentajedescuento_fisico.setMaximum(99999999.989999994635582)
+
+        self.formLayout.setWidget(8, QFormLayout.ItemRole.FieldRole, self.cajaDecimal_porcentajedescuento_fisico)
+
+        self.line_2 = QFrame(self.wpc_clientes_autorizacredito)
+        self.line_2.setObjectName(u"line_2")
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.formLayout.setWidget(9, QFormLayout.ItemRole.SpanningRole, self.line_2)
+
+        self.etiqueta_entidadlegalizada_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_entidadlegalizada_fisico.setObjectName(u"etiqueta_entidadlegalizada_fisico")
+
+        self.formLayout.setWidget(10, QFormLayout.ItemRole.SpanningRole, self.etiqueta_entidadlegalizada_fisico)
+
+        self.casillaverificacion_entidadlegalizada_fisico = QCheckBox(self.wpc_clientes_autorizacredito)
+        self.casillaverificacion_entidadlegalizada_fisico.setObjectName(u"casillaverificacion_entidadlegalizada_fisico")
+
+        self.formLayout.setWidget(11, QFormLayout.ItemRole.SpanningRole, self.casillaverificacion_entidadlegalizada_fisico)
+
+        self.etiqueta_fechaultimoreporte_fisico = QLabel(self.wpc_clientes_autorizacredito)
+        self.etiqueta_fechaultimoreporte_fisico.setObjectName(u"etiqueta_fechaultimoreporte_fisico")
+
+        self.formLayout.setWidget(13, QFormLayout.ItemRole.LabelRole, self.etiqueta_fechaultimoreporte_fisico)
+
+        self.fecha_ultimoreporte_fisico = QDateEdit(self.wpc_clientes_autorizacredito)
+        self.fecha_ultimoreporte_fisico.setObjectName(u"fecha_ultimoreporte_fisico")
+        self.fecha_ultimoreporte_fisico.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+
+        self.formLayout.setWidget(13, QFormLayout.ItemRole.FieldRole, self.fecha_ultimoreporte_fisico)
+
+        self.verticalSpacer = QSpacerItem(149, 117, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.formLayout.setItem(14, QFormLayout.ItemRole.SpanningRole, self.verticalSpacer)
+
+
+        self.gridLayout_6.addWidget(self.wpc_clientes_autorizacredito, 1, 0, 1, 1)
+
+
+        self.gridLayout_7.addWidget(self.contenedor_izquierda, 0, 1, 1, 1)
 
 
         self.gridLayout_3.addWidget(self.wpc_contenedor_clientfisico, 0, 0, 1, 1)
@@ -1138,7 +1070,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaMoral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_nuevacategoriaMoral.setObjectName(u"btn_btn_nuevacategoriaMoral")
         self.btn_btn_nuevacategoriaMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevacategoriaMoral.setIcon(icon2)
+        self.btn_btn_nuevacategoriaMoral.setIcon(icon)
         self.btn_btn_nuevacategoriaMoral.setIconSize(QSize(20, 20))
 
         self.gridLayout_13.addWidget(self.btn_btn_nuevacategoriaMoral, 0, 1, 1, 1)
@@ -1189,7 +1121,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_areasnegocio_moral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_areasnegocio_moral.setObjectName(u"btn_btn_areasnegocio_moral")
         self.btn_btn_areasnegocio_moral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_areasnegocio_moral.setIcon(icon2)
+        self.btn_btn_areasnegocio_moral.setIcon(icon)
         self.btn_btn_areasnegocio_moral.setIconSize(QSize(20, 20))
 
         self.gridLayout_2.addWidget(self.btn_btn_areasnegocio_moral, 1, 1, 1, 1)
@@ -1429,6 +1361,144 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_4.addWidget(self.wpc_contenedor_pila, 1, 0, 1, 1)
 
+        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
+        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
+        self.gridLayout_21 = QGridLayout(self.wpc_buscar_clientes)
+        self.gridLayout_21.setObjectName(u"gridLayout_21")
+        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
+        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
+
+        self.gridLayout_21.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
+
+        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_21.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
+
+        self.contenedor_clientesFisicos = QFrame(self.wpc_buscar_clientes)
+        self.contenedor_clientesFisicos.setObjectName(u"contenedor_clientesFisicos")
+        self.contenedor_clientesFisicos.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_clientesFisicos.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout = QVBoxLayout(self.contenedor_clientesFisicos)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalLayout_3.setContentsMargins(10, -1, 10, -1)
+        self.etiqueta_iconobuscarClienteFisico = QLabel(self.contenedor_clientesFisicos)
+        self.etiqueta_iconobuscarClienteFisico.setObjectName(u"etiqueta_iconobuscarClienteFisico")
+        self.etiqueta_iconobuscarClienteFisico.setPixmap(QPixmap(u":/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg"))
+        self.etiqueta_iconobuscarClienteFisico.setScaledContents(True)
+        self.etiqueta_iconobuscarClienteFisico.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.etiqueta_iconobuscarClienteFisico.setWordWrap(False)
+
+        self.horizontalLayout_3.addWidget(self.etiqueta_iconobuscarClienteFisico)
+
+        self.txt_buscarclienteFisico = QLineEdit(self.contenedor_clientesFisicos)
+        self.txt_buscarclienteFisico.setObjectName(u"txt_buscarclienteFisico")
+        self.txt_buscarclienteFisico.setClearButtonEnabled(True)
+
+        self.horizontalLayout_3.addWidget(self.txt_buscarclienteFisico)
+
+        self.btn_btn_filtrarClienteFisico = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_btn_filtrarClienteFisico.setObjectName(u"btn_btn_filtrarClienteFisico")
+        self.btn_btn_filtrarClienteFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.horizontalLayout_3.addWidget(self.btn_btn_filtrarClienteFisico)
+
+        self.btn_btn_paginarClientesFisicos = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_btn_paginarClientesFisicos.setObjectName(u"btn_btn_paginarClientesFisicos")
+        self.btn_btn_paginarClientesFisicos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_paginarClientesFisicos.setIcon(icon1)
+        self.btn_btn_paginarClientesFisicos.setIconSize(QSize(20, 20))
+
+        self.horizontalLayout_3.addWidget(self.btn_btn_paginarClientesFisicos)
+
+        self.btn_RefrescarTablaClientesFisicos = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_RefrescarTablaClientesFisicos.setObjectName(u"btn_RefrescarTablaClientesFisicos")
+        self.btn_RefrescarTablaClientesFisicos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTablaClientesFisicos.setIcon(icon2)
+
+        self.horizontalLayout_3.addWidget(self.btn_RefrescarTablaClientesFisicos)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
+
+        self.tabla_clientesFisicos = QTableView(self.contenedor_clientesFisicos)
+        self.tabla_clientesFisicos.setObjectName(u"tabla_clientesFisicos")
+        self.tabla_clientesFisicos.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientesFisicos.setAlternatingRowColors(True)
+        self.tabla_clientesFisicos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientesFisicos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientesFisicos.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientesFisicos.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientesFisicos.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientesFisicos.horizontalHeader().setStretchLastSection(True)
+
+        self.verticalLayout.addWidget(self.tabla_clientesFisicos)
+
+
+        self.gridLayout_21.addWidget(self.contenedor_clientesFisicos, 1, 0, 1, 2)
+
+        self.contenedor_clientesMorales = QFrame(self.wpc_buscar_clientes)
+        self.contenedor_clientesMorales.setObjectName(u"contenedor_clientesMorales")
+        self.contenedor_clientesMorales.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_clientesMorales.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_2 = QVBoxLayout(self.contenedor_clientesMorales)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(10, -1, 10, -1)
+        self.etiqueta_iconobuscarClienteMorales = QLabel(self.contenedor_clientesMorales)
+        self.etiqueta_iconobuscarClienteMorales.setObjectName(u"etiqueta_iconobuscarClienteMorales")
+        self.etiqueta_iconobuscarClienteMorales.setPixmap(QPixmap(u":/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg"))
+        self.etiqueta_iconobuscarClienteMorales.setScaledContents(True)
+
+        self.horizontalLayout_4.addWidget(self.etiqueta_iconobuscarClienteMorales)
+
+        self.txt_buscarclienteMorales = QLineEdit(self.contenedor_clientesMorales)
+        self.txt_buscarclienteMorales.setObjectName(u"txt_buscarclienteMorales")
+        self.txt_buscarclienteMorales.setClearButtonEnabled(True)
+
+        self.horizontalLayout_4.addWidget(self.txt_buscarclienteMorales)
+
+        self.btn_btn_filrtarClienteMoral = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_filrtarClienteMoral.setObjectName(u"btn_btn_filrtarClienteMoral")
+        self.btn_btn_filrtarClienteMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.horizontalLayout_4.addWidget(self.btn_btn_filrtarClienteMoral)
+
+        self.btn_btn_paginarClientesMorales = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_paginarClientesMorales.setObjectName(u"btn_btn_paginarClientesMorales")
+        self.btn_btn_paginarClientesMorales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_paginarClientesMorales.setIcon(icon1)
+        self.btn_btn_paginarClientesMorales.setIconSize(QSize(20, 20))
+
+        self.horizontalLayout_4.addWidget(self.btn_btn_paginarClientesMorales)
+
+        self.btn_RefrescarTablaClientesMorales = QPushButton(self.contenedor_clientesMorales)
+        self.btn_RefrescarTablaClientesMorales.setObjectName(u"btn_RefrescarTablaClientesMorales")
+        self.btn_RefrescarTablaClientesMorales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_RefrescarTablaClientesMorales.setIcon(icon2)
+
+        self.horizontalLayout_4.addWidget(self.btn_RefrescarTablaClientesMorales)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+
+        self.tabla_clientesMorales = QTableView(self.contenedor_clientesMorales)
+        self.tabla_clientesMorales.setObjectName(u"tabla_clientesMorales")
+
+        self.verticalLayout_2.addWidget(self.tabla_clientesMorales)
+
+
+        self.gridLayout_21.addWidget(self.contenedor_clientesMorales, 2, 0, 1, 2)
+
+
+        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
+
 
         self.gridLayout_11.addWidget(self.wpc_clientes_datos, 0, 1, 1, 1)
 
@@ -1575,9 +1645,8 @@ class Ui_Control_Clientes(object):
         QWidget.setTabOrder(self.txt_nombre_repre_moral, self.txt_telefono_repre_moral)
         QWidget.setTabOrder(self.txt_telefono_repre_moral, self.txt_puesto_repre_moral)
         QWidget.setTabOrder(self.txt_puesto_repre_moral, self.txt_correo_repre_moral)
-        QWidget.setTabOrder(self.txt_correo_repre_moral, self.txt_buscarcliente)
-        QWidget.setTabOrder(self.txt_buscarcliente, self.tabla_clientes)
-        QWidget.setTabOrder(self.tabla_clientes, self.btn_btn_limpiarcampos)
+        QWidget.setTabOrder(self.txt_correo_repre_moral, self.txt_buscarclienteFisico)
+        QWidget.setTabOrder(self.txt_buscarclienteFisico, self.btn_btn_limpiarcampos)
 
         self.retranslateUi(Control_Clientes)
 
@@ -1592,52 +1661,6 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_tipo_cliente.setText(QCoreApplication.translate("Control_Clientes", u"Tipo de cliente", None))
         self.btnRadio_wpc_clienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Fisico", None))
         self.btnRadio_wpc_clienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Moral", None))
-        self.etiqueta_iconobuscar.setText("")
-        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
-#if QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setText("")
-        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
-#if QT_CONFIG(tooltip)
-        self.btn_btn_paginarClientesClientes.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_btn_paginarClientesClientes.setText("")
-        self.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
-        self.casillaverificacion_wpc_credito_autorizado.setText(QCoreApplication.translate("Control_Clientes", u"Autoriza cr\u00e9dito", None))
-        self.etiqueta_wpc_limitecredito.setText(QCoreApplication.translate("Control_Clientes", u"Limite:", None))
-#if QT_CONFIG(tooltip)
-        self.cajaDecimal_wpc_limite_credito.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limite de cr\u00e9dito", None))
-#endif // QT_CONFIG(tooltip)
-        self.cajaDecimal_wpc_limite_credito.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
-        self.etiqueta_creditodisponible_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Disponible:", None))
-#if QT_CONFIG(tooltip)
-        self.cajaDecimal_creditodisponible_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Cr\u00e9dito disponible", None))
-#endif // QT_CONFIG(tooltip)
-        self.cajaDecimal_creditodisponible_fisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
-        self.etiqueta_creditoutilizado_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Utilizado:", None))
-#if QT_CONFIG(tooltip)
-        self.cajaDecimal_creditoutilizado_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Cr\u00e9dito utilizado", None))
-#endif // QT_CONFIG(tooltip)
-        self.cajaDecimal_creditoutilizado_fisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
-        self.etiqueta_estadodelcredito_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Estado del Cr\u00e9dito", None))
-        self.etiqueta_porcentajeintereses_fisico.setText(QCoreApplication.translate("Control_Clientes", u"% Interes:", None))
-#if QT_CONFIG(tooltip)
-        self.cajaDecimal_interesesaplicados_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Interes sobre la deuda", None))
-#endif // QT_CONFIG(tooltip)
-        self.cajaDecimal_interesesaplicados_fisico.setSuffix(QCoreApplication.translate("Control_Clientes", u" %", None))
-#if QT_CONFIG(tooltip)
-        self.casillaverificacion_aplicadescuento_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Descuento sobre la compra", None))
-#endif // QT_CONFIG(tooltip)
-        self.casillaverificacion_aplicadescuento_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Aplica descuento", None))
-        self.etiqueta_porcentajedescuento_fisico.setText(QCoreApplication.translate("Control_Clientes", u"% Descuento", None))
-#if QT_CONFIG(tooltip)
-        self.cajaDecimal_porcentajedescuento_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Descuento sobre la compra", None))
-#endif // QT_CONFIG(tooltip)
-        self.cajaDecimal_porcentajedescuento_fisico.setSuffix(QCoreApplication.translate("Control_Clientes", u" %", None))
-        self.etiqueta_entidadlegalizada_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Entidad Legalizada:", None))
-        self.casillaverificacion_entidadlegalizada_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Si", None))
-        self.etiqueta_fechaultimoreporte_fisico.setText(QCoreApplication.translate("Control_Clientes", u"\u00daltimo reporte:", None))
         self.etiqueta_ciudad_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Ciudad", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setSuffix("")
@@ -1682,6 +1705,41 @@ class Ui_Control_Clientes(object):
         self.etiqueta_categoriaFisico.setText(QCoreApplication.translate("Control_Clientes", u"Clasificaci\u00f3n Cliente", None))
         self.etiqueta_wpc_descripcionAreaCliente.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Area", None))
         self.etiqueta_wpc_descripcionCategoriaCliente.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Categoria", None))
+        self.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
+        self.casillaverificacion_wpc_credito_autorizado.setText(QCoreApplication.translate("Control_Clientes", u"Autoriza cr\u00e9dito", None))
+        self.etiqueta_wpc_limitecredito.setText(QCoreApplication.translate("Control_Clientes", u"Limite:", None))
+#if QT_CONFIG(tooltip)
+        self.cajaDecimal_wpc_limite_credito.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limite de cr\u00e9dito", None))
+#endif // QT_CONFIG(tooltip)
+        self.cajaDecimal_wpc_limite_credito.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
+        self.etiqueta_creditodisponible_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Disponible:", None))
+#if QT_CONFIG(tooltip)
+        self.cajaDecimal_creditodisponible_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Cr\u00e9dito disponible", None))
+#endif // QT_CONFIG(tooltip)
+        self.cajaDecimal_creditodisponible_fisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
+        self.etiqueta_creditoutilizado_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Utilizado:", None))
+#if QT_CONFIG(tooltip)
+        self.cajaDecimal_creditoutilizado_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Cr\u00e9dito utilizado", None))
+#endif // QT_CONFIG(tooltip)
+        self.cajaDecimal_creditoutilizado_fisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
+        self.etiqueta_estadodelcredito_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Estado del Cr\u00e9dito", None))
+        self.etiqueta_porcentajeintereses_fisico.setText(QCoreApplication.translate("Control_Clientes", u"% Interes:", None))
+#if QT_CONFIG(tooltip)
+        self.cajaDecimal_interesesaplicados_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Interes sobre la deuda", None))
+#endif // QT_CONFIG(tooltip)
+        self.cajaDecimal_interesesaplicados_fisico.setSuffix(QCoreApplication.translate("Control_Clientes", u" %", None))
+#if QT_CONFIG(tooltip)
+        self.casillaverificacion_aplicadescuento_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Descuento sobre la compra", None))
+#endif // QT_CONFIG(tooltip)
+        self.casillaverificacion_aplicadescuento_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Aplica descuento", None))
+        self.etiqueta_porcentajedescuento_fisico.setText(QCoreApplication.translate("Control_Clientes", u"% Descuento", None))
+#if QT_CONFIG(tooltip)
+        self.cajaDecimal_porcentajedescuento_fisico.setToolTip(QCoreApplication.translate("Control_Clientes", u"Descuento sobre la compra", None))
+#endif // QT_CONFIG(tooltip)
+        self.cajaDecimal_porcentajedescuento_fisico.setSuffix(QCoreApplication.translate("Control_Clientes", u" %", None))
+        self.etiqueta_entidadlegalizada_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Entidad Legalizada:", None))
+        self.casillaverificacion_entidadlegalizada_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Si", None))
+        self.etiqueta_fechaultimoreporte_fisico.setText(QCoreApplication.translate("Control_Clientes", u"\u00daltimo reporte:", None))
         self.casillaverificacion_wpc_credito_autorizado_moral.setText(QCoreApplication.translate("Control_Clientes", u"Autoriza cr\u00e9dito", None))
         self.etiqueta_wpc_limitecredito_moral.setText(QCoreApplication.translate("Control_Clientes", u"Limite", None))
 #if QT_CONFIG(tooltip)
@@ -1754,6 +1812,29 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_fechaconst_moral.setText(QCoreApplication.translate("Control_Clientes", u"Fecha de constituci\u00f3n", None))
         self.etiqueta_wpc_descripcionAreaClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Area", None))
         self.etiqueta_wpc_descripcionCategoriaClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Categoria", None))
+        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
+        self.etiqueta_iconobuscarClienteFisico.setText("")
+        self.txt_buscarclienteFisico.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
+        self.btn_btn_filtrarClienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesFisicos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesFisicos.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesFisicos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesFisicos.setText("")
+        self.etiqueta_iconobuscarClienteMorales.setText("")
+        self.txt_buscarclienteMorales.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
+        self.btn_btn_filrtarClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesMorales.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesMorales.setText("")
         self.etiquetaTitulo_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_limpiarcampos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limpiar campos", None))
