@@ -52,6 +52,10 @@ class Clientes(QWidget):
         self.consultor = None
         self.cantidad_inicial_clientes = 0
         self.cantidad_final_clientes = 100
+        self.cantidad_inicial_clientes_morales = 0
+        self.cantidad_final_clientes_morales = 100
+        self.cantidad_inicial_clientes_fisicos = 0
+        self.cantidad_final_clientes_fisicos = 100
         self.busqueda_realizada_clientes = False
         self._translate = QtCore.QCoreApplication.translate
         #------------------------------
@@ -94,12 +98,16 @@ class Clientes(QWidget):
 #//: ACTUALIZAR CLIENTES
         self.ui.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
         #----------------------------
-#// : eliminar clientes
+# ELIMINAR CLIENTE
         self.ui.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
-        
-        self.ui.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes)
-        self.ui.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes)
-        
+        #----------------------------
+# REFRESCAR LA TABBLA DEL CLIENTE FISICO
+        self.ui.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes_fisicos)
+        #----------------------------
+# PAGINAR LA TABLA DEL CLIENTE FISICO
+        self.ui.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
+        #----------------------------
+# MOSTRAR DESCRIPCION DEL AREA Y CATEGORIA
         self.ui.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
         self.ui.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
         self.ui.cajaOpciones_areasnegocio_moral.currentIndexChanged.connect(self.mostrar_descripcion_area)
@@ -465,10 +473,10 @@ class Clientes(QWidget):
                 except Exception as e:
                     Mensaje().mensaje_critico("Error al obtener proveedor por lo siguiente: " + str(e))
     
-    def cargar_mas_clientes(self):
-        self._is_refreshing_clientes = False
+    def cargar_mas_clientes_fisicos(self):
+        self._is_refreshing_clientes_fisicos = False
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
+            if not hasattr(self, 'busqueda_realizada_clientes_fisicos') or not self.busqueda_realizada_clientes_fisicos:
                 print('Cargando más productos sin filtro')
                 try:
                     self.manejadorModal.mostrar_modal()
@@ -481,7 +489,7 @@ class Clientes(QWidget):
                     
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_clientes_fisicos,
-                        resultado_callback=self.mostrar_clientes_resultado,
+                        resultado_callback=self.mostrar_clientes_resultado_fisicos,
                         error_callback=self.mostrar_error_hilo,
                         terminado_callback=self.manejadorModal.cerrar_modal
                     )
@@ -495,9 +503,9 @@ class Clientes(QWidget):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
                     Mensaje().mensaje_alerta(f"Error al obtener clientes físicos: {str(e)}")
             else:
-                self.paginar_productos_filtrados()
+                self.paginar_clientes_fisicos_filtrados()
     
-    def paginar_productos_filtrados(self):
+    def paginar_clientes_fisicos_filtrados(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             try:
                 self.manejadorModal.mostrar_modal(self)
@@ -508,19 +516,21 @@ class Clientes(QWidget):
                     raise Exception("No se pudo obtener el worker gestionado")
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_clientes_paginados_fisicos,
-                    resultado_callback=self.agregar_clientes_paginados_tabla,
+                    resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_obtener_clientes_paginados_fisicos.ejecutar(
-                    funcion=self.paginar_busqueda_por_filtros
+                    funcion=self.paginar_busqueda_por_filtros_clientes_fisicos,
+                    texto=self.ui.txt_buscarclienteFisico.text().strip(),
+                    es_fisico=True
                     )
             except Exception as e:
                 if hasattr(self, 'id_hilo_obtener_clientes_paginados_fisicos'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
                 
-    def paginar_busqueda_por_filtros(self, session, texto, es_fisico = None):
+    def paginar_busqueda_por_filtros_clientes_fisicos(self, session, texto, es_fisico = None):
         print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes}, limit={self.cantidad_final_clientes}")
         
         datos = []
@@ -537,19 +547,19 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                else:
-                    clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
-                    print(f"buscando fisico")
-                    if not estado:
-                        session.rollback()
-                        return {
-                            "exito": estado,
-                            "mensaje": f'No se logro hacer la operación',
-                            "data": clientes
-                        }
+                # else:
+                #     clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
+                #     print(f"buscando fisico")
+                #     if not estado:
+                #         session.rollback()
+                #         return {
+                #             "exito": estado,
+                #             "mensaje": f'No se logro hacer la operación',
+                #             "data": clientes
+                #         }
                 print(f"DEBUG - Obtenidos filtrados: {len(clientes) if clientes else 0} registros")
-                self.cantidad_inicial_clientes += len(clientes)
-                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_consulta}")
+                self.cantidad_inicial_clientes_fisicos += len(clientes)
+                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_clientes_fisicos}")
                 return {
                     "exito": estado,
                     "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -562,28 +572,34 @@ class Clientes(QWidget):
                     "mensaje": f'Ocurrio un problema en el proceso: {e}'
                 }
                 
-    def agregar_clientes_paginados_tabla(self, resultado):
+    def agregar_clientes_paginados_tabla_fisicos(self, resultado):
         if not resultado["exito"] or not resultado["data"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
-            self.no_hay_mas_registros_clientes = True
+            self.no_hay_mas_registros_clientes_fisicos = True
             return
-        self.modelo_tabla_clientes.update_data(resultado["data"], reset=False)
-        self.ultima_carga_cantidad = len(resultado["data"])
+        self.modelo_tabla_clientes_fisicos.update_data(resultado["data"], reset=False)
+        self.ultima_carga_cantidad_clientes_fisicos = len(resultado["data"])
     
-    def tabla_listar_clientes(self):
-        self.cantidad_inicial_clientes = 0
-        self.no_hay_mas_registros_clientes = False  # Resetear el flag de fin de datos
-        if hasattr(self, 'ultima_carga_cantidad_clientes'):
-            del self.ultima_carga_cantidad_clientes
+    def tabla_listar_clientes_morales(self):
+        self.cantidad_inicial_clientes_morales = 0
+        self.no_hay_mas_registros_clientes_morales = False  # Resetear el flag de fin de datos
+        if hasattr(self, 'ultima_carga_cantidad_clientes_morales'):
+            del self.ultima_carga_cantidad_clientes_morales
+        if self.ui.btnRadio_wpc_clienteMorales.isChecked():
+            self.obtener_clientes_morales_hilo(reset_paginacion = True)
+
+    def tabla_listar_clientes_fisicos(self):
+        self.cantidad_inicial_clientes_fisicos = 0
+        self.no_hay_mas_registros_clientes_fisicos = False  # Resetear el flag de fin de datos
+        if hasattr(self, 'ultima_carga_cantidad_clientes_fisicos'):
+            del self.ultima_carga_cantidad_clientes_fisicos
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             self.obtener_clientes_fisicos_hilo(reset_paginacion = True)
-        else:
-            self.obtener_clientes_morales_hilo(reset_paginacion = True)
             
     def obtener_clientes_fisicos_hilo(self, reset_paginacion=False):
         try:
             if reset_paginacion:
-                self.cantidad_inicial_clientes = 0
+                self.cantidad_inicial_clientes_fisicos = 0
                 print("DEBUG - Paginación reiniciada")
                 
             self.manejadorModal.mostrar_modal()
@@ -596,7 +612,7 @@ class Clientes(QWidget):
             
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_clientes_fisicos,
-                resultado_callback=self.mostrar_clientes_resultado,
+                resultado_callback=self.mostrar_clientes_resultado_fisicos,
                 error_callback=self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
@@ -638,20 +654,20 @@ class Clientes(QWidget):
 
     def clientes_fisicos_query(self, session):
         try:
-            print(f"DEBUG - Consultando: offset={self.cantidad_inicial_clientes}, limit={self.cantidad_final_clientes}")
+            print(f"DEBUG - Consultando: offset={self.cantidad_inicial_clientes_fisicos}, limit={self.cantidad_final_clientes_fisicos}")
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos(
-                cantidad_inicial=self.cantidad_inicial_clientes,
-                cantidad_final=self.cantidad_final_clientes
+                cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
+                cantidad_final=self.cantidad_final_clientes_fisicos
             )
             print(f"DEBUG - Obtenidos: {len(clientes) if clientes else 0} registros")
             print(f"DEBUG - Estado de la consulta: {estado}")
             
             # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
-            if (not hasattr(self, '_is_refreshing_clientes') or not self._is_refreshing_clientes) and clientes:
+            if (not hasattr(self, '_is_refreshing_clientes') or not self._is_refreshing_clientes_fisicos) and clientes:
                 # Incrementar por el límite, no por la cantidad recibida
                 # Esto mantiene la paginación consistente
-                self.cantidad_inicial_clientes += self.cantidad_final_clientes
-                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_clientes}")
+                self.cantidad_inicial_clientes_fisicos += self.cantidad_final_clientes_fisicos
+                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_clientes_fisicos}")
             if not estado:
                 session.rollback()
                 return {
@@ -706,21 +722,15 @@ class Clientes(QWidget):
                 "tipo_cliente": "MORAL"
             }
 
-    def mostrar_clientes_resultado(self, resultado):
+    def mostrar_clientes_resultado_fisicos(self, resultado):
         """Callback unificado para ambos tipos de clientes"""
         print(f"🔍 Resultado clientes: {resultado}")
         
         tipo_cliente = resultado.get("tipo_cliente", "")
         
         if resultado.get("exito"):
-            # Establecer el tipo de cliente según el resultado
-            if tipo_cliente == "FISICO":
-                self.ui.btnRadio_wpc_clienteFisico.setChecked(True)
-            elif tipo_cliente == "MORAL":
-                self.ui.btnRadio_wpc_clienteMoral.setChecked(True)
-            
             # Llamar a la función de llenado de tabla
-            self.llenar_tabla_clientes(resultado)
+            self.llenar_tabla_clientes_fisicos(resultado)
         else:
             Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes()
@@ -728,88 +738,83 @@ class Clientes(QWidget):
     def limpiar_tabla_clientes(self):
         """Limpia la tabla de clientes"""
         try:
-            if hasattr(self, 'modelo_listar_clientes'):
-                self.modelo_listar_clientes.clear()
-            elif hasattr(self, 'model_clientes'):
-                self.model_clientes.clear()
+            if hasattr(self, 'modelo_tabla_clientes_fisicos'):
+                self.modelo_tabla_clientes_fisicos.clear()
         except Exception as e:
             print(f"💥 Error al limpiar tabla de clientes: {e}")
     
-    def llenar_tabla_clientes(self, resultado):
-        self.comprobar_modelos_tablas.limpiarModelo("modelo_listar_clientes")
+    def llenar_tabla_clientes_fisicos(self, resultado):
+        self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
         clientes = resultado["data"]
         estado = resultado["exito"]
-        if self.ui.tabla_clientes is None:
+        if self.ui.tabla_clientesFisicos is None:
             Mensaje().mensaje_informativo("La tabla de clientes no está disponible")
             return
         
-        # Definir cabeceras y mapeo según el tipo de cliente
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
-            mapeo_de_cabeceras = {
-                "Id": lambda c: c.id,
-                "nombre": lambda c: c.nombre,
-                "apellido_paterno": lambda c: c.apellido_paterno,
-                "apellido_materno": lambda c: c.apellido_materno,
-                "rfc": lambda c: c.rfc,
-                "curp": lambda c: c.curp,
-                "estado_credito": lambda c: c.estado_credito,
-                "credito": lambda c: c.credito,
-                "estado_credito": lambda c:c.estado_credito,
-                "limite_credito": lambda c:c.limite_credito,
-                "credito_disponible": lambda c:c.credito_disponible,
-                "credito_utilizado": lambda c:c.credito_utilizado,
-                "porcentaje_descuento": lambda c:c.porcentaje_descuento,
-                "categoria": lambda c:c.categoria.nombre,
-                "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
-                "ocupacion": lambda c:c.ocupacion
-            }
+        cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
+        mapeo_de_cabeceras = {
+            "Id": lambda c: c.id,
+            "nombre": lambda c: c.nombre,
+            "apellido_paterno": lambda c: c.apellido_paterno,
+            "apellido_materno": lambda c: c.apellido_materno,
+            "rfc": lambda c: c.rfc,
+            "curp": lambda c: c.curp,
+            "estado_credito": lambda c: c.estado_credito,
+            "credito": lambda c: c.credito,
+            "estado_credito": lambda c:c.estado_credito,
+            "limite_credito": lambda c:c.limite_credito,
+            "credito_disponible": lambda c:c.credito_disponible,
+            "credito_utilizado": lambda c:c.credito_utilizado,
+            "porcentaje_descuento": lambda c:c.porcentaje_descuento,
+            "categoria": lambda c:c.categoria.nombre,
+            "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
+            "ocupacion": lambda c:c.ocupacion
+        }
             
-        elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
-            mapeo_de_cabeceras = {
-                "Id": lambda c: c.id,
-                "nombre": lambda c: c.nombre,
-                "rfc": lambda c: c.rfc,
-                "razon_social": lambda c: c.razon_social,
-                "nif": lambda c: c.NIF,
-                "sector": lambda c:c.sector,
-                "telefono": lambda c:c.telefono,
-                "credito": lambda c:c.credito,
-                "estado_credito": lambda c:c.estado_credito,
-                "limite_credito": lambda c:c.limite_credito,
-                "credito_disponible": lambda c:c.credito_disponible,
-                "credito_utilizado": lambda c:c.credito_utilizado,
-                "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
-            }
-        else:
-            Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
-            return
+        # elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        #     cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
+        #     mapeo_de_cabeceras = {
+        #         "Id": lambda c: c.id,
+        #         "nombre": lambda c: c.nombre,
+        #         "rfc": lambda c: c.rfc,
+        #         "razon_social": lambda c: c.razon_social,
+        #         "nif": lambda c: c.NIF,
+        #         "sector": lambda c:c.sector,
+        #         "telefono": lambda c:c.telefono,
+        #         "credito": lambda c:c.credito,
+        #         "estado_credito": lambda c:c.estado_credito,
+        #         "limite_credito": lambda c:c.limite_credito,
+        #         "credito_disponible": lambda c:c.credito_disponible,
+        #         "credito_utilizado": lambda c:c.credito_utilizado,
+        #         "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
+        #     }
+        # else:
+        #     Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
+        #     return
 
         # Crear o comprobar el modelo de la tabla
-        self.modelo_tabla_clientes = self.comprobar_modelos_tablas.comprobarModeloTabla(
+        self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_listar_clientes",
-            interfazTabla=self.ui.tabla_clientes,
+            interfazTabla=self.ui.tabla_clientesFisicos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
             signalPersonalizada=self.obtener_id_elemento_tabla,
-            forzarNuevo=True
         )
 
         # Verificar si hay datos para mostrar
         if not estado or not clientes:
             Mensaje().mensaje_informativo("No hay información para listar")
-            self.modelo_tabla_clientes.clear()
+            self.modelo_tabla_clientes_fisicos.clear()
             return
 
         # Actualizar los datos en el modelo
-        self.modelo_tabla_clientes.update_data(clientes, reset=True)
+        self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=True)
         
         # Ocultar columna ID
-        self.ui.tabla_clientes.setColumnHidden(0, True)
+        self.ui.tabla_clientesFisicos.setColumnHidden(0, True)
         self.conectar_seleccion_tabla()
         
     def conectar_seleccion_tabla(self):
