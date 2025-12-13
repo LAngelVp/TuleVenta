@@ -57,6 +57,7 @@ class Clientes(QWidget):
         self.cantidad_inicial_clientes_fisicos = 0
         self.cantidad_final_clientes_fisicos = 100
         self.busqueda_realizada_clientes = False
+        self.clienteSeleccionadoVariable = None
         self._translate = QtCore.QCoreApplication.translate
         #------------------------------
 #//: CARGAR FOTO DEL CLIENTE FISICO
@@ -93,7 +94,7 @@ class Clientes(QWidget):
         #------------------------------
 #//: BUSCAR CLIENTES
         # self.ui.txt_buscarclienteFisico.returnPressed.connect(self.buscar_cliente)
-        self.ui.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente)
+        self.ui.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente_fisico)
         #------------------------------
 #//: ACTUALIZAR CLIENTES
         self.ui.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
@@ -142,11 +143,7 @@ class Clientes(QWidget):
                 return
             self.ui.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
         
-    def buscar_cliente(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            cliente_fisico = True
-        else:
-            cliente_fisico = False
+    def buscar_cliente_fisico(self):
         try:
             texto = self.ui.txt_buscarclienteFisico.text().strip() 
             if texto:
@@ -158,38 +155,25 @@ class Clientes(QWidget):
                     raise Exception("No se pudo obtener el worker gestionado")
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_buscar_clientes_vclientes,
-                    resultado_callback=self.llenar_tabla_clientes,
+                    resultado_callback=self.llenar_tabla_clientes_fisicos,
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_buscar_clientes_vclientes.ejecutar(
-                    funcion = self.buscar_clientes_query,
+                    funcion = self.buscar_clientes_fisicos_query,
                     texto = texto,
-                    es_fisico = cliente_fisico
                 )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
             
-    def buscar_clientes_query(self, session, texto, es_fisico = None):
+    def buscar_clientes_morales_query(self, session, texto):
         try:
-            if es_fisico:
-                clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(texto)
-                print(f"buscando fisico")
-                if not estado:
-                    session.rollback()
-                    return {
-                        "exito": estado,
-                        "mensaje": f'No se logro hacer la operación',
-                        "data": clientes
-                    }
-            else:
-                clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
-                print(f"buscando fisico")
-                if not estado:
-                    session.rollback()
-                    return {
+            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
+            if not estado:
+                session.rollback()
+                return {
                         "exito": estado,
                         "mensaje": f'No se logro hacer la operación',
                         "data": clientes
@@ -205,7 +189,29 @@ class Clientes(QWidget):
             "mensaje" : f'Se encontraron {len(clientes)} registros',
             "data": clientes
         }
-        
+    
+    def buscar_clientes_fisicos_query(self, session, texto):
+        try:
+            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(texto)
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro hacer la operación',
+                    "data": clientes
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}'
+            }
+        return {
+            "exito": estado,
+            "mensaje" : f'Se encontraron {len(clientes)} registros',
+            "data": clientes
+        }
+
     def limpiar_campos(self):
         try:
             if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -489,7 +495,7 @@ class Clientes(QWidget):
                     
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_clientes_fisicos,
-                        resultado_callback=self.mostrar_clientes_resultado_fisicos,
+                        resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
                         error_callback=self.mostrar_error_hilo,
                         terminado_callback=self.manejadorModal.cerrar_modal
                     )
@@ -794,14 +800,15 @@ class Clientes(QWidget):
 
         # Crear o comprobar el modelo de la tabla
         self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listar_clientes",
+            nombreModelo="modelo_listar_clientes_fisicos",
             interfazTabla=self.ui.tabla_clientesFisicos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            signalPersonalizada=self.obtener_id_elemento_tabla,
+            signalPersonalizada=None,
+            signalSeleccion=self.obtener_id_elemento_tabla,
         )
 
         # Verificar si hay datos para mostrar
@@ -815,63 +822,16 @@ class Clientes(QWidget):
         
         # Ocultar columna ID
         self.ui.tabla_clientesFisicos.setColumnHidden(0, True)
-        self.conectar_seleccion_tabla()
-        
-    def conectar_seleccion_tabla(self):
-        """Conecta la señal de selección de forma segura"""
-        try:
-            selection_model = self.ui.tabla_clientes.selectionModel()
-            if selection_model:
-                # Desconectar si ya está conectada
-                try:
-                    selection_model.currentChanged.disconnect(self.obtener_id_elemento_tabla)
-                except Exception:
-                    pass
-                
-                # Conectar la señal
-                selection_model.currentChanged.connect(self.obtener_id_elemento_tabla)
-                self.seleccion_clientes_conectada = True
-        except Exception as e:
-            print(f"Error al conectar selección de tabla: {e}")
 
     def obtener_id_elemento_tabla(self, current, previus = None):
-        """Maneja la selección de elementos en la tabla de forma segura"""
-        try:
-            if not current.isValid():
-                return
-                
+        print("obtener_id_elemento_tabla")
+        if current.isValid():
             fila = current.row()
-            
-            # Verificar que el modelo existe
-            if not hasattr(self, 'modelo_listar_clientes'):
-                print("Error: modelo_listar_clientes no está definido")
-                return
-                
-            # Obtener el cliente de forma segura
-            cliente = self.modelo_listar_clientes.get_item(current)
-            
-            if not cliente:
-                print("Error: No se pudo obtener el cliente de la fila seleccionada")
-                return
-                
-            # Asignar el cliente seleccionado
-            self.clienteSeleccionadoVariable = cliente
-            
-            # Emitir señal si existe
-            if hasattr(self, 'cliente_seleccionado'):
+            cliente = self.modelo_listar_clientes_fisicos.get_item(current)
+            if cliente:
+                self.clienteSeleccionadoVariable = cliente
+                print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
                 self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
-                
-            print(f"Cliente seleccionado: {cliente.nombre} (ID: {cliente.id})")
-            
-        except AttributeError as e:
-            print(f"Error de atributo al obtener cliente: {e}")
-            # Debug: mostrar información del objeto cliente
-            if 'cliente' in locals():
-                print(f"Tipo de cliente: {type(cliente)}")
-                print(f"Atributos disponibles: {dir(cliente)}")
-                
-        except Exception as e:
-            print(f"Error inesperado en obtener_id_elemento_tabla: {e}")
 
     def autorizar_credito_fisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
