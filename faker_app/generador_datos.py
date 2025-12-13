@@ -124,5 +124,231 @@ class Generador_tablas:
         df_empleados.to_sql('Empleados', con=self.engine, if_exists='append', index=False)
         print(f"✅ Se generó empleados_fake.xlsx con {self.cantidad_registros} empleados.")
 
+    def creacion_de_clientes(self):
+        # Primero, obtener los IDs existentes de las tablas relacionadas
+        try:
+            # Obtener categorías existentes
+            query_categorias = "SELECT id FROM Categorias_de_clientes"
+            categorias_df = pd.read_sql(query_categorias, self.engine)
+            categorias_ids = categorias_df['id'].tolist()
+            
+            if not categorias_ids:
+                raise ValueError("No hay categorías en la tabla Categorias_de_clientes")
+            
+            # Obtener áreas de negocio existentes
+            query_areas = "SELECT id FROM Areas_negocios"
+            areas_df = pd.read_sql(query_areas, self.engine)
+            areas_ids = areas_df['id'].tolist()
+            
+            if not areas_ids:
+                raise ValueError("No hay áreas en la tabla Areas_negocios")
+            
+            # Obtener representantes existentes
+            query_representantes = "SELECT id FROM Representantes_clientes_morales"
+            representantes_df = pd.read_sql(query_representantes, self.engine)
+            representantes_ids = representantes_df['id'].tolist()
+            
+        except Exception as e:
+            print(f"❌ Error al leer tablas existentes: {e}")
+            print("Asegúrate de que las tablas relacionadas ya existen y tienen datos")
+            return
+        
+        # Generar clientes
+        clientes_fisicos = []
+        clientes_morales = []
+        clientes_generales = []
+        
+        print(f"🔧 Generando {self.cantidad_registros} clientes...")
+        
+        # Obtener el último ID de cliente para continuar desde ahí
+        try:
+            query_max_id = "SELECT MAX(id) as max_id FROM Clientes"
+            max_id_df = pd.read_sql(query_max_id, self.engine)
+            start_id = max_id_df['max_id'].iloc[0]
+            if pd.isna(start_id):
+                start_id = 1
+            else:
+                start_id = int(start_id) + 1
+        except:
+            start_id = 1
+        
+        for i in range(self.cantidad_registros):
+            cliente_id = start_id + i
+            es_moral = random.random() < 0.3  # 30% clientes morales, 70% físicos
+            
+            # Datos comunes para todos los clientes
+            tiene_credito = random.random() < 0.7  # 70% tienen crédito
+            limite_credito = round(random.uniform(1000, 100000), 2) if tiene_credito else 0
+            credito_utilizado = round(random.uniform(0, limite_credito * 0.8), 2) if tiene_credito else 0
+            
+            # Fechas aleatorias
+            fecha_reporte = fake.date_time_between(start_date='-1y', end_date='now')
+            
+            # Nombre según tipo de cliente
+            if es_moral:
+                nombre = fake.company()
+            else:
+                nombre = fake.first_name()
+            
+            cliente_general = {
+                "id": cliente_id,
+                "nombre": nombre,
+                "correo": fake.unique.email(),
+                "rfc": self._generar_rfc_valido(),
+                "telefono": fake.numerify(text='##########'),
+                "pais": "México",
+                "estado": fake.state(),
+                "ciudad": fake.city(),
+                "avenidas": fake.street_name(),
+                "calles": fake.street_name(),
+                "codigo_postal": fake.postcode()[:5],
+                "direccion_adicional": fake.address(),
+                "entidad_legalizada": random.choice([True, False]),
+                "categoria_cliente_id": random.choice(categorias_ids),
+                "credito": tiene_credito,
+                "estado_credito": random.choice(["Activo", "Suspendido", "Cancelado", "En revisión"]) if tiene_credito else "Sin crédito",
+                "limite_credito": limite_credito,
+                "porcentaje_interes": round(random.uniform(5, 30), 2) if tiene_credito else 0,
+                "fecha_ultimo_reporte": fecha_reporte,
+                "credito_disponible": limite_credito - credito_utilizado,
+                "credito_utilizado": credito_utilizado,
+                "tipo_cliente": "MORAL" if es_moral else "FISICO",
+                "aplica_descuento": random.choice([True, False]),
+                "porcentaje_descuento": round(random.uniform(0, 20), 2),
+                "comentarios": fake.sentence(nb_words=10),
+                "areas_de_negocios_id": random.choice(areas_ids)
+            }
+            
+            if es_moral:
+                # Datos específicos para cliente moral
+                cliente_moral = {
+                    "id": cliente_id,
+                    "razon_social": fake.company(),
+                    "fecha_constitucion": fake.date_between(start_date='-30y', end_date='-1y'),
+                    "web": fake.url(),
+                    "sector": random.choice(["Tecnología", "Manufactura", "Retail", "Servicios", 
+                                            "Alimentos", "Construcción", "Salud", "Educación", 
+                                            "Finanzas", "Transporte"]),
+                    "NIF": fake.unique.bothify(text='NIF##########'),
+                    "representante_id": random.choice(representantes_ids) if representantes_ids else None
+                }
+                clientes_morales.append(cliente_moral)
+            else:
+                # Datos específicos para cliente físico
+                genero = random.choice(['Masculino', 'Femenino'])
+                apellido_paterno = fake.last_name()
+                apellido_materno = fake.last_name()
+                nombre_completo = f"{nombre} {apellido_paterno} {apellido_materno}"
+                
+                # Actualizar nombre en cliente general para que incluya apellidos
+                cliente_general["nombre"] = nombre_completo
+                
+                # Generar CURP (formato básico)
+                curp_base = f"{apellido_paterno[:2]}{apellido_materno[:1]}{nombre[:1]}"
+                curp_sufijo = fake.bothify(text='######??????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+                
+                cliente_fisico = {
+                    "id": cliente_id,
+                    "apellido_paterno": apellido_paterno,
+                    "apellido_materno": apellido_materno,
+                    "curp": f"{curp_base}{curp_sufijo}".upper()[:18],
+                    "fecha_nacimiento": fake.date_of_birth(minimum_age=18, maximum_age=80),
+                    "num_identificacion": fake.unique.bothify(text='INE##########'),
+                    "ocupacion": fake.job(),
+                    "ingresos": round(random.uniform(5000, 50000), 2),
+                    "estado_civil": random.choice(['Soltero', 'Casado', 'Divorciado', 'Viudo', 'Unión libre']),
+                    "foto": None
+                }
+                clientes_fisicos.append(cliente_fisico)
+            
+            clientes_generales.append(cliente_general)
+            
+            # Mostrar progreso cada 1000 registros
+            if (i + 1) % 1000 == 0:
+                print(f"   ✅ Generados {i + 1} clientes...")
+        
+        # Convertir a DataFrames
+        df_clientes_generales = pd.DataFrame(clientes_generales)
+        df_clientes_fisicos = pd.DataFrame(clientes_fisicos)
+        df_clientes_morales = pd.DataFrame(clientes_morales)
+        
+        # Convertir columnas booleanas para PostgreSQL
+        columnas_bool = df_clientes_generales.select_dtypes(include=bool).columns.tolist()
+        if columnas_bool:
+            df_clientes_generales[columnas_bool] = df_clientes_generales[columnas_bool].astype(str)
+        
+        # Insertar en la base de datos (append, no replace)
+        print("\n💾 Insertando datos en la base de datos...")
+        
+        try:
+            # Insertar clientes generales
+            df_clientes_generales.to_sql('Clientes', con=self.engine, if_exists='append', index=False)
+            print(f"✅ Insertados {len(clientes_generales)} registros en 'Clientes'")
+            
+            # Insertar clientes físicos si hay
+            if not df_clientes_fisicos.empty:
+                df_clientes_fisicos.to_sql('Clientes_fisicos', con=self.engine, if_exists='append', index=False)
+                print(f"✅ Insertados {len(clientes_fisicos)} registros en 'Clientes_fisicos'")
+            
+            # Insertar clientes morales si hay
+            if not df_clientes_morales.empty:
+                df_clientes_morales.to_sql('Clientes_morales', con=self.engine, if_exists='append', index=False)
+                print(f"✅ Insertados {len(clientes_morales)} registros en 'Clientes_morales'")
+            
+            # Guardar también en archivos CSV por si acaso
+            df_clientes_generales.to_csv("clientes_generales.csv", sep=';', index=False, 
+                                       encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
+            
+            if not df_clientes_fisicos.empty:
+                df_clientes_fisicos.to_csv("clientes_fisicos.csv", sep=';', index=False, 
+                                         encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
+            
+            if not df_clientes_morales.empty:
+                df_clientes_morales.to_csv("clientes_morales.csv", sep=';', index=False, 
+                                         encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
+            
+            print("\n🎯 Resumen final:")
+            print(f"   - Total clientes insertados: {self.cantidad_registros}")
+            print(f"   - Clientes físicos: {len(clientes_fisicos)}")
+            print(f"   - Clientes morales: {len(clientes_morales)}")
+            print(f"   - Archivos CSV generados: clientes_generales.csv, clientes_fisicos.csv, clientes_morales.csv")
+            print("\n✅ ¡Proceso completado exitosamente!")
+            
+        except Exception as e:
+            print(f"❌ Error al insertar en la base de datos: {e}")
+            # Guardar en CSV aunque falle la inserción
+            print("Guardando datos en archivos CSV como respaldo...")
+            df_clientes_generales.to_csv("clientes_generales_backup.csv", sep=';', index=False, 
+                                       encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
+    
+    def _generar_rfc_valido(self):
+        """Genera un RFC válido para México"""
+        # Para persona física
+        if random.random() < 0.7:
+            apellido1 = fake.last_name()[:2].upper()
+            apellido2 = fake.last_name()[:1].upper()
+            nombre = fake.first_name()[:1].upper()
+            fecha = fake.date_of_birth(minimum_age=18, maximum_age=80).strftime('%y%m%d')
+            homoclave = fake.bothify(text='???', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+            return f"{apellido1}{apellido2}{nombre}{fecha}{homoclave}"[:13]
+        else:
+            # Para persona moral
+            palabras = fake.company().split()
+            iniciales = ''.join([p[:1] for p in palabras[:3]]).upper()
+            fecha = fake.date_between(start_date='-30y', end_date='-1y').strftime('%y%m%d')
+            homoclave = fake.bothify(text='???', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+            return f"{iniciales}{fecha}{homoclave}"[:12]
+
+# Para usar con tu clase existente
+# if __name__ == "__main__":
+#     from sqlalchemy import create_engine
+    
+#     # Asegúrate de que las tablas relacionadas ya existen con datos:
+#     # - Categorias_de_clientes (con algunos registros)
+#     # - Areas_negocios (con algunos registros)
+#     # - Representantes_clientes_morales (opcional, para clientes morales)
+    
+generador = Generador_tablas()
+generador.creacion_de_clientes()
 
 # Generador_tablas().creacion_empleados()
