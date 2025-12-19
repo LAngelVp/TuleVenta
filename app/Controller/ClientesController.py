@@ -120,6 +120,7 @@ class Clientes(QWidget):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador = AjustarcajaOpciones()
         self.__configuracion_tabla_clientes_fisicos()
+        self.__configuracion_tabla_clientes_morales()
     #FUNCIONES:-----------------
     def mostrar_descripcion_area(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -503,7 +504,7 @@ class Clientes(QWidget):
 
                 except Exception as e:
                     Mensaje().mensaje_critico("Error al obtener proveedor por lo siguiente: " + str(e))
-    
+# PAGINAR CLIENTES FISICOS
     def cargar_mas_clientes_fisicos(self):
         self._is_refreshing_clientes_fisicos = False
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -614,13 +615,6 @@ class Clientes(QWidget):
         self.modelo_tabla_clientes_fisicos.update_data(resultado["data"], reset=False)
         self.ultima_carga_cantidad_clientes_fisicos = len(resultado["data"])
     
-    def tabla_listar_clientes_morales(self):
-        self.cantidad_inicial_clientes_morales = 0
-        self.no_hay_mas_registros_clientes_morales = False  # Resetear el flag de fin de datos
-        if hasattr(self, 'ultima_carga_cantidad_clientes_morales'):
-            del self.ultima_carga_cantidad_clientes_morales
-        if self.ui.btnRadio_wpc_clienteMorales.isChecked():
-            self.obtener_clientes_morales_hilo(reset_paginacion = True)
 # OBTENEMOS LOS CLIENTES FISICOS
     def tabla_listar_clientes_fisicos(self):
         self.cantidad_inicial_clientes_fisicos = 0
@@ -725,36 +719,101 @@ class Clientes(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes fisicos en la tabla, esta no existe en la metadata: {str(e)}")
             return
-        
-        
-            
-        # elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-        #     cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
-        #     mapeo_de_cabeceras = {
-        #         "Id": lambda c: c.id,
-        #         "nombre": lambda c: c.nombre,
-        #         "rfc": lambda c: c.rfc,
-        #         "razon_social": lambda c: c.razon_social,
-        #         "nif": lambda c: c.NIF,
-        #         "sector": lambda c:c.sector,
-        #         "telefono": lambda c:c.telefono,
-        #         "credito": lambda c:c.credito,
-        #         "estado_credito": lambda c:c.estado_credito,
-        #         "limite_credito": lambda c:c.limite_credito,
-        #         "credito_disponible": lambda c:c.credito_disponible,
-        #         "credito_utilizado": lambda c:c.credito_utilizado,
-        #         "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
-        #     }
-        # else:
-        #     Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
-        #     return
-
-        # Crear o comprobar el modelo de la tabla
-        
-
-        # Verificar si hay datos para mostrar
 # --------------------------------- FINAL - OBTENER CLIENTES FISICOS
+# CONFIGURACION DE LA TABLA DE CLIENTES FISICOS
+    def __configuracion_tabla_clientes_fisicos(self):
+        cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
+        mapeo_de_cabeceras = {
+            "Id": lambda c: c.id,
+            "nombre": lambda c: c.nombre,
+            "apellido_paterno": lambda c: c.apellido_paterno,
+            "apellido_materno": lambda c: c.apellido_materno,
+            "rfc": lambda c: c.rfc,
+            "curp": lambda c: c.curp,
+            "estado_credito": lambda c: c.estado_credito,
+            "credito": lambda c: c.credito,
+            "estado_credito": lambda c:c.estado_credito,
+            "limite_credito": lambda c:c.limite_credito,
+            "credito_disponible": lambda c:c.credito_disponible,
+            "credito_utilizado": lambda c:c.credito_utilizado,
+            "porcentaje_descuento": lambda c:c.porcentaje_descuento,
+            "categoria": lambda c:c.categoria.nombre,
+            "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
+            "ocupacion": lambda c:c.ocupacion
+        }
+        self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_listar_clientes_fisicos",
+            interfazTabla=self.ui.tabla_clientesFisicos,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_de_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            signalSeleccion=self.obtener_id_elemento_tabla_fisicos,
+        )
+        return self.modelo_tabla_clientes_fisicos
+    
+    def obtener_id_elemento_tabla_fisicos(self, current, previus = None):
+        print("obtener_id_elemento_tabla")
+        if current.isValid():
+            fila = current.row()
+            cliente = self.modelo_listar_clientes_fisicos.get_item(current)
+            if cliente:
+                self.clienteSeleccionadoVariable = cliente
+                print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
+                self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
+# -------------------------------- FINAL - CONFIGURACION TABLA CLIENTES FISICOS
+# CONFIGURACION DE LA TABLA DE CLIENTES MORALES
+    def __configuracion_tabla_clientes_morales(self):
+        cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
+        mapeo_de_cabeceras = {
+            "Id": lambda c: c.id,
+            "nombre": lambda c: c.nombre,
+            "rfc": lambda c: c.rfc,
+            "razon_social": lambda c: c.razon_social,
+            "nif": lambda c: c.NIF,
+            "sector": lambda c:c.sector,
+            "telefono": lambda c:c.telefono,
+            "credito": lambda c:c.credito,
+            "estado_credito": lambda c:c.estado_credito,
+            "limite_credito": lambda c:c.limite_credito,
+            "credito_disponible": lambda c:c.credito_disponible,
+            "credito_utilizado": lambda c:c.credito_utilizado,
+            "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
+        }
+        self.modelo_tabla_clientes_morales = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_listar_clientes_morales",
+            interfazTabla=self.ui.tabla_clientesMorales,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_de_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            signalSeleccion=self.obtener_id_elemento_tabla_morales,
+        )
+        return self.modelo_tabla_clientes_morales
+
+    def obtener_id_elemento_tabla_morales(self, current, previus = None):
+        print("obtener_id_elemento_tabla")
+        if current.isValid():
+            fila = current.row()
+            cliente = self.modelo_listar_clientes_morales.get_item(current)
+            if cliente:
+                self.clienteSeleccionadoVariable = cliente
+                print("clienteSeleccionadoVariableMorales", self.clienteSeleccionadoVariable)
+                self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
+
 # OBTENER CLIENTES MORALES
+    def tabla_listar_clientes_morales(self):
+        self.cantidad_inicial_clientes_morales = 0
+        self.no_hay_mas_registros_clientes_morales = False  # Resetear el flag de fin de datos
+        if hasattr(self, 'ultima_carga_cantidad_clientes_morales'):
+            del self.ultima_carga_cantidad_clientes_morales
+        if self.ui.btnRadio_wpc_clienteMorales.isChecked():
+            self.obtener_clientes_morales_hilo(reset_paginacion = True)
+
     def obtener_clientes_morales_hilo(self):
         try:
             self.manejadorModal.mostrar_modal()
@@ -818,48 +877,7 @@ class Clientes(QWidget):
         except Exception as e:
             print(f"💥 Error al limpiar tabla de clientes: {e}")
     
-    def __configuracion_tabla_clientes_fisicos(self):
-        cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
-        mapeo_de_cabeceras = {
-            "Id": lambda c: c.id,
-            "nombre": lambda c: c.nombre,
-            "apellido_paterno": lambda c: c.apellido_paterno,
-            "apellido_materno": lambda c: c.apellido_materno,
-            "rfc": lambda c: c.rfc,
-            "curp": lambda c: c.curp,
-            "estado_credito": lambda c: c.estado_credito,
-            "credito": lambda c: c.credito,
-            "estado_credito": lambda c:c.estado_credito,
-            "limite_credito": lambda c:c.limite_credito,
-            "credito_disponible": lambda c:c.credito_disponible,
-            "credito_utilizado": lambda c:c.credito_utilizado,
-            "porcentaje_descuento": lambda c:c.porcentaje_descuento,
-            "categoria": lambda c:c.categoria.nombre,
-            "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
-            "ocupacion": lambda c:c.ocupacion
-        }
-        self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listar_clientes_fisicos",
-            interfazTabla=self.ui.tabla_clientesFisicos,
-            encabezados=cabeceras,
-            mapeoCabecera=mapeo_de_cabeceras,
-            ordenable=True,
-            editable=False,
-            autoAjustarColumnas=True,
-            signalPersonalizada=None,
-            signalSeleccion=self.obtener_id_elemento_tabla,
-        )
-        return self.modelo_tabla_clientes_fisicos
-
-    def obtener_id_elemento_tabla(self, current, previus = None):
-        print("obtener_id_elemento_tabla")
-        if current.isValid():
-            fila = current.row()
-            cliente = self.modelo_listar_clientes_fisicos.get_item(current)
-            if cliente:
-                self.clienteSeleccionadoVariable = cliente
-                print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
-                self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
+    
 
     def autorizar_credito_fisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():

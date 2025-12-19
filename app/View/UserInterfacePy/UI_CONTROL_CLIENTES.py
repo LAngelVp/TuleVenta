@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_CLIENTES.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.0
+## Created by: Qt User Interface Compiler version 6.9.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -368,7 +368,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1594, 1787))
+        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1582, 1621))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -1490,6 +1490,14 @@ class Ui_Control_Clientes(object):
 
         self.tabla_clientesMorales = QTableView(self.contenedor_clientesMorales)
         self.tabla_clientesMorales.setObjectName(u"tabla_clientesMorales")
+        self.tabla_clientesMorales.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientesMorales.setAlternatingRowColors(True)
+        self.tabla_clientesMorales.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientesMorales.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientesMorales.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientesMorales.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientesMorales.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientesMorales.horizontalHeader().setStretchLastSection(True)
 
         self.verticalLayout_2.addWidget(self.tabla_clientesMorales)
 

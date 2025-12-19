@@ -20,16 +20,17 @@ from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication
     QFrame, QGridLayout, QHBoxLayout, QHeaderView,
     QLabel, QLayout, QLineEdit, QPlainTextEdit,
     QPushButton, QRadioButton, QScrollArea, QSizePolicy,
-    QSpacerItem, QStackedWidget, QTableView, QWidget)
-import ibootstrap_rc
-import iconsdvg_rc
-import iconosSVG_rc
+    QSpacerItem, QStackedWidget, QTableView, QVBoxLayout,
+    QWidget)
+from ...Source import ibootstrap_rc
+from ...Source import iconsdvg_rc
+from ...Source import iconosSVG_rc
 
 class Ui_Control_Clientes(object):
     def setupUi(self, Control_Clientes):
         if not Control_Clientes.objectName():
             Control_Clientes.setObjectName(u"Control_Clientes")
-        Control_Clientes.resize(1400, 590)
+        Control_Clientes.resize(1594, 1435)
         Control_Clientes.setMinimumSize(QSize(0, 0))
         Control_Clientes.setStyleSheet(u"#Control_Clientes{\n"
 "background: #fffefb;\n"
@@ -74,20 +75,15 @@ class Ui_Control_Clientes(object):
 "#wpc_buscar_clientes{\n"
 "min-width:300px;\n"
 "}\n"
-"#etiqueta_iconobuscar{\n"
-"image: url(:/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg);\n"
-"min-width:35px;\n"
-"min-height:25px;\n"
-"}\n"
-"[objectName"
-                        "^=\"btn_btn_\"]{\n"
+"[objectName^=\"btn_btn_\"]{\n"
 "background-color: #023375;\n"
 "border-radius: 3px;\n"
 "color: #fffefb;\n"
 "font-weight: bold;\n"
 "font-family: Arial;\n"
-"font-size: 16px;\n"
-"padding: 2px; \n"
+"font-"
+                        "size: 16px;\n"
+"padding: 2px 4px; \n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
 "background-color: #2196F3;\n"
@@ -98,15 +94,15 @@ class Ui_Control_Clientes(object):
 "#btn_btn_cliente_eliminar:hover{\n"
 "	background: #EE1D52;\n"
 "}\n"
-"#btn_RefrescarTabla{\n"
+"[objectName*=\"RefrescarTabla\"]{\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
 "padding: 5px;\n"
 "}\n"
-"#btn_RefrescarTabla:hover{\n"
+"[objectName*=\"RefrescarTabla\"]:hover{\n"
 "background: rgb(179, 179, 179);\n"
 "}\n"
-"#btn_RefrescarTabla:pressed{\n"
+"[objectName*=\"RefrescarTabla\"]:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
 "[objectName*=\"etiqueta_\"]{\n"
@@ -125,13 +121,13 @@ class Ui_Control_Clientes(object):
 "font-size: 15px;\n"
 "border: none;\n"
 "border-bottom: 1px solid rgb(0, 0, 0);\n"
-""
-                        "background: #F5F5F5;\n"
+"background: #F5F5F5;\n"
 "border-radius: 2px;\n"
 "color: #1d1c1c;\n"
 "min-width: 200px;\n"
 "}\n"
-"[objectName*=\"txt_\"]::focus{\n"
+"[objectN"
+                        "ame*=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName*=\"txtlargo_\"]{\n"
@@ -168,12 +164,12 @@ class Ui_Control_Clientes(object):
 "    border-bottom: 1px solid #787878 ;\n"
 "    padding: 2px ;\n"
 "    background-color: #F5F5F5 ;\n"
-"    font"
-                        "-size: 14px ;\n"
+"    font-size: 14px ;\n"
 "    min-width: 200px ;\n"
 "    font-family: \"Arial\" ;\n"
 "    color: #1d1c1c ;\n"
-"	selection-background-color: #4791F5; \n"
+"	s"
+                        "election-background-color: #4791F5; \n"
 "}\n"
 "\n"
 "/* ESTILO DEL DROPDOWN (LISTA) */\n"
@@ -205,14 +201,14 @@ class Ui_Control_Clientes(object):
 "    height: 17% ;\n"
 "    padding-left: 5px ;\n"
 "    padding-right: 5px ;\n"
-"}"
-                        "\n"
+"}\n"
 "/*TABLA*/\n"
 "\n"
 "[objectName*=\"tabla_\"] {\n"
 "font-family: Arial;\n"
 "font-size: 14px;\n"
-"background: #E3E3E3;\n"
+"backg"
+                        "round: #E3E3E3;\n"
 "border: 1px solid #4791F5;\n"
 "min-height: 400px;\n"
 "}\n"
@@ -250,14 +246,14 @@ class Ui_Control_Clientes(object):
 "font-family:Arial;\n"
 "font-size: 14px;\n"
 "color:#1d1c1c;\n"
-"font-weig"
-                        "ht: bold;\n"
+"font-weight: bold;\n"
 "}\n"
 "#wpc_clientes_contenedordatos{\n"
 "max-width:800px;\n"
 "background: #fffefb;\n"
 "}\n"
-"#label_wpc_fotocliente{\n"
+""
+                        "#label_wpc_fotocliente{\n"
 "min-height:200px;\n"
 "min-width:200px;\n"
 "background: #F5F5F5;\n"
@@ -296,12 +292,12 @@ class Ui_Control_Clientes(object):
 "width: 17%;\n"
 "height: 17%;\n"
 "padding-left:5px;\n"
-"padding-ri"
-                        "ght:5px;\n"
+"padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
 "*[objectName*=\"fecha_\"]::focus{\n"
-"border-bottom: 2px solid #00668c;\n"
+"border-bottom: 2px solid "
+                        "#00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
@@ -335,12 +331,12 @@ class Ui_Control_Clientes(object):
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
 "    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
-""
-                        "    selection-color: white;\n"
+"    selection-color: white;\n"
 "}\n"
 "\n"
 "/* D\u00cdAS DE OTROS MESES */\n"
-"QCalendarWidget QAbstractItemView:disabled {\n"
+"QCalendarWidget QAbstractIt"
+                        "emView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
@@ -372,7 +368,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1388, 1104))
+        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1582, 1621))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -412,60 +408,6 @@ class Ui_Control_Clientes(object):
 
 
         self.gridLayout_4.addWidget(self.contenedor_opcionesclientes, 0, 0, 1, 1)
-
-        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
-        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
-        self.gridLayout_12 = QGridLayout(self.wpc_buscar_clientes)
-        self.gridLayout_12.setObjectName(u"gridLayout_12")
-        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
-
-        self.gridLayout_12.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
-
-        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_12.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
-
-        self.btn_RefrescarTabla = QPushButton(self.wpc_buscar_clientes)
-        self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
-        self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon = QIcon()
-        icon.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon)
-
-        self.gridLayout_12.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
-
-        self.tabla_clientes = QTableView(self.wpc_buscar_clientes)
-        self.tabla_clientes.setObjectName(u"tabla_clientes")
-        self.tabla_clientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tabla_clientes.setAlternatingRowColors(True)
-        self.tabla_clientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tabla_clientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla_clientes.setGridStyle(Qt.PenStyle.DashDotLine)
-        self.tabla_clientes.horizontalHeader().setMinimumSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setDefaultSectionSize(200)
-        self.tabla_clientes.horizontalHeader().setStretchLastSection(True)
-
-        self.gridLayout_12.addWidget(self.tabla_clientes, 2, 0, 1, 3)
-
-        self.gridLayout_8 = QGridLayout()
-        self.gridLayout_8.setObjectName(u"gridLayout_8")
-        self.etiqueta_iconobuscar = QLabel(self.wpc_buscar_clientes)
-        self.etiqueta_iconobuscar.setObjectName(u"etiqueta_iconobuscar")
-
-        self.gridLayout_8.addWidget(self.etiqueta_iconobuscar, 0, 0, 1, 1)
-
-        self.txt_buscarcliente = QLineEdit(self.wpc_buscar_clientes)
-        self.txt_buscarcliente.setObjectName(u"txt_buscarcliente")
-        self.txt_buscarcliente.setClearButtonEnabled(True)
-
-        self.gridLayout_8.addWidget(self.txt_buscarcliente, 0, 1, 1, 1)
-
-
-        self.gridLayout_12.addLayout(self.gridLayout_8, 1, 0, 1, 3)
-
-
-        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
 
         self.wpc_contenedor_pila = QStackedWidget(self.wpc_clientes_datos)
         self.wpc_contenedor_pila.setObjectName(u"wpc_contenedor_pila")
@@ -515,9 +457,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevacategoriaFisico = QPushButton(self.wpc_clientes_clienteFisico)
         self.btn_btn_nuevacategoriaFisico.setObjectName(u"btn_btn_nuevacategoriaFisico")
         self.btn_btn_nuevacategoriaFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon1 = QIcon()
-        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_nuevacategoriaFisico.setIcon(icon1)
+        icon = QIcon()
+        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_nuevacategoriaFisico.setIcon(icon)
         self.btn_btn_nuevacategoriaFisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout_2.addWidget(self.btn_btn_nuevacategoriaFisico)
@@ -672,7 +614,7 @@ class Ui_Control_Clientes(object):
         self.btn_btn_nuevaareanegocio_fisico.setObjectName(u"btn_btn_nuevaareanegocio_fisico")
         self.btn_btn_nuevaareanegocio_fisico.setMaximumSize(QSize(16777215, 16777215))
         self.btn_btn_nuevaareanegocio_fisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon1)
+        self.btn_btn_nuevaareanegocio_fisico.setIcon(icon)
         self.btn_btn_nuevaareanegocio_fisico.setIconSize(QSize(20, 20))
 
         self.horizontalLayout.addWidget(self.btn_btn_nuevaareanegocio_fisico)
@@ -784,8 +726,32 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_5.addWidget(self.etiqueta_categoriaFisico, 9, 2, 1, 1)
 
+        self.txtlargo_descripcionAreaCliente = QPlainTextEdit(self.wpc_clientes_clienteFisico)
+        self.txtlargo_descripcionAreaCliente.setObjectName(u"txtlargo_descripcionAreaCliente")
+
+        self.gridLayout_5.addWidget(self.txtlargo_descripcionAreaCliente, 13, 1, 1, 1)
+
+        self.etiqueta_wpc_descripcionAreaCliente = QLabel(self.wpc_clientes_clienteFisico)
+        self.etiqueta_wpc_descripcionAreaCliente.setObjectName(u"etiqueta_wpc_descripcionAreaCliente")
+
+        self.gridLayout_5.addWidget(self.etiqueta_wpc_descripcionAreaCliente, 13, 0, 1, 1)
+
+        self.etiqueta_wpc_descripcionCategoriaCliente = QLabel(self.wpc_clientes_clienteFisico)
+        self.etiqueta_wpc_descripcionCategoriaCliente.setObjectName(u"etiqueta_wpc_descripcionCategoriaCliente")
+
+        self.gridLayout_5.addWidget(self.etiqueta_wpc_descripcionCategoriaCliente, 13, 2, 1, 1)
+
+        self.txtlargo_descripcionCategoriaCliente = QPlainTextEdit(self.wpc_clientes_clienteFisico)
+        self.txtlargo_descripcionCategoriaCliente.setObjectName(u"txtlargo_descripcionCategoriaCliente")
+
+        self.gridLayout_5.addWidget(self.txtlargo_descripcionCategoriaCliente, 13, 3, 1, 1)
+
 
         self.gridLayout_7.addWidget(self.wpc_clientes_clienteFisico, 0, 0, 1, 1)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_7.addItem(self.verticalSpacer_2, 1, 0, 1, 1)
 
         self.contenedor_izquierda = QFrame(self.wpc_contenedor_clientfisico)
         self.contenedor_izquierda.setObjectName(u"contenedor_izquierda")
@@ -931,10 +897,6 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_7.addWidget(self.contenedor_izquierda, 0, 1, 1, 1)
 
-        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.gridLayout_7.addItem(self.verticalSpacer_2, 1, 0, 1, 1)
-
 
         self.gridLayout_3.addWidget(self.wpc_contenedor_clientfisico, 0, 0, 1, 1)
 
@@ -1066,29 +1028,49 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_clienteMoral.setMaximumSize(QSize(16777215, 16777215))
         self.gridLayout_15 = QGridLayout(self.wpc_contenedor_clienteMoral)
         self.gridLayout_15.setObjectName(u"gridLayout_15")
-        self.etiqueta_wpc_rfc_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_rfc_moral.setObjectName(u"etiqueta_wpc_rfc_moral")
-        self.etiqueta_wpc_rfc_moral.setMinimumSize(QSize(0, 0))
+        self.etiqueta_pais_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_pais_moral.setObjectName(u"etiqueta_pais_moral")
 
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_rfc_moral, 4, 0, 1, 1)
+        self.gridLayout_15.addWidget(self.etiqueta_pais_moral, 6, 0, 1, 1)
 
-        self.txt_calles_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_calles_empre_moral.setObjectName(u"txt_calles_empre_moral")
-        self.txt_calles_empre_moral.setMinimumSize(QSize(200, 17))
+        self.txt_codigopostal_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_codigopostal_moral.setObjectName(u"txt_codigopostal_moral")
 
-        self.gridLayout_15.addWidget(self.txt_calles_empre_moral, 2, 4, 1, 1)
+        self.gridLayout_15.addWidget(self.txt_codigopostal_moral, 7, 4, 1, 1)
 
-        self.txt_ciudad_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_ciudad_moral.setObjectName(u"txt_ciudad_moral")
+        self.etiqueta_ciudad_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_ciudad_moral.setObjectName(u"etiqueta_ciudad_moral")
 
-        self.gridLayout_15.addWidget(self.txt_ciudad_moral, 7, 1, 1, 2)
+        self.gridLayout_15.addWidget(self.etiqueta_ciudad_moral, 7, 0, 1, 1)
+
+        self.etiqueta_wpc_sector_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_sector_moral.setObjectName(u"etiqueta_wpc_sector_moral")
+        self.etiqueta_wpc_sector_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_sector_moral, 4, 3, 1, 1)
+
+        self.etiqueta_wpc_puesto_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_puesto_representante_moral.setObjectName(u"etiqueta_wpc_puesto_representante_moral")
+        self.etiqueta_wpc_puesto_representante_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_puesto_representante_moral, 13, 3, 1, 1)
+
+        self.txt_estado_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_estado_moral.setObjectName(u"txt_estado_moral")
+
+        self.gridLayout_15.addWidget(self.txt_estado_moral, 6, 4, 1, 1)
+
+        self.etiqueta_estado_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_estado_moral.setObjectName(u"etiqueta_estado_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_estado_moral, 6, 3, 1, 1)
 
         self.gridLayout_13 = QGridLayout()
         self.gridLayout_13.setObjectName(u"gridLayout_13")
         self.btn_btn_nuevacategoriaMoral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_nuevacategoriaMoral.setObjectName(u"btn_btn_nuevacategoriaMoral")
         self.btn_btn_nuevacategoriaMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_nuevacategoriaMoral.setIcon(icon1)
+        self.btn_btn_nuevacategoriaMoral.setIcon(icon)
         self.btn_btn_nuevacategoriaMoral.setIconSize(QSize(20, 20))
 
         self.gridLayout_13.addWidget(self.btn_btn_nuevacategoriaMoral, 0, 1, 1, 1)
@@ -1106,18 +1088,40 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_15.addLayout(self.gridLayout_13, 5, 4, 1, 1)
 
-        self.txt_correo_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_correo_repre_moral.setObjectName(u"txt_correo_repre_moral")
-        self.txt_correo_repre_moral.setMinimumSize(QSize(200, 17))
+        self.txt_puesto_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_puesto_repre_moral.setObjectName(u"txt_puesto_repre_moral")
+        self.txt_puesto_repre_moral.setMinimumSize(QSize(200, 17))
 
-        self.gridLayout_15.addWidget(self.txt_correo_repre_moral, 13, 4, 1, 1)
+        self.gridLayout_15.addWidget(self.txt_puesto_repre_moral, 13, 4, 1, 1)
+
+        self.etiqueta_categoriaMoral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_categoriaMoral.setObjectName(u"etiqueta_categoriaMoral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_categoriaMoral, 5, 3, 1, 1)
+
+        self.etiqueta_wpc_correo_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_correo_moral.setObjectName(u"etiqueta_wpc_correo_moral")
+        self.etiqueta_wpc_correo_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_correo_moral, 2, 0, 1, 1)
+
+        self.etiqueta_codigopostal_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_codigopostal_moral.setObjectName(u"etiqueta_codigopostal_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_codigopostal_moral, 7, 3, 1, 1)
+
+        self.etiqueta_wpc_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_representante_moral.setObjectName(u"etiqueta_wpc_representante_moral")
+        self.etiqueta_wpc_representante_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_representante_moral, 13, 0, 1, 1)
 
         self.gridLayout_2 = QGridLayout()
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.btn_btn_areasnegocio_moral = QPushButton(self.wpc_contenedor_clienteMoral)
         self.btn_btn_areasnegocio_moral.setObjectName(u"btn_btn_areasnegocio_moral")
         self.btn_btn_areasnegocio_moral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_areasnegocio_moral.setIcon(icon1)
+        self.btn_btn_areasnegocio_moral.setIcon(icon)
         self.btn_btn_areasnegocio_moral.setIconSize(QSize(20, 20))
 
         self.gridLayout_2.addWidget(self.btn_btn_areasnegocio_moral, 1, 1, 1, 1)
@@ -1135,218 +1139,18 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_15.addLayout(self.gridLayout_2, 8, 1, 1, 2)
 
-        self.etiqueta_wpc_fechaconst_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_fechaconst_moral.setObjectName(u"etiqueta_wpc_fechaconst_moral")
-        self.etiqueta_wpc_fechaconst_moral.setMinimumSize(QSize(0, 0))
+        self.etiqueta_wpc_telefono_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_telefono_representante_moral.setObjectName(u"etiqueta_wpc_telefono_representante_moral")
+        self.etiqueta_wpc_telefono_representante_moral.setMinimumSize(QSize(0, 0))
 
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_fechaconst_moral, 3, 3, 1, 1)
-
-        self.txt_estado_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_estado_moral.setObjectName(u"txt_estado_moral")
-
-        self.gridLayout_15.addWidget(self.txt_estado_moral, 6, 4, 1, 1)
-
-        self.txt_codigopostal_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_codigopostal_moral.setObjectName(u"txt_codigopostal_moral")
-
-        self.gridLayout_15.addWidget(self.txt_codigopostal_moral, 7, 4, 1, 1)
-
-        self.etiqueta_estado_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_estado_moral.setObjectName(u"etiqueta_estado_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_estado_moral, 6, 3, 1, 1)
-
-        self.txt_sector_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_sector_empre_moral.setObjectName(u"txt_sector_empre_moral")
-        self.txt_sector_empre_moral.setMinimumSize(QSize(200, 17))
-
-        self.gridLayout_15.addWidget(self.txt_sector_empre_moral, 4, 4, 1, 1)
-
-        self.txtlargo_comentarios_cliente_moral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
-        self.txtlargo_comentarios_cliente_moral.setObjectName(u"txtlargo_comentarios_cliente_moral")
-
-        self.gridLayout_15.addWidget(self.txtlargo_comentarios_cliente_moral, 10, 2, 1, 3)
-
-        self.etiqueta_wpc_sector_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_sector_moral.setObjectName(u"etiqueta_wpc_sector_moral")
-        self.etiqueta_wpc_sector_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_sector_moral, 4, 3, 1, 1)
-
-        self.etiqueta_wpc_pagina_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_pagina_moral.setObjectName(u"etiqueta_wpc_pagina_moral")
-        self.etiqueta_wpc_pagina_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_pagina_moral, 5, 0, 1, 1)
-
-        self.txt_nombre_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_nombre_repre_moral.setObjectName(u"txt_nombre_repre_moral")
-        self.txt_nombre_repre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_nombre_repre_moral, 12, 2, 1, 1)
-
-        self.txt_puesto_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_puesto_repre_moral.setObjectName(u"txt_puesto_repre_moral")
-        self.txt_puesto_repre_moral.setMinimumSize(QSize(200, 17))
-
-        self.gridLayout_15.addWidget(self.txt_puesto_repre_moral, 12, 4, 1, 1)
-
-        self.etiqueta_wpc_puesto_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_puesto_representante_moral.setObjectName(u"etiqueta_wpc_puesto_representante_moral")
-        self.etiqueta_wpc_puesto_representante_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_puesto_representante_moral, 12, 3, 1, 1)
-
-        self.etiqueta_nif_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_nif_moral.setObjectName(u"etiqueta_nif_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_nif_moral, 1, 3, 1, 1)
-
-        self.etiqueta_wpc_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_representante_moral.setObjectName(u"etiqueta_wpc_representante_moral")
-        self.etiqueta_wpc_representante_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_representante_moral, 12, 0, 1, 1)
-
-        self.txt_pais_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_pais_moral.setObjectName(u"txt_pais_moral")
-
-        self.gridLayout_15.addWidget(self.txt_pais_moral, 6, 1, 1, 2)
-
-        self.txt_razonsocial_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_razonsocial_moral.setObjectName(u"txt_razonsocial_moral")
-
-        self.gridLayout_15.addWidget(self.txt_razonsocial_moral, 1, 1, 1, 2)
-
-        self.etiqueta_codigopostal_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_codigopostal_moral.setObjectName(u"etiqueta_codigopostal_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_codigopostal_moral, 7, 3, 1, 1)
-
-        self.txt_avenidas_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_avenidas_empre_moral.setObjectName(u"txt_avenidas_empre_moral")
-        self.txt_avenidas_empre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_avenidas_empre_moral, 3, 1, 1, 2)
-
-        self.etiqueta_comentarios_cliente_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_comentarios_cliente_moral.setObjectName(u"etiqueta_comentarios_cliente_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_comentarios_cliente_moral, 10, 0, 1, 1)
-
-        self.etiqueta_wpc_telefono_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_telefono_moral.setObjectName(u"etiqueta_wpc_telefono_moral")
-        self.etiqueta_wpc_telefono_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_telefono_moral, 0, 3, 1, 1)
-
-        self.etiqueta_pais_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_pais_moral.setObjectName(u"etiqueta_pais_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_pais_moral, 6, 0, 1, 1)
-
-        self.etiqueta_areanegocio_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_areanegocio_moral.setObjectName(u"etiqueta_areanegocio_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_areanegocio_moral, 8, 0, 1, 1)
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_telefono_representante_moral, 14, 0, 1, 1)
 
         self.line = QFrame(self.wpc_contenedor_clienteMoral)
         self.line.setObjectName(u"line")
         self.line.setFrameShape(QFrame.Shape.HLine)
         self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout_15.addWidget(self.line, 11, 0, 1, 5)
-
-        self.fecha_fechaconstitucion = QDateEdit(self.wpc_contenedor_clienteMoral)
-        self.fecha_fechaconstitucion.setObjectName(u"fecha_fechaconstitucion")
-        self.fecha_fechaconstitucion.setCalendarPopup(True)
-
-        self.gridLayout_15.addWidget(self.fecha_fechaconstitucion, 3, 4, 1, 1)
-
-        self.etiqueta_categoriaMoral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_categoriaMoral.setObjectName(u"etiqueta_categoriaMoral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_categoriaMoral, 5, 3, 1, 1)
-
-        self.txt_nombre_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_nombre_empre_moral.setObjectName(u"txt_nombre_empre_moral")
-        self.txt_nombre_empre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_nombre_empre_moral, 0, 1, 1, 2)
-
-        self.txtlargo_direccionadicional_moral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
-        self.txtlargo_direccionadicional_moral.setObjectName(u"txtlargo_direccionadicional_moral")
-
-        self.gridLayout_15.addWidget(self.txtlargo_direccionadicional_moral, 9, 2, 1, 3)
-
-        self.txt_correo_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_correo_empre_moral.setObjectName(u"txt_correo_empre_moral")
-        self.txt_correo_empre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_correo_empre_moral, 2, 1, 1, 2)
-
-        self.txt_telefono_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_telefono_empre_moral.setObjectName(u"txt_telefono_empre_moral")
-        self.txt_telefono_empre_moral.setMinimumSize(QSize(200, 17))
-
-        self.gridLayout_15.addWidget(self.txt_telefono_empre_moral, 0, 4, 1, 1)
-
-        self.etiqueta_razonsocial_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_razonsocial_moral.setObjectName(u"etiqueta_razonsocial_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_razonsocial_moral, 1, 0, 1, 1)
-
-        self.etiqueta_wpc_nombre_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_nombre_moral.setObjectName(u"etiqueta_wpc_nombre_moral")
-        self.etiqueta_wpc_nombre_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_nombre_moral, 0, 0, 1, 1)
-
-        self.txt_rfc_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_rfc_empre_moral.setObjectName(u"txt_rfc_empre_moral")
-        self.txt_rfc_empre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_rfc_empre_moral, 4, 1, 1, 2)
-
-        self.txt_nif_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_nif_moral.setObjectName(u"txt_nif_moral")
-
-        self.gridLayout_15.addWidget(self.txt_nif_moral, 1, 4, 1, 1)
-
-        self.etiqueta_ciudad_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_ciudad_moral.setObjectName(u"etiqueta_ciudad_moral")
-
-        self.gridLayout_15.addWidget(self.etiqueta_ciudad_moral, 7, 0, 1, 1)
-
-        self.etiqueta_wpc_telefono_representante_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_telefono_representante_moral.setObjectName(u"etiqueta_wpc_telefono_representante_moral")
-        self.etiqueta_wpc_telefono_representante_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_telefono_representante_moral, 13, 0, 1, 1)
-
-        self.etiqueta_wpc_correo_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_correo_moral.setObjectName(u"etiqueta_wpc_correo_moral")
-        self.etiqueta_wpc_correo_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_correo_moral, 2, 0, 1, 1)
-
-        self.txt_telefono_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_telefono_repre_moral.setObjectName(u"txt_telefono_repre_moral")
-        self.txt_telefono_repre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_telefono_repre_moral, 13, 2, 1, 1)
-
-        self.txt_pagina_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
-        self.txt_pagina_empre_moral.setObjectName(u"txt_pagina_empre_moral")
-        self.txt_pagina_empre_moral.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout_15.addWidget(self.txt_pagina_empre_moral, 5, 1, 1, 2)
-
-        self.etiqueta_wpc_calles_moral = QLabel(self.wpc_contenedor_clienteMoral)
-        self.etiqueta_wpc_calles_moral.setObjectName(u"etiqueta_wpc_calles_moral")
-        self.etiqueta_wpc_calles_moral.setMinimumSize(QSize(0, 0))
-
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_calles_moral, 2, 3, 1, 1)
+        self.gridLayout_15.addWidget(self.line, 12, 0, 1, 5)
 
         self.etiqueta_wpc_avenidas_moral = QLabel(self.wpc_contenedor_clienteMoral)
         self.etiqueta_wpc_avenidas_moral.setObjectName(u"etiqueta_wpc_avenidas_moral")
@@ -1354,16 +1158,194 @@ class Ui_Control_Clientes(object):
 
         self.gridLayout_15.addWidget(self.etiqueta_wpc_avenidas_moral, 3, 0, 1, 1)
 
+        self.txt_calles_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_calles_empre_moral.setObjectName(u"txt_calles_empre_moral")
+        self.txt_calles_empre_moral.setMinimumSize(QSize(200, 17))
+
+        self.gridLayout_15.addWidget(self.txt_calles_empre_moral, 2, 4, 1, 1)
+
+        self.txt_razonsocial_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_razonsocial_moral.setObjectName(u"txt_razonsocial_moral")
+
+        self.gridLayout_15.addWidget(self.txt_razonsocial_moral, 1, 1, 1, 2)
+
+        self.etiqueta_areanegocio_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_areanegocio_moral.setObjectName(u"etiqueta_areanegocio_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_areanegocio_moral, 8, 0, 1, 1)
+
+        self.etiqueta_wpc_rfc_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_rfc_moral.setObjectName(u"etiqueta_wpc_rfc_moral")
+        self.etiqueta_wpc_rfc_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_rfc_moral, 4, 0, 1, 1)
+
         self.etiqueta_direccionadicional_moral = QLabel(self.wpc_contenedor_clienteMoral)
         self.etiqueta_direccionadicional_moral.setObjectName(u"etiqueta_direccionadicional_moral")
 
         self.gridLayout_15.addWidget(self.etiqueta_direccionadicional_moral, 9, 0, 1, 1)
 
+        self.txt_nombre_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_nombre_repre_moral.setObjectName(u"txt_nombre_repre_moral")
+        self.txt_nombre_repre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_nombre_repre_moral, 13, 2, 1, 1)
+
+        self.txt_nif_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_nif_moral.setObjectName(u"txt_nif_moral")
+
+        self.gridLayout_15.addWidget(self.txt_nif_moral, 1, 4, 1, 1)
+
+        self.txt_correo_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_correo_repre_moral.setObjectName(u"txt_correo_repre_moral")
+        self.txt_correo_repre_moral.setMinimumSize(QSize(200, 17))
+
+        self.gridLayout_15.addWidget(self.txt_correo_repre_moral, 14, 4, 1, 1)
+
+        self.etiqueta_wpc_pagina_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_pagina_moral.setObjectName(u"etiqueta_wpc_pagina_moral")
+        self.etiqueta_wpc_pagina_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_pagina_moral, 5, 0, 1, 1)
+
+        self.txt_avenidas_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_avenidas_empre_moral.setObjectName(u"txt_avenidas_empre_moral")
+        self.txt_avenidas_empre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_avenidas_empre_moral, 3, 1, 1, 2)
+
+        self.etiqueta_wpc_calles_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_calles_moral.setObjectName(u"etiqueta_wpc_calles_moral")
+        self.etiqueta_wpc_calles_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_calles_moral, 2, 3, 1, 1)
+
+        self.txt_ciudad_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_ciudad_moral.setObjectName(u"txt_ciudad_moral")
+
+        self.gridLayout_15.addWidget(self.txt_ciudad_moral, 7, 1, 1, 2)
+
+        self.etiqueta_nif_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_nif_moral.setObjectName(u"etiqueta_nif_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_nif_moral, 1, 3, 1, 1)
+
+        self.txt_telefono_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_telefono_empre_moral.setObjectName(u"txt_telefono_empre_moral")
+        self.txt_telefono_empre_moral.setMinimumSize(QSize(200, 17))
+
+        self.gridLayout_15.addWidget(self.txt_telefono_empre_moral, 0, 4, 1, 1)
+
+        self.txtlargo_direccionadicional_moral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
+        self.txtlargo_direccionadicional_moral.setObjectName(u"txtlargo_direccionadicional_moral")
+
+        self.gridLayout_15.addWidget(self.txtlargo_direccionadicional_moral, 9, 2, 1, 3)
+
+        self.txtlargo_comentarios_cliente_moral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
+        self.txtlargo_comentarios_cliente_moral.setObjectName(u"txtlargo_comentarios_cliente_moral")
+
+        self.gridLayout_15.addWidget(self.txtlargo_comentarios_cliente_moral, 10, 2, 1, 3)
+
+        self.txt_rfc_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_rfc_empre_moral.setObjectName(u"txt_rfc_empre_moral")
+        self.txt_rfc_empre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_rfc_empre_moral, 4, 1, 1, 2)
+
+        self.txt_sector_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_sector_empre_moral.setObjectName(u"txt_sector_empre_moral")
+        self.txt_sector_empre_moral.setMinimumSize(QSize(200, 17))
+
+        self.gridLayout_15.addWidget(self.txt_sector_empre_moral, 4, 4, 1, 1)
+
+        self.etiqueta_wpc_nombre_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_nombre_moral.setObjectName(u"etiqueta_wpc_nombre_moral")
+        self.etiqueta_wpc_nombre_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_nombre_moral, 0, 0, 1, 1)
+
+        self.txt_pais_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_pais_moral.setObjectName(u"txt_pais_moral")
+
+        self.gridLayout_15.addWidget(self.txt_pais_moral, 6, 1, 1, 2)
+
+        self.fecha_fechaconstitucion = QDateEdit(self.wpc_contenedor_clienteMoral)
+        self.fecha_fechaconstitucion.setObjectName(u"fecha_fechaconstitucion")
+        self.fecha_fechaconstitucion.setCalendarPopup(True)
+
+        self.gridLayout_15.addWidget(self.fecha_fechaconstitucion, 3, 4, 1, 1)
+
+        self.txt_telefono_repre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_telefono_repre_moral.setObjectName(u"txt_telefono_repre_moral")
+        self.txt_telefono_repre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_telefono_repre_moral, 14, 2, 1, 1)
+
+        self.txt_correo_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_correo_empre_moral.setObjectName(u"txt_correo_empre_moral")
+        self.txt_correo_empre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_correo_empre_moral, 2, 1, 1, 2)
+
+        self.txt_pagina_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_pagina_empre_moral.setObjectName(u"txt_pagina_empre_moral")
+        self.txt_pagina_empre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_pagina_empre_moral, 5, 1, 1, 2)
+
+        self.etiqueta_wpc_telefono_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_telefono_moral.setObjectName(u"etiqueta_wpc_telefono_moral")
+        self.etiqueta_wpc_telefono_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_telefono_moral, 0, 3, 1, 1)
+
+        self.txt_nombre_empre_moral = QLineEdit(self.wpc_contenedor_clienteMoral)
+        self.txt_nombre_empre_moral.setObjectName(u"txt_nombre_empre_moral")
+        self.txt_nombre_empre_moral.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout_15.addWidget(self.txt_nombre_empre_moral, 0, 1, 1, 2)
+
+        self.etiqueta_razonsocial_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_razonsocial_moral.setObjectName(u"etiqueta_razonsocial_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_razonsocial_moral, 1, 0, 1, 1)
+
         self.etiqueta_wpc_correo_repre_moral = QLabel(self.wpc_contenedor_clienteMoral)
         self.etiqueta_wpc_correo_repre_moral.setObjectName(u"etiqueta_wpc_correo_repre_moral")
         self.etiqueta_wpc_correo_repre_moral.setMinimumSize(QSize(0, 0))
 
-        self.gridLayout_15.addWidget(self.etiqueta_wpc_correo_repre_moral, 13, 3, 1, 1)
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_correo_repre_moral, 14, 3, 1, 1)
+
+        self.etiqueta_comentarios_cliente_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_comentarios_cliente_moral.setObjectName(u"etiqueta_comentarios_cliente_moral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_comentarios_cliente_moral, 10, 0, 1, 1)
+
+        self.etiqueta_wpc_fechaconst_moral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_fechaconst_moral.setObjectName(u"etiqueta_wpc_fechaconst_moral")
+        self.etiqueta_wpc_fechaconst_moral.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_fechaconst_moral, 3, 3, 1, 1)
+
+        self.txtlargo_descripcionAreaClienteMoral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
+        self.txtlargo_descripcionAreaClienteMoral.setObjectName(u"txtlargo_descripcionAreaClienteMoral")
+
+        self.gridLayout_15.addWidget(self.txtlargo_descripcionAreaClienteMoral, 11, 2, 1, 1)
+
+        self.etiqueta_wpc_descripcionAreaClienteMoral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_descripcionAreaClienteMoral.setObjectName(u"etiqueta_wpc_descripcionAreaClienteMoral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_descripcionAreaClienteMoral, 11, 0, 1, 1)
+
+        self.txtlargo_descripcionCategoriaClienteMoral = QPlainTextEdit(self.wpc_contenedor_clienteMoral)
+        self.txtlargo_descripcionCategoriaClienteMoral.setObjectName(u"txtlargo_descripcionCategoriaClienteMoral")
+
+        self.gridLayout_15.addWidget(self.txtlargo_descripcionCategoriaClienteMoral, 11, 4, 1, 1)
+
+        self.etiqueta_wpc_descripcionCategoriaClienteMoral = QLabel(self.wpc_contenedor_clienteMoral)
+        self.etiqueta_wpc_descripcionCategoriaClienteMoral.setObjectName(u"etiqueta_wpc_descripcionCategoriaClienteMoral")
+
+        self.gridLayout_15.addWidget(self.etiqueta_wpc_descripcionCategoriaClienteMoral, 11, 3, 1, 1)
 
 
         self.gridLayout_18.addWidget(self.wpc_contenedor_clienteMoral, 0, 0, 1, 1)
@@ -1378,6 +1360,152 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_pila.addWidget(self.wpc_pagina_clientemoral)
 
         self.gridLayout_4.addWidget(self.wpc_contenedor_pila, 1, 0, 1, 1)
+
+        self.wpc_buscar_clientes = QWidget(self.wpc_clientes_datos)
+        self.wpc_buscar_clientes.setObjectName(u"wpc_buscar_clientes")
+        self.gridLayout_21 = QGridLayout(self.wpc_buscar_clientes)
+        self.gridLayout_21.setObjectName(u"gridLayout_21")
+        self.etiqueta_titulo_tabla = QLabel(self.wpc_buscar_clientes)
+        self.etiqueta_titulo_tabla.setObjectName(u"etiqueta_titulo_tabla")
+
+        self.gridLayout_21.addWidget(self.etiqueta_titulo_tabla, 0, 0, 1, 1)
+
+        self.horizontalSpacer_6 = QSpacerItem(1154, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_21.addItem(self.horizontalSpacer_6, 0, 1, 1, 1)
+
+        self.contenedor_clientesFisicos = QFrame(self.wpc_buscar_clientes)
+        self.contenedor_clientesFisicos.setObjectName(u"contenedor_clientesFisicos")
+        self.contenedor_clientesFisicos.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_clientesFisicos.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout = QVBoxLayout(self.contenedor_clientesFisicos)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalLayout_3.setContentsMargins(10, -1, 10, -1)
+        self.etiqueta_iconobuscarClienteFisico = QLabel(self.contenedor_clientesFisicos)
+        self.etiqueta_iconobuscarClienteFisico.setObjectName(u"etiqueta_iconobuscarClienteFisico")
+        self.etiqueta_iconobuscarClienteFisico.setPixmap(QPixmap(u":/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg"))
+        self.etiqueta_iconobuscarClienteFisico.setScaledContents(True)
+        self.etiqueta_iconobuscarClienteFisico.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.etiqueta_iconobuscarClienteFisico.setWordWrap(False)
+
+        self.horizontalLayout_3.addWidget(self.etiqueta_iconobuscarClienteFisico)
+
+        self.txt_buscarclienteFisico = QLineEdit(self.contenedor_clientesFisicos)
+        self.txt_buscarclienteFisico.setObjectName(u"txt_buscarclienteFisico")
+        self.txt_buscarclienteFisico.setClearButtonEnabled(True)
+
+        self.horizontalLayout_3.addWidget(self.txt_buscarclienteFisico)
+
+        self.btn_btn_filtrarClienteFisico = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_btn_filtrarClienteFisico.setObjectName(u"btn_btn_filtrarClienteFisico")
+        self.btn_btn_filtrarClienteFisico.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.horizontalLayout_3.addWidget(self.btn_btn_filtrarClienteFisico)
+
+        self.btn_btn_paginarClientesFisicos = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_btn_paginarClientesFisicos.setObjectName(u"btn_btn_paginarClientesFisicos")
+        self.btn_btn_paginarClientesFisicos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon1 = QIcon()
+        icon1.addFile(u":/iconosBlancos/Icons/iconos/Blanco/nextPageFilter_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_paginarClientesFisicos.setIcon(icon1)
+        self.btn_btn_paginarClientesFisicos.setIconSize(QSize(20, 20))
+
+        self.horizontalLayout_3.addWidget(self.btn_btn_paginarClientesFisicos)
+
+        self.btn_RefrescarTablaClientesFisicos = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_RefrescarTablaClientesFisicos.setObjectName(u"btn_RefrescarTablaClientesFisicos")
+        self.btn_RefrescarTablaClientesFisicos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTablaClientesFisicos.setIcon(icon2)
+
+        self.horizontalLayout_3.addWidget(self.btn_RefrescarTablaClientesFisicos)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
+
+        self.tabla_clientesFisicos = QTableView(self.contenedor_clientesFisicos)
+        self.tabla_clientesFisicos.setObjectName(u"tabla_clientesFisicos")
+        self.tabla_clientesFisicos.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientesFisicos.setAlternatingRowColors(True)
+        self.tabla_clientesFisicos.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientesFisicos.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientesFisicos.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientesFisicos.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientesFisicos.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientesFisicos.horizontalHeader().setStretchLastSection(True)
+
+        self.verticalLayout.addWidget(self.tabla_clientesFisicos)
+
+
+        self.gridLayout_21.addWidget(self.contenedor_clientesFisicos, 1, 0, 1, 2)
+
+        self.contenedor_clientesMorales = QFrame(self.wpc_buscar_clientes)
+        self.contenedor_clientesMorales.setObjectName(u"contenedor_clientesMorales")
+        self.contenedor_clientesMorales.setFrameShape(QFrame.Shape.StyledPanel)
+        self.contenedor_clientesMorales.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_2 = QVBoxLayout(self.contenedor_clientesMorales)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(10, -1, 10, -1)
+        self.etiqueta_iconobuscarClienteMorales = QLabel(self.contenedor_clientesMorales)
+        self.etiqueta_iconobuscarClienteMorales.setObjectName(u"etiqueta_iconobuscarClienteMorales")
+        self.etiqueta_iconobuscarClienteMorales.setPixmap(QPixmap(u":/iconosAzules/Icons/iconos/Azul/buscar_persona_azul.svg"))
+        self.etiqueta_iconobuscarClienteMorales.setScaledContents(True)
+
+        self.horizontalLayout_4.addWidget(self.etiqueta_iconobuscarClienteMorales)
+
+        self.txt_buscarclienteMorales = QLineEdit(self.contenedor_clientesMorales)
+        self.txt_buscarclienteMorales.setObjectName(u"txt_buscarclienteMorales")
+        self.txt_buscarclienteMorales.setClearButtonEnabled(True)
+
+        self.horizontalLayout_4.addWidget(self.txt_buscarclienteMorales)
+
+        self.btn_btn_filrtarClienteMoral = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_filrtarClienteMoral.setObjectName(u"btn_btn_filrtarClienteMoral")
+        self.btn_btn_filrtarClienteMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.horizontalLayout_4.addWidget(self.btn_btn_filrtarClienteMoral)
+
+        self.btn_btn_paginarClientesMorales = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_paginarClientesMorales.setObjectName(u"btn_btn_paginarClientesMorales")
+        self.btn_btn_paginarClientesMorales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_paginarClientesMorales.setIcon(icon1)
+        self.btn_btn_paginarClientesMorales.setIconSize(QSize(20, 20))
+
+        self.horizontalLayout_4.addWidget(self.btn_btn_paginarClientesMorales)
+
+        self.btn_RefrescarTablaClientesMorales = QPushButton(self.contenedor_clientesMorales)
+        self.btn_RefrescarTablaClientesMorales.setObjectName(u"btn_RefrescarTablaClientesMorales")
+        self.btn_RefrescarTablaClientesMorales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_RefrescarTablaClientesMorales.setIcon(icon2)
+
+        self.horizontalLayout_4.addWidget(self.btn_RefrescarTablaClientesMorales)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+
+        self.tabla_clientesMorales = QTableView(self.contenedor_clientesMorales)
+        self.tabla_clientesMorales.setObjectName(u"tabla_clientesMorales")
+        self.tabla_clientesMorales.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_clientesMorales.setAlternatingRowColors(True)
+        self.tabla_clientesMorales.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_clientesMorales.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_clientesMorales.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_clientesMorales.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_clientesMorales.horizontalHeader().setDefaultSectionSize(200)
+        self.tabla_clientesMorales.horizontalHeader().setStretchLastSection(True)
+
+        self.verticalLayout_2.addWidget(self.tabla_clientesMorales)
+
+
+        self.gridLayout_21.addWidget(self.contenedor_clientesMorales, 2, 0, 1, 2)
+
+
+        self.gridLayout_4.addWidget(self.wpc_buscar_clientes, 2, 0, 1, 1)
 
 
         self.gridLayout_11.addWidget(self.wpc_clientes_datos, 0, 1, 1, 1)
@@ -1418,9 +1546,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_limpiarcampos = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_limpiarcampos.setObjectName(u"btn_btn_limpiarcampos")
         self.btn_btn_limpiarcampos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiarcampos.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiarcampos.setIcon(icon3)
         self.btn_btn_limpiarcampos.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_limpiarcampos, 0, 4, 1, 1)
@@ -1428,9 +1556,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_eliminar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_eliminar.setObjectName(u"btn_btn_cliente_eliminar")
         self.btn_btn_cliente_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_eliminar.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_eliminar.setIcon(icon4)
         self.btn_btn_cliente_eliminar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_eliminar, 0, 1, 1, 1)
@@ -1438,9 +1566,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_agregar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_agregar.setObjectName(u"btn_btn_cliente_agregar")
         self.btn_btn_cliente_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_agregar.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_agregar.setIcon(icon5)
         self.btn_btn_cliente_agregar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_agregar, 0, 0, 1, 1)
@@ -1448,9 +1576,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_modificar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_modificar.setObjectName(u"btn_btn_cliente_modificar")
         self.btn_btn_cliente_modificar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon5 = QIcon()
-        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_modificar.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_modificar.setIcon(icon6)
         self.btn_btn_cliente_modificar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_modificar, 0, 3, 1, 1)
@@ -1525,9 +1653,8 @@ class Ui_Control_Clientes(object):
         QWidget.setTabOrder(self.txt_nombre_repre_moral, self.txt_telefono_repre_moral)
         QWidget.setTabOrder(self.txt_telefono_repre_moral, self.txt_puesto_repre_moral)
         QWidget.setTabOrder(self.txt_puesto_repre_moral, self.txt_correo_repre_moral)
-        QWidget.setTabOrder(self.txt_correo_repre_moral, self.txt_buscarcliente)
-        QWidget.setTabOrder(self.txt_buscarcliente, self.tabla_clientes)
-        QWidget.setTabOrder(self.tabla_clientes, self.btn_btn_limpiarcampos)
+        QWidget.setTabOrder(self.txt_correo_repre_moral, self.txt_buscarclienteFisico)
+        QWidget.setTabOrder(self.txt_buscarclienteFisico, self.btn_btn_limpiarcampos)
 
         self.retranslateUi(Control_Clientes)
 
@@ -1542,13 +1669,6 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_tipo_cliente.setText(QCoreApplication.translate("Control_Clientes", u"Tipo de cliente", None))
         self.btnRadio_wpc_clienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Fisico", None))
         self.btnRadio_wpc_clienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Moral", None))
-        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
-#if QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla.setText("")
-        self.etiqueta_iconobuscar.setText("")
-        self.txt_buscarcliente.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
         self.etiqueta_ciudad_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Ciudad", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setPrefix(QCoreApplication.translate("Control_Clientes", u"$ ", None))
         self.cajaDecimal_wpc_ingresosclienteFisico.setSuffix("")
@@ -1591,6 +1711,8 @@ class Ui_Control_Clientes(object):
         self.etiqueta_pais_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Pais", None))
         self.etiqueta_wpc_ApellidoP_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Apellido Paterno", None))
         self.etiqueta_categoriaFisico.setText(QCoreApplication.translate("Control_Clientes", u"Clasificaci\u00f3n Cliente", None))
+        self.etiqueta_wpc_descripcionAreaCliente.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Area", None))
+        self.etiqueta_wpc_descripcionCategoriaCliente.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Categoria", None))
         self.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
         self.casillaverificacion_wpc_credito_autorizado.setText(QCoreApplication.translate("Control_Clientes", u"Autoriza cr\u00e9dito", None))
         self.etiqueta_wpc_limitecredito.setText(QCoreApplication.translate("Control_Clientes", u"Limite:", None))
@@ -1661,41 +1783,66 @@ class Ui_Control_Clientes(object):
 #endif // QT_CONFIG(tooltip)
         self.cajaDecimal_porcentajedescuento_moral.setSuffix(QCoreApplication.translate("Control_Clientes", u" %", None))
         self.etiqueta_ultimoreporte_moral.setText(QCoreApplication.translate("Control_Clientes", u"\u00daltimo reporte:", None))
-        self.etiqueta_wpc_rfc_moral.setText(QCoreApplication.translate("Control_Clientes", u"RFC", None))
+        self.etiqueta_pais_moral.setText(QCoreApplication.translate("Control_Clientes", u"Pais", None))
+        self.etiqueta_ciudad_moral.setText(QCoreApplication.translate("Control_Clientes", u"Ciudad", None))
+        self.etiqueta_wpc_sector_moral.setText(QCoreApplication.translate("Control_Clientes", u"Sector", None))
+        self.etiqueta_wpc_puesto_representante_moral.setText(QCoreApplication.translate("Control_Clientes", u"Puesto", None))
+        self.etiqueta_estado_moral.setText(QCoreApplication.translate("Control_Clientes", u"Estado", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_nuevacategoriaMoral.setToolTip(QCoreApplication.translate("Control_Clientes", u"Agregar clasificaci\u00f3n", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_nuevacategoriaMoral.setText("")
         self.cajaOpciones_categoriaMoral.setItemText(0, QCoreApplication.translate("Control_Clientes", u"Sin Clasificaci\u00f3n", None))
 
+        self.etiqueta_categoriaMoral.setText(QCoreApplication.translate("Control_Clientes", u"Clasificaci\u00f3n Cliente", None))
+        self.etiqueta_wpc_correo_moral.setText(QCoreApplication.translate("Control_Clientes", u"Correo Electronico", None))
+        self.etiqueta_codigopostal_moral.setText(QCoreApplication.translate("Control_Clientes", u"Codigo Postal", None))
+        self.etiqueta_wpc_representante_moral.setText(QCoreApplication.translate("Control_Clientes", u"Nombre representante", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_areasnegocio_moral.setToolTip(QCoreApplication.translate("Control_Clientes", u"Agregar \u00e1rea", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_areasnegocio_moral.setText("")
         self.cajaOpciones_areasnegocio_moral.setItemText(0, QCoreApplication.translate("Control_Clientes", u"Sin \u00c1rea", None))
 
-        self.etiqueta_wpc_fechaconst_moral.setText(QCoreApplication.translate("Control_Clientes", u"Fecha de constituci\u00f3n", None))
-        self.etiqueta_estado_moral.setText(QCoreApplication.translate("Control_Clientes", u"Estado", None))
-        self.etiqueta_wpc_sector_moral.setText(QCoreApplication.translate("Control_Clientes", u"Sector", None))
-        self.etiqueta_wpc_pagina_moral.setText(QCoreApplication.translate("Control_Clientes", u"Pagina web", None))
-        self.etiqueta_wpc_puesto_representante_moral.setText(QCoreApplication.translate("Control_Clientes", u"Puesto", None))
-        self.etiqueta_nif_moral.setText(QCoreApplication.translate("Control_Clientes", u"NIF", None))
-        self.etiqueta_wpc_representante_moral.setText(QCoreApplication.translate("Control_Clientes", u"Nombre representante", None))
-        self.etiqueta_codigopostal_moral.setText(QCoreApplication.translate("Control_Clientes", u"Codigo Postal", None))
-        self.etiqueta_comentarios_cliente_moral.setText(QCoreApplication.translate("Control_Clientes", u"Comentarios", None))
-        self.etiqueta_wpc_telefono_moral.setText(QCoreApplication.translate("Control_Clientes", u"Num. Telefono", None))
-        self.etiqueta_pais_moral.setText(QCoreApplication.translate("Control_Clientes", u"Pais", None))
-        self.etiqueta_areanegocio_moral.setText(QCoreApplication.translate("Control_Clientes", u"Area de Negocio", None))
-        self.etiqueta_categoriaMoral.setText(QCoreApplication.translate("Control_Clientes", u"Clasificaci\u00f3n Cliente", None))
-        self.etiqueta_razonsocial_moral.setText(QCoreApplication.translate("Control_Clientes", u"Raz\u00f3n Social", None))
-        self.etiqueta_wpc_nombre_moral.setText(QCoreApplication.translate("Control_Clientes", u"Nombre", None))
-        self.etiqueta_ciudad_moral.setText(QCoreApplication.translate("Control_Clientes", u"Ciudad", None))
         self.etiqueta_wpc_telefono_representante_moral.setText(QCoreApplication.translate("Control_Clientes", u"Telefono", None))
-        self.etiqueta_wpc_correo_moral.setText(QCoreApplication.translate("Control_Clientes", u"Correo Electronico", None))
-        self.etiqueta_wpc_calles_moral.setText(QCoreApplication.translate("Control_Clientes", u"Calle o entra calles", None))
         self.etiqueta_wpc_avenidas_moral.setText(QCoreApplication.translate("Control_Clientes", u"Avenida o entre avenidas", None))
+        self.etiqueta_areanegocio_moral.setText(QCoreApplication.translate("Control_Clientes", u"Area de Negocio", None))
+        self.etiqueta_wpc_rfc_moral.setText(QCoreApplication.translate("Control_Clientes", u"RFC", None))
         self.etiqueta_direccionadicional_moral.setText(QCoreApplication.translate("Control_Clientes", u"Direcci\u00f3 Adicional", None))
+        self.etiqueta_wpc_pagina_moral.setText(QCoreApplication.translate("Control_Clientes", u"Pagina web", None))
+        self.etiqueta_wpc_calles_moral.setText(QCoreApplication.translate("Control_Clientes", u"Calle o entra calles", None))
+        self.etiqueta_nif_moral.setText(QCoreApplication.translate("Control_Clientes", u"NIF", None))
+        self.etiqueta_wpc_nombre_moral.setText(QCoreApplication.translate("Control_Clientes", u"Nombre", None))
+        self.etiqueta_wpc_telefono_moral.setText(QCoreApplication.translate("Control_Clientes", u"Num. Telefono", None))
+        self.etiqueta_razonsocial_moral.setText(QCoreApplication.translate("Control_Clientes", u"Raz\u00f3n Social", None))
         self.etiqueta_wpc_correo_repre_moral.setText(QCoreApplication.translate("Control_Clientes", u"Correo electronico", None))
+        self.etiqueta_comentarios_cliente_moral.setText(QCoreApplication.translate("Control_Clientes", u"Comentarios", None))
+        self.etiqueta_wpc_fechaconst_moral.setText(QCoreApplication.translate("Control_Clientes", u"Fecha de constituci\u00f3n", None))
+        self.etiqueta_wpc_descripcionAreaClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Area", None))
+        self.etiqueta_wpc_descripcionCategoriaClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Descripci\u00f3n Categoria", None))
+        self.etiqueta_titulo_tabla.setText(QCoreApplication.translate("Control_Clientes", u"LISTADO DE CLIENTES", None))
+        self.etiqueta_iconobuscarClienteFisico.setText("")
+        self.txt_buscarclienteFisico.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
+        self.btn_btn_filtrarClienteFisico.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesFisicos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesFisicos.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesFisicos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesFisicos.setText("")
+        self.etiqueta_iconobuscarClienteMorales.setText("")
+        self.txt_buscarclienteMorales.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
+        self.btn_btn_filrtarClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarClientesMorales.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_RefrescarTablaClientesMorales.setText("")
         self.etiquetaTitulo_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_limpiarcampos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limpiar campos", None))

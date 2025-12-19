@@ -392,8 +392,8 @@ QCalendarWidget QAbstractItemView::item:hover {
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>1594</width>
-              <height>1787</height>
+              <width>1582</width>
+              <height>1621</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_11">
@@ -2377,7 +2377,32 @@ QCalendarWidget QAbstractItemView::item:hover {
                        </layout>
                       </item>
                       <item>
-                       <widget class="QTableView" name="tabla_clientesMorales"/>
+                       <widget class="QTableView" name="tabla_clientesMorales">
+                        <property name="editTriggers">
+                         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                        </property>
+                        <property name="alternatingRowColors">
+                         <bool>true</bool>
+                        </property>
+                        <property name="selectionMode">
+                         <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                        </property>
+                        <property name="selectionBehavior">
+                         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                        </property>
+                        <property name="gridStyle">
+                         <enum>Qt::PenStyle::DashDotLine</enum>
+                        </property>
+                        <attribute name="horizontalHeaderMinimumSectionSize">
+                         <number>200</number>
+                        </attribute>
+                        <attribute name="horizontalHeaderDefaultSectionSize">
+                         <number>200</number>
+                        </attribute>
+                        <attribute name="horizontalHeaderStretchLastSection">
+                         <bool>true</bool>
+                        </attribute>
+                       </widget>
                       </item>
                      </layout>
                     </widget>
