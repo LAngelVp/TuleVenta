@@ -34,8 +34,7 @@ class ClientesFisicosAndMorales:
             self.session.execute(Areas_negocios.__table__.insert(), areas_basicas)
             # self.session.commit()
             return True
-        
-    
+       
     def insertar_categorias_negocio_basicas(self):
         query = select(Categorias_de_clientes).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -239,7 +238,7 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             return None
 
-    def filtrar_clientes_fisicos_por_nombre(self, valor_buscado):
+    def filtrar_clientes_fisicos_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
         try:
             clientes = (
                 self.session.query(Clientes_fisicos)
@@ -249,17 +248,20 @@ class ClientesFisicosAndMorales:
                 )
                 .filter(
                     or_(
-                        Clientes_fisicos.nombre.ilike(f'%{valor_buscado}%'),
-                        Clientes_fisicos.apellido_paterno.ilike(f'%{valor_buscado}%'),
-                        Clientes_fisicos.apellido_materno.ilike(f'%{valor_buscado}%'),
-                        Clientes_fisicos.curp.ilike(f'%{valor_buscado}%')
+                        Clientes_fisicos.nombre.ilike(f'%{texto}%'),
+                        Clientes_fisicos.apellido_paterno.ilike(f'%{texto}%'),
+                        Clientes_fisicos.apellido_materno.ilike(f'%{texto}%'),
+                        Clientes_fisicos.curp.ilike(f'%{texto}%')
                     )
                 )
+                .order_by(Clientes_fisicos.nombre.asc())
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
         except Exception as e:
             print(f"💥 Error en filtrar_clientes_fisicos_por_nombre: {e}")
-            return None, False
+            return [], False
         
         return clientes, bool(clientes)
     

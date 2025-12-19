@@ -58,6 +58,7 @@ class Clientes(QWidget):
         self.cantidad_final_clientes_fisicos = 100
         self.busqueda_realizada_clientes = False
         self.clienteSeleccionadoVariable = None
+        self.nombre_cliente_fisico = None
         self._translate = QtCore.QCoreApplication.translate
         #------------------------------
 #//: CARGAR FOTO DEL CLIENTE FISICO
@@ -118,6 +119,7 @@ class Clientes(QWidget):
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador = AjustarcajaOpciones()
+        self.__configuracion_tabla_clientes_fisicos()
     #FUNCIONES:-----------------
     def mostrar_descripcion_area(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -144,29 +146,74 @@ class Clientes(QWidget):
             self.ui.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
         
     def buscar_cliente_fisico(self):
+        self.cantidad_inicial_clientes_fisicos = 0
+        nombre = self.ui.txt_buscarclienteFisico.text().strip()
+        busqueda_nuevo_cliente_fisico = (nombre != self.nombre_cliente_fisico)
+        self.nombre_cliente_fisico = nombre
+        if not self.nombre_cliente_fisico:
+            Mensaje().mensaje_alerta("Debe ingresar un nombre para buscar")
+            return
+        if not hasattr(self, "cantidad_inicial_clientes_fisicos"):
+            self.cantidad_inicial_clientes_fisicos = 0
+        else:
+            self.cantidad_inicial_clientes_fisicos = 0
+
+        if busqueda_nuevo_cliente_fisico:
+            self.cantidad_inicial_clientes_fisicos = 0
+            self.no_hay_mas_registros_clientes_fisicos = False
+            self.busqueda_clientes_fisicos = True
+        
+        if busqueda_nuevo_cliente_fisico and hasattr(self,'modelo_listar_clientes_fisicos'):
+            self.modelo_listar_clientes_fisicos.clear()
         try:
-            texto = self.ui.txt_buscarclienteFisico.text().strip() 
-            if texto:
-                self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
-                self.id_hilo_buscar_clientes_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_thread_vclientes")
-                self.consultor_buscar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_vclientes)
-                if not self.consultor_buscar_clientes_vclientes:
-                    raise Exception("No se pudo obtener el worker gestionado")
-                WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_buscar_clientes_vclientes,
-                    resultado_callback=self.llenar_tabla_clientes_fisicos,
-                    error_callback=self.mostrar_error_hilo,
-                    terminado_callback=self.manejadorModal.cerrar_modal
-                )
-                self.consultor_buscar_clientes_vclientes.ejecutar(
-                    funcion = self.buscar_clientes_fisicos_query,
-                    texto = texto,
-                )
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
+            self.id_hilo_buscar_clientes_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_thread_vclientes")
+            self.consultor_buscar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_vclientes)
+            if not self.consultor_buscar_clientes_vclientes:
+                raise Exception("No se pudo obtener el worker gestionado")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_buscar_clientes_vclientes,
+                resultado_callback=self.llenar_tabla_clientes_fisicos,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_buscar_clientes_vclientes.ejecutar(
+                funcion = self.buscar_clientes_fisicos_query,
+                texto = self.nombre_cliente_fisico,
+            )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
+
+    def buscar_clientes_fisicos_query(self, session, texto):
+        try:
+            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
+                texto = texto,
+                cantidad_inicial = self.cantidad_inicial_clientes_fisicos,
+                cantidad_final = self.cantidad_final_clientes_fisicos
+                )
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": estado,
+                    "mensaje": f'No se logro hacer la operación',
+                    "data": clientes
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema en el proceso: {e}'
+            }
+        self.busqueda_clientes_fisicos = True
+        self.cantidad_inicial_clientes_fisicos = self.cantidad_inicial_clientes_fisicos + self.cantidad_final_clientes_fisicos
+        return {
+            "exito": estado,
+            "mensaje" : f'Se encontraron {len(clientes)} registros',
+            "data": clientes
+        }
             
     def buscar_clientes_morales_query(self, session, texto):
         try:
@@ -190,28 +237,6 @@ class Clientes(QWidget):
             "data": clientes
         }
     
-    def buscar_clientes_fisicos_query(self, session, texto):
-        try:
-            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(texto)
-            if not estado:
-                session.rollback()
-                return {
-                    "exito": estado,
-                    "mensaje": f'No se logro hacer la operación',
-                    "data": clientes
-                }
-        except Exception as e:
-            session.rollback()
-            return {
-                "exito": False,
-                "mensaje": f'Ocurrio un problema en el proceso: {e}'
-            }
-        return {
-            "exito": estado,
-            "mensaje" : f'Se encontraron {len(clientes)} registros',
-            "data": clientes
-        }
-
     def limpiar_campos(self):
         try:
             if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -482,28 +507,27 @@ class Clientes(QWidget):
     def cargar_mas_clientes_fisicos(self):
         self._is_refreshing_clientes_fisicos = False
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            if hasattr(self, "no_hay_mas_registros_clientes_fisicos"):
+                Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
+                return
             if not hasattr(self, 'busqueda_realizada_clientes_fisicos') or not self.busqueda_realizada_clientes_fisicos:
                 print('Cargando más productos sin filtro')
                 try:
-                    self.manejadorModal.mostrar_modal()
+                    self.manejadorModal.mostrar_modal(self)
                     WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
                     self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_fisicos_thread")
                     self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
-                    
                     if not self.consultor_clientes_fisicos:
                         raise Exception("No se pudo obtener el worker gestionado")
-                    
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_clientes_fisicos,
                         resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
                         error_callback=self.mostrar_error_hilo,
                         terminado_callback=self.manejadorModal.cerrar_modal
                     )
-                    
                     self.consultor_clientes_fisicos.ejecutar(
                         funcion=self.clientes_fisicos_query
                     )
-                    
                 except Exception as e:
                     if hasattr(self, 'id_hilo_clientes_fisicos'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
@@ -527,8 +551,8 @@ class Clientes(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_obtener_clientes_paginados_fisicos.ejecutar(
-                    funcion=self.paginar_busqueda_por_filtros_clientes_fisicos,
-                    texto=self.ui.txt_buscarclienteFisico.text().strip(),
+                    funcion=self.paginar_busqueda_por_filtros_clientes_fisicos_query,
+                    texto=self.nombre_cliente_fisico,
                     es_fisico=True
                     )
             except Exception as e:
@@ -536,15 +560,19 @@ class Clientes(QWidget):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
                 
-    def paginar_busqueda_por_filtros_clientes_fisicos(self, session, texto, es_fisico = None):
-        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes}, limit={self.cantidad_final_clientes}")
+    def paginar_busqueda_por_filtros_clientes_fisicos_query(self, session, texto, es_fisico = None):
+        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes_fisicos}, limit={self.cantidad_final_clientes_fisicos}")
         
         datos = []
         estado = False
-        if self.nombre_cliente_a_buscar:
+        if texto:
             try:
                 if es_fisico:
-                    clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(texto)
+                    clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
+                        texto = texto,
+                        cantidad_inicial = self.cantidad_inicial_clientes_fisicos,
+                        cantidad_final = self.cantidad_final_clientes_fisicos
+                        )
                     print(f"buscando fisico")
                     if not estado:
                         session.rollback()
@@ -593,7 +621,7 @@ class Clientes(QWidget):
             del self.ultima_carga_cantidad_clientes_morales
         if self.ui.btnRadio_wpc_clienteMorales.isChecked():
             self.obtener_clientes_morales_hilo(reset_paginacion = True)
-
+# OBTENEMOS LOS CLIENTES FISICOS
     def tabla_listar_clientes_fisicos(self):
         self.cantidad_inicial_clientes_fisicos = 0
         self.no_hay_mas_registros_clientes_fisicos = False  # Resetear el flag de fin de datos
@@ -607,56 +635,30 @@ class Clientes(QWidget):
             if reset_paginacion:
                 self.cantidad_inicial_clientes_fisicos = 0
                 print("DEBUG - Paginación reiniciada")
-                
-            self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
-            self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_fisicos_thread")
-            self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
+                self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_fisicos_thread")
+                self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
+                if not self.consultor_clientes_fisicos:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_clientes_fisicos,
+                    resultado_callback=self.mostrar_clientes_resultado_fisicos,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_clientes_fisicos.ejecutar(
+                    funcion=self.clientes_fisicos_query
+                )
             
-            if not self.consultor_clientes_fisicos:
-                raise Exception("No se pudo obtener el worker gestionado")
-            
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_clientes_fisicos,
-                resultado_callback=self.mostrar_clientes_resultado_fisicos,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            
-            self.consultor_clientes_fisicos.ejecutar(
-                funcion=self.clientes_fisicos_query
-            )
-            
+            except Exception as e:
+                if hasattr(self, 'id_hilo_clientes_fisicos'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
+                Mensaje().mensaje_alerta(f"Error al obtener clientes físicos: {str(e)}")
         except Exception as e:
-            if hasattr(self, 'id_hilo_clientes_fisicos'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
-            Mensaje().mensaje_alerta(f"Error al obtener clientes físicos: {str(e)}")
-
-    def obtener_clientes_morales_hilo(self):
-        try:
-            self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
-            self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
-            self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
-            
-            if not self.consultor_clientes_morales:
-                raise Exception("No se pudo obtener el worker gestionado")
-            
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_clientes_morales,
-                resultado_callback=self.mostrar_clientes_resultado,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            
-            self.consultor_clientes_morales.ejecutar(
-                funcion=self.clientes_morales_query
-            )
-            
-        except Exception as e:
-            if hasattr(self, 'id_hilo_clientes_morales'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
-            Mensaje().mensaje_alerta(f"Error al obtener clientes morales: {str(e)}")
+            Mensaje().mensaje_alerta(f"Error clientico para obtener los clientes fisicos: {str(e)}")
+            return
 
     def clientes_fisicos_query(self, session):
         try:
@@ -699,6 +701,86 @@ class Clientes(QWidget):
                 "tipo_cliente": "FISICO"
             }
 
+    def mostrar_clientes_resultado_fisicos(self, resultado):
+        """Callback unificado para ambos tipos de clientes"""
+        print(f"🔍 Resultado clientes: {resultado}")
+        
+        tipo_cliente = resultado.get("tipo_cliente", "")
+        
+        if resultado.get("exito"):
+            # Llamar a la función de llenado de tabla
+            self.llenar_tabla_clientes_fisicos(resultado)
+        else:
+            Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
+            self.limpiar_tabla_clientes()
+
+    def llenar_tabla_clientes_fisicos(self, resultado):
+        # self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
+        clientes = resultado["data"]
+        estado = resultado["exito"]
+        try:
+            if not hasattr(self, "modelo_listar_clientes_fisicos"):
+                self.__configuracion_tabla_clientes_fisicos()
+            self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=True)
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes fisicos en la tabla, esta no existe en la metadata: {str(e)}")
+            return
+        
+        
+            
+        # elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        #     cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
+        #     mapeo_de_cabeceras = {
+        #         "Id": lambda c: c.id,
+        #         "nombre": lambda c: c.nombre,
+        #         "rfc": lambda c: c.rfc,
+        #         "razon_social": lambda c: c.razon_social,
+        #         "nif": lambda c: c.NIF,
+        #         "sector": lambda c:c.sector,
+        #         "telefono": lambda c:c.telefono,
+        #         "credito": lambda c:c.credito,
+        #         "estado_credito": lambda c:c.estado_credito,
+        #         "limite_credito": lambda c:c.limite_credito,
+        #         "credito_disponible": lambda c:c.credito_disponible,
+        #         "credito_utilizado": lambda c:c.credito_utilizado,
+        #         "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
+        #     }
+        # else:
+        #     Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
+        #     return
+
+        # Crear o comprobar el modelo de la tabla
+        
+
+        # Verificar si hay datos para mostrar
+# --------------------------------- FINAL - OBTENER CLIENTES FISICOS
+# OBTENER CLIENTES MORALES
+    def obtener_clientes_morales_hilo(self):
+        try:
+            self.manejadorModal.mostrar_modal()
+            WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
+            self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
+            self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
+            
+            if not self.consultor_clientes_morales:
+                raise Exception("No se pudo obtener el worker gestionado")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_clientes_morales,
+                resultado_callback=self.mostrar_clientes_resultado,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            
+            self.consultor_clientes_morales.ejecutar(
+                funcion=self.clientes_morales_query
+            )
+            
+        except Exception as e:
+            if hasattr(self, 'id_hilo_clientes_morales'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
+            Mensaje().mensaje_alerta(f"Error al obtener clientes morales: {str(e)}")
+
     def clientes_morales_query(self, session):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales()
@@ -728,19 +810,6 @@ class Clientes(QWidget):
                 "tipo_cliente": "MORAL"
             }
 
-    def mostrar_clientes_resultado_fisicos(self, resultado):
-        """Callback unificado para ambos tipos de clientes"""
-        print(f"🔍 Resultado clientes: {resultado}")
-        
-        tipo_cliente = resultado.get("tipo_cliente", "")
-        
-        if resultado.get("exito"):
-            # Llamar a la función de llenado de tabla
-            self.llenar_tabla_clientes_fisicos(resultado)
-        else:
-            Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
-            self.limpiar_tabla_clientes()
-    
     def limpiar_tabla_clientes(self):
         """Limpia la tabla de clientes"""
         try:
@@ -749,14 +818,7 @@ class Clientes(QWidget):
         except Exception as e:
             print(f"💥 Error al limpiar tabla de clientes: {e}")
     
-    def llenar_tabla_clientes_fisicos(self, resultado):
-        self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
-        clientes = resultado["data"]
-        estado = resultado["exito"]
-        if self.ui.tabla_clientesFisicos is None:
-            Mensaje().mensaje_informativo("La tabla de clientes no está disponible")
-            return
-        
+    def __configuracion_tabla_clientes_fisicos(self):
         cabeceras = ["Id", "Nombre", "Apellido_paterno", "Apellido_materno", "RFC", "CURP", "Estado_credito", "Credito", "Limite_credito", "Porcentaje_descuento",  "Categoria", "Areas_de_negocios", "Ocupacion"]
         mapeo_de_cabeceras = {
             "Id": lambda c: c.id,
@@ -776,29 +838,6 @@ class Clientes(QWidget):
             "areas_de_negocios": lambda c:c.areas_de_negocios.nombre,
             "ocupacion": lambda c:c.ocupacion
         }
-            
-        # elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
-        #     cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
-        #     mapeo_de_cabeceras = {
-        #         "Id": lambda c: c.id,
-        #         "nombre": lambda c: c.nombre,
-        #         "rfc": lambda c: c.rfc,
-        #         "razon_social": lambda c: c.razon_social,
-        #         "nif": lambda c: c.NIF,
-        #         "sector": lambda c:c.sector,
-        #         "telefono": lambda c:c.telefono,
-        #         "credito": lambda c:c.credito,
-        #         "estado_credito": lambda c:c.estado_credito,
-        #         "limite_credito": lambda c:c.limite_credito,
-        #         "credito_disponible": lambda c:c.credito_disponible,
-        #         "credito_utilizado": lambda c:c.credito_utilizado,
-        #         "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
-        #     }
-        # else:
-        #     Mensaje().mensaje_informativo("No se ha seleccionado un tipo de cliente válido.")
-        #     return
-
-        # Crear o comprobar el modelo de la tabla
         self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_listar_clientes_fisicos",
             interfazTabla=self.ui.tabla_clientesFisicos,
@@ -810,18 +849,7 @@ class Clientes(QWidget):
             signalPersonalizada=None,
             signalSeleccion=self.obtener_id_elemento_tabla,
         )
-
-        # Verificar si hay datos para mostrar
-        if not estado or not clientes:
-            Mensaje().mensaje_informativo("No hay información para listar")
-            self.modelo_tabla_clientes_fisicos.clear()
-            return
-
-        # Actualizar los datos en el modelo
-        self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=True)
-        
-        # Ocultar columna ID
-        self.ui.tabla_clientesFisicos.setColumnHidden(0, True)
+        return self.modelo_tabla_clientes_fisicos
 
     def obtener_id_elemento_tabla(self, current, previus = None):
         print("obtener_id_elemento_tabla")
