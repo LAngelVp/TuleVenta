@@ -2325,7 +2325,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                          </widget>
                         </item>
                         <item>
-                         <widget class="QPushButton" name="btn_btn_filrtarClienteMoral">
+                         <widget class="QPushButton" name="btn_btn_filtrarClienteMoral">
                           <property name="cursor">
                            <cursorShape>PointingHandCursor</cursorShape>
                           </property>

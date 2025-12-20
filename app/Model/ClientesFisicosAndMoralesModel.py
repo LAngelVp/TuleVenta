@@ -182,6 +182,7 @@ class ClientesFisicosAndMorales:
             clientes = (
                 self.session.query(Clientes_fisicos)
                 .options(joinedload(Clientes_fisicos.areas_de_negocios), joinedload(Clientes_fisicos.categoria))
+                .order_by(Clientes_fisicos.nombre.asc())
                 .offset(cantidad_inicial)
                 .limit(cantidad_final)
                 .all()
@@ -194,21 +195,24 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             return [], False
 
-    def mostrar_clientes_morales(self):
+    def mostrar_clientes_morales(self, cantidad_inicial=0, cantidad_final = 100):
         try:
             clientes = (
                 self.session.query(Clientes_morales)
                 .options(joinedload(Clientes_morales.areas_de_negocios), joinedload(Clientes_morales.categoria), joinedload(Clientes_morales.representante))
+                .order_by(Clientes_morales.nombre.asc())
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
             
             if clientes:
                 return clientes, True
             else:
-                return None, False
+                return [], False
         except Exception as e:
             print(f"Error: {e}")
-            return None, False
+            return [], False
 
     def obtener_cliente_fisico_por_id(self, id):
         try:
@@ -265,7 +269,7 @@ class ClientesFisicosAndMorales:
         
         return clientes, bool(clientes)
     
-    def filtrar_clientes_morales_por_nombre(self, valor_buscado):
+    def filtrar_clientes_morales_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
         try:
             clientes = (
                 self.session.query(Clientes_morales)
@@ -276,17 +280,20 @@ class ClientesFisicosAndMorales:
                 )
                 .filter(
                     or_(
-                        Clientes_morales.nombre.ilike(f'%{valor_buscado}%'),
-                        Clientes_morales.razon_social.ilike(f'%{valor_buscado}%'),
-                        Clientes_morales.rfc.ilike(f'%{valor_buscado}%'),
-                        Clientes_morales.NIF.ilike(f'%{valor_buscado}%')
+                        Clientes_morales.nombre.ilike(f'%{texto}%'),
+                        Clientes_morales.razon_social.ilike(f'%{texto}%'),
+                        Clientes_morales.rfc.ilike(f'%{texto}%'),
+                        Clientes_morales.NIF.ilike(f'%{texto}%')
                     )
                 )
+                .order_by(Clientes_morales.nombre.asc())
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
                 .all()
             )
         except Exception as e:
             print(f"💥 Error en filtrar_clientes_morales_por_nombre: {e}")
-            return None, False
+            return [], False
         
         return clientes, bool(clientes)
 

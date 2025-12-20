@@ -1464,11 +1464,11 @@ class Ui_Control_Clientes(object):
 
         self.horizontalLayout_4.addWidget(self.txt_buscarclienteMorales)
 
-        self.btn_btn_filrtarClienteMoral = QPushButton(self.contenedor_clientesMorales)
-        self.btn_btn_filrtarClienteMoral.setObjectName(u"btn_btn_filrtarClienteMoral")
-        self.btn_btn_filrtarClienteMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_filtrarClienteMoral = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_filtrarClienteMoral.setObjectName(u"btn_btn_filtrarClienteMoral")
+        self.btn_btn_filtrarClienteMoral.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.horizontalLayout_4.addWidget(self.btn_btn_filrtarClienteMoral)
+        self.horizontalLayout_4.addWidget(self.btn_btn_filtrarClienteMoral)
 
         self.btn_btn_paginarClientesMorales = QPushButton(self.contenedor_clientesMorales)
         self.btn_btn_paginarClientesMorales.setObjectName(u"btn_btn_paginarClientesMorales")
@@ -1834,7 +1834,7 @@ class Ui_Control_Clientes(object):
         self.btn_RefrescarTablaClientesFisicos.setText("")
         self.etiqueta_iconobuscarClienteMorales.setText("")
         self.txt_buscarclienteMorales.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
-        self.btn_btn_filrtarClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
+        self.btn_btn_filtrarClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_paginarClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Paginar", None))
 #endif // QT_CONFIG(tooltip)

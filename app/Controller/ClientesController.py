@@ -50,15 +50,15 @@ class Clientes(QWidget):
         self.id_clasificacion_del_cliente = None
         self.cargando = None
         self.consultor = None
-        self.cantidad_inicial_clientes = 0
-        self.cantidad_final_clientes = 100
         self.cantidad_inicial_clientes_morales = 0
         self.cantidad_final_clientes_morales = 100
         self.cantidad_inicial_clientes_fisicos = 0
         self.cantidad_final_clientes_fisicos = 100
-        self.busqueda_realizada_clientes = False
+        self.busqueda_realizada_clientes_fisicos = False
+        self.busqueda_realizada_clientes_morales = False
         self.clienteSeleccionadoVariable = None
         self.nombre_cliente_fisico = None
+        self.nombre_cliente_moral = None
         self._translate = QtCore.QCoreApplication.translate
         #------------------------------
 #//: CARGAR FOTO DEL CLIENTE FISICO
@@ -97,6 +97,9 @@ class Clientes(QWidget):
         # self.ui.txt_buscarclienteFisico.returnPressed.connect(self.buscar_cliente)
         self.ui.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente_fisico)
         #------------------------------
+# BUSCAR CLIENTE MORAL
+        self.ui.btn_btn_filtrarClienteMoral.clicked.connect(self.buscar_cliente_moral)
+# -----------------------------------
 #//: ACTUALIZAR CLIENTES
         self.ui.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
         #----------------------------
@@ -108,6 +111,12 @@ class Clientes(QWidget):
         #----------------------------
 # PAGINAR LA TABLA DEL CLIENTE FISICO
         self.ui.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
+        #----------------------------
+# REFRESCAR LA TABLA DEL CLIENTE MORAL
+        self.ui.btn_RefrescarTablaClientesMorales.clicked.connect(self.tabla_listar_clientes_morales)
+        #----------------------------
+# PAGINAR LA TABLA DEL CLIENTE MORAL
+        self.ui.btn_btn_paginarClientesMorales.clicked.connect(self.cargar_mas_clientes_morales)
         #----------------------------
 # MOSTRAR DESCRIPCION DEL AREA Y CATEGORIA
         self.ui.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
@@ -145,7 +154,7 @@ class Clientes(QWidget):
             if not categoria:
                 return
             self.ui.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
-        
+# FILTRO DE CLIENTES FISICOS
     def buscar_cliente_fisico(self):
         self.cantidad_inicial_clientes_fisicos = 0
         nombre = self.ui.txt_buscarclienteFisico.text().strip()
@@ -187,7 +196,7 @@ class Clientes(QWidget):
             if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
-
+    
     def buscar_clientes_fisicos_query(self, session, texto):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
@@ -215,10 +224,57 @@ class Clientes(QWidget):
             "mensaje" : f'Se encontraron {len(clientes)} registros',
             "data": clientes
         }
-            
+# ----------------------------------------FINAL - FILTRO CLIENTE FISICO
+# FILTRO DE CLIENTE MORAL
+    def buscar_cliente_moral(self):
+        self.cantidad_inicial_clientes_morales = 0
+        nombre = self.ui.txt_buscarclienteMorales.text().strip()
+        busqueda_nuevo_cliente_moral = (nombre != self.nombre_cliente_moral)
+        self.nombre_cliente_moral = nombre
+        if not self.nombre_cliente_moral:
+            Mensaje().mensaje_alerta("Debe ingresar un nombre para buscar")
+            return
+        if not hasattr(self, "cantidad_inicial_clientes_morales"):
+            self.cantidad_inicial_clientes_morales = 0
+        else:
+            self.cantidad_inicial_clientes_morales = 0
+
+        if busqueda_nuevo_cliente_moral:
+            self.cantidad_inicial_clientes_morales = 0
+            self.no_hay_mas_registros_clientes_morales = False
+            self.busqueda_clientes_morales = True
+        
+        if busqueda_nuevo_cliente_moral and hasattr(self,'modelo_listar_clientes_morales'):
+            self.modelo_listar_clientes_morales.clear()
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("buscar_clientes_morales_thread_vclientes")
+            self.id_hilo_buscar_clientes_morales_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_morales_thread_vclientes")
+            self.consultor_buscar_clientes_morales_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
+            if not self.consultor_buscar_clientes_morales_vclientes:
+                raise Exception("No se pudo obtener el worker gestionado")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_buscar_clientes_morales_vclientes,
+                resultado_callback=self.llenar_tabla_clientes_morales,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_buscar_clientes_morales_vclientes.ejecutar(
+                funcion = self.buscar_clientes_morales_query,
+                texto = self.nombre_cliente_moral,
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_buscar_clientes_morales_vclientes'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
+            Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
+     
     def buscar_clientes_morales_query(self, session, texto):
         try:
-            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
+            clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
+                texto = texto,
+                cantidad_inicial = self.cantidad_inicial_clientes_morales,
+                cantidad_final = self.cantidad_final_clientes_morales
+            )
             if not estado:
                 session.rollback()
                 return {
@@ -232,12 +288,14 @@ class Clientes(QWidget):
                 "exito": False,
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
+        self.busqueda_clientes_morales = True
+        self.cantidad_inicial_clientes_morales = self.cantidad_inicial_clientes_morales + self.cantidad_final_clientes_morales
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
             "data": clientes
         }
-    
+# -----------------------------------FINAL - FILTRO DE CLIENTE MORAL
     def limpiar_campos(self):
         try:
             if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -582,16 +640,6 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                # else:
-                #     clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(texto)
-                #     print(f"buscando fisico")
-                #     if not estado:
-                #         session.rollback()
-                #         return {
-                #             "exito": estado,
-                #             "mensaje": f'No se logro hacer la operación',
-                #             "data": clientes
-                #         }
                 print(f"DEBUG - Obtenidos filtrados: {len(clientes) if clientes else 0} registros")
                 self.cantidad_inicial_clientes_fisicos += len(clientes)
                 print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_clientes_fisicos}")
@@ -614,7 +662,6 @@ class Clientes(QWidget):
             return
         self.modelo_tabla_clientes_fisicos.update_data(resultado["data"], reset=False)
         self.ultima_carga_cantidad_clientes_fisicos = len(resultado["data"])
-    
 # OBTENEMOS LOS CLIENTES FISICOS
     def tabla_listar_clientes_fisicos(self):
         self.cantidad_inicial_clientes_fisicos = 0
@@ -665,7 +712,7 @@ class Clientes(QWidget):
             print(f"DEBUG - Estado de la consulta: {estado}")
             
             # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
-            if (not hasattr(self, '_is_refreshing_clientes') or not self._is_refreshing_clientes_fisicos) and clientes:
+            if (not hasattr(self, '_is_refreshing_clientes_fisicos') or not self._is_refreshing_clientes_fisicos) and clientes:
                 # Incrementar por el límite, no por la cantidad recibida
                 # Esto mantiene la paginación consistente
                 self.cantidad_inicial_clientes_fisicos += self.cantidad_final_clientes_fisicos
@@ -706,7 +753,7 @@ class Clientes(QWidget):
             self.llenar_tabla_clientes_fisicos(resultado)
         else:
             Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
-            self.limpiar_tabla_clientes()
+            self.limpiar_tabla_clientes_fisicos()
 
     def llenar_tabla_clientes_fisicos(self, resultado):
         # self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
@@ -764,6 +811,210 @@ class Clientes(QWidget):
                 print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
                 self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
 # -------------------------------- FINAL - CONFIGURACION TABLA CLIENTES FISICOS
+# OBTENER CLIENTES MORALES
+    def tabla_listar_clientes_morales(self):
+        self.cantidad_inicial_clientes_morales = 0
+        self.no_hay_mas_registros_clientes_morales = False
+        if hasattr(self, "ultima_carga_cantidad_clientes_morales"):
+            del self.ultima_carga_cantidad_clientes_morales
+        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            self.obtener_clientes_morales_hilo(reset_paginacion = True)
+
+    def obtener_clientes_morales_hilo(self, reset_paginacion = False):
+        try:
+            if reset_paginacion:
+                self.cantidad_inicial_clientes_morales = 0
+                print("Paginacion reiniciada")
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
+                self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
+                self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
+                if not self.consultor_clientes_morales:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_clientes_morales,
+                    resultado_callback=self.mostrar_clientes_resultado_morales,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_clientes_morales.ejecutar(
+                    funcion=self.clientes_morales_query
+                )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_clientes_morales'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
+                Mensaje().mensaje_alerta(f"Error al obtener los clientes morales: {str(e)}")
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Error critico para obtener los clientes morales: {str(e)}")
+            return
+
+    def clientes_morales_query(self, session):
+        try:
+            print(f"DEBUG - Consultando: offset={self.cantidad_inicial_clientes_morales}, limit={self.cantidad_final_clientes_morales}")
+            clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales(
+                cantidad_inicial=self.cantidad_inicial_clientes_morales,
+                cantidad_final=self.cantidad_final_clientes_morales
+            )
+            print(f"DEBUG - Obtenidos: {len(clientes) if clientes else 0} registros")
+            print(f"DEBUG - Estado de la consulta: {estado}")
+            
+            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
+            if (not hasattr(self, '_is_refreshing_clientes_morales') or not self._is_refreshing_clientes_morales) and clientes:
+                # Incrementar por el límite, no por la cantidad recibida
+                # Esto mantiene la paginación consistente
+                self.cantidad_inicial_clientes_morales += self.cantidad_final_clientes_morales
+                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_clientes_morales}")
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": False,
+                    "mensaje": "No se pudieron obtener los clientes morales",
+                    "data": [],
+                    "tipo_cliente": "MORAL"
+                }
+            return {
+                "exito": True,
+                "mensaje": f"Se obtuvieron {len(clientes)} clientes morales",
+                "data": clientes,
+                "tipo_cliente": "MORAL"
+            }
+            
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f"Error al obtener clientes morales: {str(e)}",
+                "data": [],
+                "tipo_cliente": "MORAL"
+            }
+
+    def mostrar_clientes_resultado_morales(self, resultado):
+        """Callback unificado para ambos tipos de clientes"""
+        print(f"🔍 Resultado clientes: {resultado}")
+        
+        tipo_cliente = resultado.get("tipo_cliente", "")
+        
+        if resultado.get("exito"):
+            # Llamar a la función de llenado de tabla
+            self.llenar_tabla_clientes_morales(resultado)
+        else:
+            Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
+            self.limpiar_tabla_clientes_morales()
+
+    def llenar_tabla_clientes_morales(self, resultado):
+        # self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
+        clientes = resultado["data"]
+        estado = resultado["exito"]
+        try:
+            if not hasattr(self, "modelo_listar_clientes_morales"):
+                self.__configuracion_tabla_clientes_morales()
+            self.modelo_tabla_clientes_morales.update_data(clientes, reset=True)
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes morales en la tabla, esta no existe en la metadata: {str(e)}")
+            return
+# -------------------------------------- FINAL - OBTENER CLIENTES MORALES
+# PAGINAR LOS CLIENTES MORALES
+    def cargar_mas_clientes_morales(self):
+        self._is_refreshing_clientes_morales = False
+        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            if hasattr(self, "no_hay_mas_registros_clientes_morales"):
+                Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
+                return
+            if not hasattr(self, 'busqueda_realizada_clientes_morales') or not self.busqueda_realizada_clientes_morales:
+                print('Cargando más productos sin filtro')
+                try:
+                    self.manejadorModal.mostrar_modal(self)
+                    WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
+                    self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
+                    self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
+                    if not self.consultor_clientes_morales:
+                        raise Exception("No se pudo obtener el worker gestionado")
+                    WorkerDB.connect_managed_signals(
+                        worker_id=self.id_hilo_clientes_morales,
+                        resultado_callback=self.agregar_clientes_paginados_tabla_morales,
+                        error_callback=self.mostrar_error_hilo,
+                        terminado_callback=self.manejadorModal.cerrar_modal
+                    )
+                    self.consultor_clientes_morales.ejecutar(
+                        funcion=self.clientes_morales_query
+                    )
+                except Exception as e:
+                    if hasattr(self, 'id_hilo_clientes_morales'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
+                    Mensaje().mensaje_alerta(f"Error al obtener clientes morales: {str(e)}")
+            else:
+                self.paginar_clientes_morales_filtrados()
+
+    def paginar_clientes_morales_filtrados(self):
+        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_morales_thread")
+                self.id_hilo_obtener_clientes_paginados_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_paginados_morales_thread")
+                self.consultor_obtener_clientes_paginados_morales = WorkerDB.get_managed_worker(self.id_hilo_obtener_clientes_paginados_morales)
+                if not self.consultor_obtener_clientes_paginados_morales:
+                    raise Exception("No se pudo obtener el worker gestionado")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_obtener_clientes_paginados_morales,
+                    resultado_callback=self.agregar_clientes_paginados_tabla_morales,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_obtener_clientes_paginados_morales.ejecutar(
+                    funcion=self.paginar_busqueda_por_filtros_clientes_morales_query,
+                    texto=self.nombre_cliente_moral,
+                    es_fisico=False
+                    )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_obtener_clientes_paginados_morales'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_morales)
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+
+    def paginar_busqueda_por_filtros_clientes_morales_query(self, session, texto, es_fisico = None):
+        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes_morales}, limit={self.cantidad_final_clientes_morales}")
+        
+        datos = []
+        estado = False
+        if texto:
+            try:
+                if not es_fisico:
+                    clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
+                        texto,
+                        cantidad_inicial = self.cantidad_inicial_clientes_morales,
+                        cantidad_final = self.cantidad_final_clientes_morales
+                        )
+                    print(f"buscando fisico")
+                    if not estado:
+                        session.rollback()
+                        return {
+                            "exito": estado,
+                            "mensaje": f'No se logro hacer la operación',
+                            "data": clientes
+                        }
+                print(f"DEBUG - Obtenidos filtrados: {len(clientes) if clientes else 0} registros")
+                self.cantidad_inicial_clientes_morales += len(clientes)
+                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_clientes_morales}")
+                return {
+                    "exito": estado,
+                    "mensaje" : f'Se encontraron {len(clientes)} registros',
+                    "data": clientes
+                }
+            except Exception as e:
+                session.rollback()
+                return {
+                    "exito": False,
+                    "mensaje": f'Ocurrio un problema en el proceso: {e}'
+                }
+
+    def agregar_clientes_paginados_tabla_morales(self, resultado):
+        if not resultado["exito"] or not resultado["data"]:
+            Mensaje().mensaje_informativo("No hay más productos por mostrar")
+            self.no_hay_mas_registros_clientes_morales = True
+            return
+        self.modelo_tabla_clientes_morales.update_data(resultado["data"], reset=False)
+        self.ultima_carga_cantidad_clientes_morales = len(resultado["data"])
+# -------------------------------------- FINAL - PAGINAR CLIENTES MORALES
 # CONFIGURACION DE LA TABLA DE CLIENTES MORALES
     def __configuracion_tabla_clientes_morales(self):
         cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
@@ -804,72 +1055,9 @@ class Clientes(QWidget):
                 self.clienteSeleccionadoVariable = cliente
                 print("clienteSeleccionadoVariableMorales", self.clienteSeleccionadoVariable)
                 self.cliente_seleccionado.emit(self.clienteSeleccionadoVariable)
-
-# OBTENER CLIENTES MORALES
-    def tabla_listar_clientes_morales(self):
-        self.cantidad_inicial_clientes_morales = 0
-        self.no_hay_mas_registros_clientes_morales = False  # Resetear el flag de fin de datos
-        if hasattr(self, 'ultima_carga_cantidad_clientes_morales'):
-            del self.ultima_carga_cantidad_clientes_morales
-        if self.ui.btnRadio_wpc_clienteMorales.isChecked():
-            self.obtener_clientes_morales_hilo(reset_paginacion = True)
-
-    def obtener_clientes_morales_hilo(self):
-        try:
-            self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
-            self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
-            self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
-            
-            if not self.consultor_clientes_morales:
-                raise Exception("No se pudo obtener el worker gestionado")
-            
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_clientes_morales,
-                resultado_callback=self.mostrar_clientes_resultado,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            
-            self.consultor_clientes_morales.ejecutar(
-                funcion=self.clientes_morales_query
-            )
-            
-        except Exception as e:
-            if hasattr(self, 'id_hilo_clientes_morales'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
-            Mensaje().mensaje_alerta(f"Error al obtener clientes morales: {str(e)}")
-
-    def clientes_morales_query(self, session):
-        try:
-            clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales()
-            
-            if not estado:
-                session.rollback()
-                return {
-                    "exito": False,
-                    "mensaje": "No se pudieron obtener los clientes morales",
-                    "data": [],
-                    "tipo_cliente": "MORAL"
-                }
-                
-            return {
-                "exito": True,
-                "mensaje": f"Se obtuvieron {len(clientes)} clientes morales",
-                "data": clientes,
-                "tipo_cliente": "MORAL"
-            }
-            
-        except Exception as e:
-            session.rollback()
-            return {
-                "exito": False,
-                "mensaje": f"Error al obtener clientes morales: {str(e)}",
-                "data": [],
-                "tipo_cliente": "MORAL"
-            }
-
-    def limpiar_tabla_clientes(self):
+# ------------------------------ FINAL - CONFIGURACION TABLA CLIENTES MORALES
+    
+    def limpiar_tabla_clientes_fisicos(self):
         """Limpia la tabla de clientes"""
         try:
             if hasattr(self, 'modelo_tabla_clientes_fisicos'):
@@ -877,8 +1065,14 @@ class Clientes(QWidget):
         except Exception as e:
             print(f"💥 Error al limpiar tabla de clientes: {e}")
     
+    def limpiar_tabla_clientes_morales(self):
+        """Limpia la tabla de clientes"""
+        try:
+            if hasattr(self, 'modelo_tabla_clientes_morales'):
+                self.modelo_tabla_clientes_morales.clear()
+        except Exception as e:
+            print(f"💥 Error al limpiar tabla de clientes: {e}")
     
-
     def autorizar_credito_fisico(self):
         if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
             self.ui.txt_estadodelcredito_fisico.setText("AUTORIZADO")
