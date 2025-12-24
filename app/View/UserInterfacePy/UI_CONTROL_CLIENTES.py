@@ -695,11 +695,6 @@ class Ui_Control_Clientes(object):
         self.gridLayout_5.addWidget(self.etiqueta_wpc_correo_fisico, 0, 2, 1, 1)
 
         self.cajaOpciones_estadocivil_fisico = QComboBox(self.wpc_clientes_clienteFisico)
-        self.cajaOpciones_estadocivil_fisico.addItem("")
-        self.cajaOpciones_estadocivil_fisico.addItem("")
-        self.cajaOpciones_estadocivil_fisico.addItem("")
-        self.cajaOpciones_estadocivil_fisico.addItem("")
-        self.cajaOpciones_estadocivil_fisico.addItem("")
         self.cajaOpciones_estadocivil_fisico.setObjectName(u"cajaOpciones_estadocivil_fisico")
 
         self.gridLayout_5.addWidget(self.cajaOpciones_estadocivil_fisico, 7, 1, 1, 1)
@@ -1702,12 +1697,6 @@ class Ui_Control_Clientes(object):
         self.etiqueta_wpc_estadocivil_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Estado Civil", None))
         self.etiqueta_wpc_avenidas_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Avenida o entre avenidas", None))
         self.etiqueta_wpc_correo_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Correo Electronico", None))
-        self.cajaOpciones_estadocivil_fisico.setItemText(0, QCoreApplication.translate("Control_Clientes", u"Soltero/a", None))
-        self.cajaOpciones_estadocivil_fisico.setItemText(1, QCoreApplication.translate("Control_Clientes", u"Casado/a", None))
-        self.cajaOpciones_estadocivil_fisico.setItemText(2, QCoreApplication.translate("Control_Clientes", u"Viudo/a", None))
-        self.cajaOpciones_estadocivil_fisico.setItemText(3, QCoreApplication.translate("Control_Clientes", u"Union Libre", None))
-        self.cajaOpciones_estadocivil_fisico.setItemText(4, QCoreApplication.translate("Control_Clientes", u"Divorciado/a", None))
-
         self.etiqueta_pais_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Pais", None))
         self.etiqueta_wpc_ApellidoP_fisico.setText(QCoreApplication.translate("Control_Clientes", u"Apellido Paterno", None))
         self.etiqueta_categoriaFisico.setText(QCoreApplication.translate("Control_Clientes", u"Clasificaci\u00f3n Cliente", None))

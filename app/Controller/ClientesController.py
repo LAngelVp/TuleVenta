@@ -54,12 +54,19 @@ class Clientes(QWidget):
         self.cantidad_final_clientes_morales = 100
         self.cantidad_inicial_clientes_fisicos = 0
         self.cantidad_final_clientes_fisicos = 100
-        self.busqueda_realizada_clientes_fisicos = False
-        self.busqueda_realizada_clientes_morales = False
+        self.busqueda_clientes_fisicos = False
+        self.busqueda_clientes_morales = False
         self.clienteSeleccionadoVariable = None
         self.nombre_cliente_fisico = None
         self.nombre_cliente_moral = None
         self._translate = QtCore.QCoreApplication.translate
+        self.estadosCivilesClientesFisicos = [
+            "SOLTERO/A",
+            "CASADO/A",
+            "DIVORCIADO/A",
+            "VIUDO/A",
+            "UNION LIBRE"
+        ]
         #------------------------------
 #//: CARGAR FOTO DEL CLIENTE FISICO
         self.ui.label_wpc_fotocliente.mousePressEvent = self.obtener_foto
@@ -130,7 +137,13 @@ class Clientes(QWidget):
         self.ajustador = AjustarcajaOpciones()
         self.__configuracion_tabla_clientes_fisicos()
         self.__configuracion_tabla_clientes_morales()
+        self.cargar_estados_civiles()
     #FUNCIONES:-----------------
+    def cargar_estados_civiles(self):
+        self.ui.cajaOpciones_estadocivil_fisico.clear()
+        self.ui.cajaOpciones_estadocivil_fisico.addItems(self.estadosCivilesClientesFisicos)
+        self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_estadocivil_fisico)
+
     def mostrar_descripcion_area(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
             area = self.ui.cajaOpciones_areasnegocio_fisico.currentData()
@@ -173,8 +186,8 @@ class Clientes(QWidget):
             self.no_hay_mas_registros_clientes_fisicos = False
             self.busqueda_clientes_fisicos = True
         
-        if busqueda_nuevo_cliente_fisico and hasattr(self,'modelo_listar_clientes_fisicos'):
-            self.modelo_listar_clientes_fisicos.clear()
+        if busqueda_nuevo_cliente_fisico and hasattr(self,'modelo_tabla_clientes_fisicos'):
+            self.modelo_tabla_clientes_fisicos.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
@@ -244,8 +257,8 @@ class Clientes(QWidget):
             self.no_hay_mas_registros_clientes_morales = False
             self.busqueda_clientes_morales = True
         
-        if busqueda_nuevo_cliente_moral and hasattr(self,'modelo_listar_clientes_morales'):
-            self.modelo_listar_clientes_morales.clear()
+        if busqueda_nuevo_cliente_moral and hasattr(self,'modelo_tabla_clientes_morales'):
+            self.modelo_tabla_clientes_morales.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("buscar_clientes_morales_thread_vclientes")
@@ -324,6 +337,9 @@ class Clientes(QWidget):
                 self.listar_categorias()
                 _translate = QtCore.QCoreApplication.translate
                 self.ui.label_wpc_fotocliente.setText(_translate("Control_Clientes", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>"))
+                self.ui.txt_buscarclienteFisico.clear()
+                self.cargar_estados_civiles()
+            
             elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
                 fisicos = self.campos_cliente_moral()
                 for campo in fisicos.values():
@@ -345,11 +361,13 @@ class Clientes(QWidget):
                     # Restablecer QDateEdit a la fecha actual
                     elif isinstance(campo, QDateEdit):
                         campo.setDate(QDate.currentDate())
+                self.ui.txt_buscarclienteMorales.clear()
                 self.listar_areas()
                 self.listar_categorias()
         except Exception as e:
             Mensaje().mensaje_critico(f"Error al limpiar campos por lo siguiente: {e}")
         self.foto_cliente = None
+        self.clienteSeleccionadoVariable = None
 
     def campos_cliente_fisico(self):
         return {
@@ -461,8 +479,6 @@ class Clientes(QWidget):
                             datos["numero de identificacion"].setText(campo.num_identificacion)
                             datos["ocupacion"].setText(campo.ocupacion)
                             datos["ingresos"].setValue(campo.ingresos)
-                            datos["estado civil"].clear()
-                            datos["estado civil"].addItem(campo.estado_civil)
                             if campo.foto is not None and campo.foto != "":
                                 datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
                                 self.foto_cliente = campo.foto
@@ -489,6 +505,10 @@ class Clientes(QWidget):
                                 caja_area.insertItem(0, categoria)
                                 caja_area.setItemData(0, campo.areas_de_negocios)
                                 caja_area.setCurrentIndex(0)
+
+                            if campo.estado_civil:
+                                nombre = campo.estado_civil
+                                FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_estadocivil_fisico, nombre)
                             
                     elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
                         if  cliente:
@@ -537,6 +557,12 @@ class Clientes(QWidget):
                                 datos['puesto del representante'].setText(representante.puesto)
                                 datos['correo electronico representante'].setText(representante.correo)
 
+                            if not campo.representante:
+                                datos['representante moral'].clear()
+                                datos['telefono representante'].clear()
+                                datos['puesto del representante'].clear()
+                                datos['correo electronico representante'].clear()
+
                             if campo.categoria:
                                 categoria = campo.categoria.nombre
                                 caja_categoria = datos["categoria del cliente"]
@@ -547,7 +573,6 @@ class Clientes(QWidget):
                                 caja_categoria.insertItem(0, categoria)
                                 caja_categoria.setItemData(0, campo.categoria)
                                 caja_categoria.setCurrentIndex(0)
-
 
                             if campo.areas_de_negocios:
                                 categoria = campo.areas_de_negocios.nombre
@@ -566,10 +591,10 @@ class Clientes(QWidget):
     def cargar_mas_clientes_fisicos(self):
         self._is_refreshing_clientes_fisicos = False
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            if hasattr(self, "no_hay_mas_registros_clientes_fisicos"):
+            if hasattr(self, "no_hay_mas_registros_clientes_fisicos") and self.no_hay_mas_registros_clientes_fisicos:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
-            if not hasattr(self, 'busqueda_realizada_clientes_fisicos') or not self.busqueda_realizada_clientes_fisicos:
+            if not hasattr(self, 'busqueda_clientes_fisicos') or not self.busqueda_clientes_fisicos:
                 print('Cargando más productos sin filtro')
                 try:
                     self.manejadorModal.mostrar_modal(self)
@@ -665,7 +690,7 @@ class Clientes(QWidget):
 # OBTENEMOS LOS CLIENTES FISICOS
     def tabla_listar_clientes_fisicos(self):
         self.cantidad_inicial_clientes_fisicos = 0
-        self.no_hay_mas_registros_clientes_fisicos = False  # Resetear el flag de fin de datos
+        self.no_hay_mas_registros_clientes_fisicos = False
         if hasattr(self, 'ultima_carga_cantidad_clientes_fisicos'):
             del self.ultima_carga_cantidad_clientes_fisicos
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
@@ -789,7 +814,7 @@ class Clientes(QWidget):
             "ocupacion": lambda c:c.ocupacion
         }
         self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listar_clientes_fisicos",
+            nombreModelo="modelo_tabla_clientes_fisicos",
             interfazTabla=self.ui.tabla_clientesFisicos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
@@ -805,7 +830,7 @@ class Clientes(QWidget):
         print("obtener_id_elemento_tabla")
         if current.isValid():
             fila = current.row()
-            cliente = self.modelo_listar_clientes_fisicos.get_item(current)
+            cliente = self.modelo_tabla_clientes_fisicos.get_item(current)
             if cliente:
                 self.clienteSeleccionadoVariable = cliente
                 print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
@@ -907,7 +932,7 @@ class Clientes(QWidget):
         clientes = resultado["data"]
         estado = resultado["exito"]
         try:
-            if not hasattr(self, "modelo_listar_clientes_morales"):
+            if not hasattr(self, "modelo_tabla_clientes_morales"):
                 self.__configuracion_tabla_clientes_morales()
             self.modelo_tabla_clientes_morales.update_data(clientes, reset=True)
         except Exception as e:
@@ -918,10 +943,10 @@ class Clientes(QWidget):
     def cargar_mas_clientes_morales(self):
         self._is_refreshing_clientes_morales = False
         if self.ui.btnRadio_wpc_clienteMoral.isChecked():
-            if hasattr(self, "no_hay_mas_registros_clientes_morales"):
+            if hasattr(self, "no_hay_mas_registros_clientes_morales") and self.no_hay_mas_registros_clientes_morales:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
-            if not hasattr(self, 'busqueda_realizada_clientes_morales') or not self.busqueda_realizada_clientes_morales:
+            if not hasattr(self, 'busqueda_clientes_morales') or not self.busqueda_clientes_morales:
                 print('Cargando más productos sin filtro')
                 try:
                     self.manejadorModal.mostrar_modal(self)
@@ -1034,7 +1059,7 @@ class Clientes(QWidget):
             "representante": lambda c: c.representante.nombre if c.representante and c.representante.nombre else "Sin representante"
         }
         self.modelo_tabla_clientes_morales = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listar_clientes_morales",
+            nombreModelo="modelo_tabla_clientes_morales",
             interfazTabla=self.ui.tabla_clientesMorales,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
@@ -1050,7 +1075,7 @@ class Clientes(QWidget):
         print("obtener_id_elemento_tabla")
         if current.isValid():
             fila = current.row()
-            cliente = self.modelo_listar_clientes_morales.get_item(current)
+            cliente = self.modelo_tabla_clientes_morales.get_item(current)
             if cliente:
                 self.clienteSeleccionadoVariable = cliente
                 print("clienteSeleccionadoVariableMorales", self.clienteSeleccionadoVariable)
@@ -1793,6 +1818,7 @@ class Clientes(QWidget):
 
     def mostrar_contenedor_cliente_moral(self):
         if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
             self.ui.wpc_contenedor_pila.setCurrentIndex(1)
@@ -1802,6 +1828,7 @@ class Clientes(QWidget):
 
     def mostrar_contenedor_cliente_fisico(self):
         if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
             self.ui.wpc_contenedor_pila.setCurrentIndex(0)

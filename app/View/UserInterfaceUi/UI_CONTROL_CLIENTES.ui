@@ -1012,33 +1012,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                            </widget>
                           </item>
                           <item row="7" column="1">
-                           <widget class="QComboBox" name="cajaOpciones_estadocivil_fisico">
-                            <item>
-                             <property name="text">
-                              <string>Soltero/a</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Casado/a</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Viudo/a</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Union Libre</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Divorciado/a</string>
-                             </property>
-                            </item>
-                           </widget>
+                           <widget class="QComboBox" name="cajaOpciones_estadocivil_fisico"/>
                           </item>
                           <item row="1" column="3">
                            <widget class="QLineEdit" name="txt_telefono_fisico">
