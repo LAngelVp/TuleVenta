@@ -90,8 +90,6 @@ class Ui_Seleccion_Productos_Proveedor(object):
 "#btn_cerrar:pressed{\n"
 "background: rgb(222, 221, 218);\n"
 "}\n"
-"\n"
-"\n"
 "#btn_RefrescarTabla{\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
@@ -103,15 +101,27 @@ class Ui_Seleccion_Productos_Proveedor(object):
 "#btn_RefrescarTabla:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
-"\n"
+"#btn_btn_paginarProductosProveedor{\n"
+"background: #e0e0e0;\n"
+"border-radius: 2px;\n"
+"}\n"
+"#btn_btn_paginarProductosProveedor:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_btn_paginarProductosProveedor:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
 "[objectName*=\"tabla_\"] {\n"
 "    font-family: Arial;\n"
 "    font-size: 14px;\n"
-"background: #E3E3E3;\n"
-"border:none;\n"
+"	background: #E3E3E3;\n"
+"	border:none;\n"
+"	border-radius: 10px;\n"
+"	min-height: 250px;\n"
 "}\n"
 "\n"
-"/* Encabezados de la tabla */\n"
+"/* Encab"
+                        "ezados de la tabla */\n"
 "\n"
 "[objectName*=\"tabla_\"] {\n"
 "font-family: Arial;\n"
@@ -123,8 +133,7 @@ class Ui_Seleccion_Productos_Proveedor(object):
 "[objectName*=\"tabla_\"] QTableView {\n"
 "background-color: #ffffff;\n"
 "alternate-background-color: #f0f0f0;\n"
-"selection-ba"
-                        "ckground-color: #cce4ff;\n"
+"selection-background-color: #cce4ff;\n"
 "selection-color: black;\n"
 "}\n"
 "\n"
@@ -219,6 +228,12 @@ class Ui_Seleccion_Productos_Proveedor(object):
 
         self.horizontalLayout_2.addWidget(self.txt_codigodelproducto)
 
+        self.btn_btn_aplicarFiltro = QPushButton(self.contenedor_opciones_superiores)
+        self.btn_btn_aplicarFiltro.setObjectName(u"btn_btn_aplicarFiltro")
+        self.btn_btn_aplicarFiltro.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
+        self.horizontalLayout_2.addWidget(self.btn_btn_aplicarFiltro)
+
 
         self.gridLayout_2.addLayout(self.horizontalLayout_2, 1, 0, 1, 2)
 
@@ -230,17 +245,35 @@ class Ui_Seleccion_Productos_Proveedor(object):
         self.contenedor_area.setWidgetResizable(True)
         self.contenedor_scrollAreaWidgetContents = QWidget()
         self.contenedor_scrollAreaWidgetContents.setObjectName(u"contenedor_scrollAreaWidgetContents")
-        self.contenedor_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 859, 369))
+        self.contenedor_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 847, 609))
         self.gridLayout_3 = QGridLayout(self.contenedor_scrollAreaWidgetContents)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.etiqueta_tablaproductosproveedor = QLabel(self.contenedor_scrollAreaWidgetContents)
-        self.etiqueta_tablaproductosproveedor.setObjectName(u"etiqueta_tablaproductosproveedor")
+        self.line = QFrame(self.contenedor_scrollAreaWidgetContents)
+        self.line.setObjectName(u"line")
+        self.line.setFrameShape(QFrame.Shape.HLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout_3.addWidget(self.etiqueta_tablaproductosproveedor, 0, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.line, 2, 0, 1, 4)
 
-        self.horizontalSpacer_2 = QSpacerItem(619, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.line_2 = QFrame(self.contenedor_scrollAreaWidgetContents)
+        self.line_2.setObjectName(u"line_2")
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout_3.addItem(self.horizontalSpacer_2, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.line_2, 3, 0, 1, 4)
+
+        self.tabla_productosParaOrden = QTableView(self.contenedor_scrollAreaWidgetContents)
+        self.tabla_productosParaOrden.setObjectName(u"tabla_productosParaOrden")
+        self.tabla_productosParaOrden.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabla_productosParaOrden.setAlternatingRowColors(True)
+        self.tabla_productosParaOrden.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabla_productosParaOrden.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_productosParaOrden.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_productosParaOrden.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_productosParaOrden.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_productosParaOrden.horizontalHeader().setStretchLastSection(True)
+
+        self.gridLayout_3.addWidget(self.tabla_productosParaOrden, 5, 0, 1, 4)
 
         self.btn_RefrescarTabla = QPushButton(self.contenedor_scrollAreaWidgetContents)
         self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
@@ -249,42 +282,44 @@ class Ui_Seleccion_Productos_Proveedor(object):
         icon1.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_RefrescarTabla.setIcon(icon1)
 
-        self.gridLayout_3.addWidget(self.btn_RefrescarTabla, 0, 2, 1, 1)
+        self.gridLayout_3.addWidget(self.btn_RefrescarTabla, 0, 3, 1, 1)
+
+        self.horizontalSpacer_2 = QSpacerItem(619, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_3.addItem(self.horizontalSpacer_2, 0, 1, 1, 1)
+
+        self.etiqueta_tablaproductosproveedor = QLabel(self.contenedor_scrollAreaWidgetContents)
+        self.etiqueta_tablaproductosproveedor.setObjectName(u"etiqueta_tablaproductosproveedor")
+
+        self.gridLayout_3.addWidget(self.etiqueta_tablaproductosproveedor, 0, 0, 1, 1)
 
         self.tabla_productosProveedor = QTableView(self.contenedor_scrollAreaWidgetContents)
         self.tabla_productosProveedor.setObjectName(u"tabla_productosProveedor")
+        self.tabla_productosProveedor.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_productosProveedor.setAlternatingRowColors(True)
         self.tabla_productosProveedor.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_productosProveedor.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_productosProveedor.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_productosProveedor.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_productosProveedor.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_productosProveedor.horizontalHeader().setStretchLastSection(True)
 
-        self.gridLayout_3.addWidget(self.tabla_productosProveedor, 1, 0, 1, 3)
+        self.gridLayout_3.addWidget(self.tabla_productosProveedor, 1, 0, 1, 4)
 
         self.etiqueta_tablaproductosparaorden = QLabel(self.contenedor_scrollAreaWidgetContents)
         self.etiqueta_tablaproductosparaorden.setObjectName(u"etiqueta_tablaproductosparaorden")
 
-        self.gridLayout_3.addWidget(self.etiqueta_tablaproductosparaorden, 4, 0, 1, 3)
+        self.gridLayout_3.addWidget(self.etiqueta_tablaproductosparaorden, 4, 0, 1, 4)
 
-        self.tabla_productosParaOrden = QTableView(self.contenedor_scrollAreaWidgetContents)
-        self.tabla_productosParaOrden.setObjectName(u"tabla_productosParaOrden")
-        self.tabla_productosParaOrden.setAlternatingRowColors(True)
-        self.tabla_productosParaOrden.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tabla_productosParaOrden.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.btn_btn_paginarProductosProveedor = QPushButton(self.contenedor_scrollAreaWidgetContents)
+        self.btn_btn_paginarProductosProveedor.setObjectName(u"btn_btn_paginarProductosProveedor")
+        self.btn_btn_paginarProductosProveedor.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_paginarProductosProveedor.setAutoFillBackground(False)
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/Bootstrap/box-arrow-down.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_paginarProductosProveedor.setIcon(icon2)
 
-        self.gridLayout_3.addWidget(self.tabla_productosParaOrden, 5, 0, 1, 3)
-
-        self.line_2 = QFrame(self.contenedor_scrollAreaWidgetContents)
-        self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.Shape.HLine)
-        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout_3.addWidget(self.line_2, 3, 0, 1, 3)
-
-        self.line = QFrame(self.contenedor_scrollAreaWidgetContents)
-        self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.Shape.HLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout_3.addWidget(self.line, 2, 0, 1, 3)
+        self.gridLayout_3.addWidget(self.btn_btn_paginarProductosProveedor, 0, 2, 1, 1)
 
         self.contenedor_area.setWidget(self.contenedor_scrollAreaWidgetContents)
 
@@ -303,18 +338,23 @@ class Ui_Seleccion_Productos_Proveedor(object):
         Seleccion_Productos_Proveedor.setWindowTitle(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Form", None))
         self.etiqueta_encabezado_productosProveedor.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"PRODUCTOS", None))
         self.btn_cerrar.setText("")
-        self.etiqueta_nombredelproveedor.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Nombre del proveedor: ", None))
+        self.etiqueta_nombredelproveedor.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Filtros:", None))
 #if QT_CONFIG(tooltip)
         self.btn_aceptar.setToolTip(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Terminar la selecci\u00f3n", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_aceptar.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Aceptar", None))
         self.txt_nombredelproducto.setPlaceholderText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Escribe el nombre del producto", None))
         self.txt_codigodelproducto.setPlaceholderText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"escribe el codigo del producto", None))
-        self.etiqueta_tablaproductosproveedor.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Productos del proveedor", None))
+        self.btn_btn_aplicarFiltro.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Aplicar", None))
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Refrescar tabla productos proveedor", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setText("")
+        self.etiqueta_tablaproductosproveedor.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Productos del proveedor", None))
         self.etiqueta_tablaproductosparaorden.setText(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Productos para orden de compra", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_paginarProductosProveedor.setToolTip(QCoreApplication.translate("Seleccion_Productos_Proveedor", u"Traer mas datos", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_paginarProductosProveedor.setText("")
     # retranslateUi
 

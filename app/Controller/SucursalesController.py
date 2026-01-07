@@ -6,7 +6,6 @@ from ..Source.ibootstrap_rc import  *
 from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import *
 from ..View.UserInterfacePy.UI_CONTROL_SUCURSALES import *
-from .MensajesAlertasController import *
 from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
