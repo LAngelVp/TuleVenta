@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import select
 from .BaseDatosModel import Usuarios, Roles
 from ..Controller.CodificarPasswordController import *
 from datetime import datetime
@@ -78,3 +80,12 @@ class UsuarioModel:
             self.session.delete(usuario)
             return True
         return False
+
+    def obtenerDatosGeneralesUsuario(self, idUsuario):
+        data = self.session.query(Usuarios).options(
+            joinedload(Usuarios.empleado),
+            joinedload(Usuarios.rol)
+        ).where(Usuarios.id == idUsuario).first()
+        if data:
+            return data, True
+        return None, False
