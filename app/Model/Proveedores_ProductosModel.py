@@ -9,7 +9,10 @@ class Proveedores_productoModel:
         productos = (
             self.session.query(ProductoProveedor)
             .options(
-                joinedload(ProductoProveedor.producto),
+                joinedload(ProductoProveedor.producto)
+                .joinedload(Productos.presentacion_productos),
+                joinedload(ProductoProveedor.producto)
+                .joinedload(Productos.unidad_medida_productos),
                 joinedload(ProductoProveedor.proveedor)
             )
             .filter(ProductoProveedor.proveedor_id == id_proveedor)
@@ -26,7 +29,13 @@ class Proveedores_productoModel:
         try:
             query = (
                 self.session.query(ProductoProveedor)
-                .options(joinedload(ProductoProveedor.producto))
+                .options(
+                    joinedload(ProductoProveedor.producto)
+                    .joinedload(Productos.presentacion_productos),
+                    joinedload(ProductoProveedor.producto)
+                    .joinedload(Productos.unidad_medida_productos),
+                    joinedload(ProductoProveedor.proveedor)
+                )
                 .filter(ProductoProveedor.proveedor_id == id_proveedor)
             )
             
@@ -53,7 +62,33 @@ class Proveedores_productoModel:
         except Exception as e:
             print(f"Error en consultar_productos_del_proveedor_por_nombre: {e}")
             return [], False
-        
+
+    def consultar_productos_del_proveedor_por_codigo(self, id_proveedor, codigo_producto, cantidad_inicial=0, cantidad_final=100):
+        try:
+            productos = (
+                self.session.query(ProductoProveedor)
+                .options(
+                    joinedload(ProductoProveedor.producto)
+                    .joinedload(Productos.presentacion_productos),
+                    joinedload(ProductoProveedor.producto)
+                    .joinedload(Productos.unidad_medida_productos),
+                    joinedload(ProductoProveedor.proveedor)
+                )
+                .filter(ProductoProveedor.proveedor_id == id_proveedor)
+                .filter(ProductoProveedor.producto.has(Productos.codigo_upc == codigo_producto))
+                .offset(cantidad_inicial)
+                .limit(cantidad_final)
+                .all()
+            )
+
+            if productos:
+                return productos, True
+            return [], False
+            
+        except Exception as e:
+            print(f"Error en consultar_productos_del_proveedor_por_codigo: {e}")
+            return [], False    
+    
     def desvincular_producto_del_proveedor(self, proveedor_id, producto_id):
         try:
             relacion = (
