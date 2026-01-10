@@ -55,11 +55,64 @@ class Orden_compra(QWidget):
         self.ui.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.__configuracionTablaProductosOrden()
         self.__obtener_proveedores()
+
+    def __configuracionTablaProductosOrden(self):
+        cabeceras = [
+            "codigo_upc",
+            "nombre_producto",
+            "descripcion_producto",
+            "unidad_medida_productos",
+            "presentacion_productos"
+        ]
+        mapeo_cabeceras = {
+            "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
+            "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
+            "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
+            "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
+            "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else ""
+        }
+        self.modeloTablaProductosOrden = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modeloTablaProductosOrden",
+            interfazTabla=self.ui.tabla_ordencompra,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            # signalSeleccion=self.obtener_id_elemento_tabla_productosProveedor,
+        )
+        return self.modeloTablaProductosOrden
+    
+    def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
+        print("agregando los productos a la vista")
+        # Convertir el set a lista
+        if isinstance(conjuntoProductosDelProveedor, set):
+            lista_productos = list(conjuntoProductosDelProveedor)
+        else:
+            # Si ya es lista, mantenerlo como está
+            lista_productos = conjuntoProductosDelProveedor
+        # Simular la estructura de resultado que tu código espera
+        resultado = {
+            "exito": bool(lista_productos),  # True si hay productos
+            "mensaje": "OK" if lista_productos else "No hay productos",
+            "data": lista_productos  # Lista de objetos SQLAlchemy
+        }
+        if not resultado["exito"]:
+            self.modeloTablaProductosOrden.clear()
+            Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
+            return
+        
+        self.modeloTablaProductosOrden.update_data(resultado["data"], reset=True)
+        print(f"Tabla actualizada: {len(resultado['data'])} productos")
         
     def mostrar_productos_proveedores(self):
         if self.ventana_productos_proveedor is None or not self.ventana_productos_proveedor.isVisible():
             self.ventana_productos_proveedor = SeleccionProductosProveedor(parent=self, proveedor=self.proveedor)
+            self.ventana_productos_proveedor.enviarProductosSignal.connect(self.productos_orden_tabla_compras_seleccionados)
             self.ventana_productos_proveedor.exec_()
         else:
             self.ventana_productos_proveedor.raise_()
@@ -119,6 +172,7 @@ class Orden_compra(QWidget):
             self._ventanaCentradaNuevaCompra = True
         
 class SeleccionProductosProveedor(QDialog):
+    enviarProductosSignal = Signal(set)
     productoSeleccionadoSignal = Signal(object)
     def __init__(self, parent = None, proveedor = None):
         super().__init__(parent)
@@ -130,6 +184,7 @@ class SeleccionProductosProveedor(QDialog):
         self.busqueda_realizada_productos_del_proveedor_compras = False
         self.nombre_producto_proveedor_compras=None
         self.codigo_upc_producto_proveedor_compras = None
+        self.conjuntoProductosDelProveedor = set()
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         pantalla = self.frameGeometry()
@@ -144,10 +199,10 @@ class SeleccionProductosProveedor(QDialog):
         self.productoSeleccionadoSignal.connect(self.pasarProductoSeleccionado)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaProductosProveedor()
+        self.__configuracionTablaProductosSeleccionados()
 
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        print("proveedor", self.proveedor)
 
     def __configuracionTablaProductosProveedor(self):
         cabeceras = [
@@ -183,7 +238,67 @@ class SeleccionProductosProveedor(QDialog):
             producto = self.modeloTablaProductosDelProveedor.get_item(current)
             if producto:
                 self.productoSeleccionadoSignal.emit(producto)
+                self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
 
+    def __configuracionTablaProductosSeleccionados(self):
+        cabeceras = [
+            "codigo_upc",
+            "nombre_producto",
+            "descripcion_producto",
+            "unidad_medida_productos",
+            "presentacion_productos"
+        ]
+        mapeo_cabeceras = {
+            "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
+            "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
+            "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
+            "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
+            "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else ""
+        }
+        self.modeloTablaProductosDelProveedorSeleccionados = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modeloTablaProductosDelProveedorSeleccionados",
+            interfazTabla=self.ui.tabla_productosParaOrden,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            signalSeleccion=self.obtener_id_elemento_tabla_productosProveedorSeleccionados,
+        )
+        return self.modeloTablaProductosDelProveedorSeleccionados
+    
+    def obtener_id_elemento_tabla_productosProveedorSeleccionados(self, current, previus = None):
+        if current.isValid():
+            fila = current.row()
+            producto = self.modeloTablaProductosDelProveedorSeleccionados.get_item(current)
+            if producto:
+                self.conjuntoProductosDelProveedor.remove(producto)
+                print("producto removido", producto)
+                print("conjunto", self.conjuntoProductosDelProveedor)
+                self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
+
+    def productos_proveedores_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
+        # Convertir el set a lista
+        if isinstance(conjuntoProductosDelProveedor, set):
+            lista_productos = list(conjuntoProductosDelProveedor)
+        else:
+            # Si ya es lista, mantenerlo como está
+            lista_productos = conjuntoProductosDelProveedor
+        # Simular la estructura de resultado que tu código espera
+        resultado = {
+            "exito": bool(lista_productos),  # True si hay productos
+            "mensaje": "OK" if lista_productos else "No hay productos",
+            "data": lista_productos  # Lista de objetos SQLAlchemy
+        }
+        if not resultado["exito"]:
+            self.modeloTablaProductosDelProveedorSeleccionados.clear()
+            Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
+            return
+        
+        self.modeloTablaProductosDelProveedorSeleccionados.update_data(resultado["data"], reset=True)
+        print(f"Tabla actualizada: {len(resultado['data'])} productos")
+    
     def aplicarFiltro(self):
         nuevo_nombre = self.ui.txt_nombredelproducto.text().strip()
         nuevo_codigo = self.ui.txt_codigodelproducto.text().strip()
@@ -470,8 +585,10 @@ class SeleccionProductosProveedor(QDialog):
         event.accept()
     
     def pasarProductoSeleccionado(self, producto):
-        print("PRECIO VENTA", producto.precio_venta)
-        print("ID PRODUCTO", producto.producto_id)
-        print("PRECIO DEL PRODUCTO", producto.producto.precio)
+        self.conjuntoProductosDelProveedor.add(producto)
+
     def aceptar(self):
-        print("Aceptar")
+        print("enviando productos")
+        print(self.conjuntoProductosDelProveedor)
+        self.enviarProductosSignal.emit(self.conjuntoProductosDelProveedor)
+        self.close()

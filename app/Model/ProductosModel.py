@@ -315,7 +315,8 @@ class ProductosModel:
                     joinedload(Productos.producto_proveedor_asociaciones),
                     joinedload(Productos.categoria),
                     joinedload(Productos.unidad_medida_productos),
-                    joinedload(Productos.presentacion_productos)
+                    joinedload(Productos.presentacion_productos),
+                    joinedload(Productos.proveedores)
                 )
                 .order_by(Productos.nombre_producto.asc())
                 .offset(offset)
