@@ -24,7 +24,7 @@ class GenericTableModel(QAbstractTableModel):
         self._headers = headers if headers else []
         self._attr_map = attr_map if attr_map else {}
         self._default_alignment = Qt.AlignCenter | Qt.AlignVCenter
-
+        self._edited_values = {}
     # -------------------------
     # Métodos básicos requeridos
     # -------------------------
@@ -40,6 +40,11 @@ class GenericTableModel(QAbstractTableModel):
             
         item = self._data[index.row()]
         col_name = self._headers[index.column()].lower()
+        
+        # Verificar si hay un valor editado para esta celda
+        edited_key = (index.row(), index.column())
+        if edited_key in self._edited_values and role == Qt.DisplayRole:
+            return self._edited_values[edited_key] 
         
         if role == Qt.DisplayRole:
             return self._get_display_data(item, col_name)
@@ -77,6 +82,53 @@ class GenericTableModel(QAbstractTableModel):
     def _get_tooltip(self, item: Any, col_name: str) -> str:
         """Genera tooltips contextuales (puede ser sobrescrito)"""
         return ""
+
+    # -------------------------
+    # MÉTODO NUEVO: actualizarCelda
+    # -------------------------
+    def actualizarCelda(self, fila: int, columna: int, valor: Any) -> bool:
+        """
+        Actualiza el valor de una celda específica.
+        
+        Args:
+            fila (int): Índice de la fila (0-based)
+            columna (int): Índice de la columna (0-based)
+            valor (Any): Nuevo valor para la celda
+            
+        Returns:
+            bool: True si se actualizó correctamente, False en caso contrario
+        """
+        try:
+            # Validar índices
+            if fila < 0 or fila >= len(self._data):
+                print(f"Error: Fila {fila} fuera de rango")
+                return False
+                
+            if columna < 0 or columna >= len(self._headers):
+                print(f"Error: Columna {columna} fuera de rango")
+                return False
+            
+            # Crear QModelIndex para la celda
+            index = self.index(fila, columna)
+            
+            if not index.isValid():
+                print(f"Error: Índice ({fila}, {columna}) no válido")
+                return False
+            
+            # Guardar el valor editado en el diccionario
+            edited_key = (fila, columna)
+            self._edited_values[edited_key] = str(valor)
+            
+            # Emitir señal de que los datos han cambiado
+            self.dataChanged.emit(index, index, [Qt.DisplayRole])
+            
+            print(f"Celda ({fila}, {columna}) actualizada a: {valor}")
+            return True
+            
+        except Exception as e:
+            self.error_occurred.emit(f"Error al actualizar celda: {str(e)}")
+            print(f"Error en actualizarCelda: {e}")
+            return False
 
     # -------------------------
     # Métodos de manipulación de datos

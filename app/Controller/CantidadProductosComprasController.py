@@ -4,6 +4,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 class CantidadProductosComprasController(QDialog):
+    cantidadEnviadaSignal = Signal(int)
     def __init__(self, parent=None):
         super().__init__(parent)
         print("CantidadProductosComprasController")
@@ -25,5 +26,8 @@ class CantidadProductosComprasController(QDialog):
         self.formulario_cantidad_productos_agregar_compras.conjuntoBotones_cantidadCompras.rejected.connect(self.rechazar)
     def aceptar(self):
         print("Aceptar")
+        cantidad = self.formulario_cantidad_productos_agregar_compras.decimal_cantidadAgregar.value()
+        self.cantidadEnviadaSignal.emit(cantidad)
+        self.close()
     def rechazar(self):
         self.close()

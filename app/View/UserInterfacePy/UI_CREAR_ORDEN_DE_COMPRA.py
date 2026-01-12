@@ -283,9 +283,14 @@ class Ui_Orden_compra(object):
 
         self.tabla_ordencompra = QTableView(self.contenedor_frame)
         self.tabla_ordencompra.setObjectName(u"tabla_ordencompra")
+        self.tabla_ordencompra.viewport().setProperty(u"cursor", QCursor(Qt.CursorShape.ArrowCursor))
         self.tabla_ordencompra.setAlternatingRowColors(True)
         self.tabla_ordencompra.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_ordencompra.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_ordencompra.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_ordencompra.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_ordencompra.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_ordencompra.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_4.addWidget(self.tabla_ordencompra, 5, 0, 1, 1)
 

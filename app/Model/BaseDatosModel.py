@@ -323,7 +323,6 @@ class ProductoProveedor(Base):
     producto = relationship("Productos", back_populates="producto_proveedor_asociaciones")
     proveedor = relationship("Proveedores", back_populates="producto_proveedor_asociaciones")
 
-
 class Representantes_proveedores(Base):
     __tablename__ = "Representantes_proveedores"
     id = Column(

@@ -62,14 +62,16 @@ class Orden_compra(QWidget):
             "nombre_producto",
             "descripcion_producto",
             "unidad_medida_productos",
-            "presentacion_productos"
+            "presentacion_productos",
+            "cantidad"
         ]
         mapeo_cabeceras = {
             "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
             "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
             "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
             "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
-            "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else ""
+            "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else "",
+            "cantidad": lambda p: "1"
         }
         self.modeloTablaProductosOrden = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modeloTablaProductosOrden",
@@ -85,16 +87,15 @@ class Orden_compra(QWidget):
         return self.modeloTablaProductosOrden
 
     def escojer_cantidad_productos(self, current, previus = None):
-        print("escojer_cantidad_productos")
+        if current.isValid():
+            self.fila = current.row()
         cantidadProductosComprasController = CantidadProductosComprasController(self)
+        cantidadProductosComprasController.cantidadEnviadaSignal.connect(self.actualizarCantidadProducto)
         cantidadProductosComprasController.show()
-        # if current.isValid():
-        #     fila = current.row()
-        #     producto = self.modeloTablaProductosDelProveedor.get_item(current)
-        #     if producto:
-        #         self.productoSeleccionadoSignal.emit(producto)
-        #         self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
     
+    def actualizarCantidadProducto(self, cantidad):
+        self.modeloTablaProductosOrden.actualizarCelda(self.fila, 5, cantidad)
+
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
         print("agregando los productos a la vista")
         # Convertir el set a lista
