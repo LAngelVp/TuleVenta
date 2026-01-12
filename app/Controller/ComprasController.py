@@ -13,6 +13,7 @@ from PySide6.QtGui import *
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
+from .CantidadProductosComprasController import CantidadProductosComprasController
 
 class Compras(QWidget):
     def __init__(self, parent = None, usuario = None):
@@ -23,10 +24,6 @@ class Compras(QWidget):
         self.ui.setupUi(self)
         self.clienteFisico = True
         self.ui.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
-        
-        
-        
-
     def nueva_orden_compra(self):
         if self.orden_compra is None or not self.orden_compra.isVisible():
             self.orden_compra = Orden_compra(parent = self, usuario = self.usuario)
@@ -83,9 +80,20 @@ class Orden_compra(QWidget):
             editable=False,
             autoAjustarColumnas=True,
             signalPersonalizada=None,
-            # signalSeleccion=self.obtener_id_elemento_tabla_productosProveedor,
+            signalSeleccion=self.escojer_cantidad_productos,
         )
         return self.modeloTablaProductosOrden
+
+    def escojer_cantidad_productos(self, current, previus = None):
+        print("escojer_cantidad_productos")
+        cantidadProductosComprasController = CantidadProductosComprasController(self)
+        cantidadProductosComprasController.show()
+        # if current.isValid():
+        #     fila = current.row()
+        #     producto = self.modeloTablaProductosDelProveedor.get_item(current)
+        #     if producto:
+        #         self.productoSeleccionadoSignal.emit(producto)
+        #         self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
     
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
         print("agregando los productos a la vista")
