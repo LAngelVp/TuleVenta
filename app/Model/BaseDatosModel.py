@@ -163,6 +163,7 @@ class Empleados(Base):
     departamento = relationship("Departamentos", back_populates="empleados", lazy="joined")
     sucursal_id = Column(Integer, ForeignKey("Sucursales.id"))
     sucursal = relationship("Sucursales", back_populates="empleados", lazy="joined")
+    compras = relationship("Compras", back_populates="empleado")
 
 class Sucursales(Base):
     __tablename__ = "Sucursales"
@@ -185,6 +186,7 @@ class Sucursales(Base):
         "Departamentos", secondary=departamento_sucursal, back_populates="sucursales", 
     )
     empleados = relationship("Empleados", back_populates="sucursal")
+
 class Departamentos(Base):
     __tablename__ = "Departamentos"
     id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
@@ -199,6 +201,7 @@ class Departamentos(Base):
     sucursales = relationship(
         "Sucursales", secondary=departamento_sucursal, back_populates="departamentos",  lazy="joined"
     )  # Relación muchos a muchos con Sucursales
+
 class Presentacion_productos(Base):
     __tablename__ = "Presentacion_productos"
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -260,6 +263,7 @@ class Productos(Base):
     detalles_ventas = relationship("Detalles_ventas", back_populates="producto")
     
     movimientos_inventario = relationship("Movimientos_Inventario", back_populates="producto", cascade="all, delete-orphan")
+
 class Movimientos_Inventario(Base):
     __tablename__ = "Movimientos_inventario"
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
@@ -401,12 +405,14 @@ class Compras(Base):
         Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
     )
     proveedor_id = Column(Integer, ForeignKey("Proveedores.id"), nullable=False)
+    empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
     fecha_compra = Column(DateTime)
     total_compra = Column(Float)
     metodos_pago_id = Column(Integer, ForeignKey("Metodos_pagos.id"), nullable=False)
     detalles = relationship("Detalles_compras", back_populates="compra")
     proveedor = relationship("Proveedores", back_populates="compras")
     metodos_de_pago = relationship("Metodos_pagos", back_populates="compras")
+    empleado = relationship("Empleados", back_populates="compras")
 
 class Detalles_compras(Base):
     __tablename__ = "Detalles_compras"

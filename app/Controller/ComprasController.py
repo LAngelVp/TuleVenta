@@ -1,6 +1,7 @@
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.Proveedores_ProductosModel import Proveedores_productoModel
+from ..Model.OrdenesDeCompraModel import OrdenesDeCompraModel
 from ..DataBase.conexionBD import Conexion_base_datos
 from .MensajesAlertasController import Mensaje
 from .Hilo_consultas import *
@@ -10,6 +11,7 @@ from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
+from datetime import datetime
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
@@ -57,12 +59,97 @@ class Orden_compra(QWidget):
         self.ordenCompraUI.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
         self.ordenCompraUI.txt_buscarproducto.setFocus()
         self.ordenCompraUI.txt_buscarproducto.returnPressed.connect(self.__buscar_producto_del_proveedor)
+        self.ordenCompraUI.btn_btn_terminar.clicked.connect(self.__terminar_orden_compra)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaProductosOrden()
         self.__obtener_proveedores()
 
+    def __terminar_orden_compra(self):
+        if self.proveedor is None or len(self.setConjuntoProductosDelProveedor) == 0:
+            return
+        """Método específico para procesar la tabla completa"""
+        orden_items = []
+        modelo = self.modeloTablaProductosOrden
+        
+        for i in range(modelo.rowCount()):
+            # PASO 1: Obtener el objeto (ProductoProveedor)
+            index_producto = modelo.index(i, 0)
+            producto_proveedor = modelo.get_item(index_producto)
+            print("producto_proveedor", producto_proveedor.precio_venta)
+            
+            if not producto_proveedor:
+                continue  # Saltar si no hay objeto
+            
+            # PASO 2: Obtener la cantidad de la columna 5
+            index_cantidad = modelo.index(i, 5)
+            cantidad_str = modelo.data(index_cantidad, Qt.DisplayRole)
+            
+            # Convertir a float, si hay error usar 1.0
+            try:
+                cantidad = float(cantidad_str) if cantidad_str else 1.0
+            except:
+                cantidad = 1.0
+            
+            # PASO 3: Extraer información del producto
+            producto = producto_proveedor.producto
+            
+            orden_items.append({
+                'producto': producto,
+                'cantidad': cantidad,
+                'precio': producto_proveedor.precio_venta if hasattr(producto_proveedor, 'precio_venta') else 0.0
+            })
+        contentData = {
+            'empleado': self.usuario["nombre_empleado"],
+            'proveedor': self.proveedor,
+            'fecha_compra': datetime.now().date(),
+            'total_compra': sum(item['precio'] * item['cantidad'] for item in orden_items),
+            'orden_items': orden_items
+        }
+        print("orden_items", orden_items)
+        print("contentData", contentData)
+        # self.createOrder(
+        #     contentData
+        # )
+
+    def createOrder(self, contentData = None):
+        if contentData is None:
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("createOrderThread")
+            self.id_hilo_createOrderThread = WorkerDB.create_managed_worker(owner_id="createOrderThread")
+            self.consultor_createOrderThread = WorkerDB.get_managed_worker(self.id_hilo_createOrderThread)
+            if not self.consultor_createOrderThread:
+                raise Exception("No se pudo obtener el resultado de la creación de la orden de compra.")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_createOrderThread,
+                resultado_callback=self.mostrar_estado_hilo,
+                error_callback= self.mostrar_estado_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_createOrderThread.ejecutar(
+                self.__createOrder_query,
+                contentData=contentData
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_createOrderThread'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_createOrderThread)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+
+    def __createOrder_query(self, session, contentData):
+        try:
+            resultData, estate = OrdenesDeCompraModel(session).create_purchase_order(
+                contentData=contentData
+            )
+            if estate:
+                Mensaje().mensaje_informacion("Orden de compra creada exitosamente.")
+                self.limpiar_productos_seleccionados()
+            return resultData, estate
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+    
     def limpiar_productos_seleccionados(self):
         """Limpia todos los productos seleccionados"""
         if hasattr(self, 'setConjuntoProductosDelProveedor'):
@@ -151,7 +238,8 @@ class Orden_compra(QWidget):
     def __configuracionTablaProductosOrden(self):
         cabeceras = [
             "codigo_upc",
-            "nombre_producto",
+            "nombre_producto",  
+            "precio_venta",
             "descripcion_producto",
             "unidad_medida_productos",
             "presentacion_productos",
@@ -160,6 +248,7 @@ class Orden_compra(QWidget):
         mapeo_cabeceras = {
             "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
             "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
+            "precio_venta": lambda p: p.precio_venta if p and p else "",
             "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
             "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
             "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else "",
@@ -322,6 +411,7 @@ class SeleccionProductosProveedor(QDialog):
         cabeceras = [
             "codigo_upc",
             "nombre_producto",
+            "precio_venta",
             "descripcion_producto",
             "unidad_medida_productos",
             "presentacion_productos"
@@ -329,6 +419,7 @@ class SeleccionProductosProveedor(QDialog):
         mapeo_cabeceras = {
             "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
             "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
+            "precio_venta": lambda p: p.precio_venta if p and p else "",
             "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
             "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
             "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else ""
@@ -358,6 +449,7 @@ class SeleccionProductosProveedor(QDialog):
         cabeceras = [
             "codigo_upc",
             "nombre_producto",
+            "precio_venta",
             "descripcion_producto",
             "unidad_medida_productos",
             "presentacion_productos"
@@ -365,6 +457,7 @@ class SeleccionProductosProveedor(QDialog):
         mapeo_cabeceras = {
             "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
             "nombre_producto": lambda p: p.producto.nombre_producto if p and p.producto else "",
+            "precio_venta": lambda p: p.precio_venta if p and p else "",
             "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
             "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
             "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else ""
@@ -387,6 +480,7 @@ class SeleccionProductosProveedor(QDialog):
             fila = current.row()
             producto = self.modeloTablaProductosDelProveedorSeleccionados.get_item(current)
             if producto:
+                print("producto", producto.precio_venta)
                 self.conjuntoProductosDelProveedor.remove(producto)
                 print("producto removido", producto)
                 print("conjunto", self.conjuntoProductosDelProveedor)

@@ -1,4 +1,3 @@
-from .Convertir_a_diccionariosModel import *
 from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import select, func
@@ -407,8 +406,6 @@ class ProductosModel:
             joinedload(Productos.presentacion_productos)
             ).filter(Productos.codigo_upc == codigo_upc).first()
         if produto:
-            # producto_dict = model_to_dict(produto, deep=True)
-            # return producto_dict, True
             return produto, True
         else:
             return None, False
