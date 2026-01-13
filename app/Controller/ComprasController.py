@@ -46,15 +46,107 @@ class Orden_compra(QWidget):
         self.proveedores = {}
         self.proveedor = None
         self.ventana_productos_proveedor = None
-        self.ui = Ui_Orden_compra()
-        self.ui.setupUi(self)
-        self.ui.btn_btn_cerrar.clicked.connect(self.close)
-        self.ui.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
+        self.setConjuntoProductosDelProveedor = set()
+        self.setProductoDelProveedor = set()
+        self.codigos_agregados = set()
+        self.ordenCompraUI = Ui_Orden_compra()
+        self.ordenCompraUI.setupUi(self)
+        self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
+        self.ordenCompraUI.btn_btn_agregar.hide()
+        self.ordenCompraUI.btn_btn_cerrar.clicked.connect(self.close)
+        self.ordenCompraUI.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
+        self.ordenCompraUI.txt_buscarproducto.setFocus()
+        self.ordenCompraUI.txt_buscarproducto.returnPressed.connect(self.__buscar_producto_del_proveedor)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaProductosOrden()
         self.__obtener_proveedores()
+
+    def limpiar_productos_seleccionados(self):
+        """Limpia todos los productos seleccionados"""
+        if hasattr(self, 'setConjuntoProductosDelProveedor'):
+            self.setConjuntoProductosDelProveedor.clear()
+        
+        if hasattr(self, 'codigos_agregados'):
+            self.codigos_agregados.clear()
+        
+        if hasattr(self, 'modeloTablaProductosOrden'):
+            self.modeloTablaProductosOrden.clear()
+        
+        print("✅ Todos los productos limpiados")
+
+    def __buscar_producto_del_proveedor(self):
+        codigo_upc = self.ordenCompraUI.txt_buscarproducto.text().strip()
+        if codigo_upc:
+            self.manejadorModal.mostrar_modal(None)
+            WorkerDB.cleanup_owner_workers("consultar_productos_del_proveedor_thread")
+            self.id_hilo_consultar_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="consultar_productos_del_proveedor_thread")
+            self.consultor_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_hilo_consultar_productos_del_proveedor)
+            if not self.consultor_productos_del_proveedor:
+                raise Exception("No se pudo obtener el worker gestionado")
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_consultar_productos_del_proveedor,
+                resultado_callback=self.agregarProductoALConjuntoTabla,
+                error_callback=self.mostrar_estado_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_productos_del_proveedor.ejecutar(
+                funcion=self.consultar_productos_del_proveedor_query,
+                codigo_upc=codigo_upc
+            )
+
+    def agregarProductoALConjuntoTabla(self, resultado):
+        """Versión SUPER rápida con set de códigos"""
+        if not resultado["exito"]:
+            Mensaje().mensaje_alerta(resultado["mensaje"])
+            return False
+        
+        producto = resultado["data"]
+        codigo = producto.producto.codigo_upc
+        
+        # VERIFICACIÓN INSTANTÁNEA (O(1))
+        if codigo in self.codigos_agregados:
+            Mensaje().mensaje_alerta(f"Producto {codigo} ya existe")
+            return False
+        
+        # AGREGAR
+        self.setConjuntoProductosDelProveedor.add(producto)
+        self.codigos_agregados.add(codigo)
+        
+        # ACTUALIZAR
+        self.modeloTablaProductosOrden.update_data(
+            list(self.setConjuntoProductosDelProveedor), 
+            reset=True
+        )
+        
+        Mensaje().mensaje_exito("Producto agregado")
+        return True
+
+    def consultar_productos_del_proveedor_query(self, session, codigo_upc):
+        try:
+            data, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_codigo(
+                id_proveedor=self.proveedor.id,
+                codigo_producto=codigo_upc
+            )
+            if estado:
+                return {
+                    "exito": True,
+                    "mensaje": "OK",
+                    "data": data
+                }
+            else:
+                return {
+                    "exito": False,
+                    "mensaje": "No se encontraron productos",
+                    "data": []
+                }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f"Ocurrió un error al consultar los productos: {str(e)}",
+                "data": []
+            }
 
     def __configuracionTablaProductosOrden(self):
         cabeceras = [
@@ -75,7 +167,7 @@ class Orden_compra(QWidget):
         }
         self.modeloTablaProductosOrden = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modeloTablaProductosOrden",
-            interfazTabla=self.ui.tabla_ordencompra,
+            interfazTabla=self.ordenCompraUI.tabla_ordencompra,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabeceras,
             ordenable=True,
@@ -97,26 +189,39 @@ class Orden_compra(QWidget):
         self.modeloTablaProductosOrden.actualizarCelda(self.fila, 5, cantidad)
 
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
-        print("agregando los productos a la vista")
-        # Convertir el set a lista
-        if isinstance(conjuntoProductosDelProveedor, set):
-            lista_productos = list(conjuntoProductosDelProveedor)
-        else:
-            # Si ya es lista, mantenerlo como está
-            lista_productos = conjuntoProductosDelProveedor
-        # Simular la estructura de resultado que tu código espera
-        resultado = {
-            "exito": bool(lista_productos),  # True si hay productos
-            "mensaje": "OK" if lista_productos else "No hay productos",
-            "data": lista_productos  # Lista de objetos SQLAlchemy
-        }
-        if not resultado["exito"]:
-            self.modeloTablaProductosOrden.clear()
-            Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
-            return
+        """Versión mínima - Solo filtra y agrega"""
         
-        self.modeloTablaProductosOrden.update_data(resultado["data"], reset=True)
-        print(f"Tabla actualizada: {len(resultado['data'])} productos")
+        # Asegurar que existe codigos_agregados
+        if not hasattr(self, 'codigos_agregados'):
+            self.codigos_agregados = set()
+        
+        # Convertir a lista
+        lista = list(conjuntoProductosDelProveedor) if isinstance(conjuntoProductosDelProveedor, set) else conjuntoProductosDelProveedor
+        
+        # Filtrar solo productos nuevos
+        productos_nuevos = []
+        
+        for p in lista:
+            if hasattr(p, 'producto') and hasattr(p.producto, 'codigo_upc'):
+                codigo = p.producto.codigo_upc
+                
+                if codigo not in self.codigos_agregados:
+                    productos_nuevos.append(p)
+                    self.codigos_agregados.add(codigo)
+        
+        # Si hay productos nuevos, agregarlos al set y actualizar tabla
+        if productos_nuevos:
+            if not hasattr(self, 'setConjuntoProductosDelProveedor'):
+                self.setConjuntoProductosDelProveedor = set()
+            
+            # Agregar al set
+            for p in productos_nuevos:
+                self.setConjuntoProductosDelProveedor.add(p)
+            
+            # Actualizar tabla
+            self.modeloTablaProductosOrden.update_data(list(self.setConjuntoProductosDelProveedor), reset=True)
+        
+        return len(productos_nuevos)
         
     def mostrar_productos_proveedores(self):
         if self.ventana_productos_proveedor is None or not self.ventana_productos_proveedor.isVisible():
@@ -159,8 +264,8 @@ class Orden_compra(QWidget):
         completar.setCaseSensitivity(Qt.CaseInsensitive)
         completar.setFilterMode(Qt.MatchContains)
         completar.setCompletionMode(QCompleter.PopupCompletion)
-        self.ui.txt_buscarproveedor.textChanged.connect(self.__proveedor_seleccionado)
-        self.ui.txt_buscarproveedor.setCompleter(completar)
+        self.ordenCompraUI.txt_buscarproveedor.textChanged.connect(self.__proveedor_seleccionado)
+        self.ordenCompraUI.txt_buscarproveedor.setCompleter(completar)
 
     def __proveedor_seleccionado(self, texto):
         # Buscar el ID del proveedor por su nombre (valor) en el diccionario
@@ -387,7 +492,7 @@ class SeleccionProductosProveedor(QDialog):
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
-                "data": productos
+                "data": [productos]
             }
 
     def filtrar_productos_del_proveedor_nombre_query(self, session, proveedor, nombre, busqueda_exacta=False):
@@ -597,7 +702,5 @@ class SeleccionProductosProveedor(QDialog):
         self.conjuntoProductosDelProveedor.add(producto)
 
     def aceptar(self):
-        print("enviando productos")
-        print(self.conjuntoProductosDelProveedor)
         self.enviarProductosSignal.emit(self.conjuntoProductosDelProveedor)
         self.close()

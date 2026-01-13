@@ -78,16 +78,16 @@ class Proveedores_productoModel:
                 .filter(ProductoProveedor.producto.has(Productos.codigo_upc == codigo_producto))
                 .offset(cantidad_inicial)
                 .limit(cantidad_final)
-                .all()
+                .first()
             )
 
             if productos:
                 return productos, True
-            return [], False
+            return None, False
             
         except Exception as e:
             print(f"Error en consultar_productos_del_proveedor_por_codigo: {e}")
-            return [], False    
+            return None, False    
     
     def desvincular_producto_del_proveedor(self, proveedor_id, producto_id):
         try:

@@ -25,9 +25,9 @@ class Ui_Orden_compra(object):
     def setupUi(self, Orden_compra):
         if not Orden_compra.objectName():
             Orden_compra.setObjectName(u"Orden_compra")
-        Orden_compra.resize(600, 556)
-        Orden_compra.setMinimumSize(QSize(600, 556))
-        Orden_compra.setMaximumSize(QSize(600, 556))
+        Orden_compra.resize(900, 500)
+        Orden_compra.setMinimumSize(QSize(900, 500))
+        Orden_compra.setMaximumSize(QSize(900, 500))
         Orden_compra.setStyleSheet(u"*{\n"
 "color: #1d1c1c;\n"
 "}\n"
@@ -288,8 +288,8 @@ class Ui_Orden_compra(object):
         self.tabla_ordencompra.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_ordencompra.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabla_ordencompra.setGridStyle(Qt.PenStyle.DashDotLine)
-        self.tabla_ordencompra.horizontalHeader().setMinimumSectionSize(150)
-        self.tabla_ordencompra.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_ordencompra.horizontalHeader().setMinimumSectionSize(200)
+        self.tabla_ordencompra.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_ordencompra.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_4.addWidget(self.tabla_ordencompra, 5, 0, 1, 1)

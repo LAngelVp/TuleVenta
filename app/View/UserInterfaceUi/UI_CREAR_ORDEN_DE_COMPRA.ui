@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>556</height>
+    <width>900</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>600</width>
-    <height>556</height>
+    <width>900</width>
+    <height>500</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>600</width>
-    <height>556</height>
+    <width>900</width>
+    <height>500</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -447,10 +447,10 @@ color: black;
          <enum>Qt::PenStyle::DashDotLine</enum>
         </property>
         <attribute name="horizontalHeaderMinimumSectionSize">
-         <number>150</number>
+         <number>200</number>
         </attribute>
         <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>150</number>
+         <number>200</number>
         </attribute>
         <attribute name="horizontalHeaderStretchLastSection">
          <bool>true</bool>

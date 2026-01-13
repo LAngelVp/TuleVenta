@@ -29,5 +29,6 @@ class CantidadProductosComprasController(QDialog):
         cantidad = self.formulario_cantidad_productos_agregar_compras.decimal_cantidadAgregar.value()
         self.cantidadEnviadaSignal.emit(cantidad)
         self.close()
+        
     def rechazar(self):
         self.close()
