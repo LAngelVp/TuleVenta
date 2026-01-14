@@ -22,10 +22,144 @@ class Compras(QWidget):
         super().__init__(parent)
         self.usuario = usuario
         self.orden_compra = None
-        self.ui = Ui_control_compras()
-        self.ui.setupUi(self)
+        self.controlOrdenesDeCompra = Ui_control_compras()
+        self.controlOrdenesDeCompra.setupUi(self)
         self.clienteFisico = True
-        self.ui.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
+        self.cantidad_inicial_consulta_compras_pendientes = 0
+        self.cantidad_final_consulta_compras_pendientes = 100
+        self.no_hay_mas_registros_compras_pendientes = False
+        self.busqueda_realizada_compras_pendientes = None
+        self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
+        self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.__configuracionTablaOrdenesDeCompra()
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+
+    def refrescar_tabla_orden_compra(self):
+        try:
+            self.cantidad_inicial_consulta_compras_pendientes = 0
+            self.no_hay_mas_registros_compras_pendientes = False
+            self.busqueda_realizada_compras_pendientes = None
+            # self.controlOrdenesDeCompra.txt_codigodelproducto.clear()
+            # self.controlOrdenesDeCompra.txt_nombredelproducto.clear()
+            if hasattr(self, 'ultima_carga_cantidad_compras_pendientes'):
+                del self.ultima_carga_cantidad_compras_pendientes
+            indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
+            if indicePestañaActual == 0:
+                self.obtener_compras_realizadas_hilo(reset_paginacion_compras_pendientes = True)
+            elif indicePestañaActual == 1:
+                self.obtener_compras_pendientes_hilo(reset_paginacion_compras_pendientes = True)
+        except Exception as e:
+            print(f"error: {e}")
+            Mensaje().mensaje_alerta("Error al consultar productos del proveedor.")
+
+    def obtener_compras_pendientes_hilo(self, reset_paginacion_compras_pendientes = False):
+        try:
+            if reset_paginacion_compras_pendientes:
+                self.cantidad_inicial_consulta_compras_pendientes = 0
+                print("DEBUG - Paginación reiniciada")
+                
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_compras_pendientes_thread")
+            self.id_obtener_compras_pendientes = WorkerDB.create_managed_worker(owner_id="obtener_compras_pendientes_thread")
+            self.consultor_obtener_compras_pendientes = WorkerDB.get_managed_worker(self.id_obtener_compras_pendientes)
+            if not self.consultor_obtener_compras_pendientes:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_compras_pendientes,
+                resultado_callback=self.compras_pendientes_tabla_compras,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_compras_pendientes.ejecutar(
+                funcion=self.obtener_compras_pendientes_query,
+                state = 'PENDIENTE'
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_compras_pendientes'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_compras_pendientes)
+            Mensaje().mensaje_alerta(f'Ocurrio un error al consultar productos del proveedor: {e}')
+
+    def obtener_compras_pendientes_query(self, session, state = None):
+        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_compras_pendientes}, limit={self.cantidad_final_consulta_compras_pendientes}")
+        
+        try:
+            compras, estado = OrdenesDeCompraModel(session).get_all_purchase_orders(
+                cantidad_inicial=self.cantidad_inicial_consulta_compras_pendientes,
+                cantidad_final=self.cantidad_final_consulta_compras_pendientes,
+                state = state
+            )
+            print(f"DEBUG - Obtenidos compras: {len(compras) if compras else 0} registros")
+            print(f"DEBUG - Estado de la consulta: {estado}")
+            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay compras
+            if (not hasattr(self, '_is_refreshing_productos_proveedor_compras') or not self._is_refreshing_productos_proveedor_compras) and compras:
+                # Incrementar por el límite, no por la cantidad recibida
+                # Esto mantiene la paginación consistente
+                self.cantidad_inicial_consulta_compras_pendientes += self.cantidad_final_consulta_compras_pendientes
+                print(f"DEBUG - Nuevo offset compras: {self.cantidad_inicial_consulta_compras_pendientes}")
+            elif not compras:
+                print("DEBUG - No se obtuvieron compras, offset no incrementado")
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
+                "data": []
+            }
+        return {
+            "exito": estado,
+            "mensaje": f'Se encontraron {len(compras) if compras else 0} registros',
+            "data": compras
+        }
+
+    def compras_pendientes_tabla_compras(self, result):
+        try:
+            if not result["exito"]:
+                Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {result["mensaje"]}")
+                return
+            self.modeloTablaOrdenesDeCompraPendientes.update_data(result["data"], reset=True)
+            print(f"Tabla actualizada: {len(result["data"]) if result["data"] else 0} productos")
+        except Exception as e:
+            Mensaje().mensaje_alerta(f'Ocurrio un error al consultar compras pendientes: {e}')
+    
+    def __configuracionTablaOrdenesDeCompra(self):
+        cabeceras = [
+            "compra_id",
+            "proveedor",  
+            "fecha_compra",
+            "total_compra",
+            "estado"
+        ]
+        mapeo_cabeceras = {
+            "compra_id": lambda p: p.id if p and p else "",
+            "proveedor": lambda p: p.proveedor.nombre if p and p.proveedor else "",
+            "fecha_compra": lambda p: p.fecha_compra if p and p else "",
+            "total_compra": lambda p: p.total_compra if p and p else "",
+            "estado": lambda p: p.estado if p and p else ""
+        }
+        self.modeloTablaOrdenesDeCompraPendientes = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modeloTablaOrdenesDeCompraPendientes",
+            interfazTabla=self.controlOrdenesDeCompra.tabla_compraspendientes,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            signalSeleccion=self.seleccionar_orden_compra,
+        )
+        return self.modeloTablaOrdenesDeCompraPendientes
+
+    def seleccionar_orden_compra(self, current, previus = None):
+        if current.isValid():
+            fila = current.row()
+            orden_compra = self.modeloTablaOrdenesDeCompraPendientes.get_item(current)
+            if orden_compra:
+                # self.orden_compraSeleccionadoSignal.emit(orden_compra)
+                # self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
+                print(orden_compra)
+
     def nueva_orden_compra(self):
         if self.orden_compra is None or not self.orden_compra.isVisible():
             self.orden_compra = Orden_compra(parent = self, usuario = self.usuario)
@@ -34,7 +168,13 @@ class Compras(QWidget):
         else:
             self.orden_compra.raise_()
             self.orden_compra.activateWindow()
-        
+    
+    def mostrar_estado_hilo(self, objetoMensaje):
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+
+    def mostrar_error_hilo(self, objetoMensaje):
+        Mensaje().mensaje_alerta(objetoMensaje)
+    
     def closeEvent(self, event):
         self.orden_compra = None
         event.accept()
@@ -68,6 +208,7 @@ class Orden_compra(QWidget):
 
     def __terminar_orden_compra(self):
         if self.proveedor is None or len(self.setConjuntoProductosDelProveedor) == 0:
+            Mensaje().mensaje_informativo("Debe seleccionar un proveedor y al menos un producto.")
             return
         """Método específico para procesar la tabla completa"""
         orden_items = []
@@ -77,13 +218,12 @@ class Orden_compra(QWidget):
             # PASO 1: Obtener el objeto (ProductoProveedor)
             index_producto = modelo.index(i, 0)
             producto_proveedor = modelo.get_item(index_producto)
-            print("producto_proveedor", producto_proveedor.precio_venta)
             
             if not producto_proveedor:
                 continue  # Saltar si no hay objeto
             
             # PASO 2: Obtener la cantidad de la columna 5
-            index_cantidad = modelo.index(i, 5)
+            index_cantidad = modelo.index(i, 6)
             cantidad_str = modelo.data(index_cantidad, Qt.DisplayRole)
             
             # Convertir a float, si hay error usar 1.0
@@ -98,23 +238,24 @@ class Orden_compra(QWidget):
             orden_items.append({
                 'producto': producto,
                 'cantidad': cantidad,
-                'precio': producto_proveedor.precio_venta if hasattr(producto_proveedor, 'precio_venta') else 0.0
+                'precio_unitario': producto_proveedor.precio_venta if hasattr(producto_proveedor, 'precio_venta') else 0.0,
+                'subtotal': producto_proveedor.precio_venta * cantidad if hasattr(producto_proveedor, 'precio_venta') else 0.0
             })
         contentData = {
-            'empleado': self.usuario["nombre_empleado"],
             'proveedor': self.proveedor,
+            'empleado': self.usuario["id_empleado"],
             'fecha_compra': datetime.now().date(),
-            'total_compra': sum(item['precio'] * item['cantidad'] for item in orden_items),
-            'orden_items': orden_items
+            'total_compra': sum(item['subtotal'] for item in orden_items),
+            'metodo_pago': 1,
+            'detalles':orden_items
         }
-        print("orden_items", orden_items)
-        print("contentData", contentData)
-        # self.createOrder(
-        #     contentData
-        # )
+        self.createOrder(
+            contentData,
+            orden_items
+        )
 
-    def createOrder(self, contentData = None):
-        if contentData is None:
+    def createOrder(self, contentData = None, orden_items = None):
+        if contentData is None or orden_items is None:
             return
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -126,29 +267,41 @@ class Orden_compra(QWidget):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_createOrderThread,
                 resultado_callback=self.mostrar_estado_hilo,
-                error_callback= self.mostrar_estado_hilo,
+                error_callback= self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_createOrderThread.ejecutar(
                 self.__createOrder_query,
-                contentData=contentData
+                contentData=contentData,
+                orden_items=orden_items
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_createOrderThread'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_createOrderThread)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            print(f"Error al iniciar el proceso: {e}")
 
-    def __createOrder_query(self, session, contentData):
+    def __createOrder_query(self, session, contentData, orden_items):
         try:
             resultData, estate = OrdenesDeCompraModel(session).create_purchase_order(
-                contentData=contentData
+                orderDatails=contentData,
+                orden_items=orden_items
             )
             if estate:
-                Mensaje().mensaje_informacion("Orden de compra creada exitosamente.")
                 self.limpiar_productos_seleccionados()
-            return resultData, estate
+                session.commit()
+            return {
+                "exito": estate,
+                "mensaje": "Orden de compra creada exitosamente.",
+                "resultado": resultData
+            }
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            session.rollback()
+            print(f"Error al iniciar el proceso: {e}")
+            return {
+                "exito": False,
+                "mensaje": "Error al iniciar el proceso",
+                "resultado": None
+            }    
     
     def limpiar_productos_seleccionados(self):
         """Limpia todos los productos seleccionados"""
@@ -275,7 +428,7 @@ class Orden_compra(QWidget):
         cantidadProductosComprasController.show()
     
     def actualizarCantidadProducto(self, cantidad):
-        self.modeloTablaProductosOrden.actualizarCelda(self.fila, 5, cantidad)
+        self.modeloTablaProductosOrden.actualizarCelda(self.fila, 6, cantidad)
 
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
         """Versión mínima - Solo filtra y agrega"""
@@ -366,7 +519,10 @@ class Orden_compra(QWidget):
             self.proveedor = None
 
     def mostrar_estado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje)
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+    
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(error)
                     
     def showEvent(self, event):
         super().showEvent(event)

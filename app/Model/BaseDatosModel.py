@@ -408,6 +408,7 @@ class Compras(Base):
     empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
     fecha_compra = Column(DateTime)
     total_compra = Column(Float)
+    estado = Column(String(20))
     metodos_pago_id = Column(Integer, ForeignKey("Metodos_pagos.id"), nullable=False)
     detalles = relationship("Detalles_compras", back_populates="compra")
     proveedor = relationship("Proveedores", back_populates="compras")
