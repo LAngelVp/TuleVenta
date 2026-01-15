@@ -24,6 +24,7 @@ class Compras(QWidget):
         self.orden_compra = None
         self.controlOrdenesDeCompra = Ui_control_compras()
         self.controlOrdenesDeCompra.setupUi(self)
+        self.orderSelected = None
         self.clienteFisico = True
         self.cantidad_inicial_consulta_compras_pendientes = 0
         self.cantidad_final_consulta_compras_pendientes = 100
@@ -31,8 +32,10 @@ class Compras(QWidget):
         self.busqueda_realizada_compras_pendientes = None
         self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
+        self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaOrdenesDeCompra()
+        self.__configuracionTablaOrdenesDeCompraRealizadas()
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
@@ -125,18 +128,20 @@ class Compras(QWidget):
     
     def __configuracionTablaOrdenesDeCompra(self):
         cabeceras = [
-            "compra_id",
-            "proveedor",  
-            "fecha_compra",
-            "total_compra",
-            "estado"
+            "ID",
+            "PROVEEDOR",  
+            "FECHA CREACION",
+            "TOTAL",
+            "ESTADO",
+            "QUIEN REALIZO"
         ]
         mapeo_cabeceras = {
-            "compra_id": lambda p: p.id if p and p else "",
-            "proveedor": lambda p: p.proveedor.nombre if p and p.proveedor else "",
-            "fecha_compra": lambda p: p.fecha_compra if p and p else "",
-            "total_compra": lambda p: p.total_compra if p and p else "",
-            "estado": lambda p: p.estado if p and p else ""
+            "ID": lambda p: str(p.id) if p else "",
+            "proveedor": lambda p: p.proveedor.nombre if p.proveedor else "",
+            "fecha creacion": lambda p: p.fecha_creacion if p else "",
+            "total": lambda p: str(p.total_compra) if p else "",
+            "estado": lambda p: p.estado if p else "",
+            "quien realizo": lambda p: p.empleado.nombre + " " + p.empleado.apellido_paterno + " " + p.empleado.apellido_materno if p.empleado else ""
         }
         self.modeloTablaOrdenesDeCompraPendientes = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modeloTablaOrdenesDeCompraPendientes",
@@ -156,9 +161,40 @@ class Compras(QWidget):
             fila = current.row()
             orden_compra = self.modeloTablaOrdenesDeCompraPendientes.get_item(current)
             if orden_compra:
-                # self.orden_compraSeleccionadoSignal.emit(orden_compra)
-                # self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
+                self.orderSelected = orden_compra
                 print(orden_compra)
+
+    def __configuracionTablaOrdenesDeCompraRealizadas(self):
+        cabeceras = [
+            "ID",
+            "PROVEEDOR",
+            "FECHA CREACION",
+            "FECHA COMPRA",
+            "TOTAL",
+            "ESTADO",
+            "QUIEN REALIZO"
+        ]
+        mapeo_cabeceras = {
+            "ID": lambda p: str(p.id) if p else "",
+            "proveedor": lambda p: p.proveedor.nombre if p.proveedor else "",
+            "fecha_creacion": lambda p: p.fecha_creacion if p else "",
+            "fecha_compra": lambda p: p.fecha_compra if p else "",
+            "total": lambda p: str(p.total_compra) if p else "",
+            "estado": lambda p: p.estado if p else "",
+            "quien_realizo": lambda p: p.empleado.nombre if p.empleado else ""
+        }
+        self.modeloTablaOrdenesDeCompraRealizadas = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modeloTablaOrdenesDeCompraRealizadas",
+            interfazTabla=self.controlOrdenesDeCompra.tabla_comprasrealizadas,
+            encabezados=cabeceras,
+            mapeoCabecera=mapeo_cabeceras,
+            ordenable=True,
+            editable=False,
+            autoAjustarColumnas=True,
+            signalPersonalizada=None,
+            signalSeleccion=self.seleccionar_orden_compra,
+        )
+        return self.modeloTablaOrdenesDeCompraRealizadas
 
     def nueva_orden_compra(self):
         if self.orden_compra is None or not self.orden_compra.isVisible():
@@ -169,11 +205,54 @@ class Compras(QWidget):
             self.orden_compra.raise_()
             self.orden_compra.activateWindow()
     
+    def orderDelete(self):
+        if self.orderSelected is None:
+            Mensaje().mensaje_alerta("No se selecciono una orden de compra")
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("eliminar_orden_compra_thread")
+            self.id_eliminar_orden_compra = WorkerDB.create_managed_worker(owner_id="eliminar_orden_compra_thread")
+            self.consultor_eliminar_orden_compra = WorkerDB.get_managed_worker(self.id_eliminar_orden_compra)
+            if not self.consultor_eliminar_orden_compra:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_eliminar_orden_compra,
+                resultado_callback=self.mostrar_estado_hilo,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_eliminar_orden_compra.ejecutar(
+                funcion=self.eliminar_orden_compra_query,
+                order=self.orderSelected
+            )
+        except Exception as e:
+            if hasattr(self, 'id_eliminar_orden_compra'):
+                WorkerDB.cleanup_managed_worker(self.id_eliminar_orden_compra)
+            Mensaje().mensaje_alerta(f'Ocurrio un error al eliminar orden de compra: {e}')
+
+    def eliminar_orden_compra_query(self, session, order):
+        try:
+            print(order.id)
+            estatus = OrdenesDeCompraModel(session).delete_purchase_order(order.id)
+            if estatus:
+                session.commit()
+                return {"mensaje": "Orden de compra eliminada exitosamente"}
+            else:
+                session.rollback()
+                return {"mensaje": "Error al eliminar orden de compra"}
+        except Exception as e:
+            session.rollback()
+            return {"mensaje": str(e)}
+
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        self.orderSelected = None
 
     def mostrar_error_hilo(self, objetoMensaje):
         Mensaje().mensaje_alerta(objetoMensaje)
+        self.orderSelected = None
     
     def closeEvent(self, event):
         self.orden_compra = None
@@ -244,7 +323,8 @@ class Orden_compra(QWidget):
         contentData = {
             'proveedor': self.proveedor,
             'empleado': self.usuario["id_empleado"],
-            'fecha_compra': datetime.now().date(),
+            'fecha_creacion': datetime.now().date(),
+            'fecha_compra': None,
             'total_compra': sum(item['subtotal'] for item in orden_items),
             'metodo_pago': 1,
             'detalles':orden_items

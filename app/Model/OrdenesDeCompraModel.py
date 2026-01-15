@@ -12,6 +12,7 @@ class OrdenesDeCompraModel:
             order = Compras(
                 proveedor_id=orderDatails['proveedor'].id,
                 fecha_compra=orderDatails['fecha_compra'],
+                fecha_creacion=orderDatails['fecha_creacion'],
                 empleado_id=orderDatails['empleado'],
                 total_compra=orderDatails['total_compra'],
                 metodos_pago_id=orderDatails['metodo_pago']
@@ -57,12 +58,11 @@ class OrdenesDeCompraModel:
         except Exception as e:
             raise e
     
-    def delete_purchase_order(self, orderId):
+    def delete_purchase_order(self, order_id):
         try:
-            order = self.session.query(Compras).filter(Compras.id == orderId).first()
-            if order:
-                self.session.delete(order)
-                self.session.commit()
+            purchaseOrder = self.session.query(Compras).get(order_id)
+            if purchaseOrder:
+                self.session.delete(purchaseOrder)
                 return True
             return False
         except Exception as e:

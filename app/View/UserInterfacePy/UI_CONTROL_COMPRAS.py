@@ -160,20 +160,29 @@ class Ui_control_compras(object):
 "font-size: 16px;\n"
 "font-weight: bold;\n"
 "height: 25px;\n"
-"margin-l"
-                        "eft: 5px;\n"
-"margin-right: 5px;\n"
+"padding-"
+                        "left:3px;\n"
+"padding-right:3px;\n"
 "text-align: center;\n"
 "text-transform: uppercase;\n"
 "}\n"
 "#btn_btn_eliminar:hover{\n"
 "background-color: #EE1D52;\n"
 "}\n"
+"#btn_btn_eliminar:pressed{\n"
+"background-color: #B13636;\n"
+"}\n"
 "#btn_btn_agregar:hover{\n"
 "background-color: #68a67d;\n"
 "}\n"
+"#btn_btn_agregar:pressed{\n"
+"background-color: #578B69;\n"
+"}\n"
 "*[objectName*=\"btn_btn\"]:hover{\n"
 "background-color: #2196F3;\n"
+"}\n"
+"*[objectName*=\"btn_btn\"]:pressed{\n"
+"background-color: #1B80D0;\n"
 "}\n"
 "#btn_RefrescarTabla{\n"
 "border-radius: 2px;\n"
@@ -186,6 +195,31 @@ class Ui_control_compras(object):
 "#btn_RefrescarTabla:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
+"#btn_paginarTabla{\n"
+"border-radius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"}\n"
+"#btn_paginarTabla:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_paginarTabla:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
+"#btn_btn_generarOrdenCompra{\n"
+"border-rad"
+                        "ius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"color: #1d1c1c;\n"
+"}\n"
+"#btn_btn_generarOrdenCompra:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_btn_generarOrdenCompra:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
+"\n"
 "/*-----------TABLA--------------*/\n"
 "\n"
 "\n"
@@ -205,8 +239,7 @@ class Ui_control_compras(object):
 "\n"
 "/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"background-color: #023375"
-                        ";\n"
+"background-color: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
 "padding: 5px;\n"
@@ -219,7 +252,8 @@ class Ui_control_compras(object):
 "color: white;\n"
 "}\n"
 "\n"
-"/* \u00cdtems seleccionados */\n"
+"/* \u00cdtems seleccionados *"
+                        "/\n"
 "[objectName*=\"tabla_\"] QTableView::item:selected {\n"
 "background-color: #cce4ff;\n"
 "color: black;\n"
@@ -248,8 +282,7 @@ class Ui_control_compras(object):
 "*[objectName*=\"fecha_\"]::down-arrow{\n"
 "image: url(:/Icons/Bootstrap/calendar2-date.svg);\n"
 "width: 17%;\n"
-"hei"
-                        "ght: 17%;\n"
+"height: 17%;\n"
 "padding-left:5px;\n"
 "padding-right:5px;\n"
 "background: #F5F5F5;\n"
@@ -260,7 +293,8 @@ class Ui_control_compras(object):
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
 "    color: white;\n"
-"    border-top-left-radius: 5px;\n"
+"    border-to"
+                        "p-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
 "}\n"
 "\n"
@@ -288,8 +322,7 @@ class Ui_control_compras(object):
 "QCalendarWidget QAbstractItemView:enabled {\n"
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
-"    selection-background-color:"
-                        " #00668c;  /* Color al seleccionar fecha */\n"
+"    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
 "    selection-color: white;\n"
 "}\n"
 "\n"
@@ -300,7 +333,8 @@ class Ui_control_compras(object):
 "\n"
 "/* EFECTO HOVER SOBRE D\u00cdAS */\n"
 "QCalendarWidget QAbstractItemView::item:hover {\n"
-"    background-color: #e1f0f7;\n"
+""
+                        "    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
 "}\n"
 "/*----------CAJA OPCIONES---------------*/\n"
@@ -310,7 +344,7 @@ class Ui_control_compras(object):
 "    padding: 2px ;\n"
 "    background-color: #F5F5F5 ;\n"
 "    font-size: 14px ;\n"
-"    min-width: 200px ;\n"
+"    min-width: 250px ;\n"
 "    font-family: \"Arial\" ;\n"
 "    color: #1d1c1c ;\n"
 "	selection-background-color: #4791F5; \n"
@@ -325,8 +359,7 @@ class Ui_control_compras(object):
 "\n"
 "/* ESTILO DE LOS \u00cdTEMS */\n"
 "[objectName*=\"cajaOpciones\"] QListView::item {\n"
-"    padding: 6px 10px"
-                        " ;\n"
+"    padding: 6px 10px ;\n"
 "    margin: 2px ;\n"
 "}\n"
 "/* BOT\u00d3N DESPLEGABLE */\n"
@@ -336,7 +369,8 @@ class Ui_control_compras(object):
 "    padding-right: 5px ;\n"
 "    width: 20% ;\n"
 "    border-left-width: 1px ;\n"
-"    border-radius: 3px ;\n"
+"    border-radius: 3px ;"
+                        "\n"
 "    background-color: #F5F5F5 ;\n"
 "}\n"
 "/* FLECHA DESPLEGABLE */\n"
@@ -398,10 +432,10 @@ class Ui_control_compras(object):
         self.gridLayout_4.setHorizontalSpacing(10)
         self.gridLayout_4.setVerticalSpacing(5)
         self.gridLayout_4.setContentsMargins(5, 10, 5, 0)
-        self.txt_proveedor = QLineEdit(self.contenedor_contenido)
-        self.txt_proveedor.setObjectName(u"txt_proveedor")
+        self.txt_quienRealizoCompraRealizada = QLineEdit(self.contenedor_contenido)
+        self.txt_quienRealizoCompraRealizada.setObjectName(u"txt_quienRealizoCompraRealizada")
 
-        self.gridLayout_4.addWidget(self.txt_proveedor, 3, 3, 1, 1)
+        self.gridLayout_4.addWidget(self.txt_quienRealizoCompraRealizada, 3, 3, 1, 1)
 
         self.etiqueta_fechalevantamientocompra = QLabel(self.contenedor_contenido)
         self.etiqueta_fechalevantamientocompra.setObjectName(u"etiqueta_fechalevantamientocompra")
@@ -422,55 +456,60 @@ class Ui_control_compras(object):
 
         self.gridLayout_4.addWidget(self.etiqueta_proveedor_2, 4, 3, 1, 1)
 
-        self.txt_idcompra = QLineEdit(self.contenedor_contenido)
-        self.txt_idcompra.setObjectName(u"txt_idcompra")
+        self.txt_idCompraRealizada = QLineEdit(self.contenedor_contenido)
+        self.txt_idCompraRealizada.setObjectName(u"txt_idCompraRealizada")
 
-        self.gridLayout_4.addWidget(self.txt_idcompra, 3, 0, 1, 3)
+        self.gridLayout_4.addWidget(self.txt_idCompraRealizada, 3, 0, 1, 3)
 
-        self.fecha_fechacompra = QDateEdit(self.contenedor_contenido)
-        self.fecha_fechacompra.setObjectName(u"fecha_fechacompra")
-        self.fecha_fechacompra.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.fecha_fechacompra.setCalendarPopup(True)
+        self.fecha_fechaCompraRealizada = QDateEdit(self.contenedor_contenido)
+        self.fecha_fechaCompraRealizada.setObjectName(u"fecha_fechaCompraRealizada")
+        self.fecha_fechaCompraRealizada.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fecha_fechaCompraRealizada.setCalendarPopup(True)
 
-        self.gridLayout_4.addWidget(self.fecha_fechacompra, 6, 0, 1, 2)
+        self.gridLayout_4.addWidget(self.fecha_fechaCompraRealizada, 6, 0, 1, 2)
 
-        self.fecha_levantamientocompra = QDateEdit(self.contenedor_contenido)
-        self.fecha_levantamientocompra.setObjectName(u"fecha_levantamientocompra")
-        self.fecha_levantamientocompra.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.fecha_levantamientocompra.setCalendarPopup(True)
+        self.fecha_fechaCreacionOCRealizada = QDateEdit(self.contenedor_contenido)
+        self.fecha_fechaCreacionOCRealizada.setObjectName(u"fecha_fechaCreacionOCRealizada")
+        self.fecha_fechaCreacionOCRealizada.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fecha_fechaCreacionOCRealizada.setCalendarPopup(True)
 
-        self.gridLayout_4.addWidget(self.fecha_levantamientocompra, 6, 2, 1, 1)
+        self.gridLayout_4.addWidget(self.fecha_fechaCreacionOCRealizada, 6, 2, 1, 1)
 
         self.etiqueta_fechacompra = QLabel(self.contenedor_contenido)
         self.etiqueta_fechacompra.setObjectName(u"etiqueta_fechacompra")
 
         self.gridLayout_4.addWidget(self.etiqueta_fechacompra, 4, 0, 1, 2)
 
-        self.cajaOpciones_proveedor = QComboBox(self.contenedor_contenido)
-        self.cajaOpciones_proveedor.setObjectName(u"cajaOpciones_proveedor")
-        self.cajaOpciones_proveedor.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.cajaOpciones_proveedorOCRealizada = QComboBox(self.contenedor_contenido)
+        self.cajaOpciones_proveedorOCRealizada.setObjectName(u"cajaOpciones_proveedorOCRealizada")
+        self.cajaOpciones_proveedorOCRealizada.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
-        self.gridLayout_4.addWidget(self.cajaOpciones_proveedor, 6, 3, 1, 1)
+        self.gridLayout_4.addWidget(self.cajaOpciones_proveedorOCRealizada, 6, 3, 1, 1)
 
-        self.btn_btn_buscar = QToolButton(self.contenedor_contenido)
-        self.btn_btn_buscar.setObjectName(u"btn_btn_buscar")
-        self.btn_btn_buscar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_buscar_OCrealizadas = QToolButton(self.contenedor_contenido)
+        self.btn_btn_buscar_OCrealizadas.setObjectName(u"btn_btn_buscar_OCrealizadas")
+        self.btn_btn_buscar_OCrealizadas.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon = QIcon()
         icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/buscar_filas_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_buscar.setIcon(icon)
-        self.btn_btn_buscar.setIconSize(QSize(25, 25))
-        self.btn_btn_buscar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_btn_buscar_OCrealizadas.setIcon(icon)
+        self.btn_btn_buscar_OCrealizadas.setIconSize(QSize(25, 25))
+        self.btn_btn_buscar_OCrealizadas.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
-        self.gridLayout_4.addWidget(self.btn_btn_buscar, 3, 10, 1, 1)
+        self.gridLayout_4.addWidget(self.btn_btn_buscar_OCrealizadas, 3, 10, 1, 1)
 
 
         self.gridLayout_2.addWidget(self.contenedor_contenido, 0, 0, 1, 1)
 
         self.tabla_comprasrealizadas = QTableView(self.contenedor_widget)
         self.tabla_comprasrealizadas.setObjectName(u"tabla_comprasrealizadas")
+        self.tabla_comprasrealizadas.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_comprasrealizadas.setAlternatingRowColors(True)
         self.tabla_comprasrealizadas.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_comprasrealizadas.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_comprasrealizadas.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_comprasrealizadas.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_comprasrealizadas.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_comprasrealizadas.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_2.addWidget(self.tabla_comprasrealizadas, 1, 0, 1, 1)
 
@@ -502,28 +541,28 @@ class Ui_control_compras(object):
         self.gridLayout_8.setHorizontalSpacing(10)
         self.gridLayout_8.setVerticalSpacing(5)
         self.gridLayout_8.setContentsMargins(5, 10, 5, 0)
-        self.txt_idcompra_2 = QLineEdit(self.contenedor_contenidocompras_pendientes)
-        self.txt_idcompra_2.setObjectName(u"txt_idcompra_2")
+        self.txt_idCompraPendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
+        self.txt_idCompraPendiente.setObjectName(u"txt_idCompraPendiente")
 
-        self.gridLayout_8.addWidget(self.txt_idcompra_2, 3, 0, 1, 2)
+        self.gridLayout_8.addWidget(self.txt_idCompraPendiente, 3, 0, 1, 2)
 
-        self.txt_proveedor_2 = QLineEdit(self.contenedor_contenidocompras_pendientes)
-        self.txt_proveedor_2.setObjectName(u"txt_proveedor_2")
+        self.txt_quienRealizoOCpendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
+        self.txt_quienRealizoOCpendiente.setObjectName(u"txt_quienRealizoOCpendiente")
 
-        self.gridLayout_8.addWidget(self.txt_proveedor_2, 3, 2, 1, 1)
+        self.gridLayout_8.addWidget(self.txt_quienRealizoOCpendiente, 3, 2, 1, 1)
 
-        self.fecha_fechacompra_2 = QDateEdit(self.contenedor_contenidocompras_pendientes)
-        self.fecha_fechacompra_2.setObjectName(u"fecha_fechacompra_2")
-        self.fecha_fechacompra_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.fecha_fechacompra_2.setCalendarPopup(True)
+        self.fecha_fechaCreacionOCPendiente = QDateEdit(self.contenedor_contenidocompras_pendientes)
+        self.fecha_fechaCreacionOCPendiente.setObjectName(u"fecha_fechaCreacionOCPendiente")
+        self.fecha_fechaCreacionOCPendiente.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fecha_fechaCreacionOCPendiente.setCalendarPopup(True)
 
-        self.gridLayout_8.addWidget(self.fecha_fechacompra_2, 5, 0, 1, 1)
+        self.gridLayout_8.addWidget(self.fecha_fechaCreacionOCPendiente, 5, 0, 1, 1)
 
-        self.cajaOpciones_proveedor_2 = QComboBox(self.contenedor_contenidocompras_pendientes)
-        self.cajaOpciones_proveedor_2.setObjectName(u"cajaOpciones_proveedor_2")
-        self.cajaOpciones_proveedor_2.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.cajaOpciones_proveedorPendiente = QComboBox(self.contenedor_contenidocompras_pendientes)
+        self.cajaOpciones_proveedorPendiente.setObjectName(u"cajaOpciones_proveedorPendiente")
+        self.cajaOpciones_proveedorPendiente.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
-        self.gridLayout_8.addWidget(self.cajaOpciones_proveedor_2, 5, 2, 1, 1)
+        self.gridLayout_8.addWidget(self.cajaOpciones_proveedorPendiente, 5, 2, 1, 1)
 
         self.etiquetaTitulo_buscar_2 = QLabel(self.contenedor_contenidocompras_pendientes)
         self.etiquetaTitulo_buscar_2.setObjectName(u"etiquetaTitulo_buscar_2")
@@ -534,14 +573,14 @@ class Ui_control_compras(object):
 
         self.gridLayout_8.addItem(self.horizontalSpacer_3, 3, 8, 1, 1)
 
-        self.btn_btn_buscar_2 = QToolButton(self.contenedor_contenidocompras_pendientes)
-        self.btn_btn_buscar_2.setObjectName(u"btn_btn_buscar_2")
-        self.btn_btn_buscar_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_buscar_2.setIcon(icon)
-        self.btn_btn_buscar_2.setIconSize(QSize(24, 24))
-        self.btn_btn_buscar_2.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.btn_btn_buscar_OCpendientes = QToolButton(self.contenedor_contenidocompras_pendientes)
+        self.btn_btn_buscar_OCpendientes.setObjectName(u"btn_btn_buscar_OCpendientes")
+        self.btn_btn_buscar_OCpendientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_buscar_OCpendientes.setIcon(icon)
+        self.btn_btn_buscar_OCpendientes.setIconSize(QSize(24, 24))
+        self.btn_btn_buscar_OCpendientes.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
-        self.gridLayout_8.addWidget(self.btn_btn_buscar_2, 3, 9, 1, 1)
+        self.gridLayout_8.addWidget(self.btn_btn_buscar_OCpendientes, 3, 9, 1, 1, Qt.AlignmentFlag.AlignRight)
 
         self.etiqueta_levantamientocompra = QLabel(self.contenedor_contenidocompras_pendientes)
         self.etiqueta_levantamientocompra.setObjectName(u"etiqueta_levantamientocompra")
@@ -553,23 +592,37 @@ class Ui_control_compras(object):
 
         self.gridLayout_8.addWidget(self.etiqueta_proveedor, 4, 2, 1, 1)
 
+        self.btn_btn_generarOrdenCompra = QPushButton(self.contenedor_contenidocompras_pendientes)
+        self.btn_btn_generarOrdenCompra.setObjectName(u"btn_btn_generarOrdenCompra")
+        self.btn_btn_generarOrdenCompra.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/Bootstrap/file-earmark-pdf-fill.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_generarOrdenCompra.setIcon(icon2)
+
+        self.gridLayout_8.addWidget(self.btn_btn_generarOrdenCompra, 5, 9, 1, 1)
+
 
         self.gridLayout_7.addWidget(self.contenedor_contenidocompras_pendientes, 0, 0, 1, 1)
 
         self.tabla_compraspendientes = QTableView(self.contenedor_widget_2)
         self.tabla_compraspendientes.setObjectName(u"tabla_compraspendientes")
+        self.tabla_compraspendientes.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_compraspendientes.setAlternatingRowColors(True)
         self.tabla_compraspendientes.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tabla_compraspendientes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabla_compraspendientes.setGridStyle(Qt.PenStyle.DashDotLine)
+        self.tabla_compraspendientes.horizontalHeader().setMinimumSectionSize(150)
+        self.tabla_compraspendientes.horizontalHeader().setDefaultSectionSize(150)
+        self.tabla_compraspendientes.horizontalHeader().setStretchLastSection(True)
 
         self.gridLayout_7.addWidget(self.tabla_compraspendientes, 1, 0, 1, 1)
 
 
         self.gridLayout_9.addWidget(self.contenedor_widget_2, 0, 0, 1, 1)
 
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/Bootstrap/pause-circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.contenedortabglobal.addTab(self.contenedortab_compraspendientes, icon2, "")
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/Bootstrap/pause-circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.contenedortabglobal.addTab(self.contenedortab_compraspendientes, icon3, "")
 
         self.gridLayout_6.addWidget(self.contenedortabglobal, 1, 0, 1, 2)
 
@@ -588,41 +641,64 @@ class Ui_control_compras(object):
         self.contenedor_frame_2.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedor_frame_2.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_2 = QHBoxLayout(self.contenedor_frame_2)
-        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setSpacing(10)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(0, 5, 5, 5)
         self.btn_btn_agregar = QToolButton(self.contenedor_frame_2)
         self.btn_btn_agregar.setObjectName(u"btn_btn_agregar")
         self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_documento_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_agregar.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/agregar_documento_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_agregar.setIcon(icon4)
         self.btn_btn_agregar.setIconSize(QSize(24, 24))
         self.btn_btn_agregar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
-        self.horizontalLayout_2.addWidget(self.btn_btn_agregar)
+        self.horizontalLayout_2.addWidget(self.btn_btn_agregar, 0, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
 
         self.btn_btn_eliminar = QToolButton(self.contenedor_frame_2)
         self.btn_btn_eliminar.setObjectName(u"btn_btn_eliminar")
         self.btn_btn_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_eliminar.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_eliminar.setIcon(icon5)
         self.btn_btn_eliminar.setIconSize(QSize(24, 24))
         self.btn_btn_eliminar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
         self.horizontalLayout_2.addWidget(self.btn_btn_eliminar)
 
+        self.btn_btn_editaOrdeCompra = QToolButton(self.contenedor_frame_2)
+        self.btn_btn_editaOrdeCompra.setObjectName(u"btn_btn_editaOrdeCompra")
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/edit_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_editaOrdeCompra.setIcon(icon6)
+        self.btn_btn_editaOrdeCompra.setIconSize(QSize(24, 24))
+        self.btn_btn_editaOrdeCompra.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+
+        self.horizontalLayout_2.addWidget(self.btn_btn_editaOrdeCompra)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
+        self.btn_paginarTabla = QPushButton(self.contenedor_frame_2)
+        self.btn_paginarTabla.setObjectName(u"btn_paginarTabla")
+        font1 = QFont()
+        font1.setFamilies([u"Arial"])
+        font1.setBold(False)
+        self.btn_paginarTabla.setFont(font1)
+        self.btn_paginarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon7 = QIcon()
+        icon7.addFile(u":/Icons/Bootstrap/box-arrow-down.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_paginarTabla.setIcon(icon7)
+
+        self.horizontalLayout_2.addWidget(self.btn_paginarTabla)
+
         self.btn_RefrescarTabla = QPushButton(self.contenedor_frame_2)
         self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
         self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon5 = QIcon()
-        icon5.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon5)
+        icon8 = QIcon()
+        icon8.addFile(u":/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon8)
 
         self.horizontalLayout_2.addWidget(self.btn_RefrescarTabla)
 
@@ -647,23 +723,35 @@ class Ui_control_compras(object):
     def retranslateUi(self, control_compras):
         control_compras.setWindowTitle(QCoreApplication.translate("control_compras", u"Form", None))
         self.label_wc_titulo_compras.setText(QCoreApplication.translate("control_compras", u"administraci\u00f3n de compras", None))
-        self.txt_proveedor.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
+        self.txt_quienRealizoCompraRealizada.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
         self.etiqueta_fechalevantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
         self.etiquetaTitulo_buscar.setText(QCoreApplication.translate("control_compras", u"Buscar por:", None))
         self.etiqueta_proveedor_2.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
-        self.txt_idcompra.setPlaceholderText(QCoreApplication.translate("control_compras", u"folio de la compra", None))
+        self.txt_idCompraRealizada.setPlaceholderText(QCoreApplication.translate("control_compras", u"Id de la orden de compra", None))
         self.etiqueta_fechacompra.setText(QCoreApplication.translate("control_compras", u"Fecha de compra", None))
-        self.btn_btn_buscar.setText(QCoreApplication.translate("control_compras", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_buscar_OCrealizadas.setToolTip(QCoreApplication.translate("control_compras", u"Buscar ordenes realizadas", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_buscar_OCrealizadas.setText("")
         self.contenedortabglobal.setTabText(self.contenedortabglobal.indexOf(self.contenedortab_comprasrealizadas), QCoreApplication.translate("control_compras", u"Realizadas", None))
-        self.txt_idcompra_2.setPlaceholderText(QCoreApplication.translate("control_compras", u"folio de la compra", None))
-        self.txt_proveedor_2.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
+        self.txt_idCompraPendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Id de la orden de compra", None))
+        self.txt_quienRealizoOCpendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
         self.etiquetaTitulo_buscar_2.setText(QCoreApplication.translate("control_compras", u"Buscar por:", None))
-        self.btn_btn_buscar_2.setText(QCoreApplication.translate("control_compras", u"Buscar", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_buscar_OCpendientes.setToolTip(QCoreApplication.translate("control_compras", u"Buscar ordenes pendientes", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_buscar_OCpendientes.setText("")
         self.etiqueta_levantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
         self.etiqueta_proveedor.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
+        self.btn_btn_generarOrdenCompra.setText(QCoreApplication.translate("control_compras", u"Generar", None))
         self.contenedortabglobal.setTabText(self.contenedortabglobal.indexOf(self.contenedortab_compraspendientes), QCoreApplication.translate("control_compras", u"Pendientes", None))
         self.btn_btn_agregar.setText(QCoreApplication.translate("control_compras", u"Agregar", None))
         self.btn_btn_eliminar.setText(QCoreApplication.translate("control_compras", u"Eliminar", None))
+        self.btn_btn_editaOrdeCompra.setText(QCoreApplication.translate("control_compras", u"EDITAR", None))
+#if QT_CONFIG(tooltip)
+        self.btn_paginarTabla.setToolTip(QCoreApplication.translate("control_compras", u"Paginar Tabla", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_paginarTabla.setText("")
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("control_compras", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)

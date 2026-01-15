@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import (
@@ -407,10 +408,15 @@ class Compras(Base):
     proveedor_id = Column(Integer, ForeignKey("Proveedores.id"), nullable=False)
     empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
     fecha_compra = Column(DateTime)
+    fecha_creacion = Column(DateTime, default=datetime.now())
     total_compra = Column(Float)
-    estado = Column(String(20))
+    estado = Column(String(20), default="PENDIENTE")
     metodos_pago_id = Column(Integer, ForeignKey("Metodos_pagos.id"), nullable=False)
-    detalles = relationship("Detalles_compras", back_populates="compra")
+    detalles = relationship("Detalles_compras", 
+    back_populates="compra",
+    cascade="all, delete-orphan",
+    passive_deletes=True
+    )
     proveedor = relationship("Proveedores", back_populates="compras")
     metodos_de_pago = relationship("Metodos_pagos", back_populates="compras")
     empleado = relationship("Empleados", back_populates="compras")
@@ -420,7 +426,7 @@ class Detalles_compras(Base):
     id = Column(
         Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
     )
-    compra_id = Column(Integer, ForeignKey("Compras.id"), nullable=False)
+    compra_id = Column(Integer, ForeignKey("Compras.id", ondelete='CASCADE'), nullable=False)
     producto_id = Column(Text, ForeignKey("Productos.codigo_upc"), nullable=False)
     cantidad = Column(Float)
     precio_unitario = Column(Float)

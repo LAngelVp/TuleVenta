@@ -1,35 +1,35 @@
 <RCC>
-  <qresource prefix="iconosBlancos">
-    <file>Icons/iconos/Blanco/searchdb_blanco.svg</file>
-    <file>Icons/iconos/Blanco/nextPageFilter_blanco.svg</file>
-    <file>Icons/iconos/Blanco/ojo_blanco.svg</file>
-    <file>Icons/IconosSVG/base_datos_refresh.png</file>
-    <file>Icons/iconos/Blanco/datos_usuario.svg</file>
-    <file>Icons/iconos/Blanco/cerrar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/password_blanco.svg</file>
-    <file>Icons/iconos/Blanco/vincular.svg</file>
-    <file>Icons/iconos/Blanco/minimizar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/mover.svg</file>
-    <file>Icons/iconos/Blanco/actualizar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/agregar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/agregar_documento_blanco.svg</file>
-    <file>Icons/iconos/Blanco/mover.svg</file>
-    <file>Icons/iconos/Blanco/agregar_persona_blanco.svg</file>
-    <file>Icons/iconos/Blanco/buscar_filas_blanco.svg</file>
-    <file>Icons/iconos/Blanco/buscar_persona_blanco.svg</file>
-    <file>Icons/iconos/Blanco/dinero_blanco.svg</file>
-    <file>Icons/iconos/Blanco/editar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/eliminar_blanco.svg</file>
-    <file>Icons/iconos/Blanco/eliminar_persona_blanco.svg</file>
-    <file>Icons/iconos/Blanco/flecha_derecha_blanco.svg</file>
-    <file>Icons/iconos/Blanco/flecha_izquierda_blanco.svg</file>
-    <file>Icons/iconos/Blanco/grupo_persona_blanco.svg</file>
-    <file>Icons/iconos/Blanco/guardar_blanco.svg</file>
-  </qresource>
-  <qresource prefix="iconosAzules">
-    <file>Icons/iconos/Azul/spiner_cargando.svg</file>
-    <file>Icons/iconos/Azul/inicio_sesion_azul.svg</file>
-    <file>Icons/iconos/Azul/buscar_filas_azul.svg</file>
-    <file>Icons/iconos/Azul/buscar_persona_azul.svg</file>
-  </qresource>
+    <qresource prefix="iconosBlancos">
+        <file>Icons/iconos/Blanco/searchdb_blanco.svg</file>
+        <file>Icons/iconos/Blanco/nextPageFilter_blanco.svg</file>
+        <file>Icons/iconos/Blanco/ojo_blanco.svg</file>
+        <file>Icons/IconosSVG/base_datos_refresh.png</file>
+        <file>Icons/iconos/Blanco/datos_usuario.svg</file>
+        <file>Icons/iconos/Blanco/cerrar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/password_blanco.svg</file>
+        <file>Icons/iconos/Blanco/vincular.svg</file>
+        <file>Icons/iconos/Blanco/minimizar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/mover.svg</file>
+        <file>Icons/iconos/Blanco/actualizar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/agregar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/agregar_documento_blanco.svg</file>
+        <file>Icons/iconos/Blanco/agregar_persona_blanco.svg</file>
+        <file>Icons/iconos/Blanco/buscar_filas_blanco.svg</file>
+        <file>Icons/iconos/Blanco/buscar_persona_blanco.svg</file>
+        <file>Icons/iconos/Blanco/dinero_blanco.svg</file>
+        <file>Icons/iconos/Blanco/editar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/eliminar_blanco.svg</file>
+        <file>Icons/iconos/Blanco/eliminar_persona_blanco.svg</file>
+        <file>Icons/iconos/Blanco/flecha_derecha_blanco.svg</file>
+        <file>Icons/iconos/Blanco/flecha_izquierda_blanco.svg</file>
+        <file>Icons/iconos/Blanco/edit_blanco.svg</file>
+        <file>Icons/iconos/Blanco/grupo_persona_blanco.svg</file>
+        <file>Icons/iconos/Blanco/guardar_blanco.svg</file>
+    </qresource>
+    <qresource prefix="iconosAzules">
+        <file>Icons/iconos/Azul/spiner_cargando.svg</file>
+        <file>Icons/iconos/Azul/inicio_sesion_azul.svg</file>
+        <file>Icons/iconos/Azul/buscar_filas_azul.svg</file>
+        <file>Icons/iconos/Azul/buscar_persona_azul.svg</file>
+    </qresource>
 </RCC>

@@ -143,19 +143,28 @@ font-family: Arial;
 font-size: 16px;
 font-weight: bold;
 height: 25px;
-margin-left: 5px;
-margin-right: 5px;
+padding-left:3px;
+padding-right:3px;
 text-align: center;
 text-transform: uppercase;
 }
 #btn_btn_eliminar:hover{
 background-color: #EE1D52;
 }
+#btn_btn_eliminar:pressed{
+background-color: #B13636;
+}
 #btn_btn_agregar:hover{
 background-color: #68a67d;
 }
+#btn_btn_agregar:pressed{
+background-color: #578B69;
+}
 *[objectName*=&quot;btn_btn&quot;]:hover{
 background-color: #2196F3;
+}
+*[objectName*=&quot;btn_btn&quot;]:pressed{
+background-color: #1B80D0;
 }
 #btn_RefrescarTabla{
 border-radius: 2px;
@@ -168,6 +177,30 @@ background: rgb(179, 179, 179);
 #btn_RefrescarTabla:pressed{
 background: #b6ccd8 ;
 }
+#btn_paginarTabla{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+}
+#btn_paginarTabla:hover{
+background: rgb(179, 179, 179);
+}
+#btn_paginarTabla:pressed{
+background: #b6ccd8 ;
+}
+#btn_btn_generarOrdenCompra{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+color: #1d1c1c;
+}
+#btn_btn_generarOrdenCompra:hover{
+background: rgb(179, 179, 179);
+}
+#btn_btn_generarOrdenCompra:pressed{
+background: #b6ccd8 ;
+}
+
 /*-----------TABLA--------------*/
 
 
@@ -289,7 +322,7 @@ QCalendarWidget QAbstractItemView::item:hover {
     padding: 2px ;
     background-color: #F5F5F5 ;
     font-size: 14px ;
-    min-width: 200px ;
+    min-width: 250px ;
     font-family: &quot;Arial&quot; ;
     color: #1d1c1c ;
 	selection-background-color: #4791F5; 
@@ -477,7 +510,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                  <number>5</number>
                 </property>
                 <item row="3" column="3">
-                 <widget class="QLineEdit" name="txt_proveedor">
+                 <widget class="QLineEdit" name="txt_quienRealizoCompraRealizada">
                   <property name="placeholderText">
                    <string>Quien realizo la compra</string>
                   </property>
@@ -518,14 +551,14 @@ QCalendarWidget QAbstractItemView::item:hover {
                  </widget>
                 </item>
                 <item row="3" column="0" colspan="3">
-                 <widget class="QLineEdit" name="txt_idcompra">
+                 <widget class="QLineEdit" name="txt_idCompraRealizada">
                   <property name="placeholderText">
-                   <string>folio de la compra</string>
+                   <string>Id de la orden de compra</string>
                   </property>
                  </widget>
                 </item>
                 <item row="6" column="0" colspan="2">
-                 <widget class="QDateEdit" name="fecha_fechacompra">
+                 <widget class="QDateEdit" name="fecha_fechaCompraRealizada">
                   <property name="alignment">
                    <set>Qt::AlignmentFlag::AlignCenter</set>
                   </property>
@@ -535,7 +568,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                  </widget>
                 </item>
                 <item row="6" column="2">
-                 <widget class="QDateEdit" name="fecha_levantamientocompra">
+                 <widget class="QDateEdit" name="fecha_fechaCreacionOCRealizada">
                   <property name="alignment">
                    <set>Qt::AlignmentFlag::AlignCenter</set>
                   </property>
@@ -552,19 +585,22 @@ QCalendarWidget QAbstractItemView::item:hover {
                  </widget>
                 </item>
                 <item row="6" column="3">
-                 <widget class="QComboBox" name="cajaOpciones_proveedor">
+                 <widget class="QComboBox" name="cajaOpciones_proveedorOCRealizada">
                   <property name="sizeAdjustPolicy">
                    <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
                   </property>
                  </widget>
                 </item>
                 <item row="3" column="10">
-                 <widget class="QToolButton" name="btn_btn_buscar">
+                 <widget class="QToolButton" name="btn_btn_buscar_OCrealizadas">
                   <property name="cursor">
                    <cursorShape>PointingHandCursor</cursorShape>
                   </property>
+                  <property name="toolTip">
+                   <string>Buscar ordenes realizadas</string>
+                  </property>
                   <property name="text">
-                   <string>Buscar</string>
+                   <string/>
                   </property>
                   <property name="icon">
                    <iconset resource="../../Source/iconosSVG.qrc">
@@ -577,7 +613,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                    </size>
                   </property>
                   <property name="toolButtonStyle">
-                   <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
+                   <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
                   </property>
                  </widget>
                 </item>
@@ -586,6 +622,9 @@ QCalendarWidget QAbstractItemView::item:hover {
              </item>
              <item row="1" column="0">
               <widget class="QTableView" name="tabla_comprasrealizadas">
+               <property name="editTriggers">
+                <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+               </property>
                <property name="alternatingRowColors">
                 <bool>true</bool>
                </property>
@@ -595,6 +634,18 @@ QCalendarWidget QAbstractItemView::item:hover {
                <property name="selectionBehavior">
                 <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
                </property>
+               <property name="gridStyle">
+                <enum>Qt::PenStyle::DashDotLine</enum>
+               </property>
+               <attribute name="horizontalHeaderMinimumSectionSize">
+                <number>150</number>
+               </attribute>
+               <attribute name="horizontalHeaderDefaultSectionSize">
+                <number>150</number>
+               </attribute>
+               <attribute name="horizontalHeaderStretchLastSection">
+                <bool>true</bool>
+               </attribute>
               </widget>
              </item>
             </layout>
@@ -672,21 +723,21 @@ QCalendarWidget QAbstractItemView::item:hover {
                  <number>5</number>
                 </property>
                 <item row="3" column="0" colspan="2">
-                 <widget class="QLineEdit" name="txt_idcompra_2">
+                 <widget class="QLineEdit" name="txt_idCompraPendiente">
                   <property name="placeholderText">
-                   <string>folio de la compra</string>
+                   <string>Id de la orden de compra</string>
                   </property>
                  </widget>
                 </item>
                 <item row="3" column="2">
-                 <widget class="QLineEdit" name="txt_proveedor_2">
+                 <widget class="QLineEdit" name="txt_quienRealizoOCpendiente">
                   <property name="placeholderText">
                    <string>Quien realizo la compra</string>
                   </property>
                  </widget>
                 </item>
                 <item row="5" column="0">
-                 <widget class="QDateEdit" name="fecha_fechacompra_2">
+                 <widget class="QDateEdit" name="fecha_fechaCreacionOCPendiente">
                   <property name="alignment">
                    <set>Qt::AlignmentFlag::AlignCenter</set>
                   </property>
@@ -696,7 +747,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                  </widget>
                 </item>
                 <item row="5" column="2">
-                 <widget class="QComboBox" name="cajaOpciones_proveedor_2">
+                 <widget class="QComboBox" name="cajaOpciones_proveedorPendiente">
                   <property name="sizeAdjustPolicy">
                    <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
                   </property>
@@ -722,13 +773,16 @@ QCalendarWidget QAbstractItemView::item:hover {
                   </property>
                  </spacer>
                 </item>
-                <item row="3" column="9">
-                 <widget class="QToolButton" name="btn_btn_buscar_2">
+                <item row="3" column="9" alignment="Qt::AlignmentFlag::AlignRight">
+                 <widget class="QToolButton" name="btn_btn_buscar_OCpendientes">
                   <property name="cursor">
                    <cursorShape>PointingHandCursor</cursorShape>
                   </property>
+                  <property name="toolTip">
+                   <string>Buscar ordenes pendientes</string>
+                  </property>
                   <property name="text">
-                   <string>Buscar</string>
+                   <string/>
                   </property>
                   <property name="icon">
                    <iconset resource="../../Source/iconosSVG.qrc">
@@ -741,7 +795,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                    </size>
                   </property>
                   <property name="toolButtonStyle">
-                   <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
+                   <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
                   </property>
                  </widget>
                 </item>
@@ -759,11 +813,28 @@ QCalendarWidget QAbstractItemView::item:hover {
                   </property>
                  </widget>
                 </item>
+                <item row="5" column="9">
+                 <widget class="QPushButton" name="btn_btn_generarOrdenCompra">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="text">
+                   <string>Generar</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../../Source/ibootstrap.qrc">
+                    <normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</iconset>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
              <item row="1" column="0">
               <widget class="QTableView" name="tabla_compraspendientes">
+               <property name="editTriggers">
+                <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+               </property>
                <property name="alternatingRowColors">
                 <bool>true</bool>
                </property>
@@ -773,6 +844,18 @@ QCalendarWidget QAbstractItemView::item:hover {
                <property name="selectionBehavior">
                 <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
                </property>
+               <property name="gridStyle">
+                <enum>Qt::PenStyle::DashDotLine</enum>
+               </property>
+               <attribute name="horizontalHeaderMinimumSectionSize">
+                <number>150</number>
+               </attribute>
+               <attribute name="horizontalHeaderDefaultSectionSize">
+                <number>150</number>
+               </attribute>
+               <attribute name="horizontalHeaderStretchLastSection">
+                <bool>true</bool>
+               </attribute>
               </widget>
              </item>
             </layout>
@@ -828,7 +911,7 @@ QCalendarWidget QAbstractItemView::item:hover {
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <property name="spacing">
-             <number>0</number>
+             <number>10</number>
             </property>
             <property name="leftMargin">
              <number>0</number>
@@ -842,7 +925,7 @@ QCalendarWidget QAbstractItemView::item:hover {
             <property name="bottomMargin">
              <number>5</number>
             </property>
-            <item>
+            <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
              <widget class="QToolButton" name="btn_btn_agregar">
               <property name="cursor">
                <cursorShape>PointingHandCursor</cursorShape>
@@ -889,6 +972,26 @@ QCalendarWidget QAbstractItemView::item:hover {
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="btn_btn_editaOrdeCompra">
+              <property name="text">
+               <string>EDITAR</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconosSVG.qrc">
+                <normaloff>:/iconosBlancos/Icons/iconos/Blanco/edit_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/edit_blanco.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
              <spacer name="horizontalSpacer">
               <property name="orientation">
                <enum>Qt::Orientation::Horizontal</enum>
@@ -900,6 +1003,30 @@ QCalendarWidget QAbstractItemView::item:hover {
                </size>
               </property>
              </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_paginarTabla">
+              <property name="font">
+               <font>
+                <family>Arial</family>
+                <pointsize>-1</pointsize>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>Paginar Tabla</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/ibootstrap.qrc">
+                <normaloff>:/Icons/Bootstrap/box-arrow-down.svg</normaloff>:/Icons/Bootstrap/box-arrow-down.svg</iconset>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="btn_RefrescarTabla">
