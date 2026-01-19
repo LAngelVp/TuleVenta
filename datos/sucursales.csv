@@ -1,0 +1,31 @@
+id,nombre_sucursal,codigo_postal,ciudad,estado,pais,num_telefono,razon_social,rfc,direccion,
+2,Sucursal Centro,1000,Cuauhtémoc,Ciudad de México,México,5512345678,Surtidora Comercial del Centro S.A. de C.V.,SUC010101AAA,Av. Juárez 123, Col. Centro
+3,Sucursal Polanco,11560,Miguel Hidalgo,Ciudad de México,México,5551234567,Distribuidora Polanco S.A.,DIP020202BBB,Masaryk 456, Col. Polanco
+4,Sucursal Santa Fe,5348,Cuajimalpa,Ciudad de México,México,5567890123,Comercializadora Santa Fe S.A.,COS030303CCC,Av. Vasco de Quiroga 789, Col. Santa Fe
+5,Sucursal Guadalajara Centro,44100,Guadalajara,Jalisco,México,3312345678,Almacenes GDL Centro S.A.,AGC040404DDD,Av. Juárez 101, Centro Histórico
+6,Sucursal Zapopan,45010,Zapopan,Jalisco,México,3339876543,Distribuidora Zapopan S.A. de C.V.,DIZ050505EEE,Av. Ávila Camacho 202, Plaza Andares
+7,Sucursal Monterrey Centro,64000,Monterrey,Nuevo León,México,8112345678,Comercial Monterrey Norte S.A.,CMN060606FFF,Av. Constitución 303, Centro
+8,Sucursal San Pedro,66215,San Pedro Garza García,Nuevo León,México,8187654321,Empresas San Pedro S.A.,ESP070707GGG,Av. Vasconcelos 404, Valle Oriente
+9,Sucursal Puebla Centro,72000,Puebla,Puebla,México,2221234567,Distribuidora Puebla S.A.,DIP080808HHH,Av. Reforma 505, Centro Histórico
+10,Sucursal Angelópolis,72160,Puebla,Puebla,México,2227654321,Comercial Angelópolis S.A. de C.V.,COA090909III,Boulevard Atlixco 606, Residencial
+11,Sucursal León Centro,37000,León,Guanajuato,México,4771234567,Zapatería León Centro S.A.,ZLC101010JJJ,Blvd. Adolfo López Mateos 707, Centro
+12,Sucursal Plaza Mayor,37260,León,Guanajuato,México,4779876543,Comercial Plaza Mayor S.A.,CPM111111KKK,Blvd. Aeropuerto 808, San Juan Bosco
+13,Sucursal Querétaro Centro,76000,Querétaro,Querétaro,México,4421234567,Distribuidora Querétaro S.A.,DIQ121212LLL,Av. Corregidora 909, Centro
+14,Sucursal Juriquilla,76230,Querétaro,Querétaro,México,4428765432,Comercial Juriquilla S.A. de C.V.,COJ131313MMM,Boulevard Bernardo Quintana 1010, Juriquilla
+15,Sucursal Mérida Centro,97000,Mérida,Yucatán,México,9991234567,Comercial del Sureste S.A.,CDS141414NNN,Calle 60 x 59, Centro Histórico
+16,Sucursal Altabrisa,97130,Mérida,Yucatán,México,9996543210,Distribuidora Altabrisa S.A.,DIA151515OOO,Calle 26 x 7, Altabrisa
+17,Sucursal Cancún Centro,77500,Cancún,Quintana Roo,México,9981234567,Comercial Caribe S.A.,COC161616PPP,Av. Tulum 111, Centro
+18,Sucursal Plaza Las Américas,77500,Cancún,Quintana Roo,México,9987654321,Distribuidora Las Américas S.A.,DLA171717QQQ,Av. Bonampak 222, SM 4
+19,Sucursal Tijuana Centro,22000,Tijuana,Baja California,México,6641234567,Fronteriza Comercial S.A.,FRC181818RRR,Av. Revolución 333, Zona Centro
+20,Sucursal Zona Río,22320,Tijuana,Baja California,México,6649876543,Comercial Zona Río S.A. de C.V.,CZR191919SSS,Paseo de los Héroes 444, Zona Río
+21,Sucursal Chihuahua Centro,31000,Chihuahua,Chihuahua,México,6141234567,Norteña Distribuidora S.A.,NDS202020TTT,Av. Independencia 555, Centro
+22,Sucursal Periférico,31210,Chihuahua,Chihuahua,México,6148765432,Comercial Periférico S.A.,COP212121UUU,Periférico de la Juventud 666, Nombre de Dios
+23,Sucursal Veracruz Centro,91700,Veracruz,Veracruz,México,2291234567,Portuaria Comercial S.A.,POC222222VVV,Av. Independencia 777, Centro
+24,Sucursal Boca del Río,94290,Veracruz,Veracruz,México,2297654321,Distribuidora Boca del Río S.A.,DBR232323WWW,Blvd. Adolfo Ruiz Cortines 888, Costa Verde
+25,Sucursal Morelia Centro,58000,Morelia,Michoacán,México,4431234567,Comercial Michoacán S.A.,CMI242424XXX,Av. Madero 999, Centro Histórico
+26,Sucursal Acapulco Diamante,39850,Acapulco,Guerrero,México,7441234567,Costera Comercial S.A.,COC252525YYY,Av. Heroico Colegio Militar 101, Fracc. Club Deportivo
+27,Sucursal Hermosillo Centro,83000,Hermosillo,Sonora,México,6621234567,Sonorense Distribuidora S.A.,SDS262626ZZZ,Av. Serdán 102, Centro
+28,Sucursal San Luis Potosí Centro,78000,San Luis Potosí,San Luis Potosí,México,4441234567,Comercial Potosina S.A.,COP272727AAB,Av. Venustiano Carranza 103, Centro
+29,Sucursal Aguascalientes Centro,20000,Aguascalientes,Aguascalientes,México,4491234567,Hidrocálida Comercial S.A.,HCS282828BBC,Av. Madero 104, Centro
+30,Sucursal Saltillo Centro,25000,Saltillo,Coahuila,México,8441234567,Comercial Saltillo S.A.,COS292929CCD,Blvd. Francisco Coss 105, Centro
+31,Sucursal Toluca Centro,50000,Toluca,Estado de México,México,7221234567,Comercial del Valle S.A.,CDV303030DDE,Av. Hidalgo 106, Centro Histórico
