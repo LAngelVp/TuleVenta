@@ -856,7 +856,7 @@ p, li { white-space: pre-wrap; }
         Mensaje().mensaje_alerta(f"{error}")
         
     def mostrar_estado_usuario(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         if objetoMensaje["exito"]:
             self.cerrar()
             self.registro_agregado_signal.emit()
@@ -1036,7 +1036,7 @@ p, li { white-space: pre-wrap; }
                     }
         if estado:
             session.commit()
-            mensaje = f"Registro exitoso, {datos["nombre"]} fue actualizado"
+            mensaje = f"Registro exitoso, {datos['nombre']} fue actualizado"
             return {
                     "exito": True,
                     "mensaje": mensaje

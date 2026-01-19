@@ -244,10 +244,10 @@ class Productos_de_proveedorController(QWidget):
     
     def productos_proveedores_tabla(self, resultado):
         if not resultado["exito"]:
-            Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado["mensaje"]}")
+            Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado['mensaje']}")
             return
-        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=True)
-        print(f"Tabla actualizada: {len(resultado["data"])} productos")
+        self.modelo_productos_del_proveedor_vproveedor.update_data(resultado['data'], reset=True)
+        print(f"Tabla actualizada: {len(resultado['data'])} productos")
         
     def paginar_productos_del_proveedor(self):
         self._is_refreshing_productos_proveedor = False

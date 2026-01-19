@@ -30,9 +30,9 @@ class AreaNegocioClientesController(QWidget):
                     descripcion = self.ui.txtlargo_descripcion.toPlainText().upper().strip()
                 )
                 session.commit()
-                Mensaje().mensaje_alerta(f'Area de negocio agregada con exito. {area}')
+                Mensaje().mensaje_alerta(f"Area de negocio agregada con exito. {area}")
                 self.signal_area.emit()
         except Exception as e:
-            print(f'Error al agregar el area de negocio. {e}')
+            print(f"Error al agregar el area de negocio. {e}")
         self.close()
                         

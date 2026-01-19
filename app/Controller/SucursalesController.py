@@ -178,18 +178,18 @@ class SucursalesController(QDialog):
                     session.rollback()
                     return {
                         'exito': estado,
-                        'mensaje': f'El registro {datos['nombre_sucursal']} no se almaceno por que ya se encuentra en el sistema'
+                        'mensaje': f"El registro {datos['nombre_sucursal']} no se almaceno por que ya se encuentra en el sistema"
                     }
         except Exception as e:
             session.rollback()
             return {
                         'exito': False,
-                        'mensaje': f'Error al realizar la operacion de agregar sucursal'
+                        'mensaje': f"Error al realizar la operacion de agregar sucursal"
                     }
         session.commit()
         return {
                     'exito': estado,
-                    'mensaje': f'Registro exitoso, {datos['nombre_sucursal']} fue almacenado'
+                    'mensaje': f"Registro exitoso, {datos['nombre_sucursal']} fue almacenado"
                 }
                         
     def obtener_sucursales(self):
@@ -269,7 +269,7 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal")
             return
         try:
-            respuesta = Mensaje().mensaje_pregunta(f'Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}')
+            respuesta = Mensaje().mensaje_pregunta(f"Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}")
             if respuesta == QMessageBox.Yes:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
@@ -291,7 +291,7 @@ class SucursalesController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_eliminar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
         
     def mensaje_estado_eliminado(self, estado):
         if estado:
@@ -314,7 +314,7 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_informativo("Error: Todos los campos deben estar completos")
             return
         if self.idSucursal:
-            respuesta = Mensaje().mensaje_pregunta('Estas seguro de actualizar')
+            respuesta = Mensaje().mensaje_pregunta("Estas seguro de actualizar")
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
@@ -338,7 +338,7 @@ class SucursalesController(QDialog):
                 except Exception as e:
                     if hasattr(self, 'id_hilo_actualizar_sucursal'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_sucursal)
-                    Mensaje().mensaje_critico(f'Error al actualizar: {e}')
+                    Mensaje().mensaje_critico(f"Error al actualizar: {e}")
         
     def actualizar_sucursal_query(self, session, sucursal, datos):
         sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
@@ -355,11 +355,11 @@ class SucursalesController(QDialog):
             }
         
     def mostrar_resultado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f'{objetoMensaje['mensaje']}')
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.signal_sucursal_agregada.emit()
         
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
+        Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
     
     def keyPressEvent(self, event):
         """Sobrescribir el evento de teclado para ignorar Escape y Enter"""

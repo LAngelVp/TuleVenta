@@ -120,12 +120,12 @@ class PresentacionProductos(QWidget):
         self.eliminacion_producto_completada.emit(objetoMensaje)
         
     def resultado_del_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.presentacion_producto_agregada_signal.emit()
         self.close()
     
     def mostrar_estado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        Mensaje().mensaje_informativo(objetoMensaje['mensaje'])
         self.presentacion_producto_agregada_signal.emit()
         
     def mostrar_error_hilo(self, error):

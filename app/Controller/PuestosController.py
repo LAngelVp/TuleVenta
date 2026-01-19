@@ -358,7 +358,7 @@ class PuestosController(QDialog):
                 session.rollback()
                 return {
                     'exito': estado,
-                    "mensaje": f"No se logro hacer la actualizacion de {datos["nombre"]}"
+                    "mensaje": f"No se logro hacer la actualizacion de {datos['nombre']}"
                 }
         except Exception as e:
             session.rollback()
@@ -586,15 +586,15 @@ class PuestosController(QDialog):
         return None, True
     
     def mostrar_resultado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f'{objetoMensaje["mensaje"]}')
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.puesto_actual = None
         self.signal_puesto_agregado.emit()
         
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
+        Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
     
     def mensaje_estado_eliminado(self, objectoMensaje):
-        Mensaje().mensaje_informativo(f'{objectoMensaje["mensaje"]}')
+        Mensaje().mensaje_informativo(f"{objectoMensaje['mensaje']}")
         self.puesto_actual = None
     
     def keyPressEvent(self, event):

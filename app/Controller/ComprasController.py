@@ -83,7 +83,7 @@ class Compras(QWidget):
         except Exception as e:
             if hasattr(self, 'id_obtener_compras_pendientes'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_compras_pendientes)
-            Mensaje().mensaje_alerta(f'Ocurrio un error al consultar productos del proveedor: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def obtener_compras_pendientes_query(self, session, state = None):
         print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_compras_pendientes}, limit={self.cantidad_final_consulta_compras_pendientes}")
@@ -119,12 +119,12 @@ class Compras(QWidget):
     def compras_pendientes_tabla_compras(self, result):
         try:
             if not result["exito"]:
-                Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {result["mensaje"]}")
+                Mensaje().mensaje_informativo(f"No hay compras pendientes")
                 return
             self.modeloTablaOrdenesDeCompraPendientes.update_data(result["data"], reset=True)
-            print(f"Tabla actualizada: {len(result["data"]) if result["data"] else 0} productos")
+            print(f"Tabla actualizada: {len(result['data']) if result['data'] else 0} compras")
         except Exception as e:
-            Mensaje().mensaje_alerta(f'Ocurrio un error al consultar compras pendientes: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras pendientes: {e}")
     
     def __configuracionTablaOrdenesDeCompra(self):
         cabeceras = [
@@ -230,7 +230,7 @@ class Compras(QWidget):
         except Exception as e:
             if hasattr(self, 'id_eliminar_orden_compra'):
                 WorkerDB.cleanup_managed_worker(self.id_eliminar_orden_compra)
-            Mensaje().mensaje_alerta(f'Ocurrio un error al eliminar orden de compra: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error al eliminar orden de compra: {e}")
 
     def eliminar_orden_compra_query(self, session, order):
         try:
@@ -890,7 +890,7 @@ class SeleccionProductosProveedor(QDialog):
         except Exception as e:
             if hasattr(self, 'id_obtener_productos_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_compras)
-            Mensaje().mensaje_alerta(f'Ocurrio un error al consultar productos del proveedor: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def obtener_productos_proveedor_compras_query(self, session):
         print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_productos_proveedor_compras}, limit={self.cantidad_final_consulta_productos_proveedor_compras}")
@@ -925,10 +925,10 @@ class SeleccionProductosProveedor(QDialog):
 
     def productos_proveedores_tabla_compras(self, resultado):
         if not resultado["exito"]:
-            Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado["mensaje"]}")
+            Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
             return
         self.modeloTablaProductosDelProveedor.update_data(resultado["data"], reset=True)
-        print(f"Tabla actualizada: {len(resultado["data"])} productos")
+        print(f"Tabla actualizada: {len(resultado['data'])} productos")
         
     def paginarProductosProveedor(self):
         print("Paginar productos proveedor")
@@ -965,7 +965,7 @@ class SeleccionProductosProveedor(QDialog):
         except Exception as e:
             if hasattr(self, 'id_obtener_productos_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_compras)
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def agregar_productos_proveedor_tabla(self, resultado):
         if not resultado["exito"]:

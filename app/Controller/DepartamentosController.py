@@ -226,7 +226,7 @@ class DepartamentosController(QDialog):
             except Exception as e:
                 if hasattr(self, 'id_hilo_eliminar_departamento'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_departamento)
-                Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
             
     def eliminar_departamento_query(self, session, departamento):
         estado = DepartamentosModel(session).eliminar_departamento(departamento.id)

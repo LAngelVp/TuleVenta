@@ -175,7 +175,7 @@ class EmpleadosController(QWidget):
                 }
     
     def mensaje_estado_eliminado(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.empleado_actual = None
 
     def editar_empleado_seleccionado(self):

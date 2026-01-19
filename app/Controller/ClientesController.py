@@ -777,7 +777,7 @@ class Clientes(QWidget):
             # Llamar a la función de llenado de tabla
             self.llenar_tabla_clientes_fisicos(resultado)
         else:
-            Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
+            Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_fisicos()
 
     def llenar_tabla_clientes_fisicos(self, resultado):
@@ -924,7 +924,7 @@ class Clientes(QWidget):
             # Llamar a la función de llenado de tabla
             self.llenar_tabla_clientes_morales(resultado)
         else:
-            Mensaje().mensaje_alerta(resultado.get("mensaje", f"Error al obtener clientes {tipo_cliente.lower()}"))
+            Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_morales()
 
     def llenar_tabla_clientes_morales(self, resultado):
@@ -1187,7 +1187,7 @@ class Clientes(QWidget):
         ]
         for campo in campos_requeridos:
             if not datos[campo]:
-                Mensaje().mensaje_informativo(f'Existe un campo llamado "{campo}" que no haz completado')
+                Mensaje().mensaje_informativo(f"Existe un campo llamado \"{campo}\" que no haz completado")
                 return False
         return True
 
@@ -1235,7 +1235,7 @@ class Clientes(QWidget):
 
         for campo in campos_cliente_moral:
             if not datos[campo]:
-                Mensaje().mensaje_informativo(f'Existe un campo llamado "{campo}" que no esta completo.')
+                Mensaje().mensaje_informativo(f"Existe un campo llamado \"{campo}\" que no esta completo.")
                 return False
         return True
     
@@ -1764,7 +1764,7 @@ class Clientes(QWidget):
                             self.ui.cajaOpciones_categoriaMoral.addItem(c.nombre, c)
                         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaMoral)
         except Exception as e:
-            Mensaje().mensaje_critico(f'No se logro listar las categorias por lo siguiente: {e}')
+            Mensaje().mensaje_critico(f"No se logro listar las categorias por lo siguiente: {e}")
             try:
                 WorkerDB.cleanup_owner_workers("obtener_categorias_thread")
                 self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id="obtener_categorias_thread")
@@ -1781,7 +1781,7 @@ class Clientes(QWidget):
                     funcion=self.obtener_categorias_clientes
                 )
             except Exception as e:
-                Mensaje().mensaje_critico(f'No se logro listar las areas por lo siguiente: {e}')
+                Mensaje().mensaje_critico(f"No se logro listar las areas por lo siguiente: {e}")
                 
     def obtener_categorias_clientes(self, session, tipo_categoria):
         try:

@@ -127,10 +127,10 @@ class CategoriasController(QWidget):
         self.eliminacion_completada.emit(objetoMensaje)
         
     def resultado_del_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.categoria_agregada_signal.emit()
         self.close()
     
     def mostrar_error_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje["mensaje"]}")
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         
