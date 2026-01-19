@@ -1,8 +1,8 @@
-"""Creacion de tablas
+"""Actualizacion en la base de datos
 
-Revision ID: 679e14527088
+Revision ID: a3271d777753
 Revises: 
-Create Date: 2026-01-18 19:08:22.020715
+Create Date: 2026-01-19 12:52:29.832631
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '679e14527088'
+revision: str = 'a3271d777753'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -225,7 +225,7 @@ def upgrade() -> None:
     sa.Column('hora_entrada', sa.Time(), nullable=True),
     sa.Column('hora_salida', sa.Time(), nullable=True),
     sa.Column('departamento_id', sa.BigInteger(), nullable=True),
-    sa.ForeignKeyConstraint(['departamento_id'], ['Departamentos.id'], ),
+    sa.ForeignKeyConstraint(['departamento_id'], ['Departamentos.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Usuarios',
@@ -235,7 +235,7 @@ def upgrade() -> None:
     sa.Column('fecha_creacion', sa.Date(), nullable=False),
     sa.Column('fecha_actualizacion', sa.Date(), nullable=True),
     sa.Column('rol_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['rol_id'], ['Roles.id'], ),
+    sa.ForeignKeyConstraint(['rol_id'], ['Roles.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('usuario')
     )
@@ -316,9 +316,9 @@ def upgrade() -> None:
     sa.Column('usuario_id', sa.Integer(), nullable=True),
     sa.Column('departamento_id', sa.BigInteger(), nullable=True),
     sa.Column('sucursal_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['departamento_id'], ['Departamentos.id'], ),
-    sa.ForeignKeyConstraint(['puesto_id'], ['Puestos.id'], ),
-    sa.ForeignKeyConstraint(['sucursal_id'], ['Sucursales.id'], ),
+    sa.ForeignKeyConstraint(['departamento_id'], ['Departamentos.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['puesto_id'], ['Puestos.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['sucursal_id'], ['Sucursales.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['usuario_id'], ['Usuarios.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('correo_electronico'),
@@ -342,11 +342,11 @@ def upgrade() -> None:
     sa.UniqueConstraint('id')
     )
     op.create_table('producto_proveedor',
-    sa.Column('producto_id', sa.Integer(), nullable=False),
-    sa.Column('proveedor_id', sa.Integer(), nullable=False),
+    sa.Column('producto_id', sa.Integer(), nullable=True),
+    sa.Column('proveedor_id', sa.Integer(), nullable=True),
     sa.Column('precio_venta', sa.Float(), nullable=True),
-    sa.ForeignKeyConstraint(['producto_id'], ['Productos.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['proveedor_id'], ['Proveedores.id'], ),
+    sa.ForeignKeyConstraint(['producto_id'], ['Productos.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['proveedor_id'], ['Proveedores.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('producto_id', 'proveedor_id')
     )
     op.create_table('proveedor_categoria',
@@ -397,17 +397,29 @@ def upgrade() -> None:
     )
     op.create_table('Ventas',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
+    sa.Column('folio', sa.String(length=100), nullable=False),
     sa.Column('fecha', sa.DateTime(), nullable=True),
+    sa.Column('fecha_creacion', sa.DateTime(), nullable=True),
+    sa.Column('fecha_actualizacion', sa.DateTime(), nullable=True),
+    sa.Column('subtotal', sa.Float(), nullable=False),
+    sa.Column('iva', sa.Float(), nullable=False),
     sa.Column('total', sa.Float(), nullable=True),
-    sa.Column('estado', sa.String(length=100), nullable=True),
+    sa.Column('estado', sa.String(length=100), nullable=False),
     sa.Column('comentarios', sa.Text(), nullable=True),
+    sa.Column('activo', sa.Boolean(), nullable=False),
+    sa.Column('motivo_cancelacion', sa.String(length=200), nullable=True),
+    sa.Column('cancelada_por_usuario_id', sa.Integer(), nullable=True),
+    sa.Column('fecha_cancelacion', sa.DateTime(), nullable=True),
+    sa.Column('forma_pago', sa.String(length=50), nullable=True),
     sa.Column('cliente_id', sa.Integer(), nullable=False),
     sa.Column('empleado_id', sa.Integer(), nullable=False),
     sa.Column('metodos_pagos_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['cliente_id'], ['Clientes.id'], ),
-    sa.ForeignKeyConstraint(['empleado_id'], ['Empleados.id'], ),
-    sa.ForeignKeyConstraint(['metodos_pagos_id'], ['Metodos_pagos.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['cancelada_por_usuario_id'], ['Usuarios.id'], ),
+    sa.ForeignKeyConstraint(['cliente_id'], ['Clientes.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['empleado_id'], ['Empleados.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['metodos_pagos_id'], ['Metodos_pagos.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('folio')
     )
     op.create_table('Detalles_compras',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -416,7 +428,7 @@ def upgrade() -> None:
     sa.Column('cantidad', sa.Float(), nullable=True),
     sa.Column('precio_unitario', sa.Float(), nullable=True),
     sa.Column('subtotal', sa.Float(), nullable=True),
-    sa.ForeignKeyConstraint(['compra_id'], ['Compras.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['compra_id'], ['Compras.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['producto_id'], ['Productos.codigo_upc'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
@@ -428,8 +440,14 @@ def upgrade() -> None:
     sa.Column('cantidad', sa.Float(), nullable=False),
     sa.Column('precio_unitario', sa.Float(), nullable=False),
     sa.Column('subtotal', sa.Float(), nullable=False),
-    sa.ForeignKeyConstraint(['producto_id'], ['Productos.id'], ),
-    sa.ForeignKeyConstraint(['venta_id'], ['Ventas.id'], ),
+    sa.Column('descuento', sa.Float(), nullable=True),
+    sa.Column('iva', sa.Float(), nullable=False),
+    sa.Column('total_con_iva', sa.Float(), nullable=False),
+    sa.Column('nombre_producto', sa.String(length=200), nullable=False),
+    sa.Column('clave_producto', sa.String(length=200), nullable=False),
+    sa.Column('activo', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['producto_id'], ['Productos.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['venta_id'], ['Ventas.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )

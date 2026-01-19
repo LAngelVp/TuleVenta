@@ -81,10 +81,27 @@ class Ui_Principal_sistema(object):
 "border: none;\n"
 "max-height:35px;\n"
 "min-height:35px;\n"
+"max-width:35px;\n"
+"min-width:35px;\n"
 "qproperty-iconSize: 35px 35px;\n"
 "}\n"
 "[objectName^=\"btn_laterales\"]:hover {\n"
 "border-left:1px solid #fffefb;\n"
+"}\n"
+"#btn_laterales_btn_burger{\n"
+"max-height:25px;\n"
+"min-height:25px;\n"
+"max-width:25px;\n"
+"min-width:25px;\n"
+"margin-left: 5px;\n"
+"}\n"
+"#btn_laterales_btn_burger:hover{\n"
+"background: #B0C5D1;\n"
+"border-radius: 5px;\n"
+"}\n"
+"#btn_laterales_btn_opciones{\n"
+"max-height:30px;\n"
+"min-height:30px;\n"
 "}\n"
 "[objectName^=\"p_\"]{\n"
 "background-color: rgb(255, 255, 255);\n"
@@ -100,7 +117,8 @@ class Ui_Principal_sistema(object):
 "max-height: 100px;\n"
 "}\n"
 "[objectName^=\"label_wp\"]{\n"
-"font-family: Arial;\n"
+"font-family: Arial;"
+                        "\n"
 "color: #1d1c1c;\n"
 "font-size:12px;\n"
 "}\n"
@@ -118,8 +136,7 @@ class Ui_Principal_sistema(object):
 "}\n"
 "#w_datos_empleado{\n"
 "background-color:#f5f4f1;\n"
-"border-radius: 10p"
-                        "x;\n"
+"border-radius: 10px;\n"
 "}\n"
 "#btn_ver_datosempleado{\n"
 "qproperty-iconSize: 20px 20px;\n"
@@ -186,11 +203,7 @@ class Ui_Principal_sistema(object):
         self.btc_cerrar_2.setIcon(icon)
         self.btc_cerrar_2.setIconSize(QSize(20, 15))
 
-        self.gridLayout_5.addWidget(self.btc_cerrar_2, 0, 3, 1, 1)
-
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_5.addItem(self.horizontalSpacer_2, 0, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.btc_cerrar_2, 0, 4, 1, 1)
 
         self.btc_minimizar_2 = QPushButton(self.w_encabezado)
         self.btc_minimizar_2.setObjectName(u"btc_minimizar_2")
@@ -203,13 +216,29 @@ class Ui_Principal_sistema(object):
         self.btc_minimizar_2.setIcon(icon1)
         self.btc_minimizar_2.setIconSize(QSize(20, 15))
 
-        self.gridLayout_5.addWidget(self.btc_minimizar_2, 0, 2, 1, 1)
+        self.gridLayout_5.addWidget(self.btc_minimizar_2, 0, 3, 1, 1)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_5.addItem(self.horizontalSpacer_2, 0, 1, 1, 1)
+
+        self.btn_laterales_btn_burger = QToolButton(self.w_encabezado)
+        self.btn_laterales_btn_burger.setObjectName(u"btn_laterales_btn_burger")
+        self.btn_laterales_btn_burger.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/Bootstrap/layout-text-sidebar-reverse.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_btn_burger.setIcon(icon2)
+        self.btn_laterales_btn_burger.setIconSize(QSize(35, 35))
+
+        self.gridLayout_5.addWidget(self.btn_laterales_btn_burger, 0, 0, 1, 1)
 
 
         self.gridLayout_3.addWidget(self.w_encabezado, 0, 1, 1, 1, Qt.AlignmentFlag.AlignVCenter)
 
         self.w_cuerpo_menu = QWidget(self.w_cuerpo)
         self.w_cuerpo_menu.setObjectName(u"w_cuerpo_menu")
+        self.w_cuerpo_menu.setMinimumSize(QSize(40, 0))
+        self.w_cuerpo_menu.setMaximumSize(QSize(70, 16777215))
         self.verticalLayout_2 = QVBoxLayout(self.w_cuerpo_menu)
         self.verticalLayout_2.setSpacing(10)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -224,70 +253,70 @@ class Ui_Principal_sistema(object):
 
         self.btn_laterales_proceso_venta = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_proceso_venta.setObjectName(u"btn_laterales_proceso_venta")
-        self.btn_laterales_proceso_venta.setMinimumSize(QSize(0, 35))
-        self.btn_laterales_proceso_venta.setMaximumSize(QSize(16777215, 35))
+        self.btn_laterales_proceso_venta.setMinimumSize(QSize(35, 35))
+        self.btn_laterales_proceso_venta.setMaximumSize(QSize(35, 35))
         self.btn_laterales_proceso_venta.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/IconosSVG/ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_proceso_venta.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/IconosSVG/ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_proceso_venta.setIcon(icon3)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_proceso_venta)
 
         self.btn_laterales_ventas = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_ventas.setObjectName(u"btn_laterales_ventas")
-        self.btn_laterales_ventas.setMaximumSize(QSize(16777215, 35))
+        self.btn_laterales_ventas.setMaximumSize(QSize(35, 35))
         self.btn_laterales_ventas.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/Icons/IconosSVG/operacion_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_ventas.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/IconosSVG/operacion_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_ventas.setIcon(icon4)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_ventas)
 
         self.btn_laterales_compras = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_compras.setObjectName(u"btn_laterales_compras")
-        self.btn_laterales_compras.setMaximumSize(QSize(16777215, 35))
+        self.btn_laterales_compras.setMaximumSize(QSize(35, 35))
         self.btn_laterales_compras.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/Icons/IconosSVG/compras.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_compras.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/Icons/IconosSVG/compras.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_compras.setIcon(icon5)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_compras)
 
         self.btn_laterales_empleados = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_empleados.setObjectName(u"btn_laterales_empleados")
-        self.btn_laterales_empleados.setMaximumSize(QSize(16777215, 35))
+        self.btn_laterales_empleados.setMaximumSize(QSize(35, 35))
         self.btn_laterales_empleados.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon5 = QIcon()
-        icon5.addFile(u":/Icons/IconosSVG/empleados.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_empleados.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u":/Icons/IconosSVG/empleados.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_empleados.setIcon(icon6)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_empleados)
 
         self.btn_laterales_proveedores = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_proveedores.setObjectName(u"btn_laterales_proveedores")
-        self.btn_laterales_proveedores.setMaximumSize(QSize(16777215, 35))
+        self.btn_laterales_proveedores.setMaximumSize(QSize(35, 35))
         self.btn_laterales_proveedores.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon6 = QIcon()
-        icon6.addFile(u":/Icons/IconosSVG/vendedores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_proveedores.setIcon(icon6)
+        icon7 = QIcon()
+        icon7.addFile(u":/Icons/IconosSVG/vendedores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_proveedores.setIcon(icon7)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_proveedores)
 
         self.btn_laterales_clientes = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_clientes.setObjectName(u"btn_laterales_clientes")
         self.btn_laterales_clientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon7 = QIcon()
-        icon7.addFile(u":/Icons/IconosSVG/clientes.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_clientes.setIcon(icon7)
+        icon8 = QIcon()
+        icon8.addFile(u":/Icons/IconosSVG/clientes.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_clientes.setIcon(icon8)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_clientes)
 
         self.btn_laterales_productos = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_productos.setObjectName(u"btn_laterales_productos")
         self.btn_laterales_productos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon8 = QIcon()
-        icon8.addFile(u":/Icons/IconosSVG/productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_productos.setIcon(icon8)
+        icon9 = QIcon()
+        icon9.addFile(u":/Icons/IconosSVG/productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_productos.setIcon(icon9)
         self.btn_laterales_productos.setIconSize(QSize(35, 35))
 
         self.verticalLayout_2.addWidget(self.btn_laterales_productos)
@@ -295,11 +324,21 @@ class Ui_Principal_sistema(object):
         self.btn_laterales_btn_sucursales = QToolButton(self.w_cuerpo_menu)
         self.btn_laterales_btn_sucursales.setObjectName(u"btn_laterales_btn_sucursales")
         self.btn_laterales_btn_sucursales.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon9 = QIcon()
-        icon9.addFile(u":/Icons/IconosSVG/sucursales.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_laterales_btn_sucursales.setIcon(icon9)
+        icon10 = QIcon()
+        icon10.addFile(u":/Icons/IconosSVG/sucursales.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_btn_sucursales.setIcon(icon10)
 
         self.verticalLayout_2.addWidget(self.btn_laterales_btn_sucursales)
+
+        self.btn_laterales_btn_opciones = QToolButton(self.w_cuerpo_menu)
+        self.btn_laterales_btn_opciones.setObjectName(u"btn_laterales_btn_opciones")
+        self.btn_laterales_btn_opciones.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon11 = QIcon()
+        icon11.addFile(u":/Icons/Bootstrap/ui-checks-grid.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_laterales_btn_opciones.setIcon(icon11)
+        self.btn_laterales_btn_opciones.setIconSize(QSize(35, 35))
+
+        self.verticalLayout_2.addWidget(self.btn_laterales_btn_opciones, 0, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
 
         self.verticalSpacer = QSpacerItem(20, 45, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -334,6 +373,7 @@ class Ui_Principal_sistema(object):
         self.btc_minimizar_2.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Minimizar</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.btc_minimizar_2.setText("")
+        self.btn_laterales_btn_burger.setText(QCoreApplication.translate("Principal_sistema", u"...", None))
 #if QT_CONFIG(tooltip)
         self.label_fotousuario.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Perfil</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
@@ -370,5 +410,9 @@ class Ui_Principal_sistema(object):
         self.btn_laterales_btn_sucursales.setToolTip(QCoreApplication.translate("Principal_sistema", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Administrador de Sucursales</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_laterales_btn_sucursales.setText("")
+#if QT_CONFIG(tooltip)
+        self.btn_laterales_btn_opciones.setToolTip(QCoreApplication.translate("Principal_sistema", u"Mas opciones", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_laterales_btn_opciones.setText(QCoreApplication.translate("Principal_sistema", u"...", None))
     # retranslateUi
 

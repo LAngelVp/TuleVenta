@@ -2,9 +2,13 @@ import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget, QDialog, QMessageBox
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QIcon
+from ..Source.ibootstrap_rc import *
 
 from app.Controller.Hilo_consultas import WorkerDB, WorkerDBManager
 from ..View.UserInterfacePy.UI_SISTEMA_PRINCIPAL import Ui_Principal_sistema
+from ..View.UserInterfacePy.UI_OPCIONES_SISTEMA import Ui_Formulario_opcionesConfiguracionSistema
 from ..Controller.ClientesController import Clientes
 from ..Controller.PerfilUsuarioController import Perfil
 from ..Controller.ComprasController import Compras
@@ -30,11 +34,14 @@ class SistemaPrincipal(QWidget):
         self.ventana_saludo = None
         self.ui = Ui_Principal_sistema()
         self.ui.setupUi(self)
+        self.ui.w_cuerpo_menu.hide()
         self.datos_usuario = datos_usuario
         
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.showFullScreen()
         self.setWindowTitle("Sistema de ventas")
+        
+        self.ui.btn_laterales_btn_burger.clicked.connect(self.mostrar_menu)
         self.ui.btn_laterales_btn_sucursales.clicked.connect(self.mostrar_sucursales)
         
         self.ui.label_fotousuario.setCursor(Qt.PointingHandCursor)
@@ -69,23 +76,34 @@ class SistemaPrincipal(QWidget):
         self.ui.w_cuerpo_contenido.addWidget(self.clientes)
         self.ui.w_cuerpo_contenido.addWidget(self.productos)
 
+        self.ui.btn_laterales_btn_opciones.clicked.connect(self.mostrar_opciones)
+
+    def mostrar_opciones(self):
+        self.opciones = OpcionesSistemaController()
+        self.opciones.show()
+
     def mostrar_perfil(self, event):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.perfil:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.perfil)
+
     def mostrar_venta(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.venta:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.venta)
+
     def mostrar_ventas(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.ventas:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.ventas)
+
     def mostrar_compras(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.compras:
-            self.ui.w_cuerpo_contenido.setCurrentWidget(self.compras)  
+            self.ui.w_cuerpo_contenido.setCurrentWidget(self.compras)
+
     def mostrar_empleados(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.empleados:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.empleados)
             # self.LISTAR_EMPLEADOS_VEMPLEADOS.connect(self.empleados.listar_empleados)
             self.LISTAR_EMPLEADOS_VEMPLEADOS.emit()
+
     def mostrar_proveedores(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.proveedores:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.proveedores)
@@ -93,6 +111,7 @@ class SistemaPrincipal(QWidget):
             # self.LIMPIAR_CAMPOS_PROVEEDORES.connect(self.proveedores.limpiar_campos)
             self.LISTAR_CATEGORIAS_VPROVEEDORES.emit()
         # self.LIMPIAR_CAMPOS_PROVEEDORES.emit()
+
     def mostrar_clientes(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.clientes:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.clientes)
@@ -102,6 +121,7 @@ class SistemaPrincipal(QWidget):
             self.LISTAR_AREAS_VCLIENTES.emit()
             self.LISTAR_CATEGORIAS_VCLIENTES.emit()
             # self.LISTAR_CLIENTES_VCLIENTES.emit()
+    
     def mostrar_productos(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.productos:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.productos)
@@ -143,3 +163,22 @@ class SistemaPrincipal(QWidget):
                 sys.exit()
         except Exception as e:
             return
+    
+    def mostrar_menu(self):
+        if self.ui.w_cuerpo_menu.isVisible():
+            self.ui.w_cuerpo_menu.hide()
+        else:
+            self.ui.w_cuerpo_menu.show()
+
+
+class OpcionesSistemaController(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = Ui_Formulario_opcionesConfiguracionSistema()
+        self.ui.setupUi(self)
+        self.setWindowTitle("Opciones del sistema")
+        self.setWindowIcon(QIcon(":/Icons/Bootstrap/grid.svg"))
+        self.ui.btn_btn_metodosPago.clicked.connect(self.agregar_metodos_pago)
+
+    def agregar_metodos_pago(self):
+        pass
