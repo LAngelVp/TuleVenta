@@ -268,6 +268,7 @@ class Orden_compra(QWidget):
         self.usuario = usuario
         self.proveedores = {}
         self.proveedor = None
+        self.metodoPago = None
         self.ventana_productos_proveedor = None
         self.setConjuntoProductosDelProveedor = set()
         self.setProductoDelProveedor = set()
@@ -293,7 +294,6 @@ class Orden_compra(QWidget):
 
     def __obtenerDatosMetodoPago(self):
         self.metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
-        print(self.metodoPago)
 
     def __obtener_metodos_pagos(self):
         try:
