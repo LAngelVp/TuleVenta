@@ -18,6 +18,7 @@ from ..Model.GruposyPermisosModel import PermisosModel, RolesModel
 from ..Model.ProductosModel import ProductosModel
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.ClientesFisicosAndMoralesModel import ClientesFisicosAndMorales
+from ..Model.MetodoPagoModel import MetodoPagoModel
 
 class Inicio_principal(QWidget):
     def __init__(self, parent = None):
@@ -64,6 +65,7 @@ class Inicio_principal(QWidget):
                     ProveedoresModel(session).insertar_categoria_proveedor_basicas()
                     ClientesFisicosAndMorales(session).insertar_areas_negocio_basicas()
                     ClientesFisicosAndMorales(session).insertar_categorias_negocio_basicas()
+                    MetodoPagoModel(session).crear_metodos_pagos_compras_inicial()
                 except Exception as e:
                     print(f'Existio un error en la creacion de datos principales: {e}')
     

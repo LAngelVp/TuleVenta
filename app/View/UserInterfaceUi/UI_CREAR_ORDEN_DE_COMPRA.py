@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QTableView,
-    QToolButton, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
+    QLabel, QLineEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QTableView, QToolButton, QWidget)
 import ibootstrap_rc
 
 class Ui_Orden_compra(object):
@@ -150,7 +150,64 @@ class Ui_Orden_compra(object):
 "background-color: #cce4ff;\n"
 "color: black;\n"
 "}\n"
+"[objectName*=\"cajaOpciones\"] {\n"
+"    border: none;\n"
+"    border-bottom: 1px solid #787878 ;\n"
+"    padding: 2px ;\n"
+"    background-color: #F5F5F5 ;\n"
+"    font-size: 14px ;\n"
+"    min-width: 200px ;\n"
+"    font-family: \"Arial\" ;\n"
+"    color: #1d1c1c ;\n"
+"	selection-background-col"
+                        "or: #4791F5; \n"
+"}\n"
 "\n"
+"/* ESTILO DEL DROPDOWN (LISTA) */\n"
+"[objectName*=\"cajaOpciones\"] QListView {\n"
+"    background: #F5F5F5 ;\n"
+"    border-radius: 3px;\n"
+"    outline: none;\n"
+"}\n"
+"\n"
+"/* ESTILO DE LOS \u00cdTEMS */\n"
+"[objectName*=\"cajaOpciones\"] QListView::item {\n"
+"    padding: 6px 10px ;\n"
+"    margin: 2px ;\n"
+"}\n"
+"/* BOT\u00d3N DESPLEGABLE */\n"
+"[objectName*=\"cajaOpciones\"]::drop-down {\n"
+"    subcontrol-origin: padding ;\n"
+"    subcontrol-position: top right ;\n"
+"    padding-right: 5px ;\n"
+"    width: 20% ;\n"
+"    border-left-width: 1px ;\n"
+"    border-radius: 3px ;\n"
+"    background-color: #F5F5F5 ;\n"
+"}\n"
+"/* FLECHA DESPLEGABLE */\n"
+"[objectName*=\"cajaOpciones\"]::down-arrow {\n"
+"    image: url(:/Icons/Bootstrap/filter-left.svg);\n"
+"    width: 17% ;\n"
+"    height: 17% ;\n"
+"    padding-left: 5px ;\n"
+"    padding-right: 5px ;\n"
+"}\n"
+"\n"
+"#contenedor_grupo{\n"
+"border: 1px solid #023375;\n"
+"color: #1d1c1c;\n"
+"font-weight: bold;\n"
+"font-family: Arial;\n"
+""
+                        "margin-top: 5px;\n"
+"margin-left:15px;\n"
+"margin-right:15px;\n"
+"border-radius: 5px;\n"
+"padding-left:15px;\n"
+"padding-right: 15px;\n"
+"padding-top:15px;\n"
+"}\n"
 "")
         self.gridLayout = QGridLayout(Orden_compra)
         self.gridLayout.setSpacing(0)
@@ -160,11 +217,11 @@ class Ui_Orden_compra(object):
         self.contenedor_frame.setObjectName(u"contenedor_frame")
         self.contenedor_frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.contenedor_frame.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout_4 = QGridLayout(self.contenedor_frame)
-        self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.gridLayout_4.setHorizontalSpacing(0)
-        self.gridLayout_4.setVerticalSpacing(5)
-        self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_5 = QGridLayout(self.contenedor_frame)
+        self.gridLayout_5.setObjectName(u"gridLayout_5")
+        self.gridLayout_5.setHorizontalSpacing(0)
+        self.gridLayout_5.setVerticalSpacing(5)
+        self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
         self.contenedor_encabezado = QFrame(self.contenedor_frame)
         self.contenedor_encabezado.setObjectName(u"contenedor_encabezado")
         self.contenedor_encabezado.setFrameShape(QFrame.Shape.StyledPanel)
@@ -194,7 +251,7 @@ class Ui_Orden_compra(object):
         self.horizontalLayout.addWidget(self.btn_btn_cerrar)
 
 
-        self.gridLayout_4.addWidget(self.contenedor_encabezado, 0, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.contenedor_encabezado, 0, 0, 1, 2)
 
         self.contenedor_frame_4 = QFrame(self.contenedor_frame)
         self.contenedor_frame_4.setObjectName(u"contenedor_frame_4")
@@ -221,14 +278,14 @@ class Ui_Orden_compra(object):
         self.horizontalLayout_2.addWidget(self.btn_btn_terminar)
 
 
-        self.gridLayout_4.addWidget(self.contenedor_frame_4, 1, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.contenedor_frame_4, 1, 0, 1, 2)
 
         self.line = QFrame(self.contenedor_frame)
         self.line.setObjectName(u"line")
         self.line.setFrameShape(QFrame.Shape.HLine)
         self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout_4.addWidget(self.line, 2, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.line, 2, 0, 1, 2)
 
         self.contenedor_frame_2 = QFrame(self.contenedor_frame)
         self.contenedor_frame_2.setObjectName(u"contenedor_frame_2")
@@ -251,7 +308,22 @@ class Ui_Orden_compra(object):
         self.gridLayout_2.addWidget(self.etiqueta_proveedor, 0, 0, 1, 1)
 
 
-        self.gridLayout_4.addWidget(self.contenedor_frame_2, 3, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.contenedor_frame_2, 3, 0, 1, 1)
+
+        self.contenedor_grupo = QGroupBox(self.contenedor_frame)
+        self.contenedor_grupo.setObjectName(u"contenedor_grupo")
+        self.contenedor_grupo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.gridLayout_4 = QGridLayout(self.contenedor_grupo)
+        self.gridLayout_4.setSpacing(0)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.gridLayout_4.setContentsMargins(0, 0, 0, 10)
+        self.cajaOpciones_metodosPago = QComboBox(self.contenedor_grupo)
+        self.cajaOpciones_metodosPago.setObjectName(u"cajaOpciones_metodosPago")
+
+        self.gridLayout_4.addWidget(self.cajaOpciones_metodosPago, 0, 0, 1, 1)
+
+
+        self.gridLayout_5.addWidget(self.contenedor_grupo, 4, 0, 1, 2)
 
         self.contenedor_frame_3 = QFrame(self.contenedor_frame)
         self.contenedor_frame_3.setObjectName(u"contenedor_frame_3")
@@ -262,24 +334,24 @@ class Ui_Orden_compra(object):
         self.gridLayout_3.setHorizontalSpacing(5)
         self.gridLayout_3.setVerticalSpacing(0)
         self.gridLayout_3.setContentsMargins(10, 0, 10, 0)
-        self.etiqueta_codigobarras = QLabel(self.contenedor_frame_3)
-        self.etiqueta_codigobarras.setObjectName(u"etiqueta_codigobarras")
-
-        self.gridLayout_3.addWidget(self.etiqueta_codigobarras, 0, 0, 1, 1)
-
-        self.txt_buscarproducto = QLineEdit(self.contenedor_frame_3)
-        self.txt_buscarproducto.setObjectName(u"txt_buscarproducto")
-
-        self.gridLayout_3.addWidget(self.txt_buscarproducto, 0, 1, 1, 1)
-
         self.btn_btn_agregar = QToolButton(self.contenedor_frame_3)
         self.btn_btn_agregar.setObjectName(u"btn_btn_agregar")
         self.btn_btn_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.gridLayout_3.addWidget(self.btn_btn_agregar, 0, 2, 1, 1)
 
+        self.txt_buscarproducto = QLineEdit(self.contenedor_frame_3)
+        self.txt_buscarproducto.setObjectName(u"txt_buscarproducto")
 
-        self.gridLayout_4.addWidget(self.contenedor_frame_3, 4, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.txt_buscarproducto, 0, 1, 1, 1)
+
+        self.etiqueta_codigobarras = QLabel(self.contenedor_frame_3)
+        self.etiqueta_codigobarras.setObjectName(u"etiqueta_codigobarras")
+
+        self.gridLayout_3.addWidget(self.etiqueta_codigobarras, 0, 0, 1, 1)
+
+
+        self.gridLayout_5.addWidget(self.contenedor_frame_3, 5, 0, 1, 2)
 
         self.tabla_ordencompra = QTableView(self.contenedor_frame)
         self.tabla_ordencompra.setObjectName(u"tabla_ordencompra")
@@ -292,7 +364,7 @@ class Ui_Orden_compra(object):
         self.tabla_ordencompra.horizontalHeader().setDefaultSectionSize(200)
         self.tabla_ordencompra.horizontalHeader().setStretchLastSection(True)
 
-        self.gridLayout_4.addWidget(self.tabla_ordencompra, 5, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.tabla_ordencompra, 6, 0, 1, 2)
 
 
         self.gridLayout.addWidget(self.contenedor_frame, 0, 0, 1, 1)
@@ -311,7 +383,8 @@ class Ui_Orden_compra(object):
         self.btn_btn_terminar.setText(QCoreApplication.translate("Orden_compra", u"Terminar", None))
         self.txt_buscarproveedor.setPlaceholderText(QCoreApplication.translate("Orden_compra", u"Buscar por nombre", None))
         self.etiqueta_proveedor.setText(QCoreApplication.translate("Orden_compra", u"Proveedor", None))
-        self.etiqueta_codigobarras.setText(QCoreApplication.translate("Orden_compra", u"Codigo del producto", None))
+        self.contenedor_grupo.setTitle(QCoreApplication.translate("Orden_compra", u"METODOS DE PAGO", None))
         self.btn_btn_agregar.setText(QCoreApplication.translate("Orden_compra", u"Agregar", None))
+        self.etiqueta_codigobarras.setText(QCoreApplication.translate("Orden_compra", u"Codigo del producto", None))
     # retranslateUi
 

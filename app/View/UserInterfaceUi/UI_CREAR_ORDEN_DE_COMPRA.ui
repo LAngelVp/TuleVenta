@@ -146,7 +146,62 @@ color: white;
 background-color: #cce4ff;
 color: black;
 }
+[objectName*=&quot;cajaOpciones&quot;] {
+    border: none;
+    border-bottom: 1px solid #787878 ;
+    padding: 2px ;
+    background-color: #F5F5F5 ;
+    font-size: 14px ;
+    min-width: 200px ;
+    font-family: &quot;Arial&quot; ;
+    color: #1d1c1c ;
+	selection-background-color: #4791F5; 
+}
 
+/* ESTILO DEL DROPDOWN (LISTA) */
+[objectName*=&quot;cajaOpciones&quot;] QListView {
+    background: #F5F5F5 ;
+    border-radius: 3px;
+    outline: none;
+}
+
+/* ESTILO DE LOS ÍTEMS */
+[objectName*=&quot;cajaOpciones&quot;] QListView::item {
+    padding: 6px 10px ;
+    margin: 2px ;
+}
+/* BOTÓN DESPLEGABLE */
+[objectName*=&quot;cajaOpciones&quot;]::drop-down {
+    subcontrol-origin: padding ;
+    subcontrol-position: top right ;
+    padding-right: 5px ;
+    width: 20% ;
+    border-left-width: 1px ;
+    border-radius: 3px ;
+    background-color: #F5F5F5 ;
+}
+/* FLECHA DESPLEGABLE */
+[objectName*=&quot;cajaOpciones&quot;]::down-arrow {
+    image: url(:/Icons/Bootstrap/filter-left.svg);
+    width: 17% ;
+    height: 17% ;
+    padding-left: 5px ;
+    padding-right: 5px ;
+}
+
+#contenedor_grupo{
+border: 1px solid #023375;
+color: #1d1c1c;
+font-weight: bold;
+font-family: Arial;
+margin-top: 5px;
+margin-left:15px;
+margin-right:15px;
+border-radius: 5px;
+padding-left:15px;
+padding-right: 15px;
+padding-top:15px;
+}
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -173,7 +228,7 @@ color: black;
      <property name="frameShadow">
       <enum>QFrame::Shadow::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4">
+     <layout class="QGridLayout" name="gridLayout_5">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -192,7 +247,7 @@ color: black;
       <property name="verticalSpacing">
        <number>5</number>
       </property>
-      <item row="0" column="0">
+      <item row="0" column="0" colspan="2">
        <widget class="QFrame" name="contenedor_encabezado">
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>
@@ -265,7 +320,7 @@ color: black;
         </layout>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="1" column="0" colspan="2">
        <widget class="QFrame" name="contenedor_frame_4">
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>
@@ -325,7 +380,7 @@ color: black;
         </layout>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="2" column="0" colspan="2">
        <widget class="Line" name="line">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
@@ -379,7 +434,37 @@ color: black;
         </layout>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="4" column="0" colspan="2">
+       <widget class="QGroupBox" name="contenedor_grupo">
+        <property name="title">
+         <string>METODOS DE PAGO</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QComboBox" name="cajaOpciones_metodosPago"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
        <widget class="QFrame" name="contenedor_frame_3">
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>
@@ -406,16 +491,6 @@ color: black;
          <property name="verticalSpacing">
           <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="etiqueta_codigobarras">
-           <property name="text">
-            <string>Codigo del producto</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="txt_buscarproducto"/>
-         </item>
          <item row="0" column="2">
           <widget class="QToolButton" name="btn_btn_agregar">
            <property name="cursor">
@@ -426,10 +501,20 @@ color: black;
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="txt_buscarproducto"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="etiqueta_codigobarras">
+           <property name="text">
+            <string>Codigo del producto</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="6" column="0" colspan="2">
        <widget class="QTableView" name="tabla_ordencompra">
         <property name="cursor" stdset="0">
          <cursorShape>ArrowCursor</cursorShape>

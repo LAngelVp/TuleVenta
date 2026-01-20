@@ -32,7 +32,6 @@ class ClientesFisicosAndMorales:
             ]
             
             self.session.execute(Areas_negocios.__table__.insert(), areas_basicas)
-            # self.session.commit()
             return True
        
     def insertar_categorias_negocio_basicas(self):

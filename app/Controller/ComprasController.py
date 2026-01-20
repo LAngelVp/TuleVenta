@@ -1,5 +1,7 @@
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from ..Model.ProveedoresModel import ProveedoresModel
+from ..Model.MetodoPagoModel import MetodoPagoModel
 from ..Model.Proveedores_ProductosModel import Proveedores_productoModel
 from ..Model.OrdenesDeCompraModel import OrdenesDeCompraModel
 from ..DataBase.conexionBD import Conexion_base_datos
@@ -282,8 +284,63 @@ class Orden_compra(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.ajustador = AjustarcajaOpciones()
         self.__configuracionTablaProductosOrden()
         self.__obtener_proveedores()
+        self.__obtener_metodos_pagos()
+
+        self.ordenCompraUI.cajaOpciones_metodosPago.currentIndexChanged.connect(self.__obtenerDatosMetodoPago)
+
+    def __obtenerDatosMetodoPago(self):
+        self.metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
+        print(self.metodoPago)
+
+    def __obtener_metodos_pagos(self):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("obtener_metodos_pagos_thread")
+            self.id_obtener_metodos_pagos = WorkerDB.create_managed_worker(owner_id="obtener_metodos_pagos_thread")
+            self.consultor_obtener_metodos_pagos = WorkerDB.get_managed_worker(self.id_obtener_metodos_pagos)
+            if not self.consultor_obtener_metodos_pagos:
+                raise Exception("No se logro hacer la operación")
+            
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_obtener_metodos_pagos,
+                resultado_callback=self.metodos_pagos_caja_opciones,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_obtener_metodos_pagos.ejecutar(
+                funcion=self.obtener_metodos_pagos_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_obtener_metodos_pagos'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_metodos_pagos)
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar metodos de pago: {e}")
+
+    def obtener_metodos_pagos_query(self, session):
+        try:
+            metodos_pagos, estado = MetodoPagoModel(session).obtener_metodos_pagos()
+            if estado:
+                return {"data": metodos_pagos, "estado": estado, "mensaje": "Metodos de pago consultados exitosamente"}
+            else:
+                return {"data": [], "estado": estado, "mensaje": "Error al consultar metodos de pago"}
+        except Exception as e:
+            print(f'Existio un error en la consulta de metodos de pago: {e}')
+            return {"data": [], "estado": False, "mensaje": "Error al consultar metodos de pago"}
+
+    def metodos_pagos_caja_opciones(self, objetoMensaje):
+        """Muestra la ventana correspondiente cuando el hilo termina"""
+        if hasattr(self, 'id_obtener_metodos_pagos'):
+            WorkerDB.cleanup_managed_worker(self.id_obtener_metodos_pagos)
+        if objetoMensaje["estado"]:
+            self.metodos_pagos = objetoMensaje["data"]
+            self.ordenCompraUI.cajaOpciones_metodosPago.clear()
+            for metodo_pago in self.metodos_pagos:
+                self.ordenCompraUI.cajaOpciones_metodosPago.addItem(metodo_pago.nombre, metodo_pago)
+            self.ajustador.ajustar_cajadeopciones(self.ordenCompraUI.cajaOpciones_metodosPago)
+        else:
+            Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
 
     def __terminar_orden_compra(self):
         if self.proveedor is None or len(self.setConjuntoProductosDelProveedor) == 0:
