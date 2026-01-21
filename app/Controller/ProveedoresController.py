@@ -30,11 +30,25 @@ class Control_proveedores(QWidget):
         super().__init__(parent)
         self.ui = Ui_Control_Proveedores()
         self.ui.setupUi(self)
+# VARIABLES
         self.ejecutando_trabajo = False
         self.lista_categorias = {}
-        
+        self.cargando = None
+        self.consultor = None
+        self.proveedores = None
+        self.proveedor_seleccionado = None
+        self.id_categoria = None
+        self.representante = None
+        self.seleccion_conectada_proveedores = None
+        self.categoriasBase = None
+        self.ventana_productos_precios = None
+        self.manejadorModal = ModalManager()
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.ajustador_categoria_proveedor = AjustarcajaOpciones()
+# CONFIGURACION DE LA VENTANA        
         self.ui.btnradio_representantefalse.setChecked(True)
         self.ui.contenedor_datosrepresentante.setVisible(False)
+# CONEXIONES DE LOS BOTONES
         self.ui.btnradio_representantetrue.toggled.connect(self.representante_visibilidad)
         self.ui.btn_btn_agregarcategoria.clicked.connect(self.nueva_categoria)
         self.ui.btn_btn_guardar.clicked.connect(self.control_agregar_proveedor)
@@ -43,29 +57,19 @@ class Control_proveedores(QWidget):
         self.ui.btn_btn_listadeproductoyprecios.clicked.connect(self.mostrar_productos_y_precios)
         self.ui.txtlargo_descripcioncategoria.setReadOnly(True)
         self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_proveedores_tabla_hilo)
-#comment : validaciones:
-
         self.ui.btn_btn_buscarproveedor.clicked.connect(self.buscar_proveedor_hilo)
         self.ui.btn_btn_actualizar.clicked.connect(self.control_actualizar_proveedor)
+# CONEXIONES DE SEÑALES
         self.ui.cajaOpciones_categorias.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
-        self.validaciones()
-        self.cargando = None
-        self.consultor = None
-        self.proveedores = None
-        self.proveedor_seleccionado = None
-        self.id_categoria = None
-        self.representante = None
-        self.seleccion_conectada_proveedores = None
-        self.lista_categorias = {}
-        self.categoriasBase = None
-        self.ventana_productos_precios = None
-# FUNCIONES PRINCIPALES
-        self.manejadorModal = ModalManager()
-        self.manejadorModal.set_modal_class(Modal_de_espera)
-        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.ajustador_categoria_proveedor = AjustarcajaOpciones()
-        self.ajustador_categoria_proveedor.elemento_eliminado_signal.connect(self.mostrar_categorias_proveedor)
+        self.PROVEEDOR_SELECCIONADO_SIGNAL.connect(self.cargar_datos_proveedor)
 
+# EJECUCION DE FUNCIONES
+        self.validaciones()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.ajustador_categoria_proveedor.elemento_eliminado_signal.connect(self.mostrar_categorias_proveedor)
+        self.__configuracion_tabla_proveedores()
+# ------------------------------------------------------------------------------
+# FUNCIONALIDADES
     def validaciones(self):
         self.ui.txt_nombre.setMaxLength(150)
         self.ui.txt_pais.setMaxLength(50)
@@ -100,11 +104,9 @@ class Control_proveedores(QWidget):
         if self.proveedor_seleccionado:
             if self.ventana_productos_precios is None or self.ventana_productos_precios.isVisible():
                 self.ventana_productos_precios = Productos_de_proveedorController(parent=self, proveedor=self.proveedor_seleccionado)
-                # self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.connect(self.ventana_productos_precios.obtener_productos_proveedor_hilo)
                 self.ventana_productos_precios.VENTANA_CERRADA_PRODUCTOS_DEL_PROVEEDOR.connect(self.ventana_cerrada_productos_proveedor)
                 self.LIMPIAR_CAMPOS_INTERNOS.connect(self.limpiar_campos)
                 self.LIMPIAR_CAMPOS_INTERNOS.emit()
-                # self.ventana_productos_precios.LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR.emit()
                 self.ventana_productos_precios.show()
             else:
                 self.ventana_productos_precios.raise_()
@@ -394,69 +396,62 @@ class Control_proveedores(QWidget):
                 "mensaje": f"Registros listados",
                 "data": proveedores
                 }
-            
-    def llenar_tabla_proveedores(self, resultado):
-        proveedores = resultado["data"]
-        estado = resultado["exito"]
-        if self.ui.tabla_proveedores is None:
-            Mensaje().mensaje_informativo("La tabla de los proveedores no esta disponible")
-            return
+    
+    def __configuracion_tabla_proveedores(self):
         cabeceras = [
-            "Nombre",
-            "Pais",
-            "Estado",
-            "Ciudad",
-            "Codigo Postal",
-            "Calles",
-            "Avenidas",
-            "Colonia",
-            "RFC",
-            "Representante"
-        ]
+                    "Nombre",
+                    "Pais",
+                    "Estado",
+                    "Ciudad",
+                    "Codigo Postal",
+                    "Calles",
+                    "Avenidas",
+                    "Colonia",
+                    "RFC",
+                    "Representante"
+                ]
         mapeo_de_cabeceras = {
-            "nombre": lambda p: p.nombre,
-            "pais": lambda p: p.pais,
-            "estado": lambda p: p.estado,
-            "ciudad": lambda p: p.ciudad,
-            "codigo_postal": lambda p: p.codigo_postal,
-            "calles": lambda p: p.calles,
-            "avenidas": lambda p: p.avenidas,
-            "colonia": lambda p: p.colonia,
-            "rfc": lambda p: p.rfc,
-            "representante": lambda p: p.representante.nombre
+            "nombre": lambda p: p.nombre if p.nombre else "",
+            "pais": lambda p: p.pais if p.pais else "",
+            "estado": lambda p: p.estado if p.estado else "",
+            "ciudad": lambda p: p.ciudad if p.ciudad else "",
+            "codigo_postal": lambda p: p.codigo_postal if p.codigo_postal else "",
+            "calles": lambda p: p.calles if p.calles else "",
+            "avenidas": lambda p: p.avenidas if p.avenidas else "",
+            "colonia": lambda p: p.colonia if p.colonia else "",
+            "rfc": lambda p: p.rfc if p.rfc else "",
+            "representante": lambda p: p.representante.nombre if p.representante else ""
         }
-        modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
-            nombreModelo="modelo_listar_proveedores_vproveedores",
+        self.modelo_tabla_proveedores = self.comprobar_modelos_tablas.comprobarModeloTabla(
+            nombreModelo="modelo_tabla_proveedores",
             interfazTabla=self.ui.tabla_proveedores,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            signalPersonalizada=self.obtener_proveedor_seleccionado_tabla,
+            signalPersonalizada=None,
+            signalSeleccion=self.obtener_proveedor_seleccionado_tabla,
         )
-        if not estado or not proveedores:
-            Mensaje().mensaje_informativo("No hay información para listar")
-            modelo.clear()
-            return
-        modelo.update_data(proveedores, reset=True)
-        if hasattr(self, "seleccion_proveedor_conectada") and self.seleccion_conectada_proveedores:
-            try:
-                self.ui.tabla_proveedores.connect(self.obtener_proveedor_seleccionado_tabla)
-            except Exception as e:
-                pass
-        self.ui.tabla_proveedores.clicked.connect(self.obtener_proveedor_seleccionado_tabla)
-        self.seleccion_proveedor_conectada = True
+        return self.modelo_tabla_proveedores
+    
+    def llenar_tabla_proveedores(self, resultado):
+        try:
+            if not resultado["exito"]:
+                Mensaje().mensaje_informativo(f"No hay proveedores")
+                return
+            self.modelo_tabla_proveedores.update_data(resultado["data"], reset=True)
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar proveedores: {e}")
         
     def obtener_proveedor_seleccionado_tabla(self, current, previus = None):
         self.limpiar_campos()
         if current.isValid():
             fila = current.row()
-            proveedor = self.modelo_listar_proveedores_vproveedores.get_item(current)
-            
+            proveedor = self.modelo_tabla_proveedores.get_item(current)
             if proveedor:
                 self.proveedor_seleccionado = proveedor
-                self.cargar_datos_proveedor(self.proveedor_seleccionado)
+                self.PROVEEDOR_SELECCIONADO_SIGNAL.emit(self.proveedor_seleccionado)
 
     def control_actualizar_proveedor(self):
         # Obtén los datos del proveedor y del representante
@@ -588,7 +583,6 @@ class Control_proveedores(QWidget):
 
         except Exception as e:
             session.rollback()
-            print(f"💥 Error en actualizar_proveedor_query: {e}")
             return {
                 "exito": False,
                 "mensaje": f"Ocurrió un problema en el proceso: {str(e)}"

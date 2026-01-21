@@ -164,7 +164,6 @@ class Compras(QWidget):
             orden_compra = self.modeloTablaOrdenesDeCompraPendientes.get_item(current)
             if orden_compra:
                 self.orderSelected = orden_compra
-                print(orden_compra)
 
     def __configuracionTablaOrdenesDeCompraRealizadas(self):
         cabeceras = [
