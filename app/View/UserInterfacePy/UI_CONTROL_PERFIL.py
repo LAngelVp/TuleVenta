@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_PERFIL.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.9.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QDateE
 from ...Source import ibootstrap_rc
 from ...Source import logos_rc
 from ...Source import iconosSVG_rc
+from ...Source import iconsdvg_rc
 
 class Ui_Formulario_Datos_Empleado(object):
     def setupUi(self, Formulario_Datos_Empleado):
@@ -58,9 +59,8 @@ class Ui_Formulario_Datos_Empleado(object):
 "min-height:150px;\n"
 "min-width:200px;\n"
 "max-height:150px;\n"
-"background:  qconicalgradient(cx:0, cy:0, angle:228.9, stop:0.136364 rgba(0, 63, 126, 255), stop:0.522222 rgba(0, 199, 255, 236));\n"
-"border-radius: 12px;\n"
-"image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);\n"
+"background: #f5f4f1;\n"
+"image: url(:/Icons/Bootstrap/card-image.svg);\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]{\n"
 "font-family: Arial;\n"
@@ -69,14 +69,14 @@ class Ui_Formulario_Datos_Empleado(object):
 "color: #fffefb;\n"
 "min-height: 30px;\n"
 "border-radius: 5px;\n"
-"ba"
-                        "ckground: #023375;\n"
+"background: #023375;\n"
 "text-align: center;\n"
 "padding-left: 5px;\n"
 "padding-right: 5px;\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
-"background: #2196F3;\n"
+"backgro"
+                        "und: #2196F3;\n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:pressed{\n"
 "background: #1B80D0;\n"
@@ -116,13 +116,13 @@ class Ui_Formulario_Datos_Empleado(object):
 "color: rgb(65, 65, 65);\n"
 "}\n"
 "[objectName*=\"txt_\"]{\n"
-"back"
-                        "ground-color: rgb(245, 244, 241);\n"
+"background-color: rgb(245, 244, 241);\n"
 "color: rgb(29, 28, 28);\n"
 "border: none;\n"
 "border-bottom: 1px solid;\n"
 "border-radius: 5px;\n"
-"font-size: 12px;\n"
+"font-si"
+                        "ze: 12px;\n"
 "font-family: Arial;\n"
 "min-width: 250px;\n"
 "}\n"
@@ -159,14 +159,14 @@ class Ui_Formulario_Datos_Empleado(object):
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "\n"
-""
-                        "#fecha_baja{\n"
+"#fecha_baja{\n"
 "background: transparent;\n"
 "color:#fffefb;\n"
 "border:none;\n"
 "}\n"
 "[objectName*=\"numerodecimal_\"]{\n"
-"background-color: rgb(245, 244, 241);\n"
+"background-color:"
+                        " rgb(245, 244, 241);\n"
 "color: rgb(29, 28, 28);\n"
 "border: none;\n"
 "border-bottom: 1px solid;\n"
@@ -201,11 +201,22 @@ class Ui_Formulario_Datos_Empleado(object):
 "}\n"
 "#txtlargo_referenciadireccion{\n"
 "min-height:50px;\n"
-"max-he"
-                        "ight:70px;\n"
+"max-height:70px;\n"
 "}\n"
 "[objectName^=\"txtlargo\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
+"}\n"
+"#btn_btn_verdatos{\n"
+"border-radius: 2"
+                        "px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"}\n"
+"#btn_btn_verdatos:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_btn_verdatos:pressed{\n"
+"background: #b6ccd8 ;\n"
 "}\n"
 "")
         self.verticalLayout = QVBoxLayout(Formulario_Datos_Empleado)
@@ -217,7 +228,7 @@ class Ui_Formulario_Datos_Empleado(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1206, 990))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1185, 932))
         self.gridLayout_6 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
@@ -262,8 +273,9 @@ class Ui_Formulario_Datos_Empleado(object):
         self.foto_empleadoperfil.setEnabled(True)
         self.foto_empleadoperfil.setStyleSheet(u"")
         self.foto_empleadoperfil.setScaledContents(True)
+        self.foto_empleadoperfil.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout_2.addWidget(self.foto_empleadoperfil, 0, 0, 2, 1)
+        self.gridLayout_2.addWidget(self.foto_empleadoperfil, 0, 0, 2, 1, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
 
 
         self.gridLayout_3.addWidget(self.tarjeta_usuario, 1, 0, 1, 2, Qt.AlignmentFlag.AlignHCenter)
@@ -875,7 +887,7 @@ class Ui_Formulario_Datos_Empleado(object):
         self.btn_btn_verdatos.setEnabled(True)
         self.btn_btn_verdatos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         icon = QIcon()
-        icon.addFile(u":/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/Icons/Bootstrap/eye-slash-fill.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_verdatos.setIcon(icon)
         self.btn_btn_verdatos.setIconSize(QSize(20, 20))
 
@@ -909,7 +921,6 @@ class Ui_Formulario_Datos_Empleado(object):
 #if QT_CONFIG(tooltip)
         self.foto_empleadoperfil.setToolTip(QCoreApplication.translate("Formulario_Datos_Empleado", u"Presiona para agregar imagen", None))
 #endif // QT_CONFIG(tooltip)
-        self.foto_empleadoperfil.setText("")
         self.etiqueta_baja.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Baja:", None))
         self.fecha_baja.setDisplayFormat(QCoreApplication.translate("Formulario_Datos_Empleado", u"dd/MM/yyyy", None))
         self.etiqueta_horaentrada.setText(QCoreApplication.translate("Formulario_Datos_Empleado", u"Hora Entrada", None))

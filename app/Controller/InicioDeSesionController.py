@@ -68,7 +68,6 @@ class Login(QWidget):
         usuario = self.ui.txt_User.text().strip()
         password = self.ui.txt_Password.text().strip()
         usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = usuario, contraseña = password)
-        # usuario_nombre = str(usuario_existente.usuario)
         if estatus_consulta:
             self.datos_usuario =   {
                 "id_usuario": usuario_existente.id,

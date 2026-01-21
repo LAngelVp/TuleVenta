@@ -43,9 +43,8 @@ max-width:200px;
 min-height:150px;
 min-width:200px;
 max-height:150px;
-background:  qconicalgradient(cx:0, cy:0, angle:228.9, stop:0.136364 rgba(0, 63, 126, 255), stop:0.522222 rgba(0, 199, 255, 236));
-border-radius: 12px;
-image: url(:/logos/Icons/logos/cuadrado_sin_fondo.png);
+background: #f5f4f1;
+image: url(:/Icons/Bootstrap/card-image.svg);
 }
 [objectName*=&quot;btn_btn_&quot;]{
 font-family: Arial;
@@ -188,6 +187,17 @@ max-height:70px;
 [objectName^=&quot;txtlargo&quot;]::focus{
 border-bottom: 2px solid #00668c;
 }
+#btn_btn_verdatos{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+}
+#btn_btn_verdatos:hover{
+background: rgb(179, 179, 179);
+}
+#btn_btn_verdatos:pressed{
+background: #b6ccd8 ;
+}
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -216,8 +226,8 @@ border-bottom: 2px solid #00668c;
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1206</width>
-        <height>990</height>
+        <width>1185</width>
+        <height>932</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">
@@ -351,7 +361,7 @@ border-bottom: 2px solid #00668c;
                    <property name="spacing">
                     <number>0</number>
                    </property>
-                   <item row="0" column="0" rowspan="2">
+                   <item row="0" column="0" rowspan="2" alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
                     <widget class="QLabel" name="foto_empleadoperfil">
                      <property name="enabled">
                       <bool>true</bool>
@@ -362,11 +372,11 @@ border-bottom: 2px solid #00668c;
                      <property name="styleSheet">
                       <string notr="true"/>
                      </property>
-                     <property name="text">
-                      <string/>
-                     </property>
                      <property name="scaledContents">
                       <bool>true</bool>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignmentFlag::AlignCenter</set>
                      </property>
                     </widget>
                    </item>
@@ -1265,8 +1275,8 @@ border-bottom: 2px solid #00668c;
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="../../Source/iconosSVG.qrc">
-                    <normaloff>:/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/ojo_blanco.svg</iconset>
+                   <iconset resource="../../Source/ibootstrap.qrc">
+                    <normaloff>:/Icons/Bootstrap/eye-slash-fill.svg</normaloff>:/Icons/Bootstrap/eye-slash-fill.svg</iconset>
                   </property>
                   <property name="iconSize">
                    <size>
@@ -1308,6 +1318,7 @@ border-bottom: 2px solid #00668c;
   <include location="../../Source/ibootstrap.qrc"/>
   <include location="../../Source/logos.qrc"/>
   <include location="../../Source/iconosSVG.qrc"/>
+  <include location="../../Source/iconsdvg.qrc"/>
  </resources>
  <connections/>
 </ui>
