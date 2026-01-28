@@ -313,7 +313,7 @@ class ProveedoresModel:
                     nueva_relacion = ProductoProveedor(
                         proveedor_id=proveedor_id,
                         producto_id=producto_db.id,
-                        precio_venta=producto.precio if hasattr(producto, 'precio') else None
+                        precio_venta= 0.00
                     )
                     self.session.add(nueva_relacion)
 

@@ -30,7 +30,7 @@ class Login(QWidget):
 
         self.ui.labelNombreEmpresa.mouseDoubleClickEvent = self.empresa()
         self.setWindowIcon(QIcon(":Icons/IconosSVG/logo_devrous.svg"))
-        self.setWindowTitle("Inicio de sesión")
+        self.setWindowTitle("TuleVenta POS - Inicio de sesión")
 
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25) 

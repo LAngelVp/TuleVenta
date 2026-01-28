@@ -295,7 +295,11 @@ class Productos_de_proveedorController(QWidget):
                 # Esto mantiene la paginación consistente
                 self.cantidad_inicial_consulta_productos_del_proveedor += self.cantidad_final_consulta_productos_del_proveedor
             elif not productos:
-                Mensaje().mensaje_informativo("No hay más productos por mostrar")
+                return {
+                    "exito": True,
+                    "mensaje": "No hay más productos por mostrar",
+                    "data": []
+                }
         except Exception as e:
             return {
                 "exito": False,
@@ -888,8 +892,8 @@ class Productos_de_proveedorController(QWidget):
             session.commit()
             return {
                 "exito": estado,
-                "mensaje": f'Operacion exitosa',
-                "data": []
+                "mensaje": f'Operacion exitosa, se vincularon {len(lista_de_productos)} productos',
+                "data": [lista_de_productos]
             }
         except Exception as e:
             session.rollback()
@@ -902,8 +906,9 @@ class Productos_de_proveedorController(QWidget):
     def mostrar_estado(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         
-    def mostrar_estado_productos_vinculados(self):
+    def mostrar_estado_productos_vinculados(self, objetoMensaje):
         self.PRODUCTO_VINCULADO_SIGNAL.emit()
+        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         if hasattr(self, "modelo_tabla_Productos_A_VincularProveedor") or self.modelo_tabla_Productos_A_VincularProveedor:
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
         

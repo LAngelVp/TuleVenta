@@ -39,7 +39,7 @@ class SistemaPrincipal(QWidget):
         
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.showFullScreen()
-        self.setWindowTitle("Sistema de ventas")
+        self.setWindowTitle("TuleVenta POS")
         
         self.ui.btn_laterales_btn_burger.clicked.connect(self.mostrar_menu)
         self.ui.btn_laterales_btn_sucursales.clicked.connect(self.mostrar_sucursales)
