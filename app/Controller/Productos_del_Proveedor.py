@@ -56,6 +56,7 @@ class Productos_de_proveedorController(QWidget):
         self.ui.btn_RefrescarTablaProductos.clicked.connect(self.obtener_productos_de_sistema_hilo)
         self.ui.btn_paginarProductosDelProveedor.clicked.connect(self.paginar_productos_del_proveedor)
         self.ui.btn_paginarProductosSistema.clicked.connect(self.paginar_productos_del_sistema)
+        self.ui.contenedorModal_tabs.currentChanged.connect(self.cambiar_vista)
         
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema)
@@ -63,13 +64,9 @@ class Productos_de_proveedorController(QWidget):
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
 
-# 
         self.__configurar_tabla_productos_proveedor()
         self.__configurar_tabla_productos_del_sistema()
         self.__congigurar_tabla_productos_a_vincular()
-        
-        
-        
         
         if not self.proveedor:
             return
@@ -78,6 +75,13 @@ class Productos_de_proveedorController(QWidget):
         
         self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.connect(self.vincular_producto_al_proveedor_signal)
         self.PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL.connect(self.quitar_de_tabla_vinculacion_producto_al_proveedor_signal)
+
+    def cambiar_vista(self):
+        if self.ui.contenedorModal_tabs.currentIndex() != 1:
+            print("Limpiando lista de productos para vincular")
+            self.lista_productos_para_vincular.clear()
+            if hasattr(self, 'modelo_tabla_Productos_A_VincularProveedor'):
+                self.modelo_tabla_Productos_A_VincularProveedor.clear()
 
     def __configurar_tabla_productos_proveedor(self):
         cabeceras = ["Codigo upc", "Nombre","Descripcion producto", "Precio venta", "Unidad medida productos", "Presentacion"]
@@ -533,8 +537,6 @@ class Productos_de_proveedorController(QWidget):
                 "data": productos
             }
     
-    
-    
     def filtrar_productos_sistema(self):
         # Obtener valores actuales de los campos de búsqueda
         nuevo_nombre = self.ui.txt_nombre_productodelsistema.text().strip()
@@ -792,9 +794,7 @@ class Productos_de_proveedorController(QWidget):
             return
         self.modelo_tabla_productos_del_sistemaproductos.update_data(resultado["data"], reset=False)
         self.ultima_carga_cantidad_productos_sistema = len(resultado["data"])
-            
-    
-    
+         
     def vincular_producto_al_proveedor_signal(self, producto):
         if not producto:
             Mensaje().mensaje_alerta(f"No se esta pasando el producto al seleccionarlo.")
@@ -911,6 +911,7 @@ class Productos_de_proveedorController(QWidget):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         if hasattr(self, "modelo_tabla_Productos_A_VincularProveedor") or self.modelo_tabla_Productos_A_VincularProveedor:
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
+        self.lista_productos_para_vincular.clear()
         
     def mostrar_error(self, mensaje):
         Mensaje().mensaje_alerta(mensaje)
