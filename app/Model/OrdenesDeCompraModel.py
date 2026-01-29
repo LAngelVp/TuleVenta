@@ -1,4 +1,4 @@
-from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos
+from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, Unidad_medida_productos, Presentacion_productos
 from sqlalchemy.orm import joinedload
 
 class OrdenesDeCompraModel:
@@ -37,13 +37,23 @@ class OrdenesDeCompraModel:
             result = (
                 self.session.query(Compras)
                 .options(
-                    joinedload(Compras.proveedor),      # Carga proveedor
-                    joinedload(Compras.empleado),       # Carga empleado
-                    joinedload(Compras.metodos_de_pago), # Carga método pago
-                    joinedload(Compras.detalles)        # Carga detalles (opcional)
+                    joinedload(Compras.proveedor),
+                    joinedload(Compras.empleado)
+                        .joinedload(Empleados.sucursal),
+                    joinedload(Compras.empleado)
+                        .joinedload(Empleados.departamento),
+                    joinedload(Compras.empleado)
+                        .joinedload(Empleados.puesto),
+                    joinedload(Compras.metodos_de_pago),
+                    joinedload(Compras.detalles)
+                        .joinedload(Detalles_compras.producto)
+                            .joinedload(Productos.unidad_medida_productos),
+                    joinedload(Compras.detalles)
+                        .joinedload(Detalles_compras.producto)
+                            .joinedload(Productos.presentacion_productos),
                 )
                 .filter(Compras.estado == state)
-                .order_by(Compras.fecha_compra.desc())  # Ordenar por fecha más reciente
+                .order_by(Compras.fecha_compra.desc())
                 .offset(cantidad_inicial)
                 .limit(cantidad_final)
                 .all()

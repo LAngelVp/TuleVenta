@@ -14,6 +14,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from datetime import datetime
+from .PurchaseOrderPDF import PurchaseOrderPDF
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
@@ -35,11 +36,40 @@ class Compras(QWidget):
         self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
+        self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaOrdenesDeCompra()
         self.__configuracionTablaOrdenesDeCompraRealizadas()
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+
+    def generar_orden_compra_pdf(self):
+        if not self.orderSelected:
+            print("Debe seleccionar una orden de compra.")
+            return
+    
+        try:
+            # Crear y generar PDF
+            pdf_generator = PurchaseOrderPDF(data=self.orderSelected)
+            pdf_generator.generar_pdf()
+        
+            # Guardar temporalmente para prueba
+            temp_file = pdf_generator.get_temp_file()
+            print(f"PDF guardado temporalmente en: {temp_file}")
+        
+            # Abrir con visor por defecto (para prueba)
+            import os
+            import platform
+        
+            if platform.system() == 'Windows':
+                os.startfile(temp_file)
+            elif platform.system() == 'Darwin':  # macOS
+                os.system(f'open "{temp_file}"')
+            else:  # Linux
+                os.system(f'xdg-open "{temp_file}"')
+            
+        except Exception as e:
+            print(f"Error: {e}")
 
     def refrescar_tabla_orden_compra(self):
         try:
