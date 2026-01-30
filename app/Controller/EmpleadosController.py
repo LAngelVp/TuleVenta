@@ -25,8 +25,8 @@ class EmpleadosController(QWidget):
 # -----------------------
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.ui = Ui_Control_empleados()
-        self.ui.setupUi(self)
+        self.WindowEmployee = Ui_Control_empleados()
+        self.WindowEmployee.setupUi(self)
 
 # ============= VARIABLES GLOBALES ===============
         self.ventana_registro = None
@@ -41,15 +41,15 @@ class EmpleadosController(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 # ================ VALIDACIONES ================
-        self.ui.txt_idempleado.setValidator(Validaciones().get_int_validator)
+        self.WindowEmployee.txt_idempleado.setValidator(Validaciones().get_int_validator)
         
 # ================ SEÑALES DE LOS BOTONES ===================
-        self.ui.btn_btn_agregar.clicked.connect(self.agregar_empleado)
-        self.ui.btn_btn_buscar.clicked.connect(self.buscar_empleado)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.limpiar)
-        self.ui.btn_btn_eliminar.clicked.connect(self.eliminar_empleado)
-        self.ui.btn_btn_editarempleado.clicked.connect(self.editar_empleado_seleccionado)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.listar_empleados)
+        self.WindowEmployee.btn_btn_agregar.clicked.connect(self.agregar_empleado)
+        self.WindowEmployee.btn_btn_buscar.clicked.connect(self.buscar_empleado)
+        self.WindowEmployee.btn_RefrescarTabla.clicked.connect(self.limpiar)
+        self.WindowEmployee.btn_btn_eliminar.clicked.connect(self.eliminar_empleado)
+        self.WindowEmployee.btn_btn_editarempleado.clicked.connect(self.editar_empleado_seleccionado)
+        self.WindowEmployee.btn_RefrescarTabla.clicked.connect(self.listar_empleados)
         
 # ================= EJECUCION DE SEÑALES PERSONALIZADAS ===============
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
@@ -67,13 +67,13 @@ class EmpleadosController(QWidget):
             self.ventana_registro.activateWindow()
 
     def buscar_empleado(self):
-        id_empleado = self.ui.txt_idempleado.text().strip()
+        id_empleado = self.WindowEmployee.txt_idempleado.text().strip()
         if id_empleado.isdigit():
             id_empleado = int(id_empleado)
         else:
             id_empleado = None
-        nombre_empleado = self.ui.txt_nombreempleado.text().strip()
-        tipo_filtro_nombre = self.ui.cajaOpciones_filtroNombreEmpleado.currentIndex()
+        nombre_empleado = self.WindowEmployee.txt_nombreempleado.text().strip()
+        tipo_filtro_nombre = self.WindowEmployee.cajaOpciones_filtroNombreEmpleado.currentIndex()
         if not id_empleado and not nombre_empleado:
             Mensaje().mensaje_informativo("No haz ingresado datos para filtrar")
             return
@@ -196,7 +196,7 @@ class EmpleadosController(QWidget):
         return empleados, estado
 
     def llenar_tabla_empleados(self, empleados, estado):
-        if self.ui.tabla_listaempleados is None:
+        if self.WindowEmployee.tabla_listaempleados is None:
             Mensaje().mensaje_alerta("El widget tabla_listaempleados no está disponible.")
             return
         cabeceras = [
@@ -248,7 +248,7 @@ class EmpleadosController(QWidget):
         }
         modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo='modelo_empleados_vempleados',
-            interfazTabla=self.ui.tabla_listaempleados,
+            interfazTabla=self.WindowEmployee.tabla_listaempleados,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabecera,
             ordenable=True,
@@ -264,11 +264,11 @@ class EmpleadosController(QWidget):
         modelo.update_data(empleados, reset=True)
         if hasattr(self, 'seleccion_conectada_empleados') and self.seleccion_conectada_empleados:
             try:
-                self.ui.tabla_listaempleados.clicked.disconnect(self.obtener_id_elemento_tabla_empleados)
+                self.WindowEmployee.tabla_listaempleados.clicked.disconnect(self.obtener_id_elemento_tabla_empleados)
             except:
                 pass
 
-        self.ui.tabla_listaempleados.clicked.connect(self.obtener_id_elemento_tabla_empleados)
+        self.WindowEmployee.tabla_listaempleados.clicked.connect(self.obtener_id_elemento_tabla_empleados)
         self.seleccion_conectada_empleados = True
 
     def obtener_id_elemento_tabla_empleados(self, current, previus = None):
@@ -290,8 +290,8 @@ class EmpleadosController(QWidget):
         self.empleado_actual = None
 
     def limpiar(self):
-        self.ui.txt_idempleado.clear()
-        self.ui.txt_nombreempleado.clear()
+        self.WindowEmployee.txt_idempleado.clear()
+        self.WindowEmployee.txt_nombreempleado.clear()
 
 # =============== RESPUESTAS DE HILO =================
     def mostrar_status(self, mensaje = None, estado = None):
