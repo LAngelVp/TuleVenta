@@ -246,7 +246,6 @@ class Admin_productosController(QWidget):
                 self.obtener_presentaciones_query
             )
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_obtener_presentaciones_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_presentaciones_vagregarproducto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
@@ -298,7 +297,6 @@ class Admin_productosController(QWidget):
                 self.obtener_unidaddes_medida_query
             )
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_obtener_unidades_medida_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_unidades_medida_vagregarproducto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
@@ -350,7 +348,6 @@ class Admin_productosController(QWidget):
                 self.obtener_categorias_query
             )
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_obtener_categorias_productos_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_categorias_productos_vagregarproducto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
@@ -877,10 +874,8 @@ class Admin_productosController(QWidget):
 
             self._cargar_fechas_producto()
 
-            # Categorías y unidades
             self._cargar_opciones_seleccionadas()
 
-            # Proveedores
             if producto.proveedores:
                 self.manejar_proveedores_vinculados(producto)
             else:
@@ -905,7 +900,6 @@ class Admin_productosController(QWidget):
                     self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
                     return
             
-            # Imagen por defecto
             _translate = QtCore.QCoreApplication.translate
             default_html = """<html><head/><body><p align="center">
                             <img src=":/Icons/IconosSVG/subir_imagen.png" width="80" height="70"/>
