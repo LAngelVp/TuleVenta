@@ -1,3 +1,7 @@
+# Separar la configuracion del modelo de la carga de datos
+# Optimizar el formato de la optencion de datos de los modelos de bd
+# Comprobar la paginacion de empleados
+
 import sys
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
@@ -16,12 +20,15 @@ from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
 
 class EmpleadosController(QWidget):
-#señales:
+# ======== SEÑALES =======
     registro_listar_puestos = Signal()
-#-----------------------
+# -----------------------
     def __init__(self, parent = None):
         super().__init__(parent)
-#comment: variables
+        self.ui = Ui_Control_empleados()
+        self.ui.setupUi(self)
+
+# ============= VARIABLES GLOBALES ===============
         self.ventana_registro = None
         self.ventana_registro_cerrada = False
         self.seleccion_conectada_empleados = None
@@ -30,38 +37,28 @@ class EmpleadosController(QWidget):
         self.cargando = None
         self.consultor = None
         self.empleado_actual = None
-#---------------------------------------------------
-        self.ui = Ui_Control_empleados()
-        self.ui.setupUi(self)
-        
-#comment: validaciones:
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
+# ================ VALIDACIONES ================
         self.ui.txt_idempleado.setValidator(Validaciones().get_int_validator)
-#----------------------------------------------------
-#comment:_ botones
+        
+# ================ SEÑALES DE LOS BOTONES ===================
         self.ui.btn_btn_agregar.clicked.connect(self.agregar_empleado)
         self.ui.btn_btn_buscar.clicked.connect(self.buscar_empleado)
         self.ui.btn_RefrescarTabla.clicked.connect(self.limpiar)
         self.ui.btn_btn_eliminar.clicked.connect(self.eliminar_empleado)
         self.ui.btn_btn_editarempleado.clicked.connect(self.editar_empleado_seleccionado)
         self.ui.btn_RefrescarTabla.clicked.connect(self.listar_empleados)
-#-------------------------------------------------------
-#señales:
+        
+# ================= EJECUCION DE SEÑALES PERSONALIZADAS ===============
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
-#---------------------------------------------------------
-#funciones:
-        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.manejadorModal = ModalManager()
-        self.manejadorModal.set_modal_class(Modal_de_espera)
-#-----------------------------------------------------------
-            
-    def ventana_cerrada_nuevo_personal(self):
-        self.ventana_registro = None
-        self.empleado_actual = None
+        
+# ========================= FUNCIONES ==================== 
         
     def agregar_empleado(self):
         if self.ventana_registro is None or self.ventana_registro.isVisible():
             self.ventana_registro = Registro_personal_inicial(parent=self)
-            # self.ventana_registro.registro_agregado_signal.connect(self.listar_empleados)
             self.ventana_registro.VENTANA_REGISTRO_CERRADA.connect(self.ventana_cerrada_nuevo_personal)
             self.registro_listar_puestos.emit()
             self.ventana_registro.show()
@@ -69,10 +66,6 @@ class EmpleadosController(QWidget):
             self.ventana_registro.raise_()
             self.ventana_registro.activateWindow()
 
-    def limpiar(self):
-        self.ui.txt_idempleado.clear()
-        self.ui.txt_nombreempleado.clear()
-        
     def buscar_empleado(self):
         id_empleado = self.ui.txt_idempleado.text().strip()
         if id_empleado.isdigit():
@@ -91,14 +84,12 @@ class EmpleadosController(QWidget):
             self.consultor_buscar_empleado = WorkerDB.get_managed_worker(self.id_hilo_buscar_empleado)
             if not self.consultor_buscar_empleado:
                 raise Exception("No se logro realizar la busqueda del empleado")
-            # conexion a las señales
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_empleado,
                 resultado_callback=self.llenar_tabla_empleados,
                 error_callback=self.mostrar_error,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
-            #ejecutar hilo
             self.consultor_buscar_empleado.ejecutar(
                 funcion=self.buscar_empleado_query,
                 id_empleado = id_empleado,
@@ -107,23 +98,14 @@ class EmpleadosController(QWidget):
             )
             
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_buscar_empleado'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_empleado)
             Mensaje.mensaje_alerta(f'Ocurrio un error en el proceso: {e}')
             
-    def mostrar_status(self, mensaje = None, estado = None):
-        Mensaje().mensaje_informativo(mensaje)
-        
     def buscar_empleado_query(self, session, id_empleado, nombre_empleado, tipo_filtro_nombre):
         empleados, estado = EmpleadosModel(session).filtrar_empleados(id_empleado, nombre_empleado, tipo_filtro_nombre)
         return empleados, estado
                 
-    def roles(self):
-        # self.roles =  Control_rol()
-        # self.roles.show()
-        pass
-
     def eliminar_empleado(self):
         if not self.empleado_actual:
             Mensaje().mensaje_informativo("No haz seleccionado un empleado")
@@ -174,10 +156,6 @@ class EmpleadosController(QWidget):
                 "mensaje": f'Operación exitosa, registro {empleado.nombre} eliminado'
                 }
     
-    def mensaje_estado_eliminado(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
-        self.empleado_actual = None
-
     def editar_empleado_seleccionado(self):
         if not self.empleado_actual:
             Mensaje().mensaje_informativo("No haz seleccionado un empleado")
@@ -209,15 +187,10 @@ class EmpleadosController(QWidget):
                 self.obtener_empleados_query
             )
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_listar_empleados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_empleados)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
         
-    def mostrar_error(self, error):
-        Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")
-        return
-    
     def obtener_empleados_query(self, session):
         empleados, estado = EmpleadosModel(session).obtener_empleados_detallados()
         return empleados, estado
@@ -226,8 +199,6 @@ class EmpleadosController(QWidget):
         if self.ui.tabla_listaempleados is None:
             Mensaje().mensaje_alerta("El widget tabla_listaempleados no está disponible.")
             return
-
-        # Configurar el modelo usando ComprobarModelosTablas
         cabeceras = [
             "ID", "Nombre", "Apellido Paterno", "Apellido Materno", "Fecha Nacimiento", "Estado Civil",
             "CURP", "RFC", "Nivel Académico", "Carrera", "Correo Electrónico", "Número Seguro Social",
@@ -237,8 +208,6 @@ class EmpleadosController(QWidget):
             "Puesto", "Salario", "Horas Laborales", "Días Laborales",
             "Hora Entrada", "Hora Salida", "Departamento", "Sucursal"
         ]
-
-        # Definir el mapeo de cabeceras para GenericTableModel
         mapeo_cabecera = {
             "id": lambda e: e.id,
             "nombre": lambda e: e.nombre,
@@ -277,8 +246,6 @@ class EmpleadosController(QWidget):
             "departamento": lambda e: e.departamento.nombre if e.departamento else '',
             "sucursal": lambda e: e.sucursal.nombre_sucursal if e.sucursal else '',
         }
-
-        # Usar ComprobarModelosTablas para crear/obtener el modelo
         modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo='modelo_empleados_vempleados',
             interfazTabla=self.ui.tabla_listaempleados,
@@ -289,18 +256,12 @@ class EmpleadosController(QWidget):
             autoAjustarColumnas=True,
             signalSeleccion=self.obtener_id_elemento_tabla_empleados
         )
-
         if not estado or not empleados:
             Mensaje().mensaje_informativo("No hay empleados para mostrar")
             modelo.clear()
             return
-
         self.empleados = empleados
-
-        # Actualizar los datos del modelo
         modelo.update_data(empleados, reset=True)
-
-        # Configurar la selección (esto ya se hace en comprobarModeloTabla, pero por si acaso)
         if hasattr(self, 'seleccion_conectada_empleados') and self.seleccion_conectada_empleados:
             try:
                 self.ui.tabla_listaempleados.clicked.disconnect(self.obtener_id_elemento_tabla_empleados)
@@ -309,8 +270,6 @@ class EmpleadosController(QWidget):
 
         self.ui.tabla_listaempleados.clicked.connect(self.obtener_id_elemento_tabla_empleados)
         self.seleccion_conectada_empleados = True
-
-        # QTimer.singleShot(0, self.cargando_cerrar)
 
     def obtener_id_elemento_tabla_empleados(self, current, previus = None):
         if current.isValid():
@@ -321,5 +280,27 @@ class EmpleadosController(QWidget):
                 self.empleado_actual = empleado
 
     def obtencion_segura(atributo, default='Sin dato'):
-        """Función auxiliar para obtener atributos de manera segura."""
         return atributo if atributo is not None else default
+
+    def roles(self):
+        pass
+# ================= FUNCIONES GENERICAS =====================
+    def ventana_cerrada_nuevo_personal(self):
+        self.ventana_registro = None
+        self.empleado_actual = None
+
+    def limpiar(self):
+        self.ui.txt_idempleado.clear()
+        self.ui.txt_nombreempleado.clear()
+
+# =============== RESPUESTAS DE HILO =================
+    def mostrar_status(self, mensaje = None, estado = None):
+        Mensaje().mensaje_informativo(mensaje)
+    
+    def mostrar_error(self, error):
+        Mensaje().mensaje_alerta(f"Sucedio un error al momento de listar los empleados : {error}")
+        return
+
+    def mensaje_estado_eliminado(self, objetoMensaje):
+        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
+        self.empleado_actual = None

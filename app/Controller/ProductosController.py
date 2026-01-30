@@ -25,26 +25,31 @@ from .Ventana_espera import *
 import traceback
 
 class ExistenciasClase(QWidget):
+# =============== SEÑALES PERSONALIZADAS ================
     VENTANA_CERRADA_EXISTENCIA = Signal()
     RECIBIR_PRODUCTO_ID_EXISTENCIA = Signal(object)
     def __init__(self, parent = None, datos_usuario = None):
         super().__init__(parent)
+        self.WindowExistenciasProducto = Ui_UI_EXISTENCIA_PRODUCTO()
+        self.WindowExistenciasProducto.setupUi(self)
+        self.WindowExistenciasProducto.fecha_FechaMovimiento.setDate(QDate.currentDate())
+# ==================== VARIABLES GLOBALES =================
         self._ventanaCentrada = False
         self.datos_usuario = datos_usuario
         self.producto = None
         self.consultor = None
         self.cargando = None
         self.codigo_producto_upc = None
-        self.ui = Ui_UI_EXISTENCIA_PRODUCTO()
-        self.ui.setupUi(self)
-        self.ui.fecha_FechaMovimiento.setDate(QDate.currentDate())
-        self.ui.btn_existenciaProducto_aceptar.clicked.connect(self.ejecutar_existencias)
-        self.ui.btn_existenciaProducto_cerrar.clicked.connect(self.close)
-        self.RECIBIR_PRODUCTO_ID_EXISTENCIA.connect(self.mostrar_datos_en_ui)
-        
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        
+# ================== SEÑALES DE BOTONES ===================
+        self.WindowExistenciasProducto.btn_existenciaProducto_aceptar.clicked.connect(self.ejecutar_existencias)
+        self.WindowExistenciasProducto.btn_existenciaProducto_cerrar.clicked.connect(self.close)
+
+# ================== SEÑALES PERSONALIZADAS =================
+        self.RECIBIR_PRODUCTO_ID_EXISTENCIA.connect(self.mostrar_datos_en_ui)
+
+# ========================= FUNCIONES ========================
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentrada:
@@ -56,17 +61,16 @@ class ExistenciasClase(QWidget):
         event.accept()
         
     def mostrar_datos_en_ui(self, producto):
-        print(f"este es el producto {self.producto}")
         self.producto = producto
         if self.producto:
-            self.ui.etiqueta_ClaveProducto.setText(self.producto.codigo_upc)
-            self.ui.etiqueta_NombreUsuario.setText(self.datos_usuario["nombre_empleado"])
+            self.WindowExistenciasProducto.etiqueta_ClaveProducto.setText(self.producto.codigo_upc)
+            self.WindowExistenciasProducto.etiqueta_NombreUsuario.setText(self.datos_usuario["nombre_empleado"])
             
     def ejecutar_existencias(self):
-        cant_existencia = self.ui.decimal_CantidadExistencia.value()
-        tipo_movimiento = self.ui.cajaOpciones_TipoMovimiento.currentText()
-        fecha_movimiento = self.ui.fecha_FechaMovimiento.date().toString('yyyy-MM-dd')
-        notas = self.ui.txtlargo_NotasProducto.toPlainText()
+        cant_existencia = self.WindowExistenciasProducto.decimal_CantidadExistencia.value()
+        tipo_movimiento = self.WindowExistenciasProducto.cajaOpciones_TipoMovimiento.currentText()
+        fecha_movimiento = self.WindowExistenciasProducto.fecha_FechaMovimiento.date().toString('yyyy-MM-dd')
+        notas = self.WindowExistenciasProducto.txtlargo_NotasProducto.toPlainText()
         id_usuario = self.datos_usuario["id_empleado"]
         if cant_existencia != 0:
             try:
@@ -107,7 +111,8 @@ class ExistenciasClase(QWidget):
         if estado:
             session.commit()
         return datos, estado
-    
+
+# =================== MENSAJES DEL HILO ===================
     def mensaje_error(self, mensaje):
         Mensaje().mensaje_critico(f"Ocurrio un error al ejecutar la operación : {mensaje}")
         return
@@ -119,15 +124,36 @@ class ExistenciasClase(QWidget):
             Mensaje().mensaje_informativo(mensaje)
 
 class Admin_productosController(QWidget):
-#SEÑALES:
+# ============= SEÑALES PERSONALIZADAS ===============
     PRODUCTOS_AGREGADOS = Signal()
     RECIBIR_PRODUCTO_ACTUALIZAR_ID = Signal(object)
     VENTANA_CERRADA_PRODUCTOS = Signal()
-    closed = Signal()
-#--------------------------
+    ClosedWindowAdminProduct = Signal()
+
     def __init__(self, parent = None):
         super().__init__(parent)
-        # VARIABLES:
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.WindowsAddProduct_Dialog = Ui_contenedorModal_agregar_productos()
+        self.WindowsAddProduct_Dialog.setupUi(self)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        icon = QIcon(':Icons/IconosSVG/productos.png')
+        self.setWindowIcon(icon)
+        self.setWindowTitle("Administración de productos")
+        self.WindowsAddProduct_Dialog.fecha_fabricacionProducto.setDate(QDate.currentDate())
+        self.WindowsAddProduct_Dialog.fecha_vencimientoProducto.setDate(QDate.currentDate())
+        self.WindowsAddProduct_Dialog.contenedorModal_proveedores_vinculados.hide()
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_actualizar_producto.hide()
+        self.WindowsAddProduct_Dialog.contenedorModal_proveedores_existentes.hide()
+        self.WindowsAddProduct_Dialog.contenedorModal_proveedores_a_vincular.hide()
+        self.WindowsAddProduct_Dialog.contenedorModal_contenedorFechaCaducidad.hide()
+        self.WindowsAddProduct_Dialog.txt_codBarras.setFocus()
+        self.sombra = QGraphicsDropShadowEffect()
+        self.sombra.setBlurRadius(25) 
+        self.sombra.setOffset(0, 0)
+        self.sombra.setColor(QColor(0, 102, 204)) 
+        self.WindowsAddProduct_Dialog.contenedorModal_general.setGraphicsEffect(self.sombra)
+
+# ====================== VARIABLES GLOBALES ===============
         self.consultor = None
         self.cargando = None
         self.producto = None
@@ -143,66 +169,44 @@ class Admin_productosController(QWidget):
         self.proveedores_no_vinculados = {}
         self.proveedores_generales_del_sistema_dict = {}
         self._ventanaCentradaProductoExistente = False 
-        #-------------------------------
-        # # Asegurar que no hay translucidez
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
-        self.ui = Ui_contenedorModal_agregar_productos()
-        self.ui.setupUi(self)
-        self.setAttribute(Qt.WA_DeleteOnClose)
-        # self.setStyleSheet(self.styleSheet())
-        icon = QIcon(':Icons/IconosSVG/productos.png')
-        self.setWindowIcon(icon)
-        self.setWindowTitle("Administración de productos")
-#// EDICION DE COMPONENTES:
-        self.ui.fecha_fabricacionProducto.setDate(QDate.currentDate())
-        self.ui.fecha_vencimientoProducto.setDate(QDate.currentDate())
-        self.ui.contenedorModal_proveedores_vinculados.hide()
-        self.ui.btn_btn_addProduct_actualizar_producto.hide()
-        self.ui.contenedorModal_proveedores_existentes.hide()
-        self.ui.contenedorModal_proveedores_a_vincular.hide()
-        self.ui.contenedorModal_contenedorFechaCaducidad.hide()
-        self.ui.txt_codBarras.setFocus()
-        self.sombra = QGraphicsDropShadowEffect()
-        self.sombra.setBlurRadius(25) 
-        self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor(0, 102, 204)) 
-        self.ui.contenedorModal_general.setGraphicsEffect(self.sombra)
-        
-#// Validaciones:
-        self.ui.txt_codBarras.setMaxLength(255)
-        self.ui.txt_nombreProducto.setMaxLength(255)
-        self.ui.txt_marcaProducto.setMaxLength(100)
-        self.ui.txt_modeloProducto.setMaxLength(50)
-        self.ui.txt_colorProducto.setMaxLength(20)
-        self.ui.txt_materialProducto.setMaxLength(255)
-        self._translate = QtCore.QCoreApplication.translate
-        # FUNCIONES INICIALES
-        self.comprobar_existencia_modelo_tabla()
-        self.obtener_proveedores()
-        # -------------------------
-        self.ui.btn_btn_addProduct_actualizar_producto.clicked.connect(self.__actualizar_producto)
-        self.ui.btn_btn_addProduct_agregar_categoria.clicked.connect(self.__agregar_categoria)
-        self.ui.btn_btn_addProduct_agregar_unidadMedidaProducto.clicked.connect(self.agregar_unidad_medida)
-        self.ui.btn_btn_addProduct_agregarPresentacionProducto.clicked.connect(self.agregar_presentacion)
-        self.ui.btn_btn_addProduct_agregar_producto.clicked.connect(self.__agregar_producto)
-        self.ui.btn_btn_addProduct_guardar_producto.clicked.connect(self.__guardar_producto)
-        self.ui.btn_btn_addProduct_limpiarTablaProductos.clicked.connect(self.__limpiar_tabla_productos)
-        self.ui.btn_btn_addProduct_cargar_CSVProductos.clicked.connect(self.__leer_archivo_csv)
-        self.ui.btn_btn_addProduct_desvincular_proveedores.clicked.connect(self.desvincular_proveedor_al_producto)
-        self.ui.btn_btn_addProduct_eliminar_proveedor_a_vincular.clicked.connect(self.eliminar_proveedor_a_vincular)
-        
-        self.ui.etiqueta_fotoProducto.mousePressEvent = self.cargar_imagen
-        self.RECIBIR_PRODUCTO_ACTUALIZAR_ID.connect(self.__cargar_datos_en_campos)
-        self.ui.txt_buscar_proveedor_a_vincular.returnPressed.connect(self.buscar_proveedor_existente)
-        self.ui.txt_buscar_proveedor_vinculado.returnPressed.connect(self.buscar_proveedor_vinculado)
-        self.ui.lista_todos_los_proveedores.itemClicked.connect(self.vincular_proveedor_al_producto)
-        self.ui.entero_margenProducto.editingFinished.connect(self.calcular_precio_venta)
-        self.ui.opcion_TieneCaducidad.stateChanged.connect(self.mostrar_fechas_caducidad)
-        self.ui.btn_btn_addProduct_cerrar.clicked.connect(self.close)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_presentacion_producto = AjustarcajaOpciones()
+# ================== VALIDACIONES =======================
+        self.WindowsAddProduct_Dialog.txt_codBarras.setMaxLength(255)
+        self.WindowsAddProduct_Dialog.txt_nombreProducto.setMaxLength(255)
+        self.WindowsAddProduct_Dialog.txt_marcaProducto.setMaxLength(100)
+        self.WindowsAddProduct_Dialog.txt_modeloProducto.setMaxLength(50)
+        self.WindowsAddProduct_Dialog.txt_colorProducto.setMaxLength(20)
+        self.WindowsAddProduct_Dialog.txt_materialProducto.setMaxLength(255)
+        self._translate = QtCore.QCoreApplication.translate
+
+# ====================== SEÑALES DE BOTONES ================
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_actualizar_producto.clicked.connect(self.__actualizar_producto)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_categoria.clicked.connect(self.__agregar_categoria)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_unidadMedidaProducto.clicked.connect(self.agregar_unidad_medida)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregarPresentacionProducto.clicked.connect(self.agregar_presentacion)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_producto.clicked.connect(self.__agregar_producto)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_guardar_producto.clicked.connect(self.__guardar_producto)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_limpiarTablaProductos.clicked.connect(self.__limpiar_tabla_productos)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_cargar_CSVProductos.clicked.connect(self.__leer_archivo_csv)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_desvincular_proveedores.clicked.connect(self.desvincular_proveedor_al_producto)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_eliminar_proveedor_a_vincular.clicked.connect(self.eliminar_proveedor_a_vincular)
+        self.WindowsAddProduct_Dialog.btn_btn_addProduct_cerrar.clicked.connect(self.close)
+        self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.itemClicked.connect(self.vincular_proveedor_al_producto)
+        
+# ====================== SEÑALES PERSONALIZADAS ====================
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.mousePressEvent = self.cargar_imagen
+        self.RECIBIR_PRODUCTO_ACTUALIZAR_ID.connect(self.__cargar_datos_en_campos)
+        self.WindowsAddProduct_Dialog.txt_buscar_proveedor_a_vincular.returnPressed.connect(self.buscar_proveedor_existente)
+        self.WindowsAddProduct_Dialog.txt_buscar_proveedor_vinculado.returnPressed.connect(self.buscar_proveedor_vinculado)
+        self.WindowsAddProduct_Dialog.entero_margenProducto.editingFinished.connect(self.calcular_precio_venta)
+        self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.stateChanged.connect(self.mostrar_fechas_caducidad)
+
+# =================== FUNCIONES INICIALES =================
+        self.comprobar_existencia_modelo_tabla()
+        self.obtener_proveedores()
         self.ajustador_presentacion_producto.elemento_eliminado_signal.connect(self.listar_presentaciones_productos)
         self.ajustador_unidad_medida_producto = AjustarcajaOpciones()
         self.ajustador_unidad_medida_producto.elemento_eliminado_signal.connect(self.listar_unidades_medida)
@@ -210,7 +214,7 @@ class Admin_productosController(QWidget):
         self.ajustador_categoria_producto.elemento_eliminado_signal.connect(self.listar_categorias)
         self.__configurar_tabla_productos()
         
-#FUNCIONES-VENTANAS EMERGENTES: 
+# ========================= FUNCIONES-VENTANAS EMERGENTES ======================
     def agregar_presentacion(self):
         self.ui_presentacion = PresentacionProductos()
         self.ui_presentacion.presentacion_producto_agregada_signal.connect(self.listar_presentaciones_productos)
@@ -272,10 +276,10 @@ class Admin_productosController(QWidget):
 
     def listar_presentaciones_cajaopciones(self, resultado):
         if resultado["exito"]:
-            self.ui.cajaOpciones_presentacionProducto.clear()
+            self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto.clear()
             for presentacion in resultado["data"]:
-                self.ui.cajaOpciones_presentacionProducto.addItem(presentacion.nombre, presentacion)
-            self.ajustador_presentacion_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_presentacionProducto)
+                self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto.addItem(presentacion.nombre, presentacion)
+            self.ajustador_presentacion_producto.ajustar_cajadeopciones(self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto)
             self.ajustador_presentacion_producto.elemento_eliminado_signal.connect(self.listar_presentaciones_productos)
             
     def listar_unidades_medida(self):
@@ -324,10 +328,10 @@ class Admin_productosController(QWidget):
         
     def listar_unidades_medida_cajaopciones(self, resultado):
         if resultado["exito"]:
-                self.ui.cajaOpciones_unidadMedidaProducto.clear()
+                self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto.clear()
                 for unidad in resultado["data"]:
-                    self.ui.cajaOpciones_unidadMedidaProducto.addItem(unidad.nombre, unidad)
-                self.ajustador_unidad_medida_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_unidadMedidaProducto)
+                    self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto.addItem(unidad.nombre, unidad)
+                self.ajustador_unidad_medida_producto.ajustar_cajadeopciones(self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto)
                 self.ajustador_unidad_medida_producto.elemento_eliminado_signal.connect(self.listar_unidades_medida)
                 
     def listar_categorias(self):
@@ -376,51 +380,47 @@ class Admin_productosController(QWidget):
 
     def listar_categorias_cajaopciones(self, resultado):
         if resultado["exito"]:
-            self.ui.cajaOpciones_categoriaProducto.clear()
+            self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto.clear()
             for categoria in resultado["data"]:
-                self.ui.cajaOpciones_categoriaProducto.addItem(categoria.nombre, categoria)
-            self.ajustador_categoria_producto.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaProducto)
+                self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto.addItem(categoria.nombre, categoria)
+            self.ajustador_categoria_producto.ajustar_cajadeopciones(self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto)
             self.ajustador_categoria_producto.elemento_eliminado_signal.connect(self.listar_categorias)
-# NOTA: APARTADO TERMINADO
-#########################
-#FUNCIONES-INTERACCION CON EL PRODUCTO
+
+# ============= FUNCIONES-INTERACCION CON EL PRODUCTO ================
     def mostrar_fechas_caducidad(self, state):
         if state in [1, 2]:
-            self.ui.contenedorModal_contenedorFechaCaducidad.show()
-        else:  # Si está desmarcado
-            self.ui.contenedorModal_contenedorFechaCaducidad.hide()
+            self.WindowsAddProduct_Dialog.contenedorModal_contenedorFechaCaducidad.show()
+        else:
+            self.WindowsAddProduct_Dialog.contenedorModal_contenedorFechaCaducidad.hide()
 
     def campos_productos(self):
-        # Crear un diccionario para almacenar los widgets
         datos = {
-            "proveedor": self.ui.txt_proveedor,
-            "codigo_barras": self.ui.txt_codBarras,
-            "nombre": self.ui.txt_nombreProducto,
-            "categoria_producto": self.ui.cajaOpciones_categoriaProducto,
-            "marca_producto": self.ui.txt_marcaProducto,
-            "modelo_producto": self.ui.txt_modeloProducto,
-            "color_producto": self.ui.txt_colorProducto,
-            "material_producto": self.ui.txt_materialProducto,
-            "unidad_medida_producto": self.ui.cajaOpciones_unidadMedidaProducto,
-            "presentacion_producto": self.ui.cajaOpciones_presentacionProducto,
-            "costo_inicial_producto": self.ui.decimal_costoInicialProducto,
-            "costo_final_producto": self.ui.decimal_costoFinalProducto,
-            "margen_porcentaje": self.ui.entero_margenProducto,
-            "precio_venta_producto": self.ui.decimal_precioVentaProducto,
-            "existencia_producto": self.ui.decimal_existenciaProducto,
-            "existencia_min_producto": self.ui.decimal_existenciaMinProducto,
-            "existencia_max_producto": self.ui.decimal_existenciaMaxProducto,
-            "peso_producto": self.ui.decimal_pesoProducto,
-            "alto_cm": self.ui.decimal_altoDimensiones,
-            "largo_cm": self.ui.decimal_largoDimensiones,
-            "ancho_cm": self.ui.decimal_anchoDimensiones,
-            "descripcion_producto": self.ui.txtlargo_descripcionProducto,
-            "notas_producto": self.ui.txtlargo_notasProducto,
-            "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto,
-            "fecha_fabricacion_producto": self.ui.fecha_fabricacionProducto,
+            "proveedor": self.WindowsAddProduct_Dialog.txt_proveedor,
+            "codigo_barras": self.WindowsAddProduct_Dialog.txt_codBarras,
+            "nombre": self.WindowsAddProduct_Dialog.txt_nombreProducto,
+            "categoria_producto": self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto,
+            "marca_producto": self.WindowsAddProduct_Dialog.txt_marcaProducto,
+            "modelo_producto": self.WindowsAddProduct_Dialog.txt_modeloProducto,
+            "color_producto": self.WindowsAddProduct_Dialog.txt_colorProducto,
+            "material_producto": self.WindowsAddProduct_Dialog.txt_materialProducto,
+            "unidad_medida_producto": self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto,
+            "presentacion_producto": self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto,
+            "costo_inicial_producto": self.WindowsAddProduct_Dialog.decimal_costoInicialProducto,
+            "costo_final_producto": self.WindowsAddProduct_Dialog.decimal_costoFinalProducto,
+            "margen_porcentaje": self.WindowsAddProduct_Dialog.entero_margenProducto,
+            "precio_venta_producto": self.WindowsAddProduct_Dialog.decimal_precioVentaProducto,
+            "existencia_producto": self.WindowsAddProduct_Dialog.decimal_existenciaProducto,
+            "existencia_min_producto": self.WindowsAddProduct_Dialog.decimal_existenciaMinProducto,
+            "existencia_max_producto": self.WindowsAddProduct_Dialog.decimal_existenciaMaxProducto,
+            "peso_producto": self.WindowsAddProduct_Dialog.decimal_pesoProducto,
+            "alto_cm": self.WindowsAddProduct_Dialog.decimal_altoDimensiones,
+            "largo_cm": self.WindowsAddProduct_Dialog.decimal_largoDimensiones,
+            "ancho_cm": self.WindowsAddProduct_Dialog.decimal_anchoDimensiones,
+            "descripcion_producto": self.WindowsAddProduct_Dialog.txtlargo_descripcionProducto,
+            "notas_producto": self.WindowsAddProduct_Dialog.txtlargo_notasProducto,
+            "fecha_vencimiento_producto": self.WindowsAddProduct_Dialog.fecha_vencimientoProducto,
+            "fecha_fabricacion_producto": self.WindowsAddProduct_Dialog.fecha_fabricacionProducto,
         }
-        
-        # Retornar el diccionario con los widgets
         return datos
 
     def __limpiar_campos(self):
@@ -435,7 +435,7 @@ class Admin_productosController(QWidget):
             elif isinstance(campo, QDateEdit):
                 campo.setDate(QDate.currentDate())
         _translate = QtCore.QCoreApplication.translate
-        self.ui.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"80\" height=\"70\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-family:Arial; font-weight:bold;\">Cargar Imagen</span></p></body></html>"))
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"80\" height=\"70\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-family:Arial; font-weight:bold;\">Cargar Imagen</span></p></body></html>"))
 
     def cargar_imagen(self, event):
         options = QFileDialog.Options()
@@ -443,48 +443,46 @@ class Admin_productosController(QWidget):
         image_accept = FuncionesAuxiliaresController().size_validator_image(self.imagenProducto)
         if self.imagenProducto:
             if image_accept:
-                self.ui.etiqueta_fotoProducto.setText(self.imagenProducto)
+                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(self.imagenProducto)
                 pixmap = QPixmap(self.imagenProducto)
-                self.ui.etiqueta_fotoProducto.setPixmap(pixmap)
-                self.ui.etiqueta_fotoProducto.setScaledContents(True)
-                self.ui.etiqueta_fotoProducto.adjustSize()
+                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap)
+                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setScaledContents(True)
+                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.adjustSize()
             else:
                 Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
         return
     
     def datos_campos(self):
-        # Crear un diccionario para almacenar los valores de los campos
         datos = {
-            "proveedor": self.ui.txt_proveedor.text().strip(),
-            "codigo_barras": self.ui.txt_codBarras.text().strip(),
-            "nombre": self.ui.txt_nombreProducto.text().strip(),
-            "categoria_producto": self.ui.cajaOpciones_categoriaProducto.currentData(),
-            "marca_producto": self.ui.txt_marcaProducto.text().strip(),
-            "modelo_producto": self.ui.txt_modeloProducto.text().strip(),
-            "color_producto": self.ui.txt_colorProducto.text().strip(),
-            "material_producto": self.ui.txt_materialProducto.text().strip(),
-            "unidad_medida_producto": self.ui.cajaOpciones_unidadMedidaProducto.currentData(),
-            "presentacion_producto": self.ui.cajaOpciones_presentacionProducto.currentData(),
-            "costo_inicial_producto": self.ui.decimal_costoInicialProducto.value(),
-            "margen_porcentaje": self.ui.entero_margenProducto.value(),
-            "precio_venta_producto": self.ui.decimal_precioVentaProducto.value(),
-            "costo_final_producto": self.ui.decimal_costoFinalProducto.value(),
-            "existencia_producto": self.ui.decimal_existenciaProducto.value(),
-            "existencia_min_producto": self.ui.decimal_existenciaMinProducto.value(),
-            "existencia_max_producto": self.ui.decimal_existenciaMaxProducto.value(),
-            "peso_producto": self.ui.decimal_pesoProducto.value(),
-            "largo_cm": self.ui.decimal_largoDimensiones.value(),
-            "alto_cm": self.ui.decimal_altoDimensiones.value(),
-            "ancho_cm": self.ui.decimal_anchoDimensiones.value(),
-            "descripcion_producto": self.ui.txtlargo_descripcionProducto.toPlainText(),
-            "notas_producto": self.ui.txtlargo_notasProducto.toPlainText(),
-            "fecha_vencimiento_producto": self.ui.fecha_vencimientoProducto.date().toPython(),
-            "fecha_fabricacion_producto": self.ui.fecha_fabricacionProducto.date().toPython(),
+            "proveedor": self.WindowsAddProduct_Dialog.txt_proveedor.text().strip(),
+            "codigo_barras": self.WindowsAddProduct_Dialog.txt_codBarras.text().strip(),
+            "nombre": self.WindowsAddProduct_Dialog.txt_nombreProducto.text().strip(),
+            "categoria_producto": self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto.currentData(),
+            "marca_producto": self.WindowsAddProduct_Dialog.txt_marcaProducto.text().strip(),
+            "modelo_producto": self.WindowsAddProduct_Dialog.txt_modeloProducto.text().strip(),
+            "color_producto": self.WindowsAddProduct_Dialog.txt_colorProducto.text().strip(),
+            "material_producto": self.WindowsAddProduct_Dialog.txt_materialProducto.text().strip(),
+            "unidad_medida_producto": self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto.currentData(),
+            "presentacion_producto": self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto.currentData(),
+            "costo_inicial_producto": self.WindowsAddProduct_Dialog.decimal_costoInicialProducto.value(),
+            "margen_porcentaje": self.WindowsAddProduct_Dialog.entero_margenProducto.value(),
+            "precio_venta_producto": self.WindowsAddProduct_Dialog.decimal_precioVentaProducto.value(),
+            "costo_final_producto": self.WindowsAddProduct_Dialog.decimal_costoFinalProducto.value(),
+            "existencia_producto": self.WindowsAddProduct_Dialog.decimal_existenciaProducto.value(),
+            "existencia_min_producto": self.WindowsAddProduct_Dialog.decimal_existenciaMinProducto.value(),
+            "existencia_max_producto": self.WindowsAddProduct_Dialog.decimal_existenciaMaxProducto.value(),
+            "peso_producto": self.WindowsAddProduct_Dialog.decimal_pesoProducto.value(),
+            "largo_cm": self.WindowsAddProduct_Dialog.decimal_largoDimensiones.value(),
+            "alto_cm": self.WindowsAddProduct_Dialog.decimal_altoDimensiones.value(),
+            "ancho_cm": self.WindowsAddProduct_Dialog.decimal_anchoDimensiones.value(),
+            "descripcion_producto": self.WindowsAddProduct_Dialog.txtlargo_descripcionProducto.toPlainText(),
+            "notas_producto": self.WindowsAddProduct_Dialog.txtlargo_notasProducto.toPlainText(),
+            "fecha_vencimiento_producto": self.WindowsAddProduct_Dialog.fecha_vencimientoProducto.date().toPython(),
+            "fecha_fabricacion_producto": self.WindowsAddProduct_Dialog.fecha_fabricacionProducto.date().toPython(),
         }
         return datos
         
     def __agregar_producto(self):
-        """Agrega un nuevo producto con los valores actuales de los campos a la tabla"""
         try:
             datos = self.datos_campos()
             if not datos["codigo_barras"]:
@@ -514,7 +512,7 @@ class Admin_productosController(QWidget):
                 "ancho_cm": datos["ancho_cm"],
                 "descripcion_producto": datos["descripcion_producto"],
                 "notas": datos["notas_producto"],
-                "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.ui.opcion_TieneCaducidad.isChecked() else None,
+                "fecha_vencimiento": datos["fecha_vencimiento_producto"] if self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.isChecked() else None,
                 "fecha_fabricacion": datos["fecha_fabricacion_producto"] if datos["fecha_fabricacion_producto"] else None,
                 "imagen": self.imagenProducto  
             }
@@ -528,11 +526,8 @@ class Admin_productosController(QWidget):
             self.lista_productos.append(nuevo_producto)
             if not hasattr(self, 'modelo_tabla_productos'):
                 self.__configurar_tabla_productos()
-            # Agregar a la tabla visual
             self.modelo_tabla_productos.append_data([nuevo_producto])
-            # Limpiar campos para nuevo ingreso
             self.__limpiar_campos()
-            # Mostrar confirmación
             Mensaje().mensaje_informativo(f"Producto '{nuevo_producto['nombre']}' agregado correctamente")
             self.imagenProducto = None
         except Exception as e:
@@ -540,12 +535,10 @@ class Admin_productosController(QWidget):
             print(f"Error detallado: {e}")
             
     def __configurar_tabla_productos(self):
-        """Configura la tabla para mostrar los productos"""
         cabeceras = [
             "Codigo_barras", "Nombre", "Descripcion_producto", "Notas", "Categoria", "Marca", "Modelo", 
             "Precio_venta", "Existencia", "Proveedor"
         ]
-        
         mapeo_cabeceras = {
             'codigo_barras': lambda p: p.get('codigo_barras', ''),
             'nombre': lambda p: p.get('nombre', ''),
@@ -558,10 +551,9 @@ class Admin_productosController(QWidget):
             'existencia': lambda p: p.get('existencia', 0),
             'proveedor': lambda p: p.get('proveedor', '')
         }
-        
         self.modelo_tabla_productos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_productos",
-            interfazTabla=self.ui.tabla_productos, 
+            interfazTabla=self.WindowsAddProduct_Dialog.tabla_productos, 
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabeceras,
             ordenable=True,
@@ -574,7 +566,7 @@ class Admin_productosController(QWidget):
     def llenar_tabla_productos(self, productos):
         if not productos:
             return
-        if self.ui.tabla_productos is None:
+        if self.WindowsAddProduct_Dialog.tabla_productos is None:
             Mensaje().mensaje_informativo("La tabla de los productos no esta disponible")
             return
         cabeceras = [
@@ -609,13 +601,12 @@ class Admin_productosController(QWidget):
         }
         modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_productos_a_agregar",
-            interfazTabla=self.ui.tabla_productos,
+            interfazTabla=self.WindowsAddProduct_Dialog.tabla_productos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabeceras,
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            # signalPersonalizada=self.obtener_proveedor_seleccionado_tabla
         )
         if productos:
             Mensaje().mensaje_informativo("No hay información para listar")
@@ -641,34 +632,28 @@ class Admin_productosController(QWidget):
                 self.agregar_productos_query
             )
         except Exception as e:
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_agregar_producto_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_producto_vagregarproducto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def productos_agregados_finalizado(self, productos_agregados, estado):
         if estado:
-            # Aquí haces lo que quieras con los productos agregados:
             Mensaje().mensaje_informativo(f"{len(productos_agregados)} productos agregados con éxito.")
-            # Podrías actualizar la UI o limpiar el formulario, por ejemplo
         else:
             Mensaje().mensaje_informativo("No se pudieron agregar productos.")
             
     def agregar_productos_query(self, session):
             productos_no_agregados = []
             productos_agregados = []
-
             for producto in self.lista_productos:
                 nombre_proveedor = producto["proveedor"].strip() if producto["proveedor"] else ""
                 nombre_presentacion = producto["presentacion"].strip() if producto["presentacion"] else ""
                 nombre_unidad_de_medida = producto["unidad_medida"].strip() if producto["unidad_medida"] else ""
                 nombre_categoria = producto["categoria"].strip() if producto["categoria"] else ""
-
                 proveedor = None
                 presentacion = None
                 unidad_medida = None
                 categoria = None
-
                 if nombre_proveedor:
                     proveedor, _ = ProveedoresModel(session).consultar_proveedor(nombre_proveedor)
                 if nombre_presentacion:
@@ -677,9 +662,7 @@ class Admin_productosController(QWidget):
                     unidad_medida, _ = ProductosModel(session).agregar_unidad_medida(nombre=nombre_unidad_de_medida)
                 if nombre_categoria:
                     categoria, _ = CategoriasModel(session).agregar(tipo_categoria="productos", nombre=nombre_categoria)
-
                 proveedores = [proveedor] if proveedor else []
-
                 producto_obj, estatus_producto = ProductosModel(session).agregar_producto(
                     codigo_upc=producto["codigo_barras"],
                     nombre_producto=producto["nombre"],
@@ -700,7 +683,7 @@ class Admin_productosController(QWidget):
                     color=producto["color"],
                     material=producto["material"],
                     fecha_fabricacion=producto["fecha_fabricacion"],
-                    fecha_vencimiento=producto["fecha_vencimiento"] if self.ui.opcion_TieneCaducidad.isChecked() or producto["fecha_vencimiento"] else None,
+                    fecha_vencimiento=producto["fecha_vencimiento"] if self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.isChecked() or producto["fecha_vencimiento"] else None,
                     imagen=self.imagenProducto if self.imagenProducto else producto["imagen"],
                     notas=producto["notas"],
                     presentacion_producto_id=presentacion.id if presentacion else None,
@@ -709,18 +692,15 @@ class Admin_productosController(QWidget):
                     sucursales=[],
                     proveedores=proveedores
                 )
-
                 if estatus_producto:
                     productos_agregados.append(producto_obj)
                 else:
                     productos_no_agregados.append(producto_obj)
-
-            # Asegúrate de hacer commit de la sesión después de agregar los productos
             try:
-                session.commit()  # Guardar cambios en la base de datos
+                session.commit()
             except Exception as e:
-                session.rollback()  # Revertir cambios si algo sale mal
-                raise e  # Propagar el error para que el hilo maneje la excepción
+                session.rollback()
+                raise e
 
             return productos_agregados, True
             
@@ -737,8 +717,8 @@ class Admin_productosController(QWidget):
                 return
             self.agregar_productos_en_bd()
         except Exception as e:
-            print(traceback.print_exc())
-            print(f"Error al guardar producto: {e}")
+            Mensaje().mensaje_alerta(f"Error al guardar producto: {traceback.print_exc()}")
+            return
 
     def __actualizar_producto(self):
         if not self.producto:
@@ -746,16 +726,13 @@ class Admin_productosController(QWidget):
             return
         datos_producto = self.datos_campos()
         proveedores_vinculados = list(self.proveedores_vinculados.values())
-        # Filtrar los proveedores de lista_proveedores_a_asignar para que no se repitan (por ID)
         proveedores_no_repetidos = [
             proveedor for proveedor_id, proveedor in self.lista_proveedores_a_asignar.items()
-            if proveedor_id not in self.proveedores_vinculados  # Excluir los proveedores ya vinculados
+            if proveedor_id not in self.proveedores_vinculados
         ]
-        # Combinar los proveedores vinculados con los no repetidos
         todos_los_proveedores = proveedores_vinculados + proveedores_no_repetidos
-        
-        if self.ui.opcion_TieneCaducidad.isChecked():
-            caducidad = self.ui.fecha_vencimientoProducto.date().toPython()
+        if self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.isChecked():
+            caducidad = self.WindowsAddProduct_Dialog.fecha_vencimientoProducto.date().toPython()
         else:
             caducidad = None
         respuesta = Mensaje().mensaje_pregunta("¿Quierez actualizar el registro?")
@@ -782,7 +759,6 @@ class Admin_productosController(QWidget):
                     datos_producto = datos_producto
                 )
             except Exception as e:
-                # ✅ Limpiar en caso de error
                 if hasattr(self, 'id_hilo_actualizar_producto_vagregarproducto'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
@@ -854,66 +830,52 @@ class Admin_productosController(QWidget):
         
     def __cargar_datos_en_campos(self, producto):
         try:
-            # Limpiar referencias previas
             if hasattr(self, 'producto'):
                 del self.producto
-            
-            # Guardar nueva referencia
             self.producto = producto
+            self.WindowsAddProduct_Dialog.txt_codBarras.setEnabled(False)
+            self.WindowsAddProduct_Dialog.contenedorModal_proveedores_vinculados.show()
+            self.WindowsAddProduct_Dialog.contenedorModal_proveedores_existentes.show()
+            self.WindowsAddProduct_Dialog.contenedorModal_proveedores_a_vincular.show()
+            self.WindowsAddProduct_Dialog.txt_proveedor.hide()
+            self.WindowsAddProduct_Dialog.etiqueta_proveedor.hide()
+            self.WindowsAddProduct_Dialog.tabla_productos.hide()
+            self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_producto.hide()
+            self.WindowsAddProduct_Dialog.btn_btn_addProduct_guardar_producto.hide()
+            self.WindowsAddProduct_Dialog.btn_btn_addProduct_cargar_CSVProductos.hide()
+            self.WindowsAddProduct_Dialog.btn_btn_addProduct_limpiarTablaProductos.hide()
+            self.WindowsAddProduct_Dialog.btn_btn_addProduct_actualizar_producto.show()
             
-            # Configuración básica de UI
-            self.ui.txt_codBarras.setEnabled(False)
-            self.ui.contenedorModal_proveedores_vinculados.show()
-            self.ui.contenedorModal_proveedores_existentes.show()
-            self.ui.contenedorModal_proveedores_a_vincular.show()
-            self.ui.txt_proveedor.hide()
-            self.ui.etiqueta_proveedor.hide()
-            self.ui.tabla_productos.hide()
-            self.ui.btn_btn_addProduct_agregar_producto.hide()
-            self.ui.btn_btn_addProduct_guardar_producto.hide()
-            self.ui.btn_btn_addProduct_cargar_CSVProductos.hide()
-            self.ui.btn_btn_addProduct_limpiarTablaProductos.hide()
-            self.ui.btn_btn_addProduct_actualizar_producto.show()
-            
-            # Cargar datos básicos
-            self.ui.txt_codBarras.setText(self.producto.codigo_upc)
-            self.ui.txt_nombreProducto.setText(self.producto.nombre_producto)
-            self.ui.txt_marcaProducto.setText(self.producto.marca)
-            self.ui.txt_modeloProducto.setText(self.producto.modelo)
-            self.ui.txt_colorProducto.setText(self.producto.color)
-            self.ui.txt_materialProducto.setText(self.producto.material)
-            self.ui.txtlargo_descripcionProducto.setPlainText(self.producto.descripcion_producto)
-            self.ui.txtlargo_notasProducto.setPlainText(self.producto.notas)
+            self.WindowsAddProduct_Dialog.txt_codBarras.setText(self.producto.codigo_upc)
+            self.WindowsAddProduct_Dialog.txt_nombreProducto.setText(self.producto.nombre_producto)
+            self.WindowsAddProduct_Dialog.txt_marcaProducto.setText(self.producto.marca)
+            self.WindowsAddProduct_Dialog.txt_modeloProducto.setText(self.producto.modelo)
+            self.WindowsAddProduct_Dialog.txt_colorProducto.setText(self.producto.color)
+            self.WindowsAddProduct_Dialog.txt_materialProducto.setText(self.producto.material)
+            self.WindowsAddProduct_Dialog.txtlargo_descripcionProducto.setPlainText(self.producto.descripcion_producto)
+            self.WindowsAddProduct_Dialog.txtlargo_notasProducto.setPlainText(self.producto.notas)
 
-            # Cargar valores numéricos
-            self.ui.decimal_costoInicialProducto.setValue(float(self.producto.costo_inicial))
-            self.ui.decimal_costoFinalProducto.setValue(float(self.producto.costo_final))
-            
-            # Manejo seguro de imagen
+            self.WindowsAddProduct_Dialog.decimal_costoInicialProducto.setValue(float(self.producto.costo_inicial))
+            self.WindowsAddProduct_Dialog.decimal_costoFinalProducto.setValue(float(self.producto.costo_final))
+
             self._cargar_imagen_producto()
 
-            # Manejo de margen
             try:
                 margen = int(str(self.producto.margen_porcentaje).strip().rstrip("%"))
             except:
                 margen = 0
-            self.ui.entero_margenProducto.setValue(margen)
-            
-            # Resto de valores
-            self.ui.decimal_precioVentaProducto.setValue(float(self.producto.precio))
-            self.ui.decimal_existenciaProducto.setValue(float(self.producto.existencia))
-            self.ui.decimal_existenciaMinProducto.setValue(float(self.producto.existencia_minima))
-            self.ui.decimal_existenciaMaxProducto.setValue(float(self.producto.existencia_maxima))
-            self.ui.decimal_pesoProducto.setValue(float(self.producto.peso))
-            self.ui.decimal_altoDimensiones.setValue(float(self.producto.alto_cm))
-            self.ui.decimal_largoDimensiones.setValue(float(self.producto.largo_cm))
-            self.ui.decimal_anchoDimensiones.setValue(float(self.producto.ancho_cm))
+            self.WindowsAddProduct_Dialog.entero_margenProducto.setValue(margen)
 
-            # Fechas
+            self.WindowsAddProduct_Dialog.decimal_precioVentaProducto.setValue(float(self.producto.precio))
+            self.WindowsAddProduct_Dialog.decimal_existenciaProducto.setValue(float(self.producto.existencia))
+            self.WindowsAddProduct_Dialog.decimal_existenciaMinProducto.setValue(float(self.producto.existencia_minima))
+            self.WindowsAddProduct_Dialog.decimal_existenciaMaxProducto.setValue(float(self.producto.existencia_maxima))
+            self.WindowsAddProduct_Dialog.decimal_pesoProducto.setValue(float(self.producto.peso))
+            self.WindowsAddProduct_Dialog.decimal_altoDimensiones.setValue(float(self.producto.alto_cm))
+            self.WindowsAddProduct_Dialog.decimal_largoDimensiones.setValue(float(self.producto.largo_cm))
+            self.WindowsAddProduct_Dialog.decimal_anchoDimensiones.setValue(float(self.producto.ancho_cm))
+
             self._cargar_fechas_producto()
-
-            # Dimensiones
-            # self._cargar_dimensiones_producto()
 
             # Categorías y unidades
             self._cargar_opciones_seleccionadas()
@@ -928,35 +890,6 @@ class Admin_productosController(QWidget):
         except Exception as e:
             print(f"Error al cargar datos: {str(e)}")
             Mensaje().mensaje_informativo(f"Error al cargar datos del producto: {str(e)}")
-
-    def _cargar_dimensiones_producto(self):
-        """Carga las dimensiones del producto de forma segura"""
-        try:
-            if hasattr(self.producto, 'dimensiones') and self.producto.dimensiones:
-                # Separar las dimensiones (formato esperado: "alto-ancho-largo")
-                partes = self.producto.dimensiones.split('-')
-                if len(partes) == 3:
-                    alto, ancho, largo = partes
-                    # Cargar valores con conversión segura a float
-                    self.ui.decimal_altoDimensiones.setValue(float(alto))
-                    self.ui.decimal_anchoDimensiones.setValue(float(ancho))
-                    self.ui.decimal_largoDimensiones.setValue(float(largo))
-                else:
-                    # Formato incorrecto, limpiar campos
-                    self.ui.decimal_altoDimensiones.setValue(0.0)
-                    self.ui.decimal_anchoDimensiones.setValue(0.0)
-                    self.ui.decimal_largoDimensiones.setValue(0.0)
-            else:
-                # No hay dimensiones, limpiar campos
-                self.ui.decimal_altoDimensiones.setValue(0.0)
-                self.ui.decimal_anchoDimensiones.setValue(0.0)
-                self.ui.decimal_largoDimensiones.setValue(0.0)
-        except Exception as e:
-            print(f"Error al cargar dimensiones: {str(e)}")
-            # Limpiar campos en caso de error
-            self.ui.decimal_altoDimensiones.setValue(0.0)
-            self.ui.decimal_anchoDimensiones.setValue(0.0)
-            self.ui.decimal_largoDimensiones.setValue(0.0)
             
     def _cargar_imagen_producto(self):
         """Maneja la carga segura de imágenes"""
@@ -966,11 +899,11 @@ class Admin_productosController(QWidget):
                 if not pixmap.isNull():
                     self.imagenProducto = self.producto.imagen
                     pixmap_scaled = pixmap.scaled(
-                        self.ui.etiqueta_fotoProducto.size(), 
+                        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.size(), 
                         Qt.KeepAspectRatio,
                         Qt.SmoothTransformation
                     )
-                    self.ui.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
+                    self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
                     return
             
             # Imagen por defecto
@@ -979,7 +912,7 @@ class Admin_productosController(QWidget):
                             <img src=":/Icons/IconosSVG/subir_imagen.png" width="80" height="70"/>
                             </p><p align="center"><span style="font-size:16pt; font-family:Arial; font-weight:bold;">
                             Cargar Imagen</span></p></body></html>"""
-            self.ui.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", default_html))
+            self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", default_html))
             self.imagenProducto = None
         except Exception as e:
             print(f"Error cargando imagen: {str(e)}")
@@ -989,14 +922,14 @@ class Admin_productosController(QWidget):
         try:
             if hasattr(self.producto, 'fecha_fabricacion') and self.producto.fecha_fabricacion:
                 fecha_fabricacion_str = self.producto.fecha_fabricacion.strftime("%Y-%m-%d")
-                self.ui.fecha_fabricacionProducto.setDate(QDate.fromString(fecha_fabricacion_str, "yyyy-MM-dd"))
+                self.WindowsAddProduct_Dialog.fecha_fabricacionProducto.setDate(QDate.fromString(fecha_fabricacion_str, "yyyy-MM-dd"))
             
             if hasattr(self.producto, 'fecha_vencimiento') and self.producto.fecha_vencimiento:
-                self.ui.opcion_TieneCaducidad.setChecked(True)
+                self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.setChecked(True)
                 fecha_vencimiento_str = self.producto.fecha_vencimiento.strftime("%Y-%m-%d")
-                self.ui.fecha_vencimientoProducto.setDate(QDate.fromString(fecha_vencimiento_str, "yyyy-MM-dd"))
+                self.WindowsAddProduct_Dialog.fecha_vencimientoProducto.setDate(QDate.fromString(fecha_vencimiento_str, "yyyy-MM-dd"))
             else:
-                self.ui.opcion_TieneCaducidad.setChecked(False)
+                self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.setChecked(False)
         except:
             pass
 
@@ -1005,21 +938,21 @@ class Admin_productosController(QWidget):
         try:
             if hasattr(self.producto, 'categoria') and self.producto.categoria:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
-                    self.ui.cajaOpciones_categoriaProducto, 
+                    self.WindowsAddProduct_Dialog.cajaOpciones_categoriaProducto, 
                     self.producto.categoria,
                     "nombre"
                 )
             
             if hasattr(self.producto, 'unidad_medida_productos') and self.producto.unidad_medida_productos:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
-                    self.ui.cajaOpciones_unidadMedidaProducto,
+                    self.WindowsAddProduct_Dialog.cajaOpciones_unidadMedidaProducto,
                     self.producto.unidad_medida_productos,
                     "nombre"
                 )
             
             if hasattr(self.producto, 'presentacion_productos') and self.producto.presentacion_productos:
                 FuncionesAuxiliaresController().caja_opciones_mover_elemento(
-                    self.ui.cajaOpciones_presentacionProducto,
+                    self.WindowsAddProduct_Dialog.cajaOpciones_presentacionProducto,
                     self.producto.presentacion_productos,
                     "nombre"
                 )
@@ -1033,13 +966,13 @@ class Admin_productosController(QWidget):
         self.__proveedores_desvinculados()  # Actualizar lista de no vinculados
     
     def listar_proveedores(self, proveedores):
-        self.ui.lista_proveedores_vinculados.clear()
+        self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.clear()
         self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
         for id, proveedor in proveedores.items():
             item = QListWidgetItem(proveedor.nombre)
             item.setIcon(self.icono_proveedor)
             item.setData(Qt.UserRole, ((id, proveedor)))  # Guardamos el ID para referencia
-            self.ui.lista_proveedores_vinculados.addItem(item)
+            self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.addItem(item)
     
     def __limpiar_tabla_productos(self):
         if hasattr(self, 'modelo_tabla_productos') and self.modelo_tabla_productos:
@@ -1077,8 +1010,8 @@ class Admin_productosController(QWidget):
         completar.setCaseSensitivity(Qt.CaseInsensitive)
         completar.setFilterMode(Qt.MatchContains)
         completar.setCompletionMode(QCompleter.PopupCompletion)
-        self.ui.txt_proveedor.textChanged.connect(self.__proveedor_seleccionado)
-        self.ui.txt_proveedor.setCompleter(completar)
+        self.WindowsAddProduct_Dialog.txt_proveedor.textChanged.connect(self.__proveedor_seleccionado)
+        self.WindowsAddProduct_Dialog.txt_proveedor.setCompleter(completar)
         self.__proveedores_desvinculados()
         
     def __proveedores_desvinculados(self):
@@ -1102,7 +1035,7 @@ class Admin_productosController(QWidget):
 
     def listar_proveedores_existentes(self):
             """Muestra proveedores disponibles para vincular"""
-            self.ui.lista_todos_los_proveedores.clear()
+            self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.clear()
             self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
             
             # Mostrar todos los proveedores no vinculados
@@ -1110,10 +1043,10 @@ class Admin_productosController(QWidget):
                 item = QListWidgetItem(proveedor.nombre)
                 item.setIcon(self.icono_proveedor)
                 item.setData(Qt.UserRole, (proveedor.id, proveedor))
-                self.ui.lista_todos_los_proveedores.addItem(item)
+                self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.addItem(item)
     
     def buscar_proveedor_existente(self):
-        nombre = self.ui.txt_buscar_proveedor_a_vincular.text().strip()
+        nombre = self.WindowsAddProduct_Dialog.txt_buscar_proveedor_a_vincular.text().strip()
         self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
         
         if not self.producto.proveedores:
@@ -1121,7 +1054,7 @@ class Admin_productosController(QWidget):
         
         if nombre:
             # Limpiar la lista antes de mostrar resultados de búsqueda
-            self.ui.lista_todos_los_proveedores.clear()
+            self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.clear()
             
             for proveedor_id, proveedor in self.proveedores_generales_del_sistema_dict.items():
                 proveedor_nombre = proveedor.nombre
@@ -1137,10 +1070,10 @@ class Admin_productosController(QWidget):
                     item.setData(Qt.UserRole, (proveedor_id, proveedor))  # Guardamos el ID y el objeto
                     
                     # Agregar el ítem a la lista
-                    self.ui.lista_todos_los_proveedores.addItem(item)
+                    self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.addItem(item)
         else:
             # Si no hay texto en el campo de búsqueda, mostrar todos los proveedores no vinculados
-            self.ui.lista_todos_los_proveedores.clear()
+            self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.clear()
             
             for proveedor_id, proveedor in self.proveedores_generales_del_sistema_dict.items():
                 # Comprobar si el proveedor ya está vinculado
@@ -1155,15 +1088,15 @@ class Admin_productosController(QWidget):
                     item.setData(Qt.UserRole, (proveedor_id, proveedor))
                     
                     # Agregar el ítem a la lista
-                    self.ui.lista_todos_los_proveedores.addItem(item)
+                    self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.addItem(item)
     
     def buscar_proveedor_vinculado(self):
-        nombre = self.ui.txt_buscar_proveedor_vinculado.text().strip()
+        nombre = self.WindowsAddProduct_Dialog.txt_buscar_proveedor_vinculado.text().strip()
         if not self.proveedores_vinculados:
             Mensaje().mensaje_informativo("No se encuentran elementos para realizar el filtrado")
             return
         if nombre:
-            self.ui.lista_proveedores_vinculados.clear()
+            self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.clear()
             self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
             for proveedor_id,  proveedor in self.proveedores_vinculados.items():
                 proveedor_nombre = proveedor.nombre
@@ -1175,9 +1108,9 @@ class Admin_productosController(QWidget):
                     item.setData(Qt.UserRole, proveedor_id)
                     
                     # Agregar el ítem a la lista
-                    self.ui.lista_proveedores_vinculados.addItem(item)
+                    self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.addItem(item)
         else:
-            self.ui.lista_proveedores_vinculados.clear()
+            self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.clear()
             self.icono_proveedor = QIcon(":/Icons/Bootstrap/file-person.svg")
             for proveedor_id, proveedor in self.proveedores_vinculados.items():
                 proveedor_nombre = proveedor.nombre
@@ -1188,7 +1121,7 @@ class Admin_productosController(QWidget):
                 item.setData(Qt.UserRole, proveedor_id)
                 
                 # Agregar el ítem a la lista
-                self.ui.lista_proveedores_vinculados.addItem(item)
+                self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.addItem(item)
     
     def vincular_proveedor_al_producto(self, item):
         # Obtener el ícono, ID y el objeto del proveedor desde UserRole
@@ -1205,7 +1138,7 @@ class Admin_productosController(QWidget):
 
             # Agregar el proveedor al diccionario y a la lista visual
             self.lista_proveedores_a_asignar[proveedor_id] = proveedor_objeto  # Guardamos ID como clave y objeto como valor
-            self.ui.lista_proveedores_a_vincular.addItem(nuevo_proveedor)
+            self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular.addItem(nuevo_proveedor)
             return
 
         # Si el proveedor no está ya en el diccionario, agregarlo
@@ -1214,16 +1147,16 @@ class Admin_productosController(QWidget):
             nuevo_proveedor = QListWidgetItem(proveedor_nombre)
             nuevo_proveedor.setIcon(icono)
             nuevo_proveedor.setData(Qt.UserRole, (proveedor_id, proveedor_objeto))  # Guardamos ID y objeto del proveedor
-            self.ui.lista_proveedores_a_vincular.addItem(nuevo_proveedor)
+            self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular.addItem(nuevo_proveedor)
     
     def desvincular_proveedor_al_producto(self):
-        item = self.ui.lista_proveedores_vinculados.currentItem()
+        item = self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.currentItem()
         if not item:
             Mensaje().mensaje_informativo("Debes de seleccionar un elemento de la lista")
             return
         try:
             proveedor_id, proveedor_objeto = item.data(Qt.UserRole)  # Obtener ID y objeto del proveedor
-            self.ui.lista_proveedores_vinculados.takeItem(self.ui.lista_proveedores_vinculados.row(item))
+            self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.takeItem(self.WindowsAddProduct_Dialog.lista_proveedores_vinculados.row(item))
             
             # Desvincular el proveedor del diccionario
             if proveedor_id in self.proveedores_vinculados:
@@ -1232,14 +1165,14 @@ class Admin_productosController(QWidget):
             Mensaje().mensaje_alerta(f"No se puede realizar la acción debido al siguiente error: {str(e)}")
 
     def eliminar_proveedor_a_vincular(self):
-        item = self.ui.lista_proveedores_a_vincular.currentItem()
+        item = self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular.currentItem()
         if not item:
             Mensaje().mensaje_informativo("Debes de seleccionar un elemento de la lista")
             return
         proveedor_id, proveedor_objeto = item.data(Qt.UserRole)  # Obtener ID y objeto del proveedor
         proveedor_nombre = item.text()  # Obtener el nombre del proveedor (por si lo necesitas para algo)
         
-        self.ui.lista_proveedores_a_vincular.takeItem(self.ui.lista_proveedores_a_vincular.row(item))
+        self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular.takeItem(self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular.row(item))
         
         # Eliminar el proveedor del diccionario de proveedores a asignar
         if proveedor_id in self.lista_proveedores_a_asignar:
@@ -1289,7 +1222,7 @@ class Admin_productosController(QWidget):
         """Actualiza la tabla con los datos actuales de lista_productos"""
         # El modelo ya está configurado, solo necesita actualizar los datos
         self.modelo_tabla_productos.update_data(self.lista_productos)
-        self.ui.tabla_productos.resizeColumnsToContents()
+        self.WindowsAddProduct_Dialog.tabla_productos.resizeColumnsToContents()
 
     def mensaje_error_docuemnto_xlsx(self, error):
         print(error)
@@ -1313,8 +1246,8 @@ class Admin_productosController(QWidget):
                 item.setTextAlignment(Qt.AlignCenter)
             self.modelo_tabla_productos.appendRow(fila)
 
-        self.ui.tabla_productos.setModel(self.modelo_tabla_productos)
-        self.ui.tabla_productos.resizeColumnsToContents()
+        self.WindowsAddProduct_Dialog.tabla_productos.setModel(self.modelo_tabla_productos)
+        self.WindowsAddProduct_Dialog.tabla_productos.resizeColumnsToContents()
     
     def comprobar_existencia_modelo_tabla(self):
         if not hasattr(self, 'modelo_tabla_productos'):
@@ -1328,7 +1261,7 @@ class Admin_productosController(QWidget):
             self.modelo_tabla_productos = GenericTableModel()
             
             # Configurar tabla
-            tabla = self.ui.tabla_productos
+            tabla = self.WindowsAddProduct_Dialog.tabla_productos
             tabla.setModel(self.modelo_tabla_productos)
             tabla.setSortingEnabled(True)
             tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -1338,10 +1271,10 @@ class Admin_productosController(QWidget):
                 lambda: tabla.resizeColumnsToContents())
 
     def calcular_precio_venta(self):
-        costo_final = self.ui.decimal_costoFinalProducto.value()
-        margen = self.ui.entero_margenProducto.value() / 100
+        costo_final = self.WindowsAddProduct_Dialog.decimal_costoFinalProducto.value()
+        margen = self.WindowsAddProduct_Dialog.entero_margenProducto.value() / 100
         precio_venta = costo_final + (costo_final * margen)
-        self.ui.decimal_precioVentaProducto.setValue(precio_venta)
+        self.WindowsAddProduct_Dialog.decimal_precioVentaProducto.setValue(precio_venta)
     
     def showEvent(self, event):
         super().showEvent(event)
@@ -1352,7 +1285,7 @@ class Admin_productosController(QWidget):
     def closeEvent(self, event):
         ProcesadorArchivoWorker.cleanup_all_managed_workers()
         WorkerDB.cleanup_all_managed_workers()
-        self.closed.emit()  # Emitir señal antes de cerrar
+        self.ClosedWindowAdminProduct.emit()  # Emitir señal antes de cerrar
         super().closeEvent(event)
     
     def mostrar_estado_hilo(self, objetoMensaje):
@@ -1388,18 +1321,18 @@ class Productos(QWidget):
         self.codigo_del_producto = None
         self._signals_connected = None
         
-        self.ui = Ui_Control_Productos()
-        self.ui.setupUi(self)
+        self.WindowProducts = Ui_Control_Productos()
+        self.WindowProducts.setupUi(self)
         
-        self.ui.txt_buscar.setValidator(Validaciones().get_text_validator)
-        self.ui.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator)
-        self.ui.btn_btn_adminProductos_agregar.clicked.connect(self.agregar_producto)
-        self.ui.btn_btn_adminProductos_eliminar.clicked.connect(self.eliminar_producto)
-        self.ui.btn_btn_adminProductos_modificar.clicked.connect(self.modificar_producto)
-        self.ui.btn_btn_adminProductos_buscar.clicked.connect(self.buscar_producto)
-        self.ui.btn_btn_adminProductos_ExistenciaProducto.clicked.connect(self.existencia_productos)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla)
-        self.ui.btn_RefrescarTabla_paginar.clicked.connect(self.cargar_mas_productos)
+        self.WindowProducts.txt_buscar.setValidator(Validaciones().get_text_validator)
+        self.WindowProducts.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator)
+        self.WindowProducts.btn_btn_adminProductos_agregar.clicked.connect(self.agregar_producto)
+        self.WindowProducts.btn_btn_adminProductos_eliminar.clicked.connect(self.eliminar_producto)
+        self.WindowProducts.btn_btn_adminProductos_modificar.clicked.connect(self.modificar_producto)
+        self.WindowProducts.btn_btn_adminProductos_buscar.clicked.connect(self.buscar_producto)
+        self.WindowProducts.btn_btn_adminProductos_ExistenciaProducto.clicked.connect(self.existencia_productos)
+        self.WindowProducts.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla)
+        self.WindowProducts.btn_RefrescarTabla_paginar.clicked.connect(self.cargar_mas_productos)
         
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
@@ -1411,8 +1344,8 @@ class Productos(QWidget):
 # FUNCION : FILTRAR PRODUCTOS
     def  buscar_producto(self):
         # Obtener valores actuales de los campos de búsqueda
-        nuevo_nombre = self.ui.txt_buscar.text().strip()
-        nuevo_codigo = self.ui.txt_buscar_productoUPC.text().strip()
+        nuevo_nombre = self.WindowProducts.txt_buscar.text().strip()
+        nuevo_codigo = self.WindowProducts.txt_buscar_productoUPC.text().strip()
         
         # Verificar si los parámetros de búsqueda cambiaron
         busqueda_nueva = (nuevo_nombre != self.nombre_producto or 
@@ -1487,7 +1420,7 @@ class Productos(QWidget):
     def agregar_producto(self):
         if self.AdminProductos is None:
             self.AdminProductos = Admin_productosController(self)
-            self.AdminProductos.closed.connect(self.__ventana_destruida)
+            self.AdminProductos.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
             if not hasattr(self, '_signals_add_producto_connected'):
                 self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
                 self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
@@ -1544,7 +1477,7 @@ class Productos(QWidget):
         if self.AdminProductos is None:
             # Crear nueva instancia
             self.AdminProductos = Admin_productosController(self)
-            self.AdminProductos.closed.connect(self.__ventana_destruida)
+            self.AdminProductos.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
             # Conectar señales (solo una vez)
             if not self._signals_connected:
                 self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
@@ -1610,7 +1543,7 @@ class Productos(QWidget):
             self.consultar_productos_db(reset_paginacion = True)
         except Exception as e:
             print(f"error: {e}")
-            self.ui.btn_RefrescarTabla.setEnabled(True)
+            self.WindowProducts.btn_RefrescarTabla.setEnabled(True)
             
     def consultar_productos_db(self, reset_paginacion=False):
         """Versión final segura para consultar productos"""
@@ -1772,7 +1705,7 @@ class Productos(QWidget):
         # Usar ComprobarModelosTablas para crear/obtener el modelo
         self.modelo_lista_productos_principal = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo='modelo_empleados_vproductos_principal',
-            interfazTabla=self.ui.tabla_productos,
+            interfazTabla=self.WindowProducts.tabla_productos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_cabecera,
             ordenable=True,
@@ -1818,6 +1751,7 @@ class Productos(QWidget):
         """Maneja el cierre de la ventana principal"""
         self.cleanup_worker()  # Detiene cualquier hilo activo
         event.accept()
+    
     def cleanup_worker(self):
         """Limpia el worker de manera completamente segura"""
         if not hasattr(self, 'consultor') or self.consultor is None:
@@ -1850,6 +1784,7 @@ class Productos(QWidget):
         finally:
             # Asegurarse de eliminar la referencia
             self.consultor = None
+    
     def modal_espera_local(self):
         if self.cargando is None or not self.cargando.isVisible():
             self.cargando = Modal_de_espera(parent=self)
@@ -1857,17 +1792,20 @@ class Productos(QWidget):
         else:
             self.cargando.raise_()
             self.cargando.activateWindow()
+    
     def cargando_cerrar(self):
         if self.cargando is not None:
             self.cargando.close()
             self.cargando = None
         print(self.cantidad_inicial_consulta, " ", self.cantidad_final_consulta)
         self.cleanup_worker()
+    
     def mostrar_error_db(self, error_msg):
         """Muestra errores de la base de datos"""
         print("Error de base de datos", error_msg)
         self.cargando_cerrar()
-        self.ui.btn_RefrescarTabla.setEnabled(True)
+        self.WindowProducts.btn_RefrescarTabla.setEnabled(True)
+    
     def mostrar_error_consulta(self, mensaje):
         print(f"❌ Error en la consulta: {mensaje}")
         # Aquí podrías usar un QMessageBox si estás en una GUI
