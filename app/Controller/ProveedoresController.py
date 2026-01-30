@@ -264,10 +264,9 @@ class Control_proveedores(QWidget):
             return
         
         if datos_proveedor is None:
-            # Si los datos son None, mostramos una alerta con los campos vacíos
-            campos_faltantes = ', '.join(campos_vacios)  # Unir los nombres de los campos vacíos en un string
+            campos_faltantes = ', '.join(campos_vacios)
             Mensaje().mensaje_alerta(f"Completa los siguientes campos: {campos_faltantes}.")
-            return  # Salir de la función si los datos no están completos
+            return
         try:
             self.manejadorModal.mostrar_modal()
             WorkerDB.cleanup_owner_workers("agregar_proveedor_thread")
@@ -330,7 +329,7 @@ class Control_proveedores(QWidget):
             else:
                 proveedor, estado = ProveedoresModel(session).agregar_proveedor(
                             categoria_id=categoria.id,
-                            representante_id=None,  # Sin representante
+                            representante_id=None,
                             **datos_proveedor
                         )
                 if not estado:
@@ -454,18 +453,14 @@ class Control_proveedores(QWidget):
                 self.PROVEEDOR_SELECCIONADO_SIGNAL.emit(self.proveedor_seleccionado)
 
     def control_actualizar_proveedor(self):
-        # Obtén los datos del proveedor y del representante
         datos_proveedor, campos_vacios = self.obtener_datos_proveedor()
         datos_representante = self.obtener_datos_representante()
         categoria = self.ui.cajaOpciones_categorias.currentData()
-
-        # Verifica si la categoría está vacía
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
         
         if datos_proveedor is None:
-            # Si los datos son None, mostramos una alerta con los campos vacíos
             campos_faltantes = ', '.join(campos_vacios)
             Mensaje().mensaje_alerta(f"Completa los siguientes campos: {campos_faltantes}.")
             return
@@ -491,7 +486,6 @@ class Control_proveedores(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 
-                # Preparar datos para el worker
                 datos_actualizacion = {
                     'proveedor_id': self.proveedor_seleccionado.id,
                     'categoria': categoria,
@@ -512,7 +506,6 @@ class Control_proveedores(QWidget):
             
     def actualizar_proveedor_query(self, session, proveedor_id, categoria, datos_proveedor, tiene_representante, datos_representante=None):
         try:
-            # 1. Verificar que el proveedor existe
             proveedor_existente, estado_proveedor = ProveedoresModel(session).obtener_proveedor_id(proveedor_id)
             if not estado_proveedor or not proveedor_existente:
                 session.rollback()
@@ -523,7 +516,6 @@ class Control_proveedores(QWidget):
 
             representante_id = None
 
-            # 2. Manejar representante según la opción seleccionada
             if tiene_representante:
                 if not datos_representante:
                     session.rollback()
@@ -532,7 +524,6 @@ class Control_proveedores(QWidget):
                         "mensaje": "Datos del representante incompletos"
                     }
 
-                # Si el proveedor ya tiene representante, actualizarlo
                 if proveedor_existente.representante_id:
                     representante_actualizado, estado_rep = RepresentanteProveedorModel(session).actualizar_representante(
                         id_representante=proveedor_existente.representante_id,
@@ -546,7 +537,6 @@ class Control_proveedores(QWidget):
                         }
                     representante_id = proveedor_existente.representante_id
                 else:
-                    # Si no tiene representante, agregar uno nuevo
                     nuevo_representante, estado_nuevo_rep = RepresentanteProveedorModel(session).agregar_representante(**datos_representante)
                     if not estado_nuevo_rep:
                         session.rollback()
@@ -556,10 +546,8 @@ class Control_proveedores(QWidget):
                         }
                     representante_id = nuevo_representante.id
             else:
-                # Si no se quiere representante, establecer como None
                 representante_id = None
 
-            # 3. Actualizar el proveedor
             proveedor_actualizado, estado_actualizacion = ProveedoresModel(session).actualizar_proveedor(
                 proveedor_id=proveedor_id,
                 categoria_id=categoria.id,
@@ -574,7 +562,6 @@ class Control_proveedores(QWidget):
                     "mensaje": "No se pudo actualizar el proveedor"
                 }
 
-            # 4. Commit si todo sale bien
             session.commit()
             return {
                 "exito": True,
@@ -589,7 +576,6 @@ class Control_proveedores(QWidget):
             }
 
     def cargar_datos_proveedor(self, proveedor):
-        # Cargar los datos en la UI
         self.ui.txt_nombre.setText(proveedor.nombre)
         self.ui.txt_pais.setText(proveedor.pais)
         self.ui.txt_estado.setText(proveedor.estado)
@@ -611,26 +597,7 @@ class Control_proveedores(QWidget):
         if proveedor.clave_moneda:
             nombre = f'{proveedor.clave_moneda}: {proveedor.tipo_moneda}'
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_tipomoneda, nombre)
-        
-            
-            # # Obtener el QComboBox
-            # caja_categorias = self.ui.cajaOpciones_categorias
-            # caja_categorias.clear()  # Limpiar elementos existentes
 
-            # # Crear un conjunto para rastrear categorías ya añadidas
-            # categorias_agregadas = set()
-
-            # for categoria in proveedor.categorias:
-            #     categoria_nombre = categoria.nombre
-                
-            #     # Verificar si la categoría ya ha sido añadida
-            #     if categoria_nombre not in categorias_agregadas:
-            #         # Insertar la nueva categoría en la posición 0
-            #         caja_categorias.insertItem(0, categoria_nombre)
-            #         # Agregar la categoría al conjunto
-            #         categorias_agregadas.add(categoria_nombre)
-
-        # Cargar representantes
         if proveedor.representante:
             self.ui.btnradio_representantetrue.setChecked(True)
             self.ui.contenedor_datosrepresentante.show()
