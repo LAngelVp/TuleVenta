@@ -28,8 +28,8 @@ class Control_proveedores(QWidget):
     LIMPIAR_CAMPOS_INTERNOS = Signal()
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.ui = Ui_Control_Proveedores()
-        self.ui.setupUi(self)
+        self.WindowSupplier = Ui_Control_Proveedores()
+        self.WindowSupplier.setupUi(self)
 # VARIABLES
         self.ejecutando_trabajo = False
         self.lista_categorias = {}
@@ -46,21 +46,21 @@ class Control_proveedores(QWidget):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_categoria_proveedor = AjustarcajaOpciones()
 # CONFIGURACION DE LA VENTANA        
-        self.ui.btnradio_representantefalse.setChecked(True)
-        self.ui.contenedor_datosrepresentante.setVisible(False)
+        self.WindowSupplier.btnradio_representantefalse.setChecked(True)
+        self.WindowSupplier.contenedor_datosrepresentante.setVisible(False)
 # CONEXIONES DE LOS BOTONES
-        self.ui.btnradio_representantetrue.toggled.connect(self.representante_visibilidad)
-        self.ui.btn_btn_agregarcategoria.clicked.connect(self.nueva_categoria)
-        self.ui.btn_btn_guardar.clicked.connect(self.control_agregar_proveedor)
-        self.ui.btn_btn_limpiardatos.clicked.connect(self.limpiar_campos)
-        self.ui.btn_btn_eliminar.clicked.connect(self.eliminar_proveedor)
-        self.ui.btn_btn_listadeproductoyprecios.clicked.connect(self.mostrar_productos_y_precios)
-        self.ui.txtlargo_descripcioncategoria.setReadOnly(True)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_proveedores_tabla_hilo)
-        self.ui.btn_btn_buscarproveedor.clicked.connect(self.buscar_proveedor_hilo)
-        self.ui.btn_btn_actualizar.clicked.connect(self.control_actualizar_proveedor)
+        self.WindowSupplier.btnradio_representantetrue.toggled.connect(self.representante_visibilidad)
+        self.WindowSupplier.btn_btn_agregarcategoria.clicked.connect(self.nueva_categoria)
+        self.WindowSupplier.btn_btn_guardar.clicked.connect(self.control_agregar_proveedor)
+        self.WindowSupplier.btn_btn_limpiardatos.clicked.connect(self.limpiar_campos)
+        self.WindowSupplier.btn_btn_eliminar.clicked.connect(self.eliminar_proveedor)
+        self.WindowSupplier.btn_btn_listadeproductoyprecios.clicked.connect(self.mostrar_productos_y_precios)
+        self.WindowSupplier.txtlargo_descripcioncategoria.setReadOnly(True)
+        self.WindowSupplier.btn_RefrescarTabla.clicked.connect(self.obtener_proveedores_tabla_hilo)
+        self.WindowSupplier.btn_btn_buscarproveedor.clicked.connect(self.buscar_proveedor_hilo)
+        self.WindowSupplier.btn_btn_actualizar.clicked.connect(self.control_actualizar_proveedor)
 # CONEXIONES DE SEÑALES
-        self.ui.cajaOpciones_categorias.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        self.WindowSupplier.cajaOpciones_categorias.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
         self.PROVEEDOR_SELECCIONADO_SIGNAL.connect(self.cargar_datos_proveedor)
 
 # EJECUCION DE FUNCIONES
@@ -71,27 +71,27 @@ class Control_proveedores(QWidget):
 # ------------------------------------------------------------------------------
 # FUNCIONALIDADES
     def validaciones(self):
-        self.ui.txt_nombre.setMaxLength(150)
-        self.ui.txt_pais.setMaxLength(50)
-        self.ui.txt_estado.setMaxLength(50)
-        self.ui.txt_ciudad.setMaxLength(50)
-        self.ui.txt_codigopostal.setMaxLength(5)
-        self.ui.txt_calles.setMaxLength(60)
-        self.ui.txt_avenida.setMaxLength(60)
-        self.ui.txt_colonia.setMaxLength(50)
-        self.ui.txt_rfc.setMaxLength(13)
-        self.ui.txt_correo.setMaxLength(100)
-        self.ui.txt_telefono.setMaxLength(10)
+        self.WindowSupplier.txt_nombre.setMaxLength(150)
+        self.WindowSupplier.txt_pais.setMaxLength(50)
+        self.WindowSupplier.txt_estado.setMaxLength(50)
+        self.WindowSupplier.txt_ciudad.setMaxLength(50)
+        self.WindowSupplier.txt_codigopostal.setMaxLength(5)
+        self.WindowSupplier.txt_calles.setMaxLength(60)
+        self.WindowSupplier.txt_avenida.setMaxLength(60)
+        self.WindowSupplier.txt_colonia.setMaxLength(50)
+        self.WindowSupplier.txt_rfc.setMaxLength(13)
+        self.WindowSupplier.txt_correo.setMaxLength(100)
+        self.WindowSupplier.txt_telefono.setMaxLength(10)
         # REPRESENTANTE
-        self.ui.txt_nombrerepresentante.setMaxLength(100)
-        self.ui.txt_apellidopaternorepresen.setMaxLength(60)
-        self.ui.txt_apellidomaternorepresen.setMaxLength(60)
-        self.ui.txt_telefonorepresentante.setMaxLength(10)
-        self.ui.txt_correorepresentante.setMaxLength(100)
-        self.ui.txt_puestorepresentante.setMaxLength(100)
-        self.ui.txt_telefono.setValidator(Validaciones().get_phone_validator)
-        self.ui.txt_codigopostal.setValidator(Validaciones().get_int_validator)
-        self.ui.txt_telefonorepresentante.setValidator(Validaciones().get_phone_validator)
+        self.WindowSupplier.txt_nombrerepresentante.setMaxLength(100)
+        self.WindowSupplier.txt_apellidopaternorepresen.setMaxLength(60)
+        self.WindowSupplier.txt_apellidomaternorepresen.setMaxLength(60)
+        self.WindowSupplier.txt_telefonorepresentante.setMaxLength(10)
+        self.WindowSupplier.txt_correorepresentante.setMaxLength(100)
+        self.WindowSupplier.txt_puestorepresentante.setMaxLength(100)
+        self.WindowSupplier.txt_telefono.setValidator(Validaciones().get_phone_validator)
+        self.WindowSupplier.txt_codigopostal.setValidator(Validaciones().get_int_validator)
+        self.WindowSupplier.txt_telefonorepresentante.setValidator(Validaciones().get_phone_validator)
         
     def ventana_cerrada_productos_proveedor(self):
         self.ventana_productos_precios = None
@@ -112,9 +112,9 @@ class Control_proveedores(QWidget):
                 self.ventana_productos_precios.raise_()
     
     def nueva_categoria(self):
-        self.categorias = CategoriasController(tipo_categoria="proveedores")
-        self.categorias.categoria_agregada_signal.connect(self.mostrar_categorias_proveedor)
-        self.categorias.show()
+        self.WindowSupplierCategory = CategoriasController(tipo_categoria="proveedores")
+        self.WindowSupplierCategory.categoria_agregada_signal.connect(self.mostrar_categorias_proveedor)
+        self.WindowSupplierCategory.show()
     
     def mostrar_categorias_proveedor(self):
         try:
@@ -164,74 +164,74 @@ class Control_proveedores(QWidget):
         if isinstance(resultado, dict):
             categorias = resultado["data"]
             if resultado["exito"]:
-                self.ui.cajaOpciones_categorias.clear()
+                self.WindowSupplier.cajaOpciones_categorias.clear()
                 for categoria in categorias:
-                    self.ui.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
-                self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
+                    self.WindowSupplier.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
+                self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.WindowSupplier.cajaOpciones_categorias)
         else:
             for categoria in resultado:
-                self.ui.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
-            self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.ui.cajaOpciones_categorias)
+                self.WindowSupplier.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
+            self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.WindowSupplier.cajaOpciones_categorias)
             
     def mostrar_descripcion_categoria(self):
-        categoria = self.ui.cajaOpciones_categorias.currentData()
+        categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
         if not categoria:
             return
-        self.ui.txtlargo_descripcioncategoria.setPlainText(categoria.descripcion)
+        self.WindowSupplier.txtlargo_descripcioncategoria.setPlainText(categoria.descripcion)
 
 #COMMENT METODO CORRECTO
     def limpiar_campos(self):
-        self.ui.txt_nombre.clear()
-        self.ui.txt_pais.clear()
-        self.ui.txt_estado.clear()
-        self.ui.txt_ciudad.clear()
-        self.ui.txt_codigopostal.clear()
-        self.ui.txt_calles.clear()
-        self.ui.txt_avenida.clear()
-        self.ui.txt_colonia.clear()
-        self.ui.txtlargo_direccionadicional.clear()
-        self.ui.txt_rfc.clear()
-        self.ui.txt_web.clear()
-        self.ui.txt_correo.clear()
-        self.ui.txt_telefono.clear()
-        self.ui.txt_nombrerepresentante.clear()
-        self.ui.txt_apellidopaternorepresen.clear()
-        self.ui.txt_apellidomaternorepresen.clear()
-        self.ui.txt_telefonorepresentante.clear()
-        self.ui.txt_correorepresentante.clear()
-        self.ui.txt_puestorepresentante.clear()
-        self.ui.btnradio_representantefalse.setChecked(True)
-        self.ui.btnradio_representantetrue.setChecked(False)
+        self.WindowSupplier.txt_nombre.clear()
+        self.WindowSupplier.txt_pais.clear()
+        self.WindowSupplier.txt_estado.clear()
+        self.WindowSupplier.txt_ciudad.clear()
+        self.WindowSupplier.txt_codigopostal.clear()
+        self.WindowSupplier.txt_calles.clear()
+        self.WindowSupplier.txt_avenida.clear()
+        self.WindowSupplier.txt_colonia.clear()
+        self.WindowSupplier.txtlargo_direccionadicional.clear()
+        self.WindowSupplier.txt_rfc.clear()
+        self.WindowSupplier.txt_web.clear()
+        self.WindowSupplier.txt_correo.clear()
+        self.WindowSupplier.txt_telefono.clear()
+        self.WindowSupplier.txt_nombrerepresentante.clear()
+        self.WindowSupplier.txt_apellidopaternorepresen.clear()
+        self.WindowSupplier.txt_apellidomaternorepresen.clear()
+        self.WindowSupplier.txt_telefonorepresentante.clear()
+        self.WindowSupplier.txt_correorepresentante.clear()
+        self.WindowSupplier.txt_puestorepresentante.clear()
+        self.WindowSupplier.btnradio_representantefalse.setChecked(True)
+        self.WindowSupplier.btnradio_representantetrue.setChecked(False)
         self.proveedor_seleccionado = None
-        self.ui.contenedor_datosrepresentante.hide()
+        self.WindowSupplier.contenedor_datosrepresentante.hide()
         self.representante = None
-        self.ui.cajaOpciones_categorias.clear()
+        self.WindowSupplier.cajaOpciones_categorias.clear()
         self.listar_categorias_proveedores(self.categoriasBase)
 
 #COMMENT FUNCION CORRECTA
     def representante_visibilidad(self):
-        if self.ui.btnradio_representantetrue.isChecked():
-            self.ui.contenedor_datosrepresentante.setVisible(True)
+        if self.WindowSupplier.btnradio_representantetrue.isChecked():
+            self.WindowSupplier.contenedor_datosrepresentante.setVisible(True)
         else:
-            self.ui.contenedor_datosrepresentante.setVisible(False)
+            self.WindowSupplier.contenedor_datosrepresentante.setVisible(False)
     
     def obtener_datos_proveedor(self):
         datos = {
-            'nombre': self.ui.txt_nombre.text().strip(),
-            'pais': self.ui.txt_pais.text().strip(),
-            'estado': self.ui.txt_estado.text().strip(),
-            'ciudad': self.ui.txt_ciudad.text().strip(),
-            'codigo_postal': self.ui.txt_codigopostal.text().strip(),
-            'calles': self.ui.txt_calles.text().strip(),
-            'avenidas': self.ui.txt_avenida.text().strip(),
-            'colonia': self.ui.txt_colonia.text().strip(),
-            'direccion_adicional': self.ui.txtlargo_direccionadicional.toPlainText().strip(),
-            'rfc': self.ui.txt_rfc.text().strip(),
-            'pagina_web': self.ui.txt_web.text().strip(),
-            'correo': self.ui.txt_correo.text().strip(),
-            'telefono': self.ui.txt_telefono.text().strip(),
-            'clave_moneda': self.ui.cajaOpciones_tipomoneda.currentText().split(":")[0].strip(),
-            'tipo_moneda': self.ui.cajaOpciones_tipomoneda.currentText().split(":")[1].strip()
+            'nombre': self.WindowSupplier.txt_nombre.text().strip(),
+            'pais': self.WindowSupplier.txt_pais.text().strip(),
+            'estado': self.WindowSupplier.txt_estado.text().strip(),
+            'ciudad': self.WindowSupplier.txt_ciudad.text().strip(),
+            'codigo_postal': self.WindowSupplier.txt_codigopostal.text().strip(),
+            'calles': self.WindowSupplier.txt_calles.text().strip(),
+            'avenidas': self.WindowSupplier.txt_avenida.text().strip(),
+            'colonia': self.WindowSupplier.txt_colonia.text().strip(),
+            'direccion_adicional': self.WindowSupplier.txtlargo_direccionadicional.toPlainText().strip(),
+            'rfc': self.WindowSupplier.txt_rfc.text().strip(),
+            'pagina_web': self.WindowSupplier.txt_web.text().strip(),
+            'correo': self.WindowSupplier.txt_correo.text().strip(),
+            'telefono': self.WindowSupplier.txt_telefono.text().strip(),
+            'clave_moneda': self.WindowSupplier.cajaOpciones_tipomoneda.currentText().split(":")[0].strip(),
+            'tipo_moneda': self.WindowSupplier.cajaOpciones_tipomoneda.currentText().split(":")[1].strip()
         }
         campos_vacios = [clave for clave, valor in datos.items() if not valor]
 
@@ -241,12 +241,12 @@ class Control_proveedores(QWidget):
     
     def obtener_datos_representante(self):
         datos = {
-            'nombre': self.ui.txt_nombrerepresentante.text().strip(),
-            'apellido_paterno': self.ui.txt_apellidopaternorepresen.text().strip(),
-            'apellido_materno': self.ui.txt_apellidomaternorepresen.text().strip(),
-            'telefono': self.ui.txt_telefonorepresentante.text().strip(),
-            'correo': self.ui.txt_correorepresentante.text().strip(),
-            'puesto': self.ui.txt_puestorepresentante.text().strip(),
+            'nombre': self.WindowSupplier.txt_nombrerepresentante.text().strip(),
+            'apellido_paterno': self.WindowSupplier.txt_apellidopaternorepresen.text().strip(),
+            'apellido_materno': self.WindowSupplier.txt_apellidomaternorepresen.text().strip(),
+            'telefono': self.WindowSupplier.txt_telefonorepresentante.text().strip(),
+            'correo': self.WindowSupplier.txt_correorepresentante.text().strip(),
+            'puesto': self.WindowSupplier.txt_puestorepresentante.text().strip(),
         }
         campos_vacios = [clave for clave, valor in datos.items() if not valor]
         if campos_vacios:
@@ -257,7 +257,7 @@ class Control_proveedores(QWidget):
     def control_agregar_proveedor(self):
         datos_proveedor, campos_vacios = self.obtener_datos_proveedor()
         datos_representante = self.obtener_datos_representante()
-        categoria = self.ui.cajaOpciones_categorias.currentData()
+        categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
         
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
@@ -280,14 +280,14 @@ class Control_proveedores(QWidget):
                 error_callback= self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
-            if self.ui.btnradio_representantetrue.isChecked():
+            if self.WindowSupplier.btnradio_representantetrue.isChecked():
                 self.consultor_agregar_proveedor.ejecutar(
                     funcion=self.agregar_proveedor_query,
                     categoria=categoria,
                     datos_representante=datos_representante,
                     datos_proveedor = datos_proveedor
                     )
-            if self.ui.btnradio_representantefalse.isChecked():
+            if self.WindowSupplier.btnradio_representantefalse.isChecked():
                 self.consultor_agregar_proveedor.ejecutar(
                     funcion=self.agregar_proveedor_query,
                     categoria=categoria,
@@ -423,7 +423,7 @@ class Control_proveedores(QWidget):
         }
         self.modelo_tabla_proveedores = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_proveedores",
-            interfazTabla=self.ui.tabla_proveedores,
+            interfazTabla=self.WindowSupplier.tabla_proveedores,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
@@ -455,7 +455,7 @@ class Control_proveedores(QWidget):
     def control_actualizar_proveedor(self):
         datos_proveedor, campos_vacios = self.obtener_datos_proveedor()
         datos_representante = self.obtener_datos_representante()
-        categoria = self.ui.cajaOpciones_categorias.currentData()
+        categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
@@ -490,8 +490,8 @@ class Control_proveedores(QWidget):
                     'proveedor_id': self.proveedor_seleccionado.id,
                     'categoria': categoria,
                     'datos_proveedor': datos_proveedor,
-                    'tiene_representante': self.ui.btnradio_representantetrue.isChecked(),
-                    'datos_representante': datos_representante if self.ui.btnradio_representantetrue.isChecked() else None
+                    'tiene_representante': self.WindowSupplier.btnradio_representantetrue.isChecked(),
+                    'datos_representante': datos_representante if self.WindowSupplier.btnradio_representantetrue.isChecked() else None
                 }
                 
                 self.consultor_actualizar_proveedor.ejecutar(
@@ -576,43 +576,43 @@ class Control_proveedores(QWidget):
             }
 
     def cargar_datos_proveedor(self, proveedor):
-        self.ui.txt_nombre.setText(proveedor.nombre)
-        self.ui.txt_pais.setText(proveedor.pais)
-        self.ui.txt_estado.setText(proveedor.estado)
-        self.ui.txt_ciudad.setText(proveedor.ciudad)
-        self.ui.txt_codigopostal.setText(proveedor.codigo_postal)
-        self.ui.txt_calles.setText(proveedor.calles)
-        self.ui.txt_avenida.setText(proveedor.avenidas)
-        self.ui.txt_colonia.setText(proveedor.colonia)
-        self.ui.txtlargo_direccionadicional.setPlainText(proveedor.direccion_adicional)
-        self.ui.txt_rfc.setText(proveedor.rfc)
-        self.ui.txt_web.setText(proveedor.pagina_web)
-        self.ui.txt_correo.setText(proveedor.correo)
-        self.ui.txt_telefono.setText(proveedor.telefono)
+        self.WindowSupplier.txt_nombre.setText(proveedor.nombre)
+        self.WindowSupplier.txt_pais.setText(proveedor.pais)
+        self.WindowSupplier.txt_estado.setText(proveedor.estado)
+        self.WindowSupplier.txt_ciudad.setText(proveedor.ciudad)
+        self.WindowSupplier.txt_codigopostal.setText(proveedor.codigo_postal)
+        self.WindowSupplier.txt_calles.setText(proveedor.calles)
+        self.WindowSupplier.txt_avenida.setText(proveedor.avenidas)
+        self.WindowSupplier.txt_colonia.setText(proveedor.colonia)
+        self.WindowSupplier.txtlargo_direccionadicional.setPlainText(proveedor.direccion_adicional)
+        self.WindowSupplier.txt_rfc.setText(proveedor.rfc)
+        self.WindowSupplier.txt_web.setText(proveedor.pagina_web)
+        self.WindowSupplier.txt_correo.setText(proveedor.correo)
+        self.WindowSupplier.txt_telefono.setText(proveedor.telefono)
         
         if proveedor.categoria:
             objeto = proveedor.categoria
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_categorias, objeto, "nombre")
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowSupplier.cajaOpciones_categorias, objeto, "nombre")
         
         if proveedor.clave_moneda:
             nombre = f'{proveedor.clave_moneda}: {proveedor.tipo_moneda}'
-            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_tipomoneda, nombre)
+            FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowSupplier.cajaOpciones_tipomoneda, nombre)
 
         if proveedor.representante:
-            self.ui.btnradio_representantetrue.setChecked(True)
-            self.ui.contenedor_datosrepresentante.show()
-            self.ui.txt_nombrerepresentante.setText(proveedor.representante.nombre)
-            self.ui.txt_apellidopaternorepresen.setText(proveedor.representante.apellido_paterno)
-            self.ui.txt_apellidomaternorepresen.setText(proveedor.representante.apellido_materno)
-            self.ui.txt_correorepresentante.setText(proveedor.representante.correo)
-            self.ui.txt_telefonorepresentante.setText(proveedor.representante.telefono)
-            self.ui.txt_puestorepresentante.setText(proveedor.representante.puesto)
+            self.WindowSupplier.btnradio_representantetrue.setChecked(True)
+            self.WindowSupplier.contenedor_datosrepresentante.show()
+            self.WindowSupplier.txt_nombrerepresentante.setText(proveedor.representante.nombre)
+            self.WindowSupplier.txt_apellidopaternorepresen.setText(proveedor.representante.apellido_paterno)
+            self.WindowSupplier.txt_apellidomaternorepresen.setText(proveedor.representante.apellido_materno)
+            self.WindowSupplier.txt_correorepresentante.setText(proveedor.representante.correo)
+            self.WindowSupplier.txt_telefonorepresentante.setText(proveedor.representante.telefono)
+            self.WindowSupplier.txt_puestorepresentante.setText(proveedor.representante.puesto)
         else:
-            self.ui.btnradio_representantefalse.setChecked(True)
-            self.ui.contenedor_datosrepresentante.hide()
+            self.WindowSupplier.btnradio_representantefalse.setChecked(True)
+            self.WindowSupplier.contenedor_datosrepresentante.hide()
 
     def buscar_proveedor_hilo(self):
-        texto_busqueda = self.ui.txt_buscarproveedor.text().strip()
+        texto_busqueda = self.WindowSupplier.txt_buscarproveedor.text().strip()
         if texto_busqueda == "":
             Mensaje().mensaje_informativo("No has ingresado datos para filtrar")
             return
