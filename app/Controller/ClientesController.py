@@ -23,25 +23,25 @@ class Clientes(QWidget):
     CustomerSignalSelected_Customers = Signal(object)
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.ui = Ui_Control_Clientes()
-        self.ui.setupUi(self)
+        self.WindowClient = Ui_Control_Clientes()
+        self.WindowClient.setupUi(self)
         self.clienteFisico = True
-        self.ui.btnRadio_wpc_clienteFisico.setChecked(self.clienteFisico)
-        self.ui.wpc_contenedor_pila.setCurrentIndex(0)
-        self.ui.cajaDecimal_wpc_limite_credito.setEnabled(False)
-        self.ui.cajaDecimal_wpc_limite_credito_moral.setEnabled(False)
-        self.ui.cajaDecimal_porcentajedescuento_fisico.setEnabled(False)
-        self.ui.cajaDecimal_porcentajedescuento_moral.setEnabled(False)
-        self.ui.fecha_ultimoreporte_fisico.setEnabled(False)
-        self.ui.fecha_ultimoreporte_moral.setEnabled(False)
-        self.ui.txt_estadodelcredito_fisico.setText("SIN AUTORIZAR")
-        self.ui.txt_estadocredito_moral.setText("SIN AUTORIZAR")
-        self.ui.fecha_fechaconstitucion.setDate(QDate.currentDate())
-        self.ui.fecha_fechanacimiento.setDate(QDate.currentDate())
-        self.ui.fecha_ultimoreporte_fisico.setDate(QDate.currentDate())
-        self.ui.fecha_ultimoreporte_moral.setDate(QDate.currentDate())
-        self.ui.contenedor_clientesMorales.hide()
-        self.ui.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
+        self.WindowClient.btnRadio_wpc_clienteFisico.setChecked(self.clienteFisico)
+        self.WindowClient.wpc_contenedor_pila.setCurrentIndex(0)
+        self.WindowClient.cajaDecimal_wpc_limite_credito.setEnabled(False)
+        self.WindowClient.cajaDecimal_wpc_limite_credito_moral.setEnabled(False)
+        self.WindowClient.cajaDecimal_porcentajedescuento_fisico.setEnabled(False)
+        self.WindowClient.cajaDecimal_porcentajedescuento_moral.setEnabled(False)
+        self.WindowClient.fecha_ultimoreporte_fisico.setEnabled(False)
+        self.WindowClient.fecha_ultimoreporte_moral.setEnabled(False)
+        self.WindowClient.txt_estadodelcredito_fisico.setText("SIN AUTORIZAR")
+        self.WindowClient.txt_estadocredito_moral.setText("SIN AUTORIZAR")
+        self.WindowClient.fecha_fechaconstitucion.setDate(QDate.currentDate())
+        self.WindowClient.fecha_fechanacimiento.setDate(QDate.currentDate())
+        self.WindowClient.fecha_ultimoreporte_fisico.setDate(QDate.currentDate())
+        self.WindowClient.fecha_ultimoreporte_moral.setDate(QDate.currentDate())
+        self.WindowClient.contenedor_clientesMorales.hide()
+        self.WindowClient.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
 # ================ GLOBAL VARIABLES =============
         self.foto_cliente = None
         self.seleccion_conectada = None
@@ -72,42 +72,42 @@ class Clientes(QWidget):
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador = AjustarcajaOpciones()
-        
+
 # ================= SEÑALES TOGGLE =================
-        self.ui.casillaverificacion_wpc_credito_autorizado.toggled.connect(self.autorizar_credito_fisico)
-        self.ui.casillaverificacion_wpc_credito_autorizado_moral.toggled.connect(self.autorizar_credito_moral)
-        self.ui.btnRadio_wpc_clienteMoral.toggled.connect(self.mostrar_contenedor_cliente_moral)
-        self.ui.btnRadio_wpc_clienteFisico.toggled.connect(self.mostrar_contenedor_cliente_fisico)
-        self.ui.casillaverificacion_wpc_credito_autorizado.toggled.connect(self.activar_creditofisico)
-        self.ui.casillaverificacion_wpc_credito_autorizado_moral.toggled.connect(self.activar_creditomoral)
-        self.ui.casillaverificacion_aplicadescuento_fisico.toggled.connect(self.activar_descuentofisico)
-        self.ui.casillaverificacion_aplicadescuento_moral.toggled.connect(self.activar_descuentomoral)
+        self.WindowClient.casillaverificacion_wpc_credito_autorizado.toggled.connect(self.autorizar_credito_fisico)
+        self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.toggled.connect(self.autorizar_credito_moral)
+        self.WindowClient.btnRadio_wpc_clienteMoral.toggled.connect(self.mostrar_contenedor_cliente_moral)
+        self.WindowClient.btnRadio_wpc_clienteFisico.toggled.connect(self.mostrar_contenedor_cliente_fisico)
+        self.WindowClient.casillaverificacion_wpc_credito_autorizado.toggled.connect(self.activar_creditofisico)
+        self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.toggled.connect(self.activar_creditomoral)
+        self.WindowClient.casillaverificacion_aplicadescuento_fisico.toggled.connect(self.activar_descuentofisico)
+        self.WindowClient.casillaverificacion_aplicadescuento_moral.toggled.connect(self.activar_descuentomoral)
         #------------------------------
 # ================= SEÑALES DE BOTONES =================
-        self.ui.btn_btn_nuevacategoriaFisico.clicked.connect(self.nueva_categoria)
-        self.ui.btn_btn_nuevacategoriaMoral.clicked.connect(self.nueva_categoria)
-        self.ui.btn_btn_nuevaareanegocio_fisico.clicked.connect(self.nueva_area_cliente_fisico)
-        self.ui.btn_btn_areasnegocio_moral.clicked.connect(self.nueva_area_cliente_moral)
-        self.ui.btn_btn_cliente_agregar.clicked.connect(self.agregar_cliente)
-        self.ui.btn_btn_limpiarcampos.clicked.connect(self.limpiar_campos)
-        self.ui.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente_fisico)
-        self.ui.btn_btn_filtrarClienteMoral.clicked.connect(self.buscar_cliente_moral)
-        self.ui.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
-        self.ui.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
-        self.ui.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes_fisicos)
-        self.ui.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
-        self.ui.btn_RefrescarTablaClientesMorales.clicked.connect(self.tabla_listar_clientes_morales)
-        self.ui.btn_btn_paginarClientesMorales.clicked.connect(self.cargar_mas_clientes_morales)
+        self.WindowClient.btn_btn_nuevacategoriaFisico.clicked.connect(self.nueva_categoria)
+        self.WindowClient.btn_btn_nuevacategoriaMoral.clicked.connect(self.nueva_categoria)
+        self.WindowClient.btn_btn_nuevaareanegocio_fisico.clicked.connect(self.nueva_area_cliente_fisico)
+        self.WindowClient.btn_btn_areasnegocio_moral.clicked.connect(self.nueva_area_cliente_moral)
+        self.WindowClient.btn_btn_cliente_agregar.clicked.connect(self.agregar_cliente)
+        self.WindowClient.btn_btn_limpiarcampos.clicked.connect(self.limpiar_campos)
+        self.WindowClient.btn_btn_filtrarClienteFisico.clicked.connect(self.buscar_cliente_fisico)
+        self.WindowClient.btn_btn_filtrarClienteMoral.clicked.connect(self.buscar_cliente_moral)
+        self.WindowClient.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
+        self.WindowClient.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
+        self.WindowClient.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes_fisicos)
+        self.WindowClient.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
+        self.WindowClient.btn_RefrescarTablaClientesMorales.clicked.connect(self.tabla_listar_clientes_morales)
+        self.WindowClient.btn_btn_paginarClientesMorales.clicked.connect(self.cargar_mas_clientes_morales)
 
 # ================= SEÑALES PERSONALIZADAS =================
-        self.ui.label_wpc_fotocliente.mousePressEvent = self.obtener_foto
+        self.WindowClient.label_wpc_fotocliente.mousePressEvent = self.obtener_foto
         self.CustomerSignalSelected_Customers.connect(self.cargar_cliente)
 
 # ================= SELAÑES DE CAJAS DE TEXTO ================
-        self.ui.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
-        self.ui.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
-        self.ui.cajaOpciones_areasnegocio_moral.currentIndexChanged.connect(self.mostrar_descripcion_area)
-        self.ui.cajaOpciones_categoriaMoral.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        self.WindowClient.cajaOpciones_areasnegocio_fisico.currentIndexChanged.connect(self.mostrar_descripcion_area)
+        self.WindowClient.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        self.WindowClient.cajaOpciones_areasnegocio_moral.currentIndexChanged.connect(self.mostrar_descripcion_area)
+        self.WindowClient.cajaOpciones_categoriaMoral.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
 
 # EJECUTAR FUNCIONALIDADES INICIALES
         self.__configuracion_tabla_clientes_fisicos()
@@ -116,7 +116,7 @@ class Clientes(QWidget):
 # ================= FUNCIONES PRINCIPALES =================
     def agregar_cliente(self):
         fecha_actual = datetime.now().date()
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             datos = self.obtener_datos_cliente_fisico()
             if not self.validacion_campos_cliente_fisico(datos):
                 return
@@ -189,7 +189,7 @@ class Clientes(QWidget):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_cliente)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {str(e)}")
 
-        elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             datos = self.obtener_datos_cliente_moral()
             tipo_de_cliente = 'MORAL'
             
@@ -266,10 +266,8 @@ class Clientes(QWidget):
 
     def agregar_cliente_moral_query(self, session, datos_cliente):
         try:
-            # Extraer datos del representante
             datos_representante = datos_cliente.pop('datos_representante', None)
             
-            # Agregar cliente moral
             nuevo_cliente, estado_cliente = ClientesFisicosAndMorales(session).agregar_cliente_moral(**datos_cliente)
             
             if estado_cliente is None:
@@ -280,10 +278,8 @@ class Clientes(QWidget):
                     "tipo_cliente": "MORAL"
                 }
             elif estado_cliente is True and datos_representante:
-                # Agregar representante
                 representante = ClientesFisicosAndMorales(session).agregar_representante_cliente_moral(**datos_representante)
                 
-                # Asociar representante al cliente
                 nuevo_cliente.representante = representante
                 session.commit()
                 
@@ -317,17 +313,17 @@ class Clientes(QWidget):
             }
 
     def actualizar_clientes(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             datos = self.obtener_datos_cliente_fisico()
-            area_cliente = self.ui.cajaOpciones_areasnegocio_fisico.currentData()
-            categoria_cliente = self.ui.cajaOpciones_categoriaFisico.currentData()
+            area_cliente = self.WindowClient.cajaOpciones_areasnegocio_fisico.currentData()
+            categoria_cliente = self.WindowClient.cajaOpciones_categoriaFisico.currentData()
             cliente_fisico = True
             if not self.validacion_campos_cliente_fisico(datos):
                 return
         else:
             datos = self.obtener_datos_cliente_moral()
-            area_cliente = self.ui.cajaOpciones_areasnegocio_moral.currentData()
-            categoria_cliente = self.ui.cajaOpciones_categoriaMoral.currentData()
+            area_cliente = self.WindowClient.cajaOpciones_areasnegocio_moral.currentData()
+            categoria_cliente = self.WindowClient.cajaOpciones_categoriaMoral.currentData()
             cliente_fisico = False
             if not self.validacion_campos_cliente_moral(datos):
                 return
@@ -348,7 +344,6 @@ class Clientes(QWidget):
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
-                # Preparar datos para el worker
                 datos_actualizacion = {
                     'cliente': self.clienteSeleccionadoVariable,
                     'datos': datos,
@@ -479,7 +474,7 @@ class Clientes(QWidget):
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
-                if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+                if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
                     modelodb = Clientes_fisicos
                 else:
                     modelodb = Clientes_morales
@@ -516,39 +511,39 @@ class Clientes(QWidget):
 
 # ========================= FUNCIONES =========================
     def cargar_estados_civiles(self):
-        self.ui.cajaOpciones_estadocivil_fisico.clear()
-        self.ui.cajaOpciones_estadocivil_fisico.addItems(self.estadosCivilesClientesFisicos)
-        self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_estadocivil_fisico)
+        self.WindowClient.cajaOpciones_estadocivil_fisico.clear()
+        self.WindowClient.cajaOpciones_estadocivil_fisico.addItems(self.estadosCivilesClientesFisicos)
+        self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_estadocivil_fisico)
 
     def mostrar_descripcion_area(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            area = self.ui.cajaOpciones_areasnegocio_fisico.currentData()
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            area = self.WindowClient.cajaOpciones_areasnegocio_fisico.currentData()
             if not area:
                 return
-            self.ui.txtlargo_descripcionAreaCliente.setPlainText(area.descripcion)
+            self.WindowClient.txtlargo_descripcionAreaCliente.setPlainText(area.descripcion)
         else:
-            area = self.ui.cajaOpciones_areasnegocio_moral.currentData()
+            area = self.WindowClient.cajaOpciones_areasnegocio_moral.currentData()
             if not area:
                 return
-            self.ui.txtlargo_descripcionAreaClienteMoral.setPlainText(area.descripcion)
+            self.WindowClient.txtlargo_descripcionAreaClienteMoral.setPlainText(area.descripcion)
             
     def mostrar_descripcion_categoria(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            categoria = self.ui.cajaOpciones_categoriaFisico.currentData()
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            categoria = self.WindowClient.cajaOpciones_categoriaFisico.currentData()
             if not categoria:
                 return
-            self.ui.txtlargo_descripcionCategoriaCliente.setPlainText(categoria.descripcion)
+            self.WindowClient.txtlargo_descripcionCategoriaCliente.setPlainText(categoria.descripcion)
         else:
-            categoria = self.ui.cajaOpciones_categoriaMoral.currentData()
+            categoria = self.WindowClient.cajaOpciones_categoriaMoral.currentData()
             if not categoria:
                 return
-            self.ui.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
+            self.WindowClient.txtlargo_descripcionCategoriaClienteMoral.setPlainText(categoria.descripcion)
 
     def listar_areas(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            self.ui.cajaOpciones_areasnegocio_fisico.clear()
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            self.WindowClient.cajaOpciones_areasnegocio_fisico.clear()
         else:
-            self.ui.cajaOpciones_areasnegocio_moral.clear()
+            self.WindowClient.cajaOpciones_areasnegocio_moral.clear()
         try:
             WorkerDB.cleanup_owner_workers("obtener_areas_negocio_thread")
             self.id_hilo_obtener_areas_negocio = WorkerDB.create_managed_worker(owner_id="obtener_areas_negocio_thread")
@@ -591,38 +586,38 @@ class Clientes(QWidget):
         }
         
     def listar_areas_negocio(self, data):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             for area in data["data"]:
-                self.ui.cajaOpciones_areasnegocio_fisico.addItem(area.nombre, area)
-            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_fisico)
+                self.WindowClient.cajaOpciones_areasnegocio_fisico.addItem(area.nombre, area)
+            self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_areasnegocio_fisico)
         else:
             for area in data["data"]:
-                self.ui.cajaOpciones_areasnegocio_moral.addItem(area.nombre, area)
-            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_areasnegocio_moral)
-                
+                self.WindowClient.cajaOpciones_areasnegocio_moral.addItem(area.nombre, area)
+            self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_areasnegocio_moral)
+# ================ DIALOG ======================
     def nueva_categoria(self):
         self.ui_categoria = CategoriasController(tipo_categoria="clientes")
         self.ui_categoria.show()
         self.ui_categoria.categoria_agregada_signal.connect(self.listar_categorias)
 
     def listar_categorias(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
-            self.ui.cajaOpciones_categoriaFisico.clear()
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            self.WindowClient.cajaOpciones_categoriaFisico.clear()
         else:
-            self.ui.cajaOpciones_categoriaMoral.clear()
+            self.WindowClient.cajaOpciones_categoriaMoral.clear()
         try:
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
                 categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="clientes")
                 if estado:
-                    if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+                    if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
                         for c in categorias:
-                            self.ui.cajaOpciones_categoriaFisico.addItem(c.nombre, c)
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaFisico)
+                            self.WindowClient.cajaOpciones_categoriaFisico.addItem(c.nombre, c)
+                        AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaFisico)
                     else:
                         for c in categorias:
-                            self.ui.cajaOpciones_categoriaMoral.addItem(c.nombre, c)
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaMoral)
+                            self.WindowClient.cajaOpciones_categoriaMoral.addItem(c.nombre, c)
+                        AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaMoral)
         except Exception as e:
             Mensaje().mensaje_critico(f"No se logro listar las categorias por lo siguiente: {e}")
             try:
@@ -667,24 +662,24 @@ class Clientes(QWidget):
         }
         
     def listar_categorias_clientes(self, data):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             for categoria in data["data"]:
-                self.ui.cajaOpciones_categoriaFisico.addItem(categoria.nombre, categoria)
-            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaFisico)
+                self.WindowClient.cajaOpciones_categoriaFisico.addItem(categoria.nombre, categoria)
+            self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaFisico)
         else:
             for categoria in data["data"]:
-                self.ui.cajaOpciones_categoriaMoral.addItem(categoria.nombre, categoria)
-            self.ajustador.ajustar_cajadeopciones(self.ui.cajaOpciones_categoriaMoral)
+                self.WindowClient.cajaOpciones_categoriaMoral.addItem(categoria.nombre, categoria)
+            self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaMoral)
 
     def obtener_foto(self, event):
         options = QFileDialog.Options()
         self.foto_cliente, _ = QFileDialog.getOpenFileName(self, 'SELECCIONA UNA IMAGEN', ' ', 'Archivo de Imagen (*.png *.jpg *.jpeg);; Todos los archivos (*)', options=options)
         if self.foto_cliente:
-            self.ui.label_wpc_fotocliente.setText(self.foto_cliente)
+            self.WindowClient.label_wpc_fotocliente.setText(self.foto_cliente)
             pixmap = QPixmap(self.foto_cliente)
-            self.ui.label_wpc_fotocliente.setPixmap(pixmap)
-            self.ui.label_wpc_fotocliente.setScaledContents(True)
-            self.ui.label_wpc_fotocliente.adjustSize()
+            self.WindowClient.label_wpc_fotocliente.setPixmap(pixmap)
+            self.WindowClient.label_wpc_fotocliente.setScaledContents(True)
+            self.WindowClient.label_wpc_fotocliente.adjustSize()
 
 # ======================= CLIENTES FISICOS ============================
     def agregar_cliente_fisico_query(self, session, datos_cliente):
@@ -715,7 +710,6 @@ class Clientes(QWidget):
                 
         except Exception as e:
             session.rollback()
-            print(f"💥 Error en agregar_cliente_fisico_query: {e}")
             return {
                 "exito": False,
                 "mensaje": f"Error al agregar cliente físico: {str(e)}",
@@ -754,71 +748,71 @@ class Clientes(QWidget):
         return True
 
     def autorizar_credito_fisico(self):
-        if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
-            self.ui.txt_estadodelcredito_fisico.setText("AUTORIZADO")
+        if self.WindowClient.casillaverificacion_wpc_credito_autorizado.isChecked():
+            self.WindowClient.txt_estadodelcredito_fisico.setText("AUTORIZADO")
         else:
-            self.ui.txt_estadodelcredito_fisico.setText("SIN AUTORIZAR")
+            self.WindowClient.txt_estadodelcredito_fisico.setText("SIN AUTORIZAR")
 
     def obtener_datos_cliente_fisico(self):
         return  {
-            "nombre": self.ui.txt_nombre_fisico.text().strip().upper(),
-            "apellido paterno" : self.ui.txt_apellidop_fisico.text().strip().upper(),
-            "apellido materno" : self.ui.txt_apellidom_fisico.text().strip().upper(),
-            "rfc": self.ui.txt_rfc_fisico.text().strip().upper(),
-            "numero telefono" : self.ui.txt_telefono_fisico.text().strip().upper(),
-            "pais": self.ui.txt_pais_fisico.text().strip().upper(),
-            "estado": self.ui.txt_estado_fisico.text().strip().upper(),
-            "ciudad": self.ui.txt_ciudad_fisico.text().strip().upper(),
-            "codigo postal": self.ui.txt_codigopostal_fisico.text().strip().upper(),
-            "direccion adicional": self.ui.txtlargo_direccionadicional_fisico.toPlainText().strip().upper(),
-            "curp": self.ui.txt_curp_fisico.text().strip().upper(),
-            "estado civil": self.ui.cajaOpciones_estadocivil_fisico.currentText().strip().upper(),
-            "nivel de ingresos": self.ui.cajaDecimal_wpc_ingresosclienteFisico.value(),
-            "correo electronico" : self.ui.txt_correo_fisico.text().strip(),
-            "avenidas" : self.ui.txt_avenidas_fisico.text().strip().upper(),
-            "calles" : self.ui.txt_calles_fisico.text().strip().upper(),
-            "fecha de nacimiento" : self.ui.fecha_fechanacimiento.date().toPython(),
-            "numero identificacion" : self.ui.txt_ine_fisico.text().strip().upper(),
-            "ocupacion" : self.ui.txt_ocupacion_fisico.text().strip().upper(),
-            "area de negocio" : self.ui.cajaOpciones_areasnegocio_fisico.currentData(),
-            "clasificacion cliente": self.ui.cajaOpciones_categoriaFisico.currentData(),
-            "estado civil": self.ui.cajaOpciones_estadocivil_fisico.currentText().strip().upper(),
-            "comentarios" : self.ui.txtlargo_comentarioclientefisico.toPlainText().strip().upper(),
-            "entidad legalizada" : self.ui.casillaverificacion_entidadlegalizada_fisico.isChecked(),
-            "credito autorizado" : self.ui.casillaverificacion_wpc_credito_autorizado.isChecked(),
-            "estado del credito" : self.ui.txt_estadodelcredito_fisico.text().strip().upper(),
-            "limite del credito" : self.ui.cajaDecimal_wpc_limite_credito.value(),
-            "porcentaje del interes" : self.ui.cajaDecimal_interesesaplicados_fisico.value(),
-            "porcentaje del descuento" : self.ui.cajaDecimal_porcentajedescuento_fisico.value(),
-            "fecha del ultimo reporte" : self.ui.fecha_ultimoreporte_fisico.date().toPython(),
-            "credito utilizado" : self.ui.cajaDecimal_creditoutilizado_fisico.value(),
-            "aplica descuento" : self.ui.casillaverificacion_aplicadescuento_fisico.isChecked(),
-            "credito disponible" : self.ui.cajaDecimal_creditodisponible_fisico.value(),
-            "ingresos" : self.ui.cajaDecimal_wpc_ingresosclienteFisico.value(),
+            "nombre": self.WindowClient.txt_nombre_fisico.text().strip().upper(),
+            "apellido paterno" : self.WindowClient.txt_apellidop_fisico.text().strip().upper(),
+            "apellido materno" : self.WindowClient.txt_apellidom_fisico.text().strip().upper(),
+            "rfc": self.WindowClient.txt_rfc_fisico.text().strip().upper(),
+            "numero telefono" : self.WindowClient.txt_telefono_fisico.text().strip().upper(),
+            "pais": self.WindowClient.txt_pais_fisico.text().strip().upper(),
+            "estado": self.WindowClient.txt_estado_fisico.text().strip().upper(),
+            "ciudad": self.WindowClient.txt_ciudad_fisico.text().strip().upper(),
+            "codigo postal": self.WindowClient.txt_codigopostal_fisico.text().strip().upper(),
+            "direccion adicional": self.WindowClient.txtlargo_direccionadicional_fisico.toPlainText().strip().upper(),
+            "curp": self.WindowClient.txt_curp_fisico.text().strip().upper(),
+            "estado civil": self.WindowClient.cajaOpciones_estadocivil_fisico.currentText().strip().upper(),
+            "nivel de ingresos": self.WindowClient.cajaDecimal_wpc_ingresosclienteFisico.value(),
+            "correo electronico" : self.WindowClient.txt_correo_fisico.text().strip(),
+            "avenidas" : self.WindowClient.txt_avenidas_fisico.text().strip().upper(),
+            "calles" : self.WindowClient.txt_calles_fisico.text().strip().upper(),
+            "fecha de nacimiento" : self.WindowClient.fecha_fechanacimiento.date().toPython(),
+            "numero identificacion" : self.WindowClient.txt_ine_fisico.text().strip().upper(),
+            "ocupacion" : self.WindowClient.txt_ocupacion_fisico.text().strip().upper(),
+            "area de negocio" : self.WindowClient.cajaOpciones_areasnegocio_fisico.currentData(),
+            "clasificacion cliente": self.WindowClient.cajaOpciones_categoriaFisico.currentData(),
+            "estado civil": self.WindowClient.cajaOpciones_estadocivil_fisico.currentText().strip().upper(),
+            "comentarios" : self.WindowClient.txtlargo_comentarioclientefisico.toPlainText().strip().upper(),
+            "entidad legalizada" : self.WindowClient.casillaverificacion_entidadlegalizada_fisico.isChecked(),
+            "credito autorizado" : self.WindowClient.casillaverificacion_wpc_credito_autorizado.isChecked(),
+            "estado del credito" : self.WindowClient.txt_estadodelcredito_fisico.text().strip().upper(),
+            "limite del credito" : self.WindowClient.cajaDecimal_wpc_limite_credito.value(),
+            "porcentaje del interes" : self.WindowClient.cajaDecimal_interesesaplicados_fisico.value(),
+            "porcentaje del descuento" : self.WindowClient.cajaDecimal_porcentajedescuento_fisico.value(),
+            "fecha del ultimo reporte" : self.WindowClient.fecha_ultimoreporte_fisico.date().toPython(),
+            "credito utilizado" : self.WindowClient.cajaDecimal_creditoutilizado_fisico.value(),
+            "aplica descuento" : self.WindowClient.casillaverificacion_aplicadescuento_fisico.isChecked(),
+            "credito disponible" : self.WindowClient.cajaDecimal_creditodisponible_fisico.value(),
+            "ingresos" : self.WindowClient.cajaDecimal_wpc_ingresosclienteFisico.value(),
         }
 
     def mostrar_contenedor_cliente_fisico(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
-            self.ui.wpc_contenedor_pila.setCurrentIndex(0)
-            self.ui.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
-            self.ui.contenedor_clientesMorales.hide()
-            self.ui.contenedor_clientesFisicos.show()
+            self.WindowClient.wpc_contenedor_pila.setCurrentIndex(0)
+            self.WindowClient.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
+            self.WindowClient.contenedor_clientesMorales.hide()
+            self.WindowClient.contenedor_clientesFisicos.show()
 
     def activar_creditofisico(self):
-        if self.ui.casillaverificacion_wpc_credito_autorizado.isChecked():
-            self.ui.cajaDecimal_wpc_limite_credito.setEnabled(True)
+        if self.WindowClient.casillaverificacion_wpc_credito_autorizado.isChecked():
+            self.WindowClient.cajaDecimal_wpc_limite_credito.setEnabled(True)
         else:
-            self.ui.cajaDecimal_wpc_limite_credito.setEnabled(False)
+            self.WindowClient.cajaDecimal_wpc_limite_credito.setEnabled(False)
 
     def activar_descuentofisico(self):
-        if self.ui.casillaverificacion_aplicadescuento_fisico.isChecked():
-            self.ui.cajaDecimal_porcentajedescuento_fisico.setEnabled(True)
+        if self.WindowClient.casillaverificacion_aplicadescuento_fisico.isChecked():
+            self.WindowClient.cajaDecimal_porcentajedescuento_fisico.setEnabled(True)
         else:
-            self.ui.cajaDecimal_porcentajedescuento_fisico.setEnabled(False)
-
+            self.WindowClient.cajaDecimal_porcentajedescuento_fisico.setEnabled(False)
+# =================== DIALOG =======================
     def nueva_area_cliente_fisico(self):
         self.ui_area_cliente_fisico =  AreaNegocioClientesController("Fisico")
         self.ui_area_cliente_fisico.show()
@@ -846,7 +840,7 @@ class Clientes(QWidget):
         }
         self.modelo_tabla_clientes_fisicos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_clientes_fisicos",
-            interfazTabla=self.ui.tabla_clientesFisicos,
+            interfazTabla=self.WindowClient.tabla_clientesFisicos,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
@@ -858,68 +852,64 @@ class Clientes(QWidget):
         return self.modelo_tabla_clientes_fisicos
     
     def obtener_id_elemento_tabla_fisicos(self, current, previus = None):
-        print("obtener_id_elemento_tabla")
         if current.isValid():
             fila = current.row()
             cliente = self.modelo_tabla_clientes_fisicos.get_item(current)
             if cliente:
                 self.clienteSeleccionadoVariable = cliente
-                print("clienteSeleccionadoVariable", self.clienteSeleccionadoVariable)
                 self.CustomerSignalSelected_Customers.emit(self.clienteSeleccionadoVariable)
     
     def limpiar_tabla_clientes_fisicos(self):
-        """Limpia la tabla de clientes"""
         try:
             if hasattr(self, 'modelo_tabla_clientes_fisicos'):
                 self.modelo_tabla_clientes_fisicos.clear()
         except Exception as e:
-            print(f"Error al limpiar tabla de clientes: {e}")
+            Mensaje().mensaje_alerta(f"Error al limpiar tabla de clientes: {e}")
 
     def campos_cliente_fisico(self):
         return {
-            "nombre": self.ui.txt_nombre_fisico,
-            "correo electronico" : self.ui.txt_correo_fisico,
-            "rfc" : self.ui.txt_rfc_fisico,
-            "telefono" : self.ui.txt_telefono_fisico,
-            "pais" : self.ui.txt_pais_fisico,
-            "estado" : self.ui.txt_estado_fisico,
-            "ciudad" : self.ui.txt_ciudad_fisico,
-            "avenidas" : self.ui.txt_avenidas_fisico,
-            "calles" : self.ui.txt_calles_fisico,
-            "codigo postal" : self.ui.txt_codigopostal_fisico,
-            "direccion adicional": self.ui.txtlargo_direccionadicional_fisico,
-            "entidad legalizada": self.ui.casillaverificacion_entidadlegalizada_fisico,
-            "categoria del cliente" : self.ui.cajaOpciones_categoriaFisico,
-            "tiene credito": self.ui.casillaverificacion_wpc_credito_autorizado,
-            "estado del credito" : self.ui.txt_estadodelcredito_fisico,
-            "limite de credito" : self.ui.cajaDecimal_wpc_limite_credito,
-            "porcentaje de interes" : self.ui.cajaDecimal_interesesaplicados_fisico,
-            "fecha del ultimo reporte" : self.ui.fecha_ultimoreporte_fisico,
-            "credito disponible": self.ui.cajaDecimal_creditodisponible_fisico,
-            "credito utilizado" : self.ui.cajaDecimal_creditoutilizado_fisico,
-            "aplica descuento" : self.ui.casillaverificacion_aplicadescuento_fisico,
-            "ocupacion" : self.ui.txt_ocupacion_fisico,
-            "area de negocio" : self.ui.cajaOpciones_areasnegocio_fisico,
-            "comentarios": self.ui.txtlargo_comentarioclientefisico,
-            "porcentaje de descuento" : self.ui.cajaDecimal_porcentajedescuento_fisico,
-            "apellido paterno" : self.ui.txt_apellidop_fisico,
-            "apellido materno" : self.ui.txt_apellidom_fisico,
-            "curp": self.ui.txt_curp_fisico,
-            "fecha de nacimiento" : self.ui.fecha_fechanacimiento,
-            "numero de identificacion" : self.ui.txt_ine_fisico,
-            "ingresos" : self.ui.cajaDecimal_wpc_ingresosclienteFisico,
-            "estado civil" : self.ui.cajaOpciones_estadocivil_fisico,
-            "foto" : self.ui.label_wpc_fotocliente
+            "nombre": self.WindowClient.txt_nombre_fisico,
+            "correo electronico" : self.WindowClient.txt_correo_fisico,
+            "rfc" : self.WindowClient.txt_rfc_fisico,
+            "telefono" : self.WindowClient.txt_telefono_fisico,
+            "pais" : self.WindowClient.txt_pais_fisico,
+            "estado" : self.WindowClient.txt_estado_fisico,
+            "ciudad" : self.WindowClient.txt_ciudad_fisico,
+            "avenidas" : self.WindowClient.txt_avenidas_fisico,
+            "calles" : self.WindowClient.txt_calles_fisico,
+            "codigo postal" : self.WindowClient.txt_codigopostal_fisico,
+            "direccion adicional": self.WindowClient.txtlargo_direccionadicional_fisico,
+            "entidad legalizada": self.WindowClient.casillaverificacion_entidadlegalizada_fisico,
+            "categoria del cliente" : self.WindowClient.cajaOpciones_categoriaFisico,
+            "tiene credito": self.WindowClient.casillaverificacion_wpc_credito_autorizado,
+            "estado del credito" : self.WindowClient.txt_estadodelcredito_fisico,
+            "limite de credito" : self.WindowClient.cajaDecimal_wpc_limite_credito,
+            "porcentaje de interes" : self.WindowClient.cajaDecimal_interesesaplicados_fisico,
+            "fecha del ultimo reporte" : self.WindowClient.fecha_ultimoreporte_fisico,
+            "credito disponible": self.WindowClient.cajaDecimal_creditodisponible_fisico,
+            "credito utilizado" : self.WindowClient.cajaDecimal_creditoutilizado_fisico,
+            "aplica descuento" : self.WindowClient.casillaverificacion_aplicadescuento_fisico,
+            "ocupacion" : self.WindowClient.txt_ocupacion_fisico,
+            "area de negocio" : self.WindowClient.cajaOpciones_areasnegocio_fisico,
+            "comentarios": self.WindowClient.txtlargo_comentarioclientefisico,
+            "porcentaje de descuento" : self.WindowClient.cajaDecimal_porcentajedescuento_fisico,
+            "apellido paterno" : self.WindowClient.txt_apellidop_fisico,
+            "apellido materno" : self.WindowClient.txt_apellidom_fisico,
+            "curp": self.WindowClient.txt_curp_fisico,
+            "fecha de nacimiento" : self.WindowClient.fecha_fechanacimiento,
+            "numero de identificacion" : self.WindowClient.txt_ine_fisico,
+            "ingresos" : self.WindowClient.cajaDecimal_wpc_ingresosclienteFisico,
+            "estado civil" : self.WindowClient.cajaOpciones_estadocivil_fisico,
+            "foto" : self.WindowClient.label_wpc_fotocliente
         }
 
     def cargar_mas_clientes_fisicos(self):
         self._is_refreshing_clientes_fisicos = False
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             if hasattr(self, "no_hay_mas_registros_clientes_fisicos") and self.no_hay_mas_registros_clientes_fisicos:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
             if not hasattr(self, 'busqueda_clientes_fisicos') or not self.busqueda_clientes_fisicos:
-                print('Cargando más productos sin filtro')
                 try:
                     self.manejadorModal.mostrar_modal(self)
                     WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
@@ -944,7 +934,7 @@ class Clientes(QWidget):
                 self.paginar_clientes_fisicos_filtrados()
     
     def paginar_clientes_fisicos_filtrados(self):
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_fisicos_thread")
@@ -969,8 +959,6 @@ class Clientes(QWidget):
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
                 
     def paginar_busqueda_por_filtros_clientes_fisicos_query(self, session, texto, es_fisico = None):
-        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes_fisicos}, limit={self.cantidad_final_clientes_fisicos}")
-        
         datos = []
         estado = False
         if texto:
@@ -981,7 +969,6 @@ class Clientes(QWidget):
                         cantidad_inicial = self.cantidad_inicial_clientes_fisicos,
                         cantidad_final = self.cantidad_final_clientes_fisicos
                         )
-                    print(f"buscando fisico")
                     if not estado:
                         session.rollback()
                         return {
@@ -989,9 +976,7 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                print(f"DEBUG - Obtenidos filtrados: {len(clientes) if clientes else 0} registros")
                 self.cantidad_inicial_clientes_fisicos += len(clientes)
-                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_clientes_fisicos}")
                 return {
                     "exito": estado,
                     "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1017,14 +1002,13 @@ class Clientes(QWidget):
         self.no_hay_mas_registros_clientes_fisicos = False
         if hasattr(self, 'ultima_carga_cantidad_clientes_fisicos'):
             del self.ultima_carga_cantidad_clientes_fisicos
-        if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             self.obtener_clientes_fisicos_hilo(reset_paginacion = True)
             
     def obtener_clientes_fisicos_hilo(self, reset_paginacion=False):
         try:
             if reset_paginacion:
                 self.cantidad_inicial_clientes_fisicos = 0
-                print("DEBUG - Paginación reiniciada")
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
@@ -1052,20 +1036,13 @@ class Clientes(QWidget):
 
     def clientes_fisicos_query(self, session):
         try:
-            print(f"DEBUG - Consultando: offset={self.cantidad_inicial_clientes_fisicos}, limit={self.cantidad_final_clientes_fisicos}")
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos(
                 cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
                 cantidad_final=self.cantidad_final_clientes_fisicos
             )
-            print(f"DEBUG - Obtenidos: {len(clientes) if clientes else 0} registros")
-            print(f"DEBUG - Estado de la consulta: {estado}")
             
-            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
             if (not hasattr(self, '_is_refreshing_clientes_fisicos') or not self._is_refreshing_clientes_fisicos) and clientes:
-                # Incrementar por el límite, no por la cantidad recibida
-                # Esto mantiene la paginación consistente
                 self.cantidad_inicial_clientes_fisicos += self.cantidad_final_clientes_fisicos
-                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_clientes_fisicos}")
             if not estado:
                 session.rollback()
                 return {
@@ -1092,20 +1069,15 @@ class Clientes(QWidget):
             }
 
     def mostrar_clientes_resultado_fisicos(self, resultado):
-        """Callback unificado para ambos tipos de clientes"""
-        print(f"🔍 Resultado clientes: {resultado}")
-        
         tipo_cliente = resultado.get("tipo_cliente", "")
         
         if resultado.get("exito"):
-            # Llamar a la función de llenado de tabla
             self.llenar_tabla_clientes_fisicos(resultado)
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_fisicos()
 
     def llenar_tabla_clientes_fisicos(self, resultado):
-        # self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
         clientes = resultado["data"]
         estado = resultado["exito"]
         try:
@@ -1118,7 +1090,7 @@ class Clientes(QWidget):
 
     def buscar_cliente_fisico(self):
         self.cantidad_inicial_clientes_fisicos = 0
-        nombre = self.ui.txt_buscarclienteFisico.text().strip()
+        nombre = self.WindowClient.txt_buscarclienteFisico.text().strip()
         busqueda_nuevo_cliente_fisico = (nombre != self.nombre_cliente_fisico)
         self.nombre_cliente_fisico = nombre
         if not self.nombre_cliente_fisico:
@@ -1190,7 +1162,7 @@ class Clientes(QWidget):
 # ======================== CLIENTES MORALES =============================
     def buscar_cliente_moral(self):
         self.cantidad_inicial_clientes_morales = 0
-        nombre = self.ui.txt_buscarclienteMorales.text().strip()
+        nombre = self.WindowClient.txt_buscarclienteMorales.text().strip()
         busqueda_nuevo_cliente_moral = (nombre != self.nombre_cliente_moral)
         self.nombre_cliente_moral = nombre
         if not self.nombre_cliente_moral:
@@ -1260,57 +1232,45 @@ class Clientes(QWidget):
 
     def limpiar_campos(self):
         try:
-            if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
                 fisicos = self.campos_cliente_fisico()
                 for campo in fisicos.values():
-                    # Limpiar QLineEdit
-                    if isinstance(campo, QLineEdit) and campo != self.ui.txt_estadodelcredito_fisico:
+                    if isinstance(campo, QLineEdit) and campo != self.WindowClient.txt_estadodelcredito_fisico:
                         campo.clear()
-                    # Limpiar QPlainTextEdit
                     elif isinstance(campo, QPlainTextEdit):
                         campo.clear()
-                    # Restablecer QComboBox al primer índice
                     elif isinstance(campo, QComboBox):
                         campo.setCurrentIndex(0)
-                    # Restablecer QDoubleSpinBox a 0
                     elif isinstance(campo, QDoubleSpinBox):
                         campo.setValue(0.0)
-                    # Restablecer QCheckBox a no marcado
                     elif isinstance(campo, QCheckBox):
                         campo.setChecked(False)
-                    # Restablecer QDateEdit a la fecha actual
                     elif isinstance(campo, QDateEdit):
                         campo.setDate(QDate.currentDate())
 
                 self.listar_areas()
                 self.listar_categorias()
                 _translate = QtCore.QCoreApplication.translate
-                self.ui.label_wpc_fotocliente.setText(_translate("Control_Clientes", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>"))
-                self.ui.txt_buscarclienteFisico.clear()
+                self.WindowClient.label_wpc_fotocliente.setText(_translate("Control_Clientes", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>"))
+                self.WindowClient.txt_buscarclienteFisico.clear()
                 self.cargar_estados_civiles()
             
-            elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
                 fisicos = self.campos_cliente_moral()
                 for campo in fisicos.values():
-                    # Limpiar QLineEdit
-                    if isinstance(campo, QLineEdit) and campo != self.ui.txt_estadocredito_moral:
+                    if isinstance(campo, QLineEdit) and campo != self.WindowClient.txt_estadocredito_moral:
                         campo.clear()
-                    # Limpiar QPlainTextEdit
                     elif isinstance(campo, QPlainTextEdit):
                         campo.clear()
-                    # Restablecer QComboBox al primer índice
                     elif isinstance(campo, QComboBox):
                         campo.setCurrentIndex(0)
-                    # Restablecer QDoubleSpinBox a 0
                     elif isinstance(campo, QDoubleSpinBox):
                         campo.setValue(0.0)
-                    # Restablecer QCheckBox a no marcado
                     elif isinstance(campo, QCheckBox):
                         campo.setChecked(False)
-                    # Restablecer QDateEdit a la fecha actual
                     elif isinstance(campo, QDateEdit):
                         campo.setDate(QDate.currentDate())
-                self.ui.txt_buscarclienteMorales.clear()
+                self.WindowClient.txt_buscarclienteMorales.clear()
                 self.listar_areas()
                 self.listar_categorias()
         except Exception as e:
@@ -1320,44 +1280,44 @@ class Clientes(QWidget):
 
     def campos_cliente_moral(self):
         return {
-            "nombre": self.ui.txt_nombre_empre_moral,
-            "correo electronico" : self.ui.txt_correo_empre_moral,
-            "rfc" : self.ui.txt_rfc_empre_moral,
-            "telefono" : self.ui.txt_telefono_empre_moral,
-            "pais" : self.ui.txt_pais_moral,
-            "estado" : self.ui.txt_estado_moral,
-            "ciudad" : self.ui.txt_ciudad_moral,
-            "avenidas" : self.ui.txt_avenidas_empre_moral,
-            "calles" : self.ui.txt_calles_empre_moral,
-            "codigo postal" : self.ui.txt_codigopostal_moral,
-            "direccion adicional": self.ui.txtlargo_direccionadicional_moral,
-            "entidad legalizada": self.ui.casillaverificacion_entidadlegalizada_moral,
-            "categoria del cliente" : self.ui.cajaOpciones_categoriaMoral,
-            "sector" : self.ui.txt_sector_empre_moral,
-            "web" : self.ui.txt_pagina_empre_moral,
-            "tiene credito": self.ui.casillaverificacion_wpc_credito_autorizado_moral,
-            "estado del credito" : self.ui.txt_estadocredito_moral,
-            "limite de credito" : self.ui.cajaDecimal_wpc_limite_credito_moral,
-            "porcentaje de interes" : self.ui.cajaDecimal_porcentajeintereses_moral,
-            "fecha del ultimo reporte" : self.ui.fecha_ultimoreporte_moral,
-            "credito disponible": self.ui.cajaDecimal_creditodisponible_moral,
-            "credito utilizado" : self.ui.cajaDecimal_creditoutilizado_moral,
-            "aplica descuento" : self.ui.casillaverificacion_aplicadescuento_moral,
-            "area de negocio" : self.ui.cajaOpciones_areasnegocio_moral,
-            "comentarios": self.ui.txtlargo_comentarios_cliente_moral,
-            "porcentaje de descuento" : self.ui.cajaDecimal_porcentajedescuento_moral,
-            "razon social": self.ui.txt_razonsocial_moral,
-            "fecha de constitucion" : self.ui.fecha_fechaconstitucion,
-            "numero de identificacion fiscal": self.ui.txt_nif_moral,
-            'representante moral' : self.ui.txt_nombre_repre_moral,
-            'telefono representante' : self.ui.txt_telefono_repre_moral,
-            'puesto del representante' : self.ui.txt_puesto_repre_moral,
-            'correo electronico representante' : self.ui.txt_correo_repre_moral,
+            "nombre": self.WindowClient.txt_nombre_empre_moral,
+            "correo electronico" : self.WindowClient.txt_correo_empre_moral,
+            "rfc" : self.WindowClient.txt_rfc_empre_moral,
+            "telefono" : self.WindowClient.txt_telefono_empre_moral,
+            "pais" : self.WindowClient.txt_pais_moral,
+            "estado" : self.WindowClient.txt_estado_moral,
+            "ciudad" : self.WindowClient.txt_ciudad_moral,
+            "avenidas" : self.WindowClient.txt_avenidas_empre_moral,
+            "calles" : self.WindowClient.txt_calles_empre_moral,
+            "codigo postal" : self.WindowClient.txt_codigopostal_moral,
+            "direccion adicional": self.WindowClient.txtlargo_direccionadicional_moral,
+            "entidad legalizada": self.WindowClient.casillaverificacion_entidadlegalizada_moral,
+            "categoria del cliente" : self.WindowClient.cajaOpciones_categoriaMoral,
+            "sector" : self.WindowClient.txt_sector_empre_moral,
+            "web" : self.WindowClient.txt_pagina_empre_moral,
+            "tiene credito": self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral,
+            "estado del credito" : self.WindowClient.txt_estadocredito_moral,
+            "limite de credito" : self.WindowClient.cajaDecimal_wpc_limite_credito_moral,
+            "porcentaje de interes" : self.WindowClient.cajaDecimal_porcentajeintereses_moral,
+            "fecha del ultimo reporte" : self.WindowClient.fecha_ultimoreporte_moral,
+            "credito disponible": self.WindowClient.cajaDecimal_creditodisponible_moral,
+            "credito utilizado" : self.WindowClient.cajaDecimal_creditoutilizado_moral,
+            "aplica descuento" : self.WindowClient.casillaverificacion_aplicadescuento_moral,
+            "area de negocio" : self.WindowClient.cajaOpciones_areasnegocio_moral,
+            "comentarios": self.WindowClient.txtlargo_comentarios_cliente_moral,
+            "porcentaje de descuento" : self.WindowClient.cajaDecimal_porcentajedescuento_moral,
+            "razon social": self.WindowClient.txt_razonsocial_moral,
+            "fecha de constitucion" : self.WindowClient.fecha_fechaconstitucion,
+            "numero de identificacion fiscal": self.WindowClient.txt_nif_moral,
+            'representante moral' : self.WindowClient.txt_nombre_repre_moral,
+            'telefono representante' : self.WindowClient.txt_telefono_repre_moral,
+            'puesto del representante' : self.WindowClient.txt_puesto_repre_moral,
+            'correo electronico representante' : self.WindowClient.txt_correo_repre_moral,
         }
 
     def cargar_cliente(self, cliente):
         try:
-            if self.ui.btnRadio_wpc_clienteFisico.isChecked():
+            if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
                 if  cliente:
                     campo = cliente
                     datos  = self.campos_cliente_fisico()
@@ -1395,8 +1355,7 @@ class Clientes(QWidget):
                         datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
                         self.foto_cliente = campo.foto
                     else:
-                        # Si no hay foto, establecer el texto HTML
-                        self.ui.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
+                        self.WindowClient.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
                         self.foto_cliente = None
                         
                     if campo.categoria:
@@ -1420,9 +1379,9 @@ class Clientes(QWidget):
 
                     if campo.estado_civil:
                         nombre = campo.estado_civil
-                        FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.ui.cajaOpciones_estadocivil_fisico, nombre)
+                        FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowClient.cajaOpciones_estadocivil_fisico, nombre)
                     
-            elif self.ui.btnRadio_wpc_clienteMoral.isChecked():
+            elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
                 if  cliente:
                     campo = cliente
                     datos  = self.campos_cliente_moral()
@@ -1505,14 +1464,13 @@ class Clientes(QWidget):
         self.no_hay_mas_registros_clientes_morales = False
         if hasattr(self, "ultima_carga_cantidad_clientes_morales"):
             del self.ultima_carga_cantidad_clientes_morales
-        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             self.obtener_clientes_morales_hilo(reset_paginacion = True)
 
     def obtener_clientes_morales_hilo(self, reset_paginacion = False):
         try:
             if reset_paginacion:
                 self.cantidad_inicial_clientes_morales = 0
-                print("Paginacion reiniciada")
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
@@ -1539,20 +1497,13 @@ class Clientes(QWidget):
 
     def clientes_morales_query(self, session):
         try:
-            print(f"DEBUG - Consultando: offset={self.cantidad_inicial_clientes_morales}, limit={self.cantidad_final_clientes_morales}")
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales(
                 cantidad_inicial=self.cantidad_inicial_clientes_morales,
                 cantidad_final=self.cantidad_final_clientes_morales
             )
-            print(f"DEBUG - Obtenidos: {len(clientes) if clientes else 0} registros")
-            print(f"DEBUG - Estado de la consulta: {estado}")
             
-            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay productos
             if (not hasattr(self, '_is_refreshing_clientes_morales') or not self._is_refreshing_clientes_morales) and clientes:
-                # Incrementar por el límite, no por la cantidad recibida
-                # Esto mantiene la paginación consistente
                 self.cantidad_inicial_clientes_morales += self.cantidad_final_clientes_morales
-                print(f"DEBUG - Nuevo offset: {self.cantidad_inicial_clientes_morales}")
             if not estado:
                 session.rollback()
                 return {
@@ -1578,22 +1529,16 @@ class Clientes(QWidget):
             }
 
     def mostrar_clientes_resultado_morales(self, resultado):
-        """Callback unificado para ambos tipos de clientes"""
-        print(f"🔍 Resultado clientes: {resultado}")
-        
         tipo_cliente = resultado.get("tipo_cliente", "")
         
         if resultado.get("exito"):
-            # Llamar a la función de llenado de tabla
             self.llenar_tabla_clientes_morales(resultado)
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_morales()
 
     def llenar_tabla_clientes_morales(self, resultado):
-        # self.comprobar_modelos_tablas.limpiarModelo("modelo_tabla_clientes_fisicos")
         clientes = resultado["data"]
-        estado = resultado["exito"]
         try:
             if not hasattr(self, "modelo_tabla_clientes_morales"):
                 self.__configuracion_tabla_clientes_morales()
@@ -1604,12 +1549,11 @@ class Clientes(QWidget):
 
     def cargar_mas_clientes_morales(self):
         self._is_refreshing_clientes_morales = False
-        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             if hasattr(self, "no_hay_mas_registros_clientes_morales") and self.no_hay_mas_registros_clientes_morales:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
             if not hasattr(self, 'busqueda_clientes_morales') or not self.busqueda_clientes_morales:
-                print('Cargando más productos sin filtro')
                 try:
                     self.manejadorModal.mostrar_modal(self)
                     WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
@@ -1634,7 +1578,7 @@ class Clientes(QWidget):
                 self.paginar_clientes_morales_filtrados()
 
     def paginar_clientes_morales_filtrados(self):
-        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_morales_thread")
@@ -1659,8 +1603,6 @@ class Clientes(QWidget):
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
     def paginar_busqueda_por_filtros_clientes_morales_query(self, session, texto, es_fisico = None):
-        print(f"DEBUG - Paginando filtros: offset={self.cantidad_inicial_clientes_morales}, limit={self.cantidad_final_clientes_morales}")
-        
         datos = []
         estado = False
         if texto:
@@ -1671,7 +1613,6 @@ class Clientes(QWidget):
                         cantidad_inicial = self.cantidad_inicial_clientes_morales,
                         cantidad_final = self.cantidad_final_clientes_morales
                         )
-                    print(f"buscando fisico")
                     if not estado:
                         session.rollback()
                         return {
@@ -1679,9 +1620,7 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                print(f"DEBUG - Obtenidos filtrados: {len(clientes) if clientes else 0} registros")
                 self.cantidad_inicial_clientes_morales += len(clientes)
-                print(f"DEBUG - Nuevo offset para filtros: {self.cantidad_inicial_clientes_morales}")
                 return {
                     "exito": estado,
                     "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1721,7 +1660,7 @@ class Clientes(QWidget):
         }
         self.modelo_tabla_clientes_morales = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_tabla_clientes_morales",
-            interfazTabla=self.ui.tabla_clientesMorales,
+            interfazTabla=self.WindowClient.tabla_clientesMorales,
             encabezados=cabeceras,
             mapeoCabecera=mapeo_de_cabeceras,
             ordenable=True,
@@ -1733,65 +1672,61 @@ class Clientes(QWidget):
         return self.modelo_tabla_clientes_morales
 
     def obtener_id_elemento_tabla_morales(self, current, previus = None):
-        print("obtener_id_elemento_tabla")
         if current.isValid():
             fila = current.row()
             cliente = self.modelo_tabla_clientes_morales.get_item(current)
             if cliente:
                 self.clienteSeleccionadoVariable = cliente
-                print("clienteSeleccionadoVariableMorales", self.clienteSeleccionadoVariable)
                 self.CustomerSignalSelected_Customers.emit(self.clienteSeleccionadoVariable)
 
     def limpiar_tabla_clientes_morales(self):
-        """Limpia la tabla de clientes"""
         try:
             if hasattr(self, 'modelo_tabla_clientes_morales'):
                 self.modelo_tabla_clientes_morales.clear()
         except Exception as e:
-            print(f"💥 Error al limpiar tabla de clientes: {e}")
+            Mensaje().mensaje_alerta(f"Error al limpiar tabla de clientes: {e}")
     
     def autorizar_credito_moral(self):
-        if self.ui.casillaverificacion_wpc_credito_autorizado_moral.isChecked():
-            self.ui.txt_estadocredito_moral.setText("AUTORIZADO")
+        if self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.isChecked():
+            self.WindowClient.txt_estadocredito_moral.setText("AUTORIZADO")
         else:
-            self.ui.txt_estadocredito_moral.setText("SIN AUTORIZAR")
-            # self.ui.cajaDecimal_wpc_limite_credito_moral.setValue(0)
+            self.WindowClient.txt_estadocredito_moral.setText("SIN AUTORIZAR")
 
     def obtener_datos_cliente_moral(self):
         return {
-            'nombre' : self.ui.txt_nombre_empre_moral.text().strip().upper(),
-            'razon social' : self.ui.txt_razonsocial_moral.text().strip().upper(),
-            'correo electronico empresa' : self.ui.txt_correo_empre_moral.text().strip().upper(),
-            'rfc' : self.ui.txt_rfc_empre_moral.text().strip().upper(),
-            'avenidas' : self.ui.txt_avenidas_empre_moral.text().strip().upper(),
-            'web' : self.ui.txt_pagina_empre_moral.text().strip(),
-            'pais' : self.ui.txt_pais_moral.text().strip().upper(),
-            'ciudad' : self.ui.txt_ciudad_moral.text().strip().upper(),
-            'numero telefono' : self.ui.txt_telefono_empre_moral.text().strip().upper(),
-            'numero de identificacion fiscal' : self.ui.txt_nif_moral.text().strip().upper(),
-            'calles' : self.ui.txt_calles_empre_moral.text().strip().upper(),
-            'sector' : self.ui.txt_sector_empre_moral.text().strip().upper(),
-            'estado' : self.ui.txt_estado_moral.text().strip().upper(),
-            'codigo postal' : self.ui.txt_codigopostal_moral.text().strip().upper(),
-            'area de negocio' : self.ui.cajaOpciones_areasnegocio_moral.currentData(),
-            "fecha de constitucion" : self.ui.fecha_fechaconstitucion.date().toPython(),
-            'clasificacion de cliente' : self.ui.cajaOpciones_categoriaMoral.currentData(),
-            'direccion adicional' : self.ui.txtlargo_direccionadicional_moral.toPlainText().strip().upper(),
-            'representante moral' : self.ui.txt_nombre_repre_moral.text().strip().upper(),
-            'telefono representante' : self.ui.txt_telefono_repre_moral.text().strip().upper(),
-            'puesto del representante' : self.ui.txt_puesto_repre_moral.text().strip().upper(),
-            'correo electronico representante' : self.ui.txt_correo_repre_moral.text().strip().upper(),
-            'comentarios' : self.ui.txtlargo_comentarios_cliente_moral.toPlainText().strip().upper(),
-            "credito autorizado": self.ui.casillaverificacion_wpc_credito_autorizado_moral.isChecked(),
-            "limite del credito": self.ui.cajaDecimal_wpc_limite_credito_moral.value(),
-            "credito disponible": self.ui.cajaDecimal_creditodisponible_moral.value(),
-            "credito utilizado": self.ui.cajaDecimal_creditoutilizado_moral.value(),
-            "estado del credito": self.ui.txt_estadocredito_moral.text().upper().strip(),
-            "porcentaje del interes": self.ui.cajaDecimal_porcentajeintereses_moral.value(),
-            "descuento autorizado": self.ui.casillaverificacion_aplicadescuento_moral.isChecked(),
-            "porcentaje del descuento": self.ui.cajaDecimal_porcentajedescuento_moral.value(),
-            "entidad legalizada": self.ui.casillaverificacion_entidadlegalizada_moral.isChecked(),
-            "fecha del ultimo reporte": self.ui.fecha_ultimoreporte_moral.date().toPython()
+            'nombre' : self.WindowClient.txt_nombre_empre_moral.text().strip().upper(),
+            'razon social' : self.WindowClient.txt_razonsocial_moral.text().strip().upper(),
+            'correo electronico empresa' : self.WindowClient.txt_correo_empre_moral.text().strip().upper(),
+            'rfc' : self.WindowClient.txt_rfc_empre_moral.text().strip().upper(),
+            'avenidas' : self.WindowClient.txt_avenidas_empre_moral.text().strip().upper(),
+            'web' : self.WindowClient.txt_pagina_empre_moral.text().strip(),
+            'pais' : self.WindowClient.txt_pais_moral.text().strip().upper(),
+            'ciudad' : self.WindowClient.txt_ciudad_moral.text().strip().upper(),
+            'numero telefono' : self.WindowClient.txt_telefono_empre_moral.text().strip().upper(),
+            'numero de identificacion fiscal' : self.WindowClient.txt_nif_moral.text().strip().upper(),
+            'calles' : self.WindowClient.txt_calles_empre_moral.text().strip().upper(),
+            'sector' : self.WindowClient.txt_sector_empre_moral.text().strip().upper(),
+            'estado' : self.WindowClient.txt_estado_moral.text().strip().upper(),
+            'codigo postal' : self.WindowClient.txt_codigopostal_moral.text().strip().upper(),
+            'area de negocio' : self.WindowClient.cajaOpciones_areasnegocio_moral.currentData(),
+            "fecha de constitucion" : self.WindowClient.fecha_fechaconstitucion.date().toPython(),
+            'clasificacion de cliente' : self.WindowClient.cajaOpciones_categoriaMoral.currentData(),
+            'direccion adicional' : self.WindowClient.txtlargo_direccionadicional_moral.toPlainText().strip().upper(),
+            'representante moral' : self.WindowClient.txt_nombre_repre_moral.text().strip().upper(),
+            'telefono representante' : self.WindowClient.txt_telefono_repre_moral.text().strip().upper(),
+            'puesto del representante' : self.WindowClient.txt_puesto_repre_moral.text().strip().upper(),
+            'correo electronico representante' : self.WindowClient.txt_correo_repre_moral.text().strip().upper(),
+            'comentarios' : self.WindowClient.txtlargo_comentarios_cliente_moral.toPlainText().strip().upper(),
+            "credito autorizado": self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.isChecked(),
+            "limite del credito": self.WindowClient.cajaDecimal_wpc_limite_credito_moral.value(),
+            "credito disponible": self.WindowClient.cajaDecimal_creditodisponible_moral.value(),
+            "credito utilizado": self.WindowClient.cajaDecimal_creditoutilizado_moral.value(),
+            "estado del credito": self.WindowClient.txt_estadocredito_moral.text().upper().strip(),
+            "porcentaje del interes": self.WindowClient.cajaDecimal_porcentajeintereses_moral.value(),
+            "descuento autorizado": self.WindowClient.casillaverificacion_aplicadescuento_moral.isChecked(),
+            "porcentaje del descuento": self.WindowClient.cajaDecimal_porcentajedescuento_moral.value(),
+            "entidad legalizada": self.WindowClient.casillaverificacion_entidadlegalizada_moral.isChecked(),
+            "fecha del ultimo reporte": self.WindowClient.fecha_ultimoreporte_moral.date().toPython()
         }
 
     def validacion_campos_cliente_moral(self, datos):
@@ -1804,33 +1739,33 @@ class Clientes(QWidget):
                 Mensaje().mensaje_informativo(f"Existe un campo llamado \"{campo}\" que no esta completo.")
                 return False
         return True
-    
+# ===================== DIALOG ==================
     def nueva_area_cliente_moral(self):
         self.ui_area_cliente_fisico =  AreaNegocioClientesController("Moral")
         self.ui_area_cliente_fisico.show()
         self.ui_area_cliente_fisico.signal_area.connect(self.listar_areas)
 
     def mostrar_contenedor_cliente_moral(self):
-        if self.ui.btnRadio_wpc_clienteMoral.isChecked():
+        if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
-            self.ui.wpc_contenedor_pila.setCurrentIndex(1)
-            self.ui.etiqueta_titulo_tabla.setText("Listado de clientes morales")
-            self.ui.contenedor_clientesFisicos.hide()
-            self.ui.contenedor_clientesMorales.show()
+            self.WindowClient.wpc_contenedor_pila.setCurrentIndex(1)
+            self.WindowClient.etiqueta_titulo_tabla.setText("Listado de clientes morales")
+            self.WindowClient.contenedor_clientesFisicos.hide()
+            self.WindowClient.contenedor_clientesMorales.show()
 
     def activar_creditomoral(self):
-        if self.ui.casillaverificacion_wpc_credito_autorizado_moral.isChecked():
-            self.ui.cajaDecimal_wpc_limite_credito_moral.setEnabled(True)
+        if self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.isChecked():
+            self.WindowClient.cajaDecimal_wpc_limite_credito_moral.setEnabled(True)
         else:
-            self.ui.cajaDecimal_wpc_limite_credito_moral.setEnabled(False)
+            self.WindowClient.cajaDecimal_wpc_limite_credito_moral.setEnabled(False)
 
     def activar_descuentomoral(self):
-        if self.ui.casillaverificacion_aplicadescuento_moral.isChecked():
-            self.ui.cajaDecimal_porcentajedescuento_moral.setEnabled(True)
+        if self.WindowClient.casillaverificacion_aplicadescuento_moral.isChecked():
+            self.WindowClient.cajaDecimal_porcentajedescuento_moral.setEnabled(True)
         else:
-            self.ui.cajaDecimal_porcentajedescuento_moral.setEnabled(False)
+            self.WindowClient.cajaDecimal_porcentajedescuento_moral.setEnabled(False)
 # -------------------------------------- FINAL DE CLIENTES MORALES
 # ==================== MENSAJES DE HILO ========================
     def mostrar_error_hilo(self, objetoMensaje):
