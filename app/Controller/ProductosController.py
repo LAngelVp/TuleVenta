@@ -25,7 +25,7 @@ from .Ventana_espera import *
 import traceback
 
 class ExistenciasClase(QWidget):
-# =============== SEÑALES PERSONALIZADAS ================
+    # =============== SEÑALES PERSONALIZADAS ================
     VENTANA_CERRADA_EXISTENCIA = Signal()
     RECIBIR_PRODUCTO_ID_EXISTENCIA = Signal(object)
     def __init__(self, parent = None, datos_usuario = None):
@@ -33,7 +33,7 @@ class ExistenciasClase(QWidget):
         self.WindowExistenciasProducto = Ui_UI_EXISTENCIA_PRODUCTO()
         self.WindowExistenciasProducto.setupUi(self)
         self.WindowExistenciasProducto.fecha_FechaMovimiento.setDate(QDate.currentDate())
-# ==================== VARIABLES GLOBALES =================
+        # ==================== VARIABLES GLOBALES =================
         self._ventanaCentrada = False
         self.datos_usuario = datos_usuario
         self.producto = None
@@ -42,14 +42,14 @@ class ExistenciasClase(QWidget):
         self.codigo_producto_upc = None
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-# ================== SEÑALES DE BOTONES ===================
+        # ================== SEÑALES DE BOTONES ===================
         self.WindowExistenciasProducto.btn_existenciaProducto_aceptar.clicked.connect(self.ejecutar_existencias)
         self.WindowExistenciasProducto.btn_existenciaProducto_cerrar.clicked.connect(self.close)
 
-# ================== SEÑALES PERSONALIZADAS =================
+        # ================== SEÑALES PERSONALIZADAS =================
         self.RECIBIR_PRODUCTO_ID_EXISTENCIA.connect(self.mostrar_datos_en_ui)
 
-# ========================= FUNCIONES ========================
+    # ========================= FUNCIONES ========================
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentrada:
@@ -121,7 +121,7 @@ class ExistenciasClase(QWidget):
             "resultado": datos
         }
 
-# =================== MENSAJES DEL HILO ===================
+    # =================== MENSAJES DEL HILO ===================
     def mensaje_error(self, mensaje):
         Mensaje().mensaje_critico(f"Ocurrio un error al ejecutar la operación : {mensaje}")
     
@@ -129,11 +129,12 @@ class ExistenciasClase(QWidget):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
 
 class Admin_productosController(QWidget):
-# ============= SEÑALES PERSONALIZADAS ===============
+    # ============= SEÑALES PERSONALIZADAS ===============
     PRODUCTOS_AGREGADOS = Signal()
     RECIBIR_PRODUCTO_ACTUALIZAR_ID = Signal(object)
     VENTANA_CERRADA_PRODUCTOS = Signal()
     ClosedWindowAdminProduct = Signal()
+
     PRESENTACIONES_CARGADAS = Signal()
     UNIDADES_MEDIDA_CARGADAS = Signal()
     CATEGORIAS_CARGADAS = Signal()
@@ -161,7 +162,7 @@ class Admin_productosController(QWidget):
         self.sombra.setColor(QColor(0, 102, 204)) 
         self.WindowsAddProduct_Dialog.contenedorModal_general.setGraphicsEffect(self.sombra)
 
-# ====================== VARIABLES GLOBALES ===============
+        # ====================== VARIABLES GLOBALES ===============
         self.consultor = None
         self.cargando = None
         self.producto = None
@@ -179,11 +180,12 @@ class Admin_productosController(QWidget):
         self.presentacionesCargadas = False
         self.unidadesMedidaCargadas = False
         self.categoriasCargadas = False
+        self.producto_para_actualizar = None
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_presentacion_producto = AjustarcajaOpciones()
-# ================== VALIDACIONES =======================
+        # ================== VALIDACIONES =======================
         self.WindowsAddProduct_Dialog.txt_codBarras.setMaxLength(255)
         self.WindowsAddProduct_Dialog.txt_nombreProducto.setMaxLength(255)
         self.WindowsAddProduct_Dialog.txt_marcaProducto.setMaxLength(100)
@@ -192,7 +194,7 @@ class Admin_productosController(QWidget):
         self.WindowsAddProduct_Dialog.txt_materialProducto.setMaxLength(255)
         self._translate = QtCore.QCoreApplication.translate
 
-# ====================== SEÑALES DE BOTONES ================
+        # ====================== SEÑALES DE BOTONES ================
         self.WindowsAddProduct_Dialog.btn_btn_addProduct_actualizar_producto.clicked.connect(self.__actualizar_producto)
         self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_categoria.clicked.connect(self.__agregar_categoria)
         self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_unidadMedidaProducto.clicked.connect(self.agregar_unidad_medida)
@@ -206,7 +208,7 @@ class Admin_productosController(QWidget):
         self.WindowsAddProduct_Dialog.btn_btn_addProduct_cerrar.clicked.connect(self.close)
         self.WindowsAddProduct_Dialog.lista_todos_los_proveedores.itemClicked.connect(self.vincular_proveedor_al_producto)
         
-# ====================== SEÑALES PERSONALIZADAS ====================
+        # ====================== SEÑALES PERSONALIZADAS ====================
         self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.mousePressEvent = self.cargar_imagen
         self.RECIBIR_PRODUCTO_ACTUALIZAR_ID.connect(self.__prepararProductoExistente)
         self.WindowsAddProduct_Dialog.txt_buscar_proveedor_a_vincular.returnPressed.connect(self.buscar_proveedor_existente)
@@ -214,7 +216,11 @@ class Admin_productosController(QWidget):
         self.WindowsAddProduct_Dialog.entero_margenProducto.editingFinished.connect(self.calcular_precio_venta)
         self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.stateChanged.connect(self.mostrar_fechas_caducidad)
 
-# =================== FUNCIONES INICIALES =================
+        self.PRESENTACIONES_CARGADAS.connect(self.__verificar_todo_cargado)
+        self.CATEGORIAS_CARGADAS.connect(self.__verificar_todo_cargado)
+        self.UNIDADES_MEDIDA_CARGADAS.connect(self.__verificar_todo_cargado)
+
+        # =================== FUNCIONES INICIALES =================
         self.obtener_proveedores()
         self.ajustador_presentacion_producto.elemento_eliminado_signal.connect(self.listar_presentaciones_productos)
         self.ajustador_unidad_medida_producto = AjustarcajaOpciones()
@@ -224,7 +230,7 @@ class Admin_productosController(QWidget):
         self.__configurar_tabla_productos()
         
         
-# ========================= FUNCIONES-VENTANAS EMERGENTES ======================
+    # ========================= FUNCIONES-VENTANAS EMERGENTES ======================
     def agregar_presentacion(self):
         self.ui_presentacion = PresentacionProductos()
         self.ui_presentacion.presentacion_producto_agregada_signal.connect(self.listar_presentaciones_productos)
@@ -239,6 +245,29 @@ class Admin_productosController(QWidget):
         self.categoria = CategoriasController(tipo_categoria="productos")
         self.categoria.categoria_agregada_signal.connect(self.listar_categorias)
         self.categoria.show()
+    
+    def __verificar_todo_cargado(self):
+        if (self.presentacionesCargadas and 
+            self.unidadesMedidaCargadas and 
+            self.categoriasCargadas):
+            if self.producto_para_actualizar:
+                self.__procesar_producto_actualizar(self.producto_para_actualizar)
+                self.producto_para_actualizar = None
+
+    def __prepararProductoExistente(self, producto):
+        """Método llamado cuando se recibe un producto para actualizar"""
+        # Guardar el producto
+        self.producto_para_actualizar = producto
+        
+        # Verificar si ya están cargados todos los combobox
+        if (self.presentacionesCargadas and 
+            self.unidadesMedidaCargadas and 
+            self.categoriasCargadas):
+            # Si ya están cargados, procesar inmediatamente
+            self.__procesar_producto_actualizar(producto)
+        else:
+            # Si no, esperar a que se carguen (se llamará desde __verificar_todo_cargado)
+            pass
 
     def listar_presentaciones_productos(self):
         try:
@@ -399,7 +428,7 @@ class Admin_productosController(QWidget):
             self.categoriasCargadas = True
             self.CATEGORIAS_CARGADAS.emit()
 
-# ============= FUNCIONES-INTERACCION CON EL PRODUCTO ================
+    # ============= FUNCIONES-INTERACCION CON EL PRODUCTO ================
     def mostrar_fechas_caducidad(self, state):
         if state in [1, 2]:
             self.WindowsAddProduct_Dialog.contenedorModal_contenedorFechaCaducidad.show()
@@ -529,16 +558,16 @@ class Admin_productosController(QWidget):
             
             # Si el producto no existe, crear el nuevo producto
             nuevo_producto = {
-                "proveedor": datos["proveedor"],
+                "proveedor": datos["proveedor"] if datos["proveedor"] else None,
                 "codigo_barras": datos["codigo_barras"],
                 "nombre": datos["nombre"],
-                "categoria": datos["categoria_producto"].nombre if datos["categoria_producto"] else "",
+                "categoria": datos["categoria_producto"].nombre if datos["categoria_producto"] else None,
                 "marca": datos["marca_producto"],
                 "modelo": datos["modelo_producto"],
                 "color": datos["color_producto"],
                 "material": datos["material_producto"],
-                "unidad_medida": datos["unidad_medida_producto"].nombre if datos["unidad_medida_producto"] else "",
-                "presentacion": datos["presentacion_producto"].nombre if datos["presentacion_producto"] else "",
+                "unidad_medida": datos["unidad_medida_producto"].nombre if datos["unidad_medida_producto"] else None,
+                "presentacion": datos["presentacion_producto"].nombre if datos["presentacion_producto"] else None,
                 "costo_inicial": datos["costo_inicial_producto"],
                 "precio_venta": datos["precio_venta_producto"],
                 "margen_porcentaje": datos["margen_porcentaje"],
@@ -652,10 +681,10 @@ class Admin_productosController(QWidget):
             productos_agregados = []
             if productos:
                 for producto in productos:
-                    nombre_proveedor = producto["proveedor"].strip() if producto["proveedor"] else ""
-                    nombre_presentacion = producto["presentacion"].strip() if producto["presentacion"] else ""
-                    nombre_unidad_de_medida = producto["unidad_medida"].strip() if producto["unidad_medida"] else ""
-                    nombre_categoria = producto["categoria"].strip() if producto["categoria"] else ""
+                    nombre_proveedor = producto["proveedor"].strip() if producto["proveedor"] else None
+                    nombre_presentacion = producto["presentacion"].strip() if producto["presentacion"] else None
+                    nombre_unidad_de_medida = producto["unidad_medida"].strip() if producto["unidad_medida"] else None
+                    nombre_categoria = producto["categoria"].strip() if producto["categoria"] else None
                     proveedor = None
                     presentacion = None
                     unidad_medida = None
@@ -1242,15 +1271,15 @@ class Admin_productosController(QWidget):
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_informativo(error)
     
-# TERMINA LA CLASE - ADMINISTRACION DE PRODUCTOS -----------------
+    # TERMINA LA CLASE - ADMINISTRACION DE PRODUCTOS -----------------
 class Productos(QWidget):
-# SEÑALES:
+    # SEÑALES:
     LISTAR_CATEGORIAS_PRODUCTOS = Signal()
     LISTAR_UNIDADES_MEDIDA_PRODUCTOS = Signal()
     LISTAR_PRESENTACIONES_PRODUCTOS = Signal()
     LISTAR_PROVEEDORES_EXISTENTES_SIGNAL = Signal()
     MOSTRAR_DATOS_EXISTENCIAS = Signal()
-# ---------------------------
+    # ---------------------------
     def __init__(self, parent = None, datos_usuario = None):
         super().__init__(parent)
         # VARIABLES:
@@ -1290,7 +1319,7 @@ class Productos(QWidget):
         self.__configurar_tabla_productos_principal()
         
 
-# FUNCION : FILTRAR PRODUCTOS
+    # FUNCION : FILTRAR PRODUCTOS
     def  buscar_producto(self):
         nuevo_nombre = self.WindowProducts.txt_buscar.text().strip()
         nuevo_codigo = self.WindowProducts.txt_buscar_productoUPC.text().strip()
@@ -1352,10 +1381,14 @@ class Productos(QWidget):
         if estado:
             self.busqueda_realizada = True
             self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
-        return datos, estado
-#TERMINA : FILTRAR PRODUCTO ++++++++++++++++++++
+        return {
+            "exito": estado,
+            "mensaje": "Productos obtenidos correctamente" if estado else "No se encontraron productos",
+            "resultado": datos
+        }
+    #TERMINA : FILTRAR PRODUCTO ++++++++++++++++++++
 
-# FUNCION : AGREGAR PRODUCTO
+    # FUNCION : AGREGAR PRODUCTO
     def agregar_producto(self):
         if self.AdminProductos is None:
             self.AdminProductos = Admin_productosController(self)
@@ -1378,9 +1411,9 @@ class Productos(QWidget):
     def ventana_productos_cerrada(self):
         self.AdminProductos = None
         self.producto_actual = None
-# TERMINA - AGREGAR PRODUCTO ++++++++++
+    # TERMINA - AGREGAR PRODUCTO ++++++++++
 
-#FUNCION : ELIMINAR PRODUCTO
+    # FUNCION : ELIMINAR PRODUCTO
     def eliminar_producto(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo("Debes de seleccionar un producto de la tabla para proceder a eliminarlo")
@@ -1403,85 +1436,96 @@ class Productos(QWidget):
             Mensaje().mensaje_informativo("Eliminado correctamente")
         else:
             Mensaje().mensaje_informativo("No se elimino el producto")
-#TERMINA - ELIMINAR PRODUCTO
+    #TERMINA - ELIMINAR PRODUCTO
 
-#FUNCION : MODIFICAR PRODUCTO
+    # FUNCION : MODIFICAR PRODUCTO
     def modificar_producto(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo("No has seleccionado un producto de la tabla para proceder a modificarlo")
             return
         self.enviar_produto_al_ui(self.producto_actual)
 
-# TODO : COMPROBAR ESTA FUNCIONALIDAD DE EDITAR PRODUCTO.
+    # TODO : COMPROBAR ESTA FUNCIONALIDAD DE EDITAR PRODUCTO.
     def enviar_produto_al_ui(self, producto):
-        if self.WindowEditProduct is None or self.WindowEditProduct.isVisible():
+        if self.WindowEditProduct is None or not self.WindowEditProduct.isVisible():
             self.WindowEditProduct = Admin_productosController(parent=self)
+            
+            # Conectar señales de carga completada desde la ventana hija
+            self.WindowEditProduct.PRESENTACIONES_CARGADAS.connect(
+                self.__on_presentaciones_cargadas
+            )
+            self.WindowEditProduct.CATEGORIAS_CARGADAS.connect(
+                self.__on_categorias_cargadas
+            )
+            self.WindowEditProduct.UNIDADES_MEDIDA_CARGADAS.connect(
+                self.__on_unidades_cargadas
+            )
+            
+            # Conectar señales para listar datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(
                 self.WindowEditProduct.listar_unidades_medida,
-                Qt.UniqueConnection)
+                Qt.UniqueConnection
+            )
             self.LISTAR_CATEGORIAS_PRODUCTOS.connect(
                 self.WindowEditProduct.listar_categorias,
-                Qt.UniqueConnection)
+                Qt.UniqueConnection
+            )
             self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(
                 self.WindowEditProduct.listar_presentaciones_productos,
-                Qt.UniqueConnection)
+                Qt.UniqueConnection
+            )
+            
             self.WindowEditProduct.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
+            
+            # Emitir señales para cargar los datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
+            
+            # Mostrar la ventana después de iniciar la carga
             self.WindowEditProduct.show()
+            
+            # Enviar el producto solo cuando la ventana esté lista
+            # Usamos un timer para asegurar que la ventana se haya inicializado
+            QTimer.singleShot(100, lambda: self.__enviar_producto_seguro(producto))
         else:
             self.WindowEditProduct.raise_()
             self.WindowEditProduct.activateWindow()
-            
-        self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
-        self.codigo_upc_producto = None
-        # if self.AdminProductos is None:
-        #     self.AdminProductos = Admin_productosController(self)
-        #     # self.AdminProductos.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
-        #     if not self._signals_connected:
-        #         self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
-        #         self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(self.AdminProductos.listar_presentaciones_productos)
-        #         self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
-        #         self.LISTAR_PROVEEDORES_EXISTENTES_SIGNAL.connect(self.AdminProductos.obtener_proveedores)
-        #         self._signals_connected = True
-        #     self.LISTAR_PROVEEDORES_EXISTENTES_SIGNAL.emit()
-        #     self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-        #     self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
-        #     self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
-        #     self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
-        #     self.AdminProductos.setParent(self)
-        #     self.AdminProductos.setStyleSheet(self.AdminProductos.styleSheet())
-        #     self.AdminProductos.show()
-        # else:
-        #     self.AdminProductos.raise_()
-        #     self.AdminProductos.activateWindow()
-        #     self.AdminProductos.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
-        
-        # self.codigo_upc_producto = None
+            # Si la ventana ya está abierta, enviar el producto directamente
+            self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
+    
+    def __enviar_producto_seguro(self, producto):
+        """Envía el producto de manera segura después de que la ventana se haya inicializado"""
+        if self.WindowEditProduct:
+            self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
+    
+    def __on_presentaciones_cargadas(self):
+        print("Presentaciones cargadas")
+    
+    def __on_categorias_cargadas(self):
+        print("Categorías cargadas")
+    
+    def __on_unidades_cargadas(self):
+        print("Unidades de medida cargadas")
     
     def __ventana_destruida(self):
         self.WindowEditProduct = None
         self.producto_actual = None
-# TERMINA - MODIFICAR PRODUCTO
+    # TERMINA - MODIFICAR PRODUCTO
     
-# FUNCION : LISTAR PRODUCTOS EN TABLA
-    def listar_productos(self, productos, estado, mensaje=None):
+    # FUNCION : LISTAR PRODUCTOS EN TABLA
+    def listar_productos(self, resultado):
         if hasattr(self, 'id_hilo_obtener_productos_tabla_productos'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
         try:
-            if not estado or not productos:
-                self.refrescar_tabla()
+            if not resultado["exito"]:
+                Mensaje().mensaje_alerta(resultado["mensaje"])
                 return
             if not hasattr(self, 'modelo_tabla_productos'):
                 self.__configurar_tabla_productos_principal()
-            
-            self.modelo_lista_productos_principal.update_data(productos, reset=True)
-            
+            self.modelo_lista_productos_principal.update_data(resultado["resultado"], reset=True)
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error en listar_productos: {str(e)}")
-        finally:
-            self.cargando_cerrar()
             
     def refrescar_tabla(self):
         try:
@@ -1523,18 +1567,37 @@ class Productos(QWidget):
             Mensaje().mensaje_alerta(f"Error al iniciar la consulta: {str(e)}")
 
     def obtener_productos_query(self, session):
-        productos, estado = ProductosModel(session).obtener_productos(
-            offset=self.cantidad_inicial_consulta,
-            limit=self.cantidad_final_consulta
-        )
+        try:
+            productos, estado = ProductosModel(session).obtener_productos(
+                offset=self.cantidad_inicial_consulta,
+                limit=self.cantidad_final_consulta
+            )
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": False,
+                    "mensaje": f"Sin resultados",
+                    "resultado": []
+                }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f"Ocurrio un error en la operacion.\n{e}",
+                "resultado": []
+            }
         
         if (not hasattr(self, '_is_refreshing') or not self._is_refreshing) and productos:
             self.cantidad_inicial_consulta += self.cantidad_final_consulta
         
-        return productos, estado
-# TERMINA - LISTAR PRODUCTOS +++++++++++++++++++
+        return {
+            "exito": True,
+            "mensaje": f"{len(productos)} productos obtenidos correctamente",
+            "resultado": productos
+        }
+    # TERMINA - LISTAR PRODUCTOS +++++++++++++++++++
 
-# FUNCION : AGREGAR MAS PRODUCTOS A LA VISTA DE LA TABLA
+    # FUNCION : AGREGAR MAS PRODUCTOS A LA VISTA DE LA TABLA
     def cargar_mas_productos(self):
         self._is_refreshing = False
         if hasattr(self, 'no_hay_mas_registros') and self.no_hay_mas_registros:
@@ -1645,9 +1708,9 @@ class Productos(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al obtener ID del producto: {str(e)}")
             return None
-# TERMINA - LISTAR PRODUCTOS++++++++++++++++++++
+    # TERMINA - LISTAR PRODUCTOS++++++++++++++++++++
 
-# FUNCION : MANIPULACION DE LA EXISTENCIA DE LOS PRODUCTOS
+    # FUNCION : MANIPULACION DE LA EXISTENCIA DE LOS PRODUCTOS
     def existencia_productos(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo('Selecciona un producto.')
@@ -1662,9 +1725,9 @@ class Productos(QWidget):
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
-#TERMINA - EXISTENCIA DE PRODUCTOS +++++++++++++++++++++
+    #TERMINA - EXISTENCIA DE PRODUCTOS +++++++++++++++++++++
 
-# // EVENTOS
+    # // EVENTOS
     def closeEvent(self, event):
         self.cleanup_worker()
         event.accept()

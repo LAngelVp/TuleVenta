@@ -5,45 +5,41 @@ class SucursalesModel:
     def __init__(self, session):
         self.session = session
 
-    def agregar_sucursal(self,
-                        nombre_sucursal,
-                        codigo_postal,
-                        ciudad,
-                        estado,
-                        pais,
-                        num_telefono,
-                        razon_social,
-                        rfc,
-                        direccion
-                        ):
+    def agregar_sucursal(self, **kwargs):
+        """Agregar sucursal retornando (sucursal, estado)"""
         try:
-            sucursal = self.session.query(Sucursales).filter_by(nombre_sucursal = nombre_sucursal).first()
-            if sucursal:
+            # Verificar si ya existe
+            if sucursal := self.session.query(Sucursales).filter_by(
+                nombre_sucursal=kwargs['nombre_sucursal']
+            ).first():
                 return sucursal, False
-            else:
-                sucursal = Sucursales(nombre_sucursal=nombre_sucursal, codigo_postal=codigo_postal, ciudad = ciudad,  estado = estado, pais = pais, num_telefono=num_telefono, razon_social = razon_social, rfc = rfc, direccion = direccion)
-                self.session.add(sucursal)
-                self.session.flush()
-                return sucursal, True
-        except Exception as e:
-            return None
+            
+            # Crear nueva
+            sucursal = Sucursales(**kwargs)
+            self.session.add(sucursal)
+            self.session.commit()  # Cambia flush() por commit()
+            return sucursal, True
+            
+        except Exception:
+            self.session.rollback()
+            return None, False
 
     def obtener_sucursal_id(self, nombre):
         try:
             sucursal = self.session.query(Sucursales).filter_by(nombre_sucursal = nombre).first()
             return sucursal.id
         except Exception as e:
-            return None
+            return None, False
         
     def obtener_sucursal_por_id(self, id):
         try:
             sucursal = self.session.query(Sucursales).filter_by(id = id).first()
             if sucursal:
-                return sucursal
+                return sucursal, True
             else:
-                return None
+                return None, False
         except Exception as e:
-            return None
+            return None, False
 
     def obtener_todo(self):
         try:
@@ -63,10 +59,10 @@ class SucursalesModel:
             sucursal = self.session.query(Sucursales).filter(Sucursales.id == id).one_or_none()
             if sucursal:
                 self.session.delete(sucursal)
-                return True
-            return False
+                return True, None
+            return False, None
         except Exception as e:
-            return False
+            return False, e
     
     def actualizar(self, 
                 id,
@@ -95,7 +91,7 @@ class SucursalesModel:
             else:
                 return None, False
         except Exception as e:
-            return None, False
+            return None, e
     
     def filtrar_nombre(self, texto):
         try:
@@ -107,4 +103,4 @@ class SucursalesModel:
                 return sucursales, True
             return None, False
         except Exception as e:
-            return None, False
+            return None, e

@@ -17,7 +17,7 @@ from sqlalchemy import (
     Boolean,
     CHAR,
     DateTime,
-    Time,
+    Time
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, configure_mappers
@@ -44,16 +44,16 @@ sucursal_producto = Table(
     "sucursal_producto",
     Base.metadata,
     Column("sucursal_id", BigInteger, ForeignKey("Sucursales.id"), primary_key=True),
-    Column("producto_id", Integer, ForeignKey("Productos.id"), primary_key=True),
+    Column("producto_id", BigInteger, ForeignKey("Productos.id"), primary_key=True),
 )
 
 proveedor_categoria = Table(
     "proveedor_categoria",
     Base.metadata,
-    Column("proveedor_id", Integer, ForeignKey("Proveedores.id"), primary_key=True),
+    Column("proveedor_id", BigInteger, ForeignKey("Proveedores.id"), primary_key=True),
     Column(
         "categoria_id",
-        Integer,
+        BigInteger,
         ForeignKey("Categorias_proveedores.id"),
         primary_key=True,
     ),
@@ -71,7 +71,13 @@ departamento_sucursal = Table(
 # Apartado de Permisos
 class Permisos(Base):
     __tablename__ = "Permisos"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(50), unique=True)
     roles = relationship(
         "Roles", secondary=rol_permiso, back_populates="permisos", 
@@ -80,7 +86,13 @@ class Permisos(Base):
 # Apartado de Roles
 class Roles(Base):
     __tablename__ = "Roles"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100), unique=True)
     descripcion = Column(Text)
     permisos = relationship(
@@ -91,13 +103,19 @@ class Roles(Base):
 # Apartado de Usuarios
 class Usuarios(Base):
     __tablename__ = "Usuarios"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     usuario = Column(String(60), unique=True, nullable=True)
     contraseña = Column(LargeBinary, nullable=True)
     fecha_creacion = Column(Date, nullable=False)
     fecha_actualizacion = Column(Date, nullable=True)
     rol_id = Column(
-        Integer, 
+        BigInteger, 
         ForeignKey("Roles.id", ondelete='SET NULL'),
         nullable=True
     )
@@ -108,7 +126,13 @@ class Usuarios(Base):
 # Apartado de Puestos
 class Puestos(Base):
     __tablename__ = "Puestos"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     salario = Column(Float)
     horas_laborales = Column(Float)
@@ -129,7 +153,13 @@ class Puestos(Base):
 # Apartado de Empleados
 class Empleados(Base):
     __tablename__ = "Empleados"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     apellido_paterno = Column(String(100))
     apellido_materno = Column(String(100))
@@ -160,9 +190,9 @@ class Empleados(Base):
     direccion_adicional = Column(Text, nullable=True)
     activo = Column(Boolean, default=True)
     foto = Column(Text, nullable=True)
-    puesto_id = Column(Integer, ForeignKey("Puestos.id", ondelete='SET NULL'), nullable=True)
+    puesto_id = Column(BigInteger, ForeignKey("Puestos.id", ondelete='SET NULL'))
     puesto = relationship("Puestos", back_populates="empleados", lazy="joined")
-    usuario_id = Column(Integer, ForeignKey("Usuarios.id", ondelete='SET NULL'), nullable=True)
+    usuario_id = Column(BigInteger, ForeignKey("Usuarios.id", ondelete='SET NULL'))
     usuario = relationship("Usuarios", back_populates="empleado")
     ventas = relationship("Ventas", back_populates="empleado")
     turnos = relationship("Turnos", back_populates="empleado")
@@ -173,7 +203,7 @@ class Empleados(Base):
     )
     departamento = relationship("Departamentos", back_populates="empleados", lazy="joined")
     sucursal_id = Column(
-        Integer, 
+        BigInteger, 
         ForeignKey("Sucursales.id", ondelete='RESTRICT'),
         nullable=True
     )
@@ -183,8 +213,12 @@ class Empleados(Base):
 class Sucursales(Base):
     __tablename__ = "Sucursales"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger,
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre_sucursal = Column(String(50))
     codigo_postal = Column(String(5))
     ciudad = Column(String(50))
@@ -204,7 +238,13 @@ class Sucursales(Base):
 
 class Departamentos(Base):
     __tablename__ = "Departamentos"
-    id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(70))
     descripcion = Column(Text)
     empleados = relationship(
@@ -214,25 +254,41 @@ class Departamentos(Base):
         "Puestos", back_populates="departamento"
     )  # Relación uno a muchos con Puestos
     sucursales = relationship(
-        "Sucursales", secondary=departamento_sucursal, back_populates="departamentos",  lazy="joined", cascade="save-update, merge", passive_deletes=True
-    )  # Relación muchos a muchos con Sucursales
+        "Sucursales", secondary=departamento_sucursal, back_populates="departamentos",  lazy="select", cascade="save-update, merge", passive_deletes=True
+    )
 
 class Presentacion_productos(Base):
     __tablename__ = "Presentacion_productos"
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100), nullable=False)
     productos = relationship("Productos", back_populates="presentacion_productos")
     
 class Unidad_medida_productos(Base):
     __tablename__ = "Unidad_medida_productos"
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     productos = relationship("Productos", back_populates="unidad_medida_productos")
     
 class Productos(Base):
     __tablename__ = "Productos"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
     )
     codigo_upc = Column(String(20), nullable=False, unique=True)
     nombre_producto = Column(String(60))
@@ -256,11 +312,11 @@ class Productos(Base):
     fecha_vencimiento = Column(Date)
     imagen = Column(Text)
     notas = Column(Text)
-    presentacion_producto_id = Column(Integer, ForeignKey("Presentacion_productos.id", ondelete='SET NULL'), nullable=True)
+    presentacion_producto_id = Column(BigInteger, ForeignKey("Presentacion_productos.id", ondelete='SET NULL'), nullable=True)
     presentacion_productos = relationship("Presentacion_productos", back_populates="productos")
-    unidad_medida_productos_id = Column(Integer, ForeignKey("Unidad_medida_productos.id", ondelete='SET NULL'), nullable=True)
+    unidad_medida_productos_id = Column(BigInteger, ForeignKey("Unidad_medida_productos.id", ondelete='SET NULL'), nullable=True)
     unidad_medida_productos = relationship("Unidad_medida_productos", back_populates="productos")
-    categoria_id = Column(Integer, ForeignKey('Categorias_productos.id', ondelete='SET NULL'), nullable=True)
+    categoria_id = Column(BigInteger, ForeignKey('Categorias_productos.id', ondelete='SET NULL'), nullable=True)
     categoria = relationship("Categorias_productos", back_populates="productos")
     sucursales = relationship(
         "Sucursales", secondary=sucursal_producto, back_populates="productos", 
@@ -281,7 +337,13 @@ class Productos(Base):
 
 class Movimientos_Inventario(Base):
     __tablename__ = "Movimientos_inventario"
-    id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     producto_id = Column(Integer, ForeignKey("Productos.id", ondelete="CASCADE"), nullable=True)
     cantidad_cambio = Column(Float)  #  Indica la cantidad de productos que entran o salen del inventario.
     tipo_movimiento = Column(String(20))  # Tipo de movimiento: "entrada" o "salida"
@@ -296,7 +358,13 @@ class Movimientos_Inventario(Base):
 
 class Categorias_productos(Base):
     __tablename__ = "Categorias_productos"
-    id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     descripcion = Column(Text)
     # Relación con Productos (una categoría tiene muchos productos)
@@ -305,8 +373,12 @@ class Categorias_productos(Base):
 class Proveedores(Base):
     __tablename__ = "Proveedores"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(150))
     pais = Column(String(30))
     estado = Column(String(30))
@@ -322,8 +394,8 @@ class Proveedores(Base):
     telefono = Column(String(10))
     clave_moneda = Column(String(5))
     tipo_moneda = Column(String(50))
-    representante_id = Column(Integer, ForeignKey("Representantes_proveedores.id"))  # Clave foránea
-    categoria_id = Column(Integer, ForeignKey("Categorias_proveedores.id"))
+    representante_id = Column(BigInteger, ForeignKey("Representantes_proveedores.id"))  # Clave foránea
+    categoria_id = Column(BigInteger, ForeignKey("Categorias_proveedores.id"))
     categoria = relationship("Categorias_proveedores", back_populates="proveedores")
     representante = relationship("Representantes_proveedores", back_populates="proveedores")  # Relación
     producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="proveedor", cascade="all, delete-orphan", collection_class=set)
@@ -336,8 +408,8 @@ class Proveedores(Base):
     
 class ProductoProveedor(Base):
     __tablename__ = "producto_proveedor"
-    producto_id = Column(Integer, ForeignKey("Productos.id", ondelete='SET NULL'), nullable=True, primary_key=True)
-    proveedor_id = Column(Integer, ForeignKey("Proveedores.id", ondelete='SET NULL'), nullable=True, primary_key=True)
+    producto_id = Column(BigInteger, ForeignKey("Productos.id", ondelete='SET NULL'), primary_key=True)
+    proveedor_id = Column(BigInteger, ForeignKey("Proveedores.id", ondelete='SET NULL'), primary_key=True)
     precio_venta = Column(Float)
     producto = relationship("Productos", back_populates="producto_proveedor_asociaciones")
     proveedor = relationship("Proveedores", back_populates="producto_proveedor_asociaciones")
@@ -345,8 +417,12 @@ class ProductoProveedor(Base):
 class Representantes_proveedores(Base):
     __tablename__ = "Representantes_proveedores"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     apellido_paterno = Column(String(60))
     apellido_materno = Column(String(60))
@@ -358,8 +434,12 @@ class Representantes_proveedores(Base):
 class Categorias_proveedores(Base):
     __tablename__ = "Categorias_proveedores"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(150))
     descripcion = Column(Text)
     proveedores = relationship(
@@ -369,8 +449,12 @@ class Categorias_proveedores(Base):
 class Clientes(Base):
     __tablename__ = "Clientes"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(255))
     correo = Column(String(255))
     rfc = Column(String(20))
@@ -383,7 +467,7 @@ class Clientes(Base):
     codigo_postal = Column(String(20))
     direccion_adicional = Column(Text)
     entidad_legalizada = Column(Boolean)
-    categoria_cliente_id = Column(Integer, ForeignKey("Categorias_de_clientes.id"))
+    categoria_cliente_id = Column(BigInteger, ForeignKey("Categorias_de_clientes.id"))
     credito = Column(Boolean)
     estado_credito = Column(String(25))
     limite_credito = Column(Float)
@@ -398,7 +482,7 @@ class Clientes(Base):
 
     ventas = relationship("Ventas", back_populates="cliente")
     areas_de_negocios_id = Column(
-        Integer, ForeignKey("Areas_negocios.id"), nullable=False
+        BigInteger, ForeignKey("Areas_negocios.id"), nullable=False
     )  # Asegúrate de que esto sea correcto
     areas_de_negocios = relationship("Areas_negocios", back_populates="clientes")
     categoria = relationship("Categorias_de_clientes", back_populates="clientes")
@@ -408,8 +492,12 @@ class Clientes(Base):
 class Categorias_de_clientes(Base):
     __tablename__ = "Categorias_de_clientes"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     descripcion = Column(String(255))
     clientes = relationship("Clientes", back_populates="categoria")
@@ -417,15 +505,19 @@ class Categorias_de_clientes(Base):
 class Compras(Base):
     __tablename__ = "Compras"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
-    proveedor_id = Column(Integer, ForeignKey("Proveedores.id"), nullable=False)
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
+    proveedor_id = Column(BigInteger, ForeignKey("Proveedores.id"), nullable=False)
     empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
     fecha_compra = Column(DateTime)
     fecha_creacion = Column(DateTime, default=datetime.now())
     total_compra = Column(Float)
     estado = Column(String(20), default="PENDIENTE")
-    metodos_pago_id = Column(Integer, ForeignKey("Metodos_pagos.id"), nullable=False)
+    metodos_pago_id = Column(BigInteger, ForeignKey("Metodos_pagos.id"), nullable=False)
     detalles = relationship("Detalles_compras", 
     back_populates="compra",
     cascade="all, delete-orphan",
@@ -438,9 +530,13 @@ class Compras(Base):
 class Detalles_compras(Base):
     __tablename__ = "Detalles_compras"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
-    compra_id = Column(Integer, ForeignKey("Compras.id", ondelete='SET NULL'), nullable=False)
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
+    compra_id = Column(BigInteger, ForeignKey("Compras.id", ondelete='SET NULL'), nullable=False)
     producto_id = Column(Text, ForeignKey("Productos.codigo_upc"), nullable=False)
     cantidad = Column(Float)
     precio_unitario = Column(Float)
@@ -451,9 +547,13 @@ class Detalles_compras(Base):
 class Turnos(Base):
     __tablename__ = "Turnos"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
-    empleado_id = Column(Integer, ForeignKey("Empleados.id"), nullable=False)
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
+    empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
     fecha_turno = Column(DateTime)
     hora_inicio = Column(DateTime)
     hora_fin = Column(DateTime)
@@ -463,13 +563,17 @@ class Turnos(Base):
 class Transacciones(Base):
     __tablename__ = "Transacciones"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     tipo = Column(String(100))
     monto = Column(Float)
     fecha = Column(DateTime)
     turno_id = Column(
-        Integer, ForeignKey("Turnos.id"), nullable=False
+        BigInteger, ForeignKey("Turnos.id"), nullable=False
     )  # Relación con Turnos
 
     # Relación con Turnos
@@ -478,15 +582,19 @@ class Transacciones(Base):
 class Areas_negocios(Base):
     __tablename__ = "Areas_negocios"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     descripcion = Column(Text)
     clientes = relationship("Clientes", back_populates="areas_de_negocios")
 
 class Clientes_fisicos(Clientes):
     __tablename__ = "Clientes_fisicos"
-    id = Column(Integer, ForeignKey("Clientes.id", ondelete='CASCADE'), primary_key=True)
+    id = Column(BigInteger, ForeignKey("Clientes.id", ondelete='CASCADE'), primary_key=True)
     apellido_paterno = Column(String(255))
     apellido_materno = Column(String(255))
     curp = Column(String(18))
@@ -503,13 +611,13 @@ class Clientes_fisicos(Clientes):
 
 class Clientes_morales(Clientes):
     __tablename__ = "Clientes_morales"
-    id = Column(Integer, ForeignKey("Clientes.id", ondelete="CASCADE"), primary_key=True)
+    id = Column(BigInteger, ForeignKey("Clientes.id", ondelete="CASCADE"), primary_key=True)
     razon_social = Column(String(255))
     fecha_constitucion = Column(Date)
     web =  Column(String(255))
     sector = Column(String(255))
     NIF = Column(String(20))
-    representante_id = Column(Integer, ForeignKey("Representantes_clientes_morales.id"))
+    representante_id = Column(BigInteger, ForeignKey("Representantes_clientes_morales.id"))
     representante = relationship(
         "Representantes_clientes_morales", back_populates="clientes_morales"
     )
@@ -521,8 +629,12 @@ class Clientes_morales(Clientes):
 class Metodos_pagos(Base):
     __tablename__ = "Metodos_pagos"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     compras = relationship("Compras", back_populates="metodos_de_pago")
     ventas = relationship("Ventas", back_populates="metodos_de_pago")
@@ -530,8 +642,12 @@ class Metodos_pagos(Base):
 class Representantes_clientes_morales(Base):
     __tablename__ = "Representantes_clientes_morales"
     id = Column(
-        Integer, primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     nombre = Column(String(100))
     telefono = Column(String(20))
     correo = Column(String(100))
@@ -541,9 +657,15 @@ class Representantes_clientes_morales(Base):
 class Detalles_ventas(Base):
     __tablename__ = "Detalles_ventas"
     
-    id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
-    venta_id = Column(Integer, ForeignKey("Ventas.id", ondelete="RESTRICT"), nullable=False)  # Relación con la venta
-    producto_id = Column(Integer, ForeignKey("Productos.id", ondelete="RESTRICT"), nullable=False)  # Relación con el producto vendido
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
+    venta_id = Column(BigInteger, ForeignKey("Ventas.id", ondelete="RESTRICT"), nullable=False)  # Relación con la venta
+    producto_id = Column(BigInteger, ForeignKey("Productos.id", ondelete="RESTRICT"), nullable=False)  # Relación con el producto vendido
     cantidad = Column(Float, nullable=False)  # Cantidad del producto vendido
     precio_unitario = Column(Float, nullable=False)  # Precio unitario del producto en el momento de la venta
     subtotal = Column(Float, nullable=False)  # Subtotal: cantidad * precio_unitario
@@ -562,7 +684,13 @@ class Detalles_ventas(Base):
 
 class Ventas(Base):
     __tablename__ = "Ventas"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(
+        BigInteger, 
+        primary_key=True,
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+        )
     folio = Column(String(100), unique=True, nullable=False)
     fecha = Column(DateTime)
     fecha_creacion = Column(DateTime, default=datetime.now())
@@ -574,22 +702,22 @@ class Ventas(Base):
     comentarios = Column(Text)
     activo = Column(Boolean, default=True, nullable=False)
     motivo_cancelacion = Column(String(200), nullable=True)
-    cancelada_por_usuario_id = Column(Integer, ForeignKey("Usuarios.id"), nullable=True)
+    cancelada_por_usuario_id = Column(BigInteger, ForeignKey("Usuarios.id"), nullable=True)
     fecha_cancelacion = Column(DateTime, nullable=True)
     forma_pago = Column(String(50), nullable=True)
 
     cliente_id = Column(
-        Integer, 
+        BigInteger, 
         ForeignKey("Clientes.id", ondelete='RESTRICT'),
         nullable=False
     )
     empleado_id = Column(
-        Integer, 
+        BigInteger, 
         ForeignKey("Empleados.id", ondelete='RESTRICT'),
         nullable=False
     )
     metodos_pagos_id = Column(
-        Integer, 
+        BigInteger, 
         ForeignKey("Metodos_pagos.id", ondelete='RESTRICT'),
         nullable=False
     )

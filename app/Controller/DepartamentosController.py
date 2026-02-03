@@ -178,26 +178,27 @@ class DepartamentosController(QDialog):
         try:
             departamento, estado = DepartamentosModel(session).agregar_departamento(**datos)
             if not estado:
-                if departamento.nombre == datos['nombre']:
-                    session.rollback()
-                    return {
-                        'exito': estado,
-                        'mensaje': "El registro que intentas agregar ya existe"
-                        }
+                if departamento:
+                    if departamento.nombre == datos['nombre']:
+                        session.rollback()
+                        return {
+                            'exito': estado,
+                            'mensaje': "El registro que intentas agregar ya existe"
+                            }
+            print(self.sucursales_seleccionadas)
+            for sucursal_id, sucursal in self.sucursales_seleccionadas.items():
+                if sucursal not in departamento.sucursales:
+                    departamento.sucursales.append(sucursal)
+            session.commit()
+            return {
+                    'exito': estado,
+                    'mensaje': f"Registro exitoso, {departamento.nombre} fue agregado"
+                    }
         except Exception as e:
             session.rollback()
             return {
-                        'exito': estado,
-                        'mensaje': "Error al realizar la operacion"
-                        }
-        for sucursal_id in self.sucursales_seleccionadas:
-                        sucursal = SucursalesModel(session).obtener_sucursal_por_id(sucursal_id)
-                        if sucursal and sucursal not in departamento.sucursales:
-                            departamento.sucursales.append(sucursal)
-        session.commit()
-        return {
                 'exito': estado,
-                'mensaje': f"Registro exitoso, {departamento.nombre} fue agregado"
+                'mensaje': f"Error al realizar la operacion {str(e)}"
                 }
     
     def eliminar(self):

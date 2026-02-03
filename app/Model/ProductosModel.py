@@ -121,11 +121,10 @@ class ProductosModel:
         try:
             if presentacion_obj:
                 self.session.delete(presentacion_obj)
-                self.session.commit()  # Confirma la eliminación
+                self.session.commit()
                 return True
             return False
         except Exception as e:
-            print(f"Error al eliminar la unidad de medida: {e}")
             return False
     
     def agregar_unidad_medida(self, nombre):
@@ -147,13 +146,11 @@ class ProductosModel:
     def eliminar_unidad_medida(self, unidad_obj):
         try:
             if unidad_obj:
-                # Elimina la unidad de medida si se encuentra
                 self.session.delete(unidad_obj)
-                self.session.commit()  # Confirma la eliminación
+                self.session.commit()
                 return True
             return False
         except Exception as e:
-            print(f"Error al eliminar la unidad de medida: {e}")
             return False
         
     def agregar_producto(
@@ -226,7 +223,6 @@ class ProductosModel:
             self.session.flush()
             return producto, True
         except Exception as e:
-            print(f"Error al agregar producto: {e}")
             return None, False
         
     def actualizar_producto(self,
@@ -289,16 +285,14 @@ class ProductosModel:
         producto_actual.unidad_medida_productos_id = unidad_medida_productos_id
         producto_actual.categoria_id = categoria_id
         producto_actual.sucursales = sucursales
-        # Limpiar la relación de proveedores
-        producto_actual.proveedores = []  # Limpiar la lista de proveedores
+        producto_actual.proveedores = []
 
-        # Usar `session.merge()` para asegurarse de que no haya duplicados
         proveedores_fusionados = []
         for proveedor_dict in proveedores:
             if isinstance(proveedor_dict, dict):
                 proveedor_obj = Proveedores(**proveedor_dict)
             else:
-                proveedor_obj = proveedor_dict  # ya es un modelo
+                proveedor_obj = proveedor_dict
             proveedor_fusionado = self.session.merge(proveedor_obj)
             proveedores_fusionados.append(proveedor_fusionado)
 
@@ -323,17 +317,12 @@ class ProductosModel:
                 .all()
             )
             
-            # LÓGICA MEJORADA DE PAGINACIÓN:
-            # Si no hay productos Y el offset es mayor a 0, significa que no hay más registros
             if not productos and offset > 0:
-                return [], False  # No hay más registros disponibles
+                return [], False
             
-            # Si hay productos pero son menos que el límite, es la última página
-            # (aún devolvemos los productos pero el frontend sabe que es el final)
             return productos, bool(productos)
             
         except Exception as e:
-            print(f"Error en obtener_productos: {e}")
             return [], False
         
     def eliminar_producto(self, codigo_producto):
@@ -353,7 +342,8 @@ class ProductosModel:
                     joinedload(Productos.producto_proveedor_asociaciones),
                     joinedload(Productos.categoria),
                     joinedload(Productos.unidad_medida_productos),
-                    joinedload(Productos.presentacion_productos)
+                    joinedload(Productos.presentacion_productos),
+                    joinedload(Productos.proveedores)
                 )
                 .filter(func.lower(Productos.nombre_producto) == func.lower(nombre)) 
                 .offset(cantidad_inicial)
@@ -361,14 +351,12 @@ class ProductosModel:
                 .all()
             )
             
-            # Misma lógica de paginación
             if not productos:
-                return [], False  # No hay más registros disponibles
+                return [], False
                 
             return productos, bool(productos)
             
         except Exception as e:
-            print(f"Error en consultar_por_nombre: {e}")
             return [], False
     
     def consultar_por_nombre(self, nombre, cantidad_inicial=0, cantidad_final=100):
@@ -379,7 +367,8 @@ class ProductosModel:
                     joinedload(Productos.producto_proveedor_asociaciones),
                     joinedload(Productos.categoria),
                     joinedload(Productos.unidad_medida_productos),
-                    joinedload(Productos.presentacion_productos)
+                    joinedload(Productos.presentacion_productos),
+                    joinedload(Productos.proveedores)
                 )
                 .filter(Productos.nombre_producto.ilike(f"%{nombre}%"))
                 .order_by(Productos.nombre_producto.asc())
@@ -388,22 +377,22 @@ class ProductosModel:
                 .all()
             )
             
-            # Misma lógica de paginación
             if not productos and cantidad_inicial > 0:
-                return [], False  # No hay más registros disponibles
+                return [], False
                 
             return productos, bool(productos)
             
         except Exception as e:
-            print(f"Error en consultar_por_nombre: {e}")
             return [], False
         
     def consultar_producto_por_codigoUPC(self, codigo_upc):
-        produto = self.session.query(Productos).options(
-            joinedload(Productos.proveedores),
-            joinedload(Productos.categoria),
-            joinedload(Productos.unidad_medida_productos),
-            joinedload(Productos.presentacion_productos)
+        produto = self.session.query(Productos)\
+            .options(
+                joinedload(Productos.producto_proveedor_asociaciones),
+                joinedload(Productos.proveedores),
+                joinedload(Productos.categoria),
+                joinedload(Productos.unidad_medida_productos),
+                joinedload(Productos.presentacion_productos)
             ).filter(Productos.codigo_upc == codigo_upc).first()
         if produto:
             return produto, True

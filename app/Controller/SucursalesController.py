@@ -23,8 +23,8 @@ class SucursalesController(QDialog):
         self.sucursales = None
         self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         
-        self.ui = Ui_Nueva_sucursal()
-        self.ui.setupUi(self)
+        self.windowSucursales = Ui_Nueva_sucursal()
+        self.windowSucursales.setupUi(self)
         
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
@@ -35,34 +35,34 @@ class SucursalesController(QDialog):
         self.move(pantalla.topLeft())
         
         #// LIMITE CARACTERES
-        self.ui.txt_nombre.setMaxLength(50)
-        self.ui.txt_codigopostal.setMaxLength(5)
-        self.ui.txt_ciudad.setMaxLength(50)
-        self.ui.txt_estado.setMaxLength(50)
-        self.ui.txt_pais.setMaxLength(50)
-        self.ui.txt_ntelefono.setMaxLength(10)
-        self.ui.txt_razonsocial.setMaxLength(300)
-        self.ui.txt_rfcsucursal.setMaxLength(13)
+        self.windowSucursales.txt_nombre.setMaxLength(50)
+        self.windowSucursales.txt_codigopostal.setMaxLength(5)
+        self.windowSucursales.txt_ciudad.setMaxLength(50)
+        self.windowSucursales.txt_estado.setMaxLength(50)
+        self.windowSucursales.txt_pais.setMaxLength(50)
+        self.windowSucursales.txt_ntelefono.setMaxLength(10)
+        self.windowSucursales.txt_razonsocial.setMaxLength(300)
+        self.windowSucursales.txt_rfcsucursal.setMaxLength(13)
         #// Validaciones
-        self.ui.txt_codigopostal.setValidator(Validaciones().get_int_validator)
-        self.ui.txt_ntelefono.setValidator(Validaciones().get_int_validator)
-        self.ui.txt_rfcsucursal.setValidator(Validaciones().get_rfc_validator)
+        self.windowSucursales.txt_codigopostal.setValidator(Validaciones().get_int_validator)
+        self.windowSucursales.txt_ntelefono.setValidator(Validaciones().get_int_validator)
+        self.windowSucursales.txt_rfcsucursal.setValidator(Validaciones().get_rfc_validator)
         
-        self.ui.btn_btn_agregar.clicked.connect(self.agregar)
-        self.ui.lista_sucursales.itemClicked.connect(self.obtenerId)
-        self.ui.btn_btn_limpiar.clicked.connect(self.limpiar)
-        self.ui.btn_btn_eliminar.clicked.connect(self.eliminar)
-        self.ui.btn_btn_actualizar.clicked.connect(self.actualizar)
-        self.ui.btn_cerrar_encabezado.clicked.connect(self.close)
-        self.ui.btn_RefrescarTabla.clicked.connect(self.obtener_sucursales)
-        self.ui.btn_btn_buscar_sucursal.clicked.connect(self.buscar_sucursal)
+        self.windowSucursales.btn_btn_agregar.clicked.connect(self.agregar)
+        self.windowSucursales.lista_sucursales.itemClicked.connect(self.obtenerId)
+        self.windowSucursales.btn_btn_limpiar.clicked.connect(self.limpiar)
+        self.windowSucursales.btn_btn_eliminar.clicked.connect(self.eliminar)
+        self.windowSucursales.btn_btn_actualizar.clicked.connect(self.actualizar)
+        self.windowSucursales.btn_cerrar_encabezado.clicked.connect(self.close)
+        self.windowSucursales.btn_RefrescarTabla.clicked.connect(self.obtener_sucursales)
+        self.windowSucursales.btn_btn_buscar_sucursal.clicked.connect(self.buscar_sucursal)
         
         #funciones:
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         
         if cabecera is False:
-            self.ui.contenedor_encabezado.hide()
+            self.windowSucursales.contenedor_encabezado.hide()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -75,11 +75,11 @@ class SucursalesController(QDialog):
         event.accept()
 
     def buscar_sucursal(self):
-        nombre_sucursal = self.ui.txt_buscarsucursales.text().strip()
+        nombre_sucursal = self.windowSucursales.txt_buscarsucursales.text().strip()
         if not nombre_sucursal:
             Mensaje().mensaje_informativo("No haz ingresado algun dato para realizar la busqueda.")
             return
-        self.ui.txt_buscarsucursales.clearFocus()
+        self.windowSucursales.txt_buscarsucursales.clearFocus()
         try:
             WorkerDB.cleanup_owner_workers("buscar_sucursal_thread")
             self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id="buscar_sucursal_thread")
@@ -116,28 +116,28 @@ class SucursalesController(QDialog):
         
     def campos_nomales(self):
         return {
-            'nombre_sucursal': self.ui.txt_nombre,
-            'codigo_postal': self.ui.txt_codigopostal,
-            'ciudad': self.ui.txt_ciudad,
-            'estado': self.ui.txt_estado,
-            'pais': self.ui.txt_pais,
-            'num_telefono': self.ui.txt_ntelefono,
-            "razon_social": self.ui.txt_razonsocial,
-            "rfc": self.ui.txt_rfcsucursal,
-            'direccion': self.ui.txtlargo_direccion
+            'nombre_sucursal': self.windowSucursales.txt_nombre,
+            'codigo_postal': self.windowSucursales.txt_codigopostal,
+            'ciudad': self.windowSucursales.txt_ciudad,
+            'estado': self.windowSucursales.txt_estado,
+            'pais': self.windowSucursales.txt_pais,
+            'num_telefono': self.windowSucursales.txt_ntelefono,
+            "razon_social": self.windowSucursales.txt_razonsocial,
+            "rfc": self.windowSucursales.txt_rfcsucursal,
+            'direccion': self.windowSucursales.txtlargo_direccion
         }
     
     def obtener_datos_campos(self):
         return {
-            'nombre_sucursal': self.ui.txt_nombre.text().strip(),
-            'codigo_postal': self.ui.txt_codigopostal.text().strip(),
-            'ciudad': self.ui.txt_ciudad.text().strip(),
-            'estado': self.ui.txt_estado.text().strip(),
-            'pais': self.ui.txt_pais.text().strip(),
-            'num_telefono': self.ui.txt_ntelefono.text().strip(),
-            "razon_social": self.ui.txt_razonsocial.text().strip(),
-            "rfc": self.ui.txt_rfcsucursal.text().strip(),
-            'direccion': self.ui.txtlargo_direccion.toPlainText().strip()
+            'nombre_sucursal': self.windowSucursales.txt_nombre.text().strip(),
+            'codigo_postal': self.windowSucursales.txt_codigopostal.text().strip(),
+            'ciudad': self.windowSucursales.txt_ciudad.text().strip(),
+            'estado': self.windowSucursales.txt_estado.text().strip(),
+            'pais': self.windowSucursales.txt_pais.text().strip(),
+            'num_telefono': self.windowSucursales.txt_ntelefono.text().strip(),
+            "razon_social": self.windowSucursales.txt_razonsocial.text().strip(),
+            "rfc": self.windowSucursales.txt_rfcsucursal.text().strip(),
+            'direccion': self.windowSucursales.txtlargo_direccion.toPlainText().strip()
         }
 
     def agregar(self):
@@ -171,29 +171,33 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
     
     def agregar_sucursal_query(self, session, datos):
+        """Manejar resultado del modelo"""
         try:
-            sucursal, estado = SucursalesModel(session).agregar_sucursal(**datos)
-            if not estado:
-                if sucursal.nombre_sucursal == datos['nombre_sucursal']:
-                    session.rollback()
-                    return {
-                        'exito': estado,
-                        'mensaje': f"El registro {datos['nombre_sucursal']} no se almaceno por que ya se encuentra en el sistema"
-                    }
+            sucursal, exito = SucursalesModel(session).agregar_sucursal(**datos)
+            nombre = datos['nombre_sucursal']
+            
+            if exito:
+                return {
+                    'exito': True,
+                    'mensaje': f"Registro exitoso, '{nombre}' almacenado"
+                }
+            
+            # Si no tuvo éxito
+            mensaje = (f"La sucursal '{nombre}' ya existe" 
+                    if sucursal else 
+                    f"No se pudo crear la sucursal '{nombre}'")
+            
+            return {'exito': False, 'mensaje': mensaje}
+            
         except Exception as e:
             session.rollback()
             return {
-                        'exito': False,
-                        'mensaje': f"Error al realizar la operacion de agregar sucursal"
-                    }
-        session.commit()
-        return {
-                    'exito': estado,
-                    'mensaje': f"Registro exitoso, {datos['nombre_sucursal']} fue almacenado"
-                }
+                'exito': False,
+                'mensaje': f"Error al agregar sucursal: {e}"
+            }
                         
     def obtener_sucursales(self):
-        self.ui.lista_sucursales.clear()
+        self.windowSucursales.lista_sucursales.clear()
         try:
             WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
             self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
@@ -220,13 +224,13 @@ class SucursalesController(QDialog):
     def listar_sucursales(self, sucursales, estado):
         if sucursales:
             try:
-                self.ui.lista_sucursales.clear()
-                self.ui.lista_departamentosasociados.clear()
+                self.windowSucursales.lista_sucursales.clear()
+                self.windowSucursales.lista_departamentosasociados.clear()
                 for sucursal in sucursales:
                     item = QListWidgetItem(sucursal.nombre_sucursal)
                     item.setIcon(self.icon)
                     item.setData(Qt.UserRole, sucursal)
-                    self.ui.lista_sucursales.addItem(item)
+                    self.windowSucursales.lista_sucursales.addItem(item)
                     
             except Exception as e:
                 Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
@@ -236,21 +240,21 @@ class SucursalesController(QDialog):
     def obtenerId(self, item):
         if item:
             sucursal = item.data(Qt.UserRole)
-            self.ui.txt_nombre.setText(sucursal.nombre_sucursal)
-            self.ui.txt_codigopostal.setText(sucursal.codigo_postal)  # Asegúrate de que sea `codigo_postal`
-            self.ui.txt_ciudad.setText(sucursal.ciudad)  # Aquí debe ser `ciudad`
-            self.ui.txt_estado.setText(sucursal.estado)  # Aquí debe ser `estado`
-            self.ui.txt_pais.setText(sucursal.pais)  # Aquí debe ser `pais`
-            self.ui.txt_ntelefono.setText(sucursal.num_telefono)  # Aquí debe ser `num_telefono`
-            self.ui.txt_razonsocial.setText(sucursal.razon_social)
-            self.ui.txt_rfcsucursal.setText(sucursal.rfc)
-            self.ui.txtlargo_direccion.setPlainText(sucursal.direccion)
+            self.windowSucursales.txt_nombre.setText(sucursal.nombre_sucursal)
+            self.windowSucursales.txt_codigopostal.setText(sucursal.codigo_postal)  # Asegúrate de que sea `codigo_postal`
+            self.windowSucursales.txt_ciudad.setText(sucursal.ciudad)  # Aquí debe ser `ciudad`
+            self.windowSucursales.txt_estado.setText(sucursal.estado)  # Aquí debe ser `estado`
+            self.windowSucursales.txt_pais.setText(sucursal.pais)  # Aquí debe ser `pais`
+            self.windowSucursales.txt_ntelefono.setText(sucursal.num_telefono)  # Aquí debe ser `num_telefono`
+            self.windowSucursales.txt_razonsocial.setText(sucursal.razon_social)
+            self.windowSucursales.txt_rfcsucursal.setText(sucursal.rfc)
+            self.windowSucursales.txtlargo_direccion.setPlainText(sucursal.direccion)
             self.listar_departamentos_asignados(sucursal.departamentos)
             self.idSucursal = sucursal
         
     def listar_departamentos_asignados(self, departamentos = None):
         if departamentos:
-            self.ui.lista_departamentosasociados.clear()
+            self.windowSucursales.lista_departamentosasociados.clear()
             for  departamento in departamentos:
                 # Crear un QListWidgetItem
                 item = QListWidgetItem(departamento.nombre)
@@ -260,9 +264,9 @@ class SucursalesController(QDialog):
                 item.setData(Qt.UserRole, departamento)
                 
                 # Agregar el ítem a la lista
-                self.ui.lista_departamentosasociados.addItem(item)
+                self.windowSucursales.lista_departamentosasociados.addItem(item)
         else:
-            self.ui.lista_departamentosasociados.clear()
+            self.windowSucursales.lista_departamentosasociados.clear()
             
     def eliminar(self):
         if self.idSucursal == None:
