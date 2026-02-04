@@ -1,3 +1,7 @@
-.venv
+.venv/
 migraciones/
 documentos/
+build/
+dist/
+__pycache__/
+alembic/versions/
