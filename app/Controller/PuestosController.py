@@ -1,7 +1,7 @@
+# TODO: Paginación
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from app.Model.AbstractTableModel import ComprobarModelosTablas
@@ -69,15 +69,15 @@ class PuestosController(QDialog):
         self.id_departamento = None
         self.puesto_actual = None
         self.puestos = None
-        self.seleccion_conectada = False
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.__configurar_tabla_puestos()
 
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
 
-    #funciones:
+    # ================ FUNCIONES ===================
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentradaPuestos:
@@ -118,8 +118,25 @@ class PuestosController(QDialog):
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
             
     def filtrar_puestos_query(self, session, dato):
-        puestos, estado = PuestoModel(session).filtrar_por_nombre(dato)
-        return puestos, estado
+        try:
+            puestos, estado = PuestoModel(session).filtrar_por_nombre(dato)
+            if not estado: 
+                return {
+                    'exito': estado,
+                    'mensaje': f'Ocurrio un error en la operación: {puestos}',
+                    'data': None
+                }
+            return {
+                'exito': estado,
+                'mensaje': f'Se encontraron {len(puestos)} puestos',
+                'data': puestos
+            }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje': f'Ocurrio un error en la operación: {e}',
+                'data': None
+            }
         
     def roles(self):
         print("en roles")
@@ -134,13 +151,9 @@ class PuestosController(QDialog):
         if is_checked:
             if day_name not in self.diasLaborales:
                 self.diasLaborales.append(day_name)
-                print(f"✅ Añadido: {day_name}")
         else:
             if day_name in self.diasLaborales:
                 self.diasLaborales.remove(day_name)
-                print(f"❌ Removido: {day_name}")
-        
-        print(f"📅 Días laborales actuales: {self.diasLaborales}")
 
     def limpiar(self):
 
@@ -269,8 +282,7 @@ class PuestosController(QDialog):
     
     def eliminar_puesto_query(self, session, puesto_seleccionado):
         try:
-            respuesta = PuestoModel(session).eliminar_puesto(puesto_seleccionado
-                                                            .id)
+            respuesta = PuestoModel(session).eliminar_puesto(puesto_seleccionado.id)
             if not respuesta:
                 session.rollback()
                 return {
@@ -374,6 +386,7 @@ class PuestosController(QDialog):
 
     def listar_departamentos(self):
         try:
+            self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
             self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
             self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
@@ -383,7 +396,8 @@ class PuestosController(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_listar_departamentos,
                 resultado_callback=self.ingresar_departamentos_opciones,
-                error_callback=self.mostrar_error_hilo
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_listar_departamentos.ejecutar(
                 funcion=self.obtener_departamentos_query
@@ -394,20 +408,40 @@ class PuestosController(QDialog):
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             
     def obtener_departamentos_query(self, session):
-        departamentos, estado = DepartamentosModel(session).obtener_todos()
-        return departamentos, estado
+        try:
+            departamentos, estado = DepartamentosModel(session).obtener_todos()
+            if not estado:
+                session.rollback()
+                return {
+                    'exito': estado,
+                    'mensaje': 'Operacion exitosa',
+                    'data': departamentos
+                }
+            return {
+                'exito': estado,
+                'mensaje': 'Operacion exitosa',
+                'data': departamentos
+            }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje': f'Ocurrio un error en la operacion: {e}',
+                'data': None
+            }
     
     def ingresar_departamentos_opciones(self, objetoDepartamentos):
-        if objetoDepartamentos:
-            self.lista_departamentos = list(objetoDepartamentos)
+        if objetoDepartamentos['exito']:
+            self.lista_departamentos = list(objetoDepartamentos['data'])
             self.ui.cajaOpciones_departamentos.clear()
             
             # Almacenar el objeto completo para tener acceso a todos los atributos
-            for departamento in objetoDepartamentos:
+            for departamento in objetoDepartamentos['data']:
                 self.ui.cajaOpciones_departamentos.addItem(
                     departamento.nombre, 
                     userData=departamento  # Objeto completo
                 )
+        else:
+            Mensaje().mensaje_alerta(objetoDepartamentos['mensaje'])
     
     def reestablecer_orden_original(self):
         """Restablece el orden original de los departamentos"""
@@ -434,23 +468,36 @@ class PuestosController(QDialog):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_listar_puestos.ejecutar(
-                self.obtener_puestos_query
+                funcion=self.obtener_puestos_query
             )
         except Exception as e:
-            print(f"Error al configurar worker: {str(e)}")
-            # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_listar_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_puestos)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
             
     def obtener_puestos_query(self, session):
-        puestos, estado = PuestoModel(session).obtener_todos()
-        return puestos, estado
+        try:
+            puestos, estado = PuestoModel(session).obtener_todos()
+            if estado:
+                return {
+                    'exito': estado,
+                    'mensaje': f'Se encontraron {len(puestos)} puestos',
+                    'data': puestos
+                }
+            else:
+                return {
+                    'exito': estado,
+                    'mensaje': f'Ocurrio un error en la operación: {puestos}',
+                    'data': None
+                }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje': f'Ocurrio un error en la operación: {e}',
+                'data': None
+            }
 
-    def llenar_tabla(self, puestos, estado = None):
-        if self.ui.tabla_listapuestos is None:
-            Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
-            return
+    def __configurar_tabla_puestos(self):
         cabeceras = [
             "Nombre",
             "Salario",
@@ -469,7 +516,7 @@ class PuestosController(QDialog):
             "hora_entrada" : lambda p: p.hora_entrada.strftime("%H:%M") if p.hora_entrada else "",
             "hora_salida": lambda p: p.hora_salida.strftime("%H:%M") if p.hora_salida else "",
         }
-        modelo = self.comprobar_modelos_tablas.comprobarModeloTabla(
+        self.modelo_tabla_puestos = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modelo_lista_vpuestos",
             interfazTabla=self.ui.tabla_listapuestos,
             encabezados=cabeceras,
@@ -477,27 +524,24 @@ class PuestosController(QDialog):
             ordenable=True,
             editable=False,
             autoAjustarColumnas=True,
-            signalPersonalizada=self.obtener_id_elemento_tabla_puestos
+            signalSeleccion=self.obtener_id_elemento_tabla_puestos
         )
-        if not estado or not puestos:
-            Mensaje().mensaje_informativo("No hay puestos para mostrar")
-            modelo.clear()
+        return self.modelo_tabla_puestos
+
+    def llenar_tabla(self, resultado):
+        if self.ui.tabla_listapuestos is None:
+            Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
             return
-        
-        modelo.update_data(puestos, reset=True)
-        if hasattr(self, 'seleccion_conectada_puestos') and self.seleccion_conectada_puestos:
-            try:
-                self.ui.tabla_listapuestos.clicked.disconnect(self.obtener_id_elemento_tabla_puestos)
-            except:
-                pass
-        self.ui.tabla_listapuestos.clicked.connect(self.obtener_id_elemento_tabla_puestos)
-        self.seleccion_conectada_puestos = True
+        Mensaje().mensaje_informativo(resultado['mensaje'])
+        if not resultado['exito'] or not resultado['data']:
+            Mensaje().mensaje_informativo("No hay puestos para mostrar")
+            self.modelo_tabla_puestos.clear()
+            return
+        self.modelo_tabla_puestos.update_data(resultado['data'], reset=True)
 
     def obtener_id_elemento_tabla_puestos(self, current):
         if current.isValid():
-            fila = current.row()
-            puesto = self.modelo_lista_vpuestos.get_item(current)
-            
+            puesto = self.modelo_tabla_puestos.get_item(current)
             if puesto:
                 self.puesto_actual = puesto
                 self.elemento_seleccionado.emit(self.puesto_actual)

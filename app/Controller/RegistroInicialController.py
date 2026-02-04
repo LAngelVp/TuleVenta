@@ -47,10 +47,10 @@ class Registro_personal_inicial(QDialog):
         self.generos = ["MASCULINO","FEMENINO", "NO BINARIO", "TRANSEXUAL", "INTERGÉNERO", "AGÉNERO", "OTRO"]
         self.drag_start_position = None
         self.file_name = '' # ALMACENAMOS LA FOTO
-        self.departamentos = None
-        self.puestos = None
+        self.windowDepartamentos = None
+        self.windowPuestos = None
         # self.sucursales = SucursalesController()
-        self.sucursales = None
+        self.windowSucursales = None
         self.lista_puestos = []
         self.variable_primer_registro = False
         self.empleado_existente = None
@@ -121,13 +121,13 @@ class Registro_personal_inicial(QDialog):
         
         
 #funciones principales:
+        self.manejadorModal = ModalManager()
+        self.manejadorModal.set_modal_class(Modal_de_espera)
         self.ingresar_validaciones()
         self.listar_grupo_permisos_rol()
         self.listar_departamentos()
         self.listar_puestos()
         self.obtener_sucursales()
-        self.manejadorModal = ModalManager()
-        self.manejadorModal.set_modal_class(Modal_de_espera)
 
 # señales y slots:
         self.CAMBIO_DE_ESTADO_CONTRATACION.connect(self.mostrar_estatus_empleado)
@@ -381,11 +381,11 @@ class Registro_personal_inicial(QDialog):
             self.ui.foto_usuario.setText(QCoreApplication.translate(
                 "RegistroAdministrador", 
                 u"""<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">
-<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">
-p, li { white-space: pre-wrap; }
-</style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">
-<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>
-<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>""", 
+                <html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">
+                p, li { white-space: pre-wrap; }
+                </style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">
+                <p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>
+                <p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>""", 
                 None
             ))
         self.file_name = empleado_seleccionado.foto
@@ -492,17 +492,26 @@ p, li { white-space: pre-wrap; }
             Mensaje().mensaje_alerta(f"Error en mostrar_estatus_empleado: {e}")
     
     def agregar_sucursal(self):
-        if self.sucursales is None or not self.sucursales.isVisible():
-            self.sucursales = SucursalesController(parent=None)
-            self.listar_sucursales_signal.connect(self.sucursales.obtener_sucursales)
-            self.sucursales.signal_sucursal_agregada.connect(self.obtener_sucursales)
-            self.sucursales.VENTANA_SUCURSALES_CERRADA.connect(self.ventana_sucursales_cerrada)
+        if self.windowSucursales is None or not self.windowSucursales.isVisible():
+            self.windowSucursales = SucursalesController(parent=None)
+            self.listar_sucursales_signal.connect(
+                self.windowSucursales.obtener_sucursales,
+                Qt.UniqueConnection
+                )
+            self.windowSucursales.signal_sucursal_agregada.connect(
+                self.obtener_sucursales,
+                Qt.UniqueConnection
+                )
+            self.windowSucursales.VENTANA_SUCURSALES_CERRADA.connect(
+                self.ventana_sucursales_cerrada,
+                Qt.UniqueConnection
+                )
             self.listar_sucursales_signal.emit()
-            self.sucursales.setModal(True)
-            self.sucursales.show()
+            self.windowSucursales.setModal(True)
+            self.windowSucursales.show()
         else:
-            self.sucursales.raise_()
-            self.sucursales.activateWindow()
+            self.windowSucursales.raise_()
+            self.windowSucursales.activateWindow()
             
     def obtener_sucursales(self):
         try:
@@ -529,42 +538,51 @@ p, li { white-space: pre-wrap; }
         return sucursales, estado
 
     def ventana_sucursales_cerrada(self):
-        self.sucursales = None
+        self.windowSucursales.deleteLater()
+        self.windowSucursales = None
     
     def ventana_departamentos(self):
-        if self.departamentos is None or not self.departamentos.isVisible():
-            self.departamentos = DepartamentosController()
-            self.listar_departamentos_signal.connect(self.departamentos.obtener_departamentos)
-            self.listar_sucursales_en_departamentos_signal.connect(self.departamentos.listar_sucursales_existentes)
-            self.departamentos.signal_departamento_agregado.connect(self.listar_departamentos)
-            self.departamentos.VENTANA_DEPARTAMENTOS_CERRADA.connect(self.ventana_departamentos_cerrada)
+        if self.windowDepartamentos is None or not self.windowDepartamentos.isVisible():
+            self.windowDepartamentos = DepartamentosController()
+            self.listar_departamentos_signal.connect(self.windowDepartamentos.obtener_departamentos)
+            self.listar_sucursales_en_departamentos_signal.connect(self.windowDepartamentos.listar_sucursales_existentes)
+            self.windowDepartamentos.signal_departamento_agregado.connect(
+                self.listar_departamentos,
+                Qt.UniqueConnection
+                )
+            self.windowDepartamentos.VENTANA_DEPARTAMENTOS_CERRADA.connect(
+                self.ventana_departamentos_cerrada,
+                Qt.UniqueConnection
+                )
             self.listar_sucursales_en_departamentos_signal.emit()
             self.listar_departamentos_signal.emit()
-            self.departamentos.setModal(True)
-            self.departamentos.show()
+            self.windowDepartamentos.setModal(True)
+            self.windowDepartamentos.show()
         else:
-            self.departamentos.raise_()
-            self.departamentos.activateWindow()
+            self.windowDepartamentos.raise_()
+            self.windowDepartamentos.activateWindow()
             
     def ventana_departamentos_cerrada(self):
-        self.departamentos = None
+        self.windowDepartamentos.deleteLater()
+        self.windowDepartamentos = None
     
     def ventana_puestos(self):
-        if self.puestos is None or not self.puestos.isVisible():
-            self.puestos = PuestosController()
-            self.puestos.signal_puesto_agregado.connect(self.listar_puestos)
-            self.puestos.VENTANA_PUESTOS_CERRADA.connect(self.ventana_puestos_cerrada)
-            self.listar_puestos_signal.connect(self.puestos.listar_puestos)
-            self.listar_depas_en_puestos_signal.connect(self.puestos.listar_departamentos)
+        if self.windowPuestos is None or not self.windowPuestos.isVisible():
+            self.windowPuestos = PuestosController()
+            self.windowPuestos.signal_puesto_agregado.connect(self.listar_puestos)
+            self.windowPuestos.VENTANA_PUESTOS_CERRADA.connect(self.ventana_puestos_cerrada)
+            self.listar_puestos_signal.connect(self.windowPuestos.listar_puestos)
+            self.listar_depas_en_puestos_signal.connect(self.windowPuestos.listar_departamentos)
             self.listar_depas_en_puestos_signal.emit()
             self.listar_puestos_signal.emit()
-            self.puestos.show()
+            self.windowPuestos.show()
         else:
-            self.puestos.raise_()
-            self.puestos.activateWindow()
+            self.windowPuestos.raise_()
+            self.windowPuestos.activateWindow()
             
     def ventana_puestos_cerrada(self):
-        self.puestos = None
+        self.windowPuestos.deleteLater()
+        self.windowPuestos = None
 
     def listar_sucursales(self, sucursales, estado):
         self.ui.cajaOpciones_sucursales.clear()
@@ -590,7 +608,8 @@ p, li { white-space: pre-wrap; }
                 raise Exception("No se pudo obtener el worker gestionado al obtener registros")
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_grupos,
-                resultado_callback=self.listar_grupos_opciones
+                resultado_callback=self.listar_grupos_opciones,
+                error_callback=self.mostrar_error_hilo
             )
             self.consultor_obtener_grupos.ejecutar(
                 funcion=self.obtener_grupos_query
@@ -616,6 +635,7 @@ p, li { white-space: pre-wrap; }
         self.ui.cajaOpciones_departamentos.clear()
         departamentos = None
         try:
+            self.manejadorModal.mostrar_modal(None)
             WorkerDB.cleanup_owner_workers("obtener_departamentos_thread")
             self.id_hilo_obtener_departamentos_lista = WorkerDB.create_managed_worker(owner_id="obtener_departamentos_thread")
             self.consultor_obtener_departamentos_lista = WorkerDB.get_managed_worker(self.id_hilo_obtener_departamentos_lista)
@@ -623,7 +643,9 @@ p, li { white-space: pre-wrap; }
                 raise Exception("No se pudo obtener el worker gestionado al obtener registros")
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_departamentos_lista,
-                resultado_callback=self.listar_departamentos_opciones
+                resultado_callback=self.listar_departamentos_opciones,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_departamentos_lista.ejecutar(
                 funcion=self.obtener_departamentos_query

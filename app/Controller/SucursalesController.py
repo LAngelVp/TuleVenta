@@ -1,3 +1,4 @@
+# TODO: Paginacion
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
@@ -72,7 +73,7 @@ class SucursalesController(QDialog):
     
     def closeEvent(self, event):
         self.VENTANA_SUCURSALES_CERRADA.emit() 
-        event.accept()
+        super().closeEvent(event)
 
     def buscar_sucursal(self):
         nombre_sucursal = self.windowSucursales.txt_buscarsucursales.text().strip()
@@ -81,6 +82,7 @@ class SucursalesController(QDialog):
             return
         self.windowSucursales.txt_buscarsucursales.clearFocus()
         try:
+            self.manejadorModal.mostrar_modal()
             WorkerDB.cleanup_owner_workers("buscar_sucursal_thread")
             self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id="buscar_sucursal_thread")
             self.consultor_buscar_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_buscar_sucursal)
@@ -89,7 +91,8 @@ class SucursalesController(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_sucursal,
                 resultado_callback=self.listar_sucursales,
-                error_callback= self.mostrar_error_hilo
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_buscar_sucursal_hilo.ejecutar(
                 funcion=self.buscar_sucursal_query,
@@ -101,8 +104,25 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}")
             
     def buscar_sucursal_query(self, session, nombre_sucursal):
-        sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
-        return sucursales, estado
+        try:
+            sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
+            if not estado:
+                return {
+                    "exito" : estado,
+                    "mensaje" : f"No se encontro ninguna sucursal con el nombre {nombre_sucursal}",
+                    "data" : None
+                }
+            return {
+                "exito" : estado,
+                "mensaje" : f"Sucursales encontradas con el nombre {nombre_sucursal} : {len(sucursales)} sucursal(es)",
+                "data" : sucursales
+            }
+        except Exception as e:
+            return {
+                "exito" : False,
+                "mensaje" : f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}",
+                "data" : None
+            }
         
     def limpiar(self):
         for campo in self.campos_nomales().values():
@@ -175,30 +195,34 @@ class SucursalesController(QDialog):
         try:
             sucursal, exito = SucursalesModel(session).agregar_sucursal(**datos)
             nombre = datos['nombre_sucursal']
-            
             if exito:
+                session.commit()
                 return {
                     'exito': True,
-                    'mensaje': f"Registro exitoso, '{nombre}' almacenado"
+                    'mensaje': f"Registro exitoso, '{nombre}' almacenado",
+                    'data': sucursal
                 }
-            
-            # Si no tuvo éxito
             mensaje = (f"La sucursal '{nombre}' ya existe" 
                     if sucursal else 
                     f"No se pudo crear la sucursal '{nombre}'")
-            
-            return {'exito': False, 'mensaje': mensaje}
-            
+            session.rollback()
+            return {
+                'exito': False, 
+                'mensaje': mensaje,
+                'data': []
+                }
         except Exception as e:
             session.rollback()
             return {
                 'exito': False,
-                'mensaje': f"Error al agregar sucursal: {e}"
+                'mensaje': f"Error al agregar sucursal: {e}",
+                'data': []
             }
                         
     def obtener_sucursales(self):
         self.windowSucursales.lista_sucursales.clear()
         try:
+            self.manejadorModal.mostrar_modal()
             WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
             self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
@@ -207,7 +231,8 @@ class SucursalesController(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_sucursales,
                 resultado_callback=self.listar_sucursales,
-                error_callback= self.mostrar_error_hilo
+                error_callback= self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_sucursal_hilo.ejecutar(
                 funcion=self.obtener_sucursales_query
@@ -218,14 +243,33 @@ class SucursalesController(QDialog):
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
             
     def obtener_sucursales_query(self, session):
-        sucursales, estado = SucursalesModel(session).obtener_todo()
-        return sucursales, estado
+        try:
+            sucursales, estado = SucursalesModel(session).obtener_todo()
+            if estado:
+                return {
+                    'exito': True,
+                    'mensaje': f"Se obtuvieron {len(sucursales)} sucursales",
+                    'data': sucursales
+                }
+            return {
+                'exito': False,
+                'mensaje': f"No se pudo obtener las sucursales",
+                'data': []
+            }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje': f"Error al obtener sucursales: {e}",
+                'data': []
+            }
 
-    def listar_sucursales(self, sucursales, estado):
-        if sucursales:
+    def listar_sucursales(self, resultado):
+        Mensaje().mensaje_informativo(f"{resultado['mensaje']}")
+        if resultado['exito']:
             try:
                 self.windowSucursales.lista_sucursales.clear()
                 self.windowSucursales.lista_departamentosasociados.clear()
+                sucursales = resultado['data']
                 for sucursal in sucursales:
                     item = QListWidgetItem(sucursal.nombre_sucursal)
                     item.setIcon(self.icon)
@@ -235,7 +279,7 @@ class SucursalesController(QDialog):
             except Exception as e:
                 Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
         else:
-            Mensaje().mensaje_informativo("No hay sucursales para mostrar")
+            Mensaje().mensaje_informativo(f"{resultado['mensaje']}")
 
     def obtenerId(self, item):
         if item:

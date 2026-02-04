@@ -6,22 +6,18 @@ class SucursalesModel:
         self.session = session
 
     def agregar_sucursal(self, **kwargs):
-        """Agregar sucursal retornando (sucursal, estado)"""
         try:
-            # Verificar si ya existe
-            if sucursal := self.session.query(Sucursales).filter_by(
+            sucursal = self.session.query(Sucursales).filter_by(
                 nombre_sucursal=kwargs['nombre_sucursal']
-            ).first():
+            ).first()
+            if sucursal:
                 return sucursal, False
             
-            # Crear nueva
             sucursal = Sucursales(**kwargs)
             self.session.add(sucursal)
-            self.session.commit()  # Cambia flush() por commit()
+            self.session.flush()
             return sucursal, True
-            
         except Exception:
-            self.session.rollback()
             return None, False
 
     def obtener_sucursal_id(self, nombre):

@@ -1,7 +1,7 @@
+# TODO: Paginacion
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from ..Source.ibootstrap_rc import  *
@@ -98,16 +98,25 @@ class DepartamentosController(QDialog):
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
                     
     def buscar_departamento_query(self, session, nombre):
-        departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre)
-        if not estado:
-            return departamentos, {
+        try:
+            departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre)
+            if not estado:
+                return {
+                    'exito': estado,
+                    'mensaje' : f'No se encontro ningun registro con {nombre}',
+                    'data': departamentos
+                }
+            return {
                 'exito': estado,
-                'mensaje' : f'No se encontro ningun registro con {nombre}'
+                'mensaje': f'Valores encontrados {len(departamentos)}',
+                'data': departamentos
             }
-        return departamentos, {
-            'exito': estado,
-            'mensaje': f'Valores encontrados {len(departamentos)}'
-        }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje' : f'Error al buscar el departamento {nombre}',
+                'data': None
+            }
         
     def limpiar(self):
         datos = self.campos()
@@ -494,8 +503,26 @@ class DepartamentosController(QDialog):
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
             
     def obtener_departamentos_query(self, session):
-        departamentos, estado = DepartamentosModel(session).obtener_todos()
-        return departamentos, estado
+        try:
+            departamentos, estado = DepartamentosModel(session).obtener_todos()
+            if estado:
+                return {
+                    'exito': estado,
+                    'mensaje': f'Se encontraron {len(departamentos)} departamentos',
+                    'data': departamentos
+                }
+            else:
+                return {
+                    'exito': estado,
+                    'mensaje': f'Ocurrio un error en la operación: {departamentos}',
+                    'data': None
+                }
+        except Exception as e:
+            return {
+                'exito': False,
+                'mensaje': f'Ocurrio un error en la operación: {e}',
+                'data': None
+            }
         
     def listar_puestos_asignados(self, puestos):
         if puestos is not None:
@@ -514,8 +541,10 @@ class DepartamentosController(QDialog):
         else:
             self.ui.lista_puestosasignados.clear()
     
-    def listar_departamentos(self, departamentos, objetoMensaje = None):
-        if departamentos:
+    def listar_departamentos(self, resultado):
+        Mensaje().mensaje_informativo(resultado['mensaje'])
+        if resultado['exito']:
+            departamentos = resultado['data']
             self.ui.lista_puestosasignados.clear()
             self.ui.lista_departamentosexistentes.clear()
             for  departamento in departamentos:
@@ -529,6 +558,7 @@ class DepartamentosController(QDialog):
                 # Agregar el ítem a la lista
                 self.ui.lista_departamentosexistentes.addItem(item)
         else:
+            Mensaje().mensaje_informativo(resultado['mensaje'])
             self.ui.lista_departamentosexistentes.clear()
 
     def obtenerId(self, item):
@@ -631,6 +661,7 @@ class DepartamentosController(QDialog):
         except Exception as e:
             print(f"Error al cargar sucursales existentes: {e}")
             raise
+    
     def _mostrar_sucursales_existentes_en_lista(self):
         """Mostrar las sucursales del diccionario existentes en la lista visual"""
         try:

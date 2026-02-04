@@ -42,17 +42,17 @@ class DepartamentosModel:
             else:
                 return [], False
         except Exception as e:
-            return []
+            return [], False
 
     def obtener_departamento_por_id(self, id):
         try:
             if id is not None:
                 departamento = self.session.query(Departamentos).filter_by(id = id).first()
-                return departamento
+                return departamento, True
             else:
-                return None
+                return None, False
         except Exception as e:
-            return None
+            return None, False
         
     def eliminar_departamento(self,id):
         try:

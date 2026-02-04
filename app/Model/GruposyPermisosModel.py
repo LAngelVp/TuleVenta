@@ -39,8 +39,8 @@ class PermisosModel:
         if nombre is not None:
             permiso = self.session.query(Permisos).filter_by(nombre=nombre.upper()).first()
             if permiso:
-                return permiso
-        return None
+                return permiso, True
+        return None, False
             
 class RolesModel:
     def __init__(self, session):
@@ -105,7 +105,7 @@ class RolesModel:
             else:
                 return [], False
         except Exception as e:
-            return None
+            return [], False
     
     def todos_roles_con_permisos(self):
         roles = self.session.query(Roles, Permisos).outerjoin(rol_permiso, rol_permiso.c.rol_id == Roles.id).outerjoin(Permisos, Permisos.id == rol_permiso.c.permiso_id).all()
