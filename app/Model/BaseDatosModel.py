@@ -20,7 +20,7 @@ from sqlalchemy import (
     Time
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, configure_mappers
+from sqlalchemy.orm import relationship, configure_mappers, Mapped, mapped_column
 
 # configure_mappers()
 Base = declarative_base()
@@ -71,14 +71,8 @@ departamento_sucursal = Table(
 # Apartado de Permisos
 class Permisos(Base):
     __tablename__ = "Permisos"
-    id = Column(
-        BigInteger,
-        primary_key=True,
-        autoincrement=True,
-        unique=True, 
-        nullable=False
-        )
-    nombre = Column(String(50), unique=True)
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(50), unique=True)
     roles = relationship(
         "Roles", secondary=rol_permiso, back_populates="permisos", 
         )
@@ -86,15 +80,9 @@ class Permisos(Base):
 # Apartado de Roles
 class Roles(Base):
     __tablename__ = "Roles"
-    id = Column(
-        BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
-        )
-    nombre = Column(String(100), unique=True)
-    descripcion = Column(Text)
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(100), unique=True)
+    descripcion:Mapped[str] = mapped_column(Text)
     permisos = relationship(
         "Permisos", secondary=rol_permiso, back_populates="roles"
         )
@@ -103,18 +91,12 @@ class Roles(Base):
 # Apartado de Usuarios
 class Usuarios(Base):
     __tablename__ = "Usuarios"
-    id = Column(
-        BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
-        )
-    usuario = Column(String(60), unique=True, nullable=True)
-    contraseña = Column(LargeBinary, nullable=True)
-    fecha_creacion = Column(Date, nullable=False)
-    fecha_actualizacion = Column(Date, nullable=True)
-    rol_id = Column(
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    usuario:Mapped[str] = mapped_column(String(60), unique=True, nullable=True)
+    contraseña:Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    fecha_creacion:Mapped[datetime] = mapped_column(Date, nullable=False)
+    fecha_actualizacion:Mapped[datetime] = mapped_column(Date, nullable=True)
+    rol_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Roles.id", ondelete='SET NULL'),
         nullable=True
@@ -126,22 +108,26 @@ class Usuarios(Base):
 # Apartado de Puestos
 class Puestos(Base):
     __tablename__ = "Puestos"
-    id = Column(
-        BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
-        )
-    nombre = Column(String(100))
-    salario = Column(Float)
-    horas_laborales = Column(Float)
-    dias_laborales = Column(Text)
-    descripcion_puesto = Column(Text)
-    hora_entrada = Column(Time)
-    hora_salida = Column(Time)
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(100))
+    salario:Mapped[float] = mapped_column(Float)
+    horas_laborales:Mapped[float] = mapped_column(Float)
+    dias_laborales:Mapped[str] = mapped_column(Text)
+    descripcion_puesto:Mapped[str] = mapped_column(Text)
+    hora_entrada:Mapped[datetime] = mapped_column(Time)
+    hora_salida:Mapped[datetime] = mapped_column(Time)
     empleados = relationship("Empleados", back_populates="puesto")
-    departamento_id = Column(
+    departamento_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Departamentos.id", ondelete='SET NULL'),
+        nullable=True
+        )
+    departamento = relationship(
+        "Departamentos", back_populates="puestos", lazy="joined"
+    )
+    hora_salida:Mapped[datetime] = mapped_column(Time)
+    empleados = relationship("Empleados", back_populates="puesto")
+    departamento_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Departamentos.id", ondelete='SET NULL'),
         nullable=True
@@ -153,56 +139,157 @@ class Puestos(Base):
 # Apartado de Empleados
 class Empleados(Base):
     __tablename__ = "Empleados"
-    id = Column(
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(100))
+    apellido_paterno:Mapped[str] = mapped_column(String(100))
+    apellido_materno:Mapped[str] = mapped_column(String(100))
+    genero:Mapped[str] = mapped_column(String(20))
+    fecha_nacimiento:Mapped[datetime] = mapped_column(Date)
+    estado_civil:Mapped[str] = mapped_column(String(20))
+    curp:Mapped[str] = mapped_column(String(18), unique=True)
+    rfc:Mapped[str] = mapped_column(String(13), unique=True)
+    nivel_academico:Mapped[str] = mapped_column(String(100))
+    carrera:Mapped[str] = mapped_column(String(150))
+    correo_electronico:Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
+    numero_seguro_social:Mapped[str] = mapped_column(String(13), unique=True)
+    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
+    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
+    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
+    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
+    estado:Mapped[str] = mapped_column(String(100), nullable=True)
+    pais:Mapped[str] = mapped_column(String(100), nullable=True)
+    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
+    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
+    contacto_emergencia:Mapped[str] = mapped_column(String(10))
+    parentesco_contacto:Mapped[str] = mapped_column(String(20))
+    calles:Mapped[str] = mapped_column(String(100), nullable=True)
+    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
+    colonia:Mapped[str] = mapped_column(String(100))
+    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
+    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
+    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
+    puesto_id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
-        )
-    nombre = Column(String(100))
-    apellido_paterno = Column(String(100))
-    apellido_materno = Column(String(100))
-    genero = Column(String(20))
-    fecha_nacimiento = Column(Date)
-    estado_civil = Column(String(20))
-    curp = Column(String(18), unique=True)
-    rfc = Column(String(13), unique=True)
-    nivel_academico = Column(String(100))
-    carrera = Column(String(150))
-    correo_electronico = Column(String(100), nullable=True, unique=True)
-    numero_seguro_social = Column(String(13), unique=True)
-    fecha_contratacion = Column(Date)
-    fecha_despido = Column(Date, nullable=True)
-    ciudad = Column(String(100), nullable=True)
-    codigo_postal = Column(String(5), nullable=True)
-    estado = Column(String(100), nullable=True)
-    pais = Column(String(100), nullable=True)
-    numero_telefonico = Column(String(10), nullable=True)
-    nombre_contacto =  Column(String(100), nullable=True)
-    contacto_emergencia = Column(String(10))
-    parentesco_contacto = Column(String(20))
-    calles =  Column(String(100), nullable=True)
-    avenidas = Column(String(100), nullable=True)
-    colonia = Column(String(100))
-    num_interior =  Column(String(10), nullable=True)
-    num_exterior = Column(String(10), nullable=True)
-    direccion_adicional = Column(Text, nullable=True)
-    activo = Column(Boolean, default=True)
-    foto = Column(Text, nullable=True)
-    puesto_id = Column(BigInteger, ForeignKey("Puestos.id", ondelete='SET NULL'))
+        ForeignKey("Puestos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    puesto = relationship("Puestos", back_populates="empleados")
+    departamento_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Departamentos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    departamento = relationship(
+        "Departamentos", back_populates="empleados", lazy="joined"
+    )
+    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
+    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
+    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
+    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
+    estado:Mapped[str] = mapped_column(String(100), nullable=True)
+    pais:Mapped[str] = mapped_column(String(100), nullable=True)
+    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
+    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
+    contacto_emergencia:Mapped[str] = mapped_column(String(10))
+    parentesco_contacto:Mapped[str] = mapped_column(String(20))
+    calles:Mapped[str] = mapped_column(String(100), nullable=True)
+    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
+    colonia:Mapped[str] = mapped_column(String(100))
+    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
+    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
+    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
+    puesto_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Puestos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    puesto = relationship("Puestos", back_populates="empleados")
+    departamento_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Departamentos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    departamento = relationship(
+        "Departamentos", back_populates="empleados", lazy="joined"
+    )
+    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
+    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
+    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
+    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
+    estado:Mapped[str] = mapped_column(String(100), nullable=True)
+    pais:Mapped[str] = mapped_column(String(100), nullable=True)
+    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
+    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
+    contacto_emergencia:Mapped[str] = mapped_column(String(10))
+    parentesco_contacto:Mapped[str] = mapped_column(String(20))
+    calles:Mapped[str] = mapped_column(String(100), nullable=True)
+    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
+    colonia:Mapped[str] = mapped_column(String(100))
+    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
+    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
+    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
+    puesto_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Puestos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    puesto = relationship("Puestos", back_populates="empleados")
+    departamento_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Departamentos.id", ondelete='SET NULL'),
+        nullable=True
+    )
+    departamento = relationship(
+        "Departamentos", back_populates="empleados", lazy="joined"
+    )
+    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
+    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
+    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
+    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
+    estado:Mapped[str] = mapped_column(String(100), nullable=True)
+    pais:Mapped[str] = mapped_column(String(100), nullable=True)
+    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
+    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
+    estado_civil:Mapped[str] = mapped_column(String(20))
+    curp:Mapped[str] = mapped_column(String(18), unique=True)
+    rfc:Mapped[str] = mapped_column(String(13), unique=True)
+    nivel_academico:Mapped[str] = mapped_column(String(100))
+    carrera:Mapped[str] = mapped_column(String(150))
+    correo_electronico:Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
+    numero_seguro_social:Mapped[str] = mapped_column(String(13), unique=True)
+    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
+    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
+    contacto_emergencia:Mapped[str] = mapped_column(String(10))
+    parentesco_contacto:Mapped[str] = mapped_column(String(20))
+    calles:Mapped[str] = mapped_column(String(100), nullable=True)
+    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
+    colonia:Mapped[str] = mapped_column(String(100))
+    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
+    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
+    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
+    activo:Mapped[bool] = mapped_column(Boolean, default=True)
+    foto:Mapped[str] = mapped_column(Text, nullable=True)
+    puesto_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Puestos.id", ondelete='SET NULL'),
+        nullable=True
+    )
     puesto = relationship("Puestos", back_populates="empleados", lazy="joined")
-    usuario_id = Column(BigInteger, ForeignKey("Usuarios.id", ondelete='SET NULL'))
+    usuario_id:Mapped[int] = mapped_column(
+        BigInteger, 
+        ForeignKey("Usuarios.id", ondelete='SET NULL'),
+        nullable=True
+    )
     usuario = relationship("Usuarios", back_populates="empleado")
     ventas = relationship("Ventas", back_populates="empleado")
     turnos = relationship("Turnos", back_populates="empleado")
-    departamento_id = Column(
+    departamento_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Departamentos.id", ondelete='RESTRICT'),
         nullable=True
     )
     departamento = relationship("Departamentos", back_populates="empleados", lazy="joined")
-    sucursal_id = Column(
+    sucursal_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Sucursales.id", ondelete='RESTRICT'),
         nullable=True
@@ -212,22 +299,19 @@ class Empleados(Base):
 
 class Sucursales(Base):
     __tablename__ = "Sucursales"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger,
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre_sucursal = Column(String(50))
-    codigo_postal = Column(String(5))
-    ciudad = Column(String(50))
-    estado = Column(String(50))
-    pais = Column(String(50))
-    num_telefono = Column(String(10))
-    razon_social = Column(String(300))
-    rfc = Column(String(13))
-    direccion = Column(Text)
+    nombre_sucursal:Mapped[str] = mapped_column(String(50))
+    codigo_postal:Mapped[str] = mapped_column(String(5))
+    ciudad:Mapped[str] = mapped_column(String(50))
+    estado:Mapped[str] = mapped_column(String(50))
+    pais:Mapped[str] = mapped_column(String(50))
+    num_telefono:Mapped[str] = mapped_column(String(10))
+    razon_social:Mapped[str] = mapped_column(String(300))
+    rfc:Mapped[str] = mapped_column(String(13))
+    direccion:Mapped[str] = mapped_column(Text)
     productos = relationship(
         "Productos", secondary=sucursal_producto, back_populates="sucursales"
     )
@@ -238,15 +322,12 @@ class Sucursales(Base):
 
 class Departamentos(Base):
     __tablename__ = "Departamentos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(70))
-    descripcion = Column(Text)
+    nombre:Mapped[str] = mapped_column(String(70))
+    descripcion:Mapped[str] = mapped_column(Text)
     empleados = relationship(
         "Empleados", back_populates="departamento"
     )  # Relación con la tabla de empleados
@@ -259,64 +340,55 @@ class Departamentos(Base):
 
 class Presentacion_productos(Base):
     __tablename__ = "Presentacion_productos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100), nullable=False)
+    nombre:Mapped[str] = mapped_column(String(100), nullable=False)
     productos = relationship("Productos", back_populates="presentacion_productos")
     
 class Unidad_medida_productos(Base):
     __tablename__ = "Unidad_medida_productos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
+    nombre:Mapped[str] = mapped_column(String(100))
     productos = relationship("Productos", back_populates="unidad_medida_productos")
     
 class Productos(Base):
     __tablename__ = "Productos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
     )
-    codigo_upc = Column(String(20), nullable=False, unique=True)
-    nombre_producto = Column(String(60))
-    descripcion_producto = Column(Text)
-    costo_inicial = Column(Float)
-    costo_final = Column(Float)
-    margen_porcentaje = Column(Float)
-    precio = Column(Float)
-    existencia = Column(Float)
-    existencia_minima = Column(Float)
-    existencia_maxima = Column(Float)
-    marca = Column(String(100))
-    modelo = Column(String(100))
-    peso = Column(Float)
-    alto_cm = Column(Float)
-    largo_cm = Column(Float)
-    ancho_cm = Column(Float)
-    color = Column(String(255))
-    material = Column(String(255))
-    fecha_fabricacion = Column(Date)
-    fecha_vencimiento = Column(Date)
-    imagen = Column(Text)
-    notas = Column(Text)
-    presentacion_producto_id = Column(BigInteger, ForeignKey("Presentacion_productos.id", ondelete='SET NULL'), nullable=True)
+    codigo_upc:Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
+    nombre_producto:Mapped[str] = mapped_column(String(60))
+    descripcion_producto:Mapped[str] = mapped_column(Text)
+    costo_inicial:Mapped[float] = mapped_column(Float)
+    costo_final:Mapped[float] = mapped_column(Float)
+    margen_porcentaje:Mapped[float] = mapped_column(Float)
+    precio:Mapped[float] = mapped_column(Float)
+    existencia:Mapped[float] = mapped_column(Float)
+    existencia_minima:Mapped[float] = mapped_column(Float)
+    existencia_maxima:Mapped[float] = mapped_column(Float)
+    marca:Mapped[str] = mapped_column(String(100))
+    modelo:Mapped[str] = mapped_column(String(100))
+    peso:Mapped[float] = mapped_column(Float)
+    alto_cm:Mapped[float] = mapped_column(Float)
+    largo_cm:Mapped[float] = mapped_column(Float)
+    ancho_cm:Mapped[float] = mapped_column(Float)
+    color:Mapped[str] = mapped_column(String(255))
+    material:Mapped[str] = mapped_column(String(255))
+    fecha_fabricacion:Mapped[datetime] = mapped_column(Date)
+    fecha_vencimiento:Mapped[datetime] = mapped_column(Date, nullable=True)
+    imagen:Mapped[str] = mapped_column(Text)
+    notas:Mapped[str] = mapped_column(Text)
+    presentacion_producto_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Presentacion_productos.id", ondelete='SET NULL'), nullable=True)
     presentacion_productos = relationship("Presentacion_productos", back_populates="productos")
-    unidad_medida_productos_id = Column(BigInteger, ForeignKey("Unidad_medida_productos.id", ondelete='SET NULL'), nullable=True)
+    unidad_medida_productos_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Unidad_medida_productos.id", ondelete='SET NULL'), nullable=True)
     unidad_medida_productos = relationship("Unidad_medida_productos", back_populates="productos")
-    categoria_id = Column(BigInteger, ForeignKey('Categorias_productos.id', ondelete='SET NULL'), nullable=True)
+    categoria_id:Mapped[int] = mapped_column(BigInteger, ForeignKey('Categorias_productos.id', ondelete='SET NULL'), nullable=True)
     categoria = relationship("Categorias_productos", back_populates="productos")
     sucursales = relationship(
         "Sucursales", secondary=sucursal_producto, back_populates="productos", 
@@ -337,19 +409,16 @@ class Productos(Base):
 
 class Movimientos_Inventario(Base):
     __tablename__ = "Movimientos_inventario"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    producto_id = Column(Integer, ForeignKey("Productos.id", ondelete="CASCADE"), nullable=True)
-    cantidad_cambio = Column(Float)  #  Indica la cantidad de productos que entran o salen del inventario.
-    tipo_movimiento = Column(String(20))  # Tipo de movimiento: "entrada" o "salida"
-    fecha_movimiento = Column(Date)
-    notas = Column(Text)
-    usuario_id = Column(Integer, ForeignKey("Usuarios.id", ondelete='SET NULL'), nullable=True)
+    producto_id:Mapped[int] = mapped_column(Integer, ForeignKey("Productos.id", ondelete="CASCADE"), nullable=True)
+    cantidad_cambio:Mapped[float] = mapped_column(Float)  #  Indica la cantidad de productos que entran o salen del inventario.
+    tipo_movimiento:Mapped[str] = mapped_column(String(20))  # Tipo de movimiento: "entrada" o "salida"
+    fecha_movimiento:Mapped[datetime] = mapped_column(Date)
+    notas:Mapped[str] = mapped_column(Text)
+    usuario_id:Mapped[int] = mapped_column(Integer, ForeignKey("Usuarios.id", ondelete='SET NULL'), nullable=True)
     
     # Relación con Productos
     producto = relationship("Productos", back_populates="movimientos_inventario")
@@ -358,46 +427,40 @@ class Movimientos_Inventario(Base):
 
 class Categorias_productos(Base):
     __tablename__ = "Categorias_productos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
-    descripcion = Column(Text)
+    nombre:Mapped[str] = mapped_column(String(100))
+    descripcion:Mapped[str] = mapped_column(Text)
     # Relación con Productos (una categoría tiene muchos productos)
     productos = relationship("Productos", back_populates="categoria")
 
 class Proveedores(Base):
     __tablename__ = "Proveedores"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(150))
-    pais = Column(String(30))
-    estado = Column(String(30))
-    ciudad = Column(String(30))
-    codigo_postal = Column(String(5))
-    calles = Column(String(60))
-    avenidas = Column(String(60))
-    colonia = Column(String(50))
-    direccion_adicional = Column(Text)
-    rfc = Column(String(13))
-    pagina_web = Column(Text)
-    correo = Column(String(100))
-    telefono = Column(String(10))
-    clave_moneda = Column(String(5))
-    tipo_moneda = Column(String(50))
-    representante_id = Column(BigInteger, ForeignKey("Representantes_proveedores.id"))  # Clave foránea
-    categoria_id = Column(BigInteger, ForeignKey("Categorias_proveedores.id"))
+    nombre:Mapped[str] = mapped_column(String(150))
+    pais:Mapped[str] = mapped_column(String(30))
+    estado:Mapped[str] = mapped_column(String(30))
+    ciudad:Mapped[str] = mapped_column(String(30))
+    codigo_postal:Mapped[str] = mapped_column(String(5))
+    calles:Mapped[str] = mapped_column(String(60))
+    avenidas:Mapped[str] = mapped_column(String(60))
+    colonia:Mapped[str] = mapped_column(String(50))
+    direccion_adicional:Mapped[str] = mapped_column(Text)
+    rfc:Mapped[str] = mapped_column(String(13))
+    pagina_web:Mapped[str] = mapped_column(Text)
+    correo:Mapped[str] = mapped_column(String(100))
+    telefono:Mapped[str] = mapped_column(String(10))
+    clave_moneda:Mapped[str] = mapped_column(String(5))
+    tipo_moneda:Mapped[str] = mapped_column(String(50))
+    representante_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Representantes_proveedores.id"), nullable=True)
+    categoria_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Categorias_proveedores.id"), nullable=True)
     categoria = relationship("Categorias_proveedores", back_populates="proveedores")
-    representante = relationship("Representantes_proveedores", back_populates="proveedores")  # Relación
+    representante = relationship("Representantes_proveedores", back_populates="proveedores")
     producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="proveedor", cascade="all, delete-orphan", collection_class=set)
     productos = relationship(
         "Productos",
@@ -408,82 +471,71 @@ class Proveedores(Base):
     
 class ProductoProveedor(Base):
     __tablename__ = "producto_proveedor"
-    producto_id = Column(BigInteger, ForeignKey("Productos.id", ondelete='SET NULL'), primary_key=True)
-    proveedor_id = Column(BigInteger, ForeignKey("Proveedores.id", ondelete='SET NULL'), primary_key=True)
-    precio_venta = Column(Float)
+    producto_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Productos.id", ondelete='SET NULL'), primary_key=True)
+    proveedor_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Proveedores.id", ondelete='SET NULL'), primary_key=True)
+    precio_venta:Mapped[float] = mapped_column(Float)
     producto = relationship("Productos", back_populates="producto_proveedor_asociaciones")
     proveedor = relationship("Proveedores", back_populates="producto_proveedor_asociaciones")
 
 class Representantes_proveedores(Base):
     __tablename__ = "Representantes_proveedores"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
-    apellido_paterno = Column(String(60))
-    apellido_materno = Column(String(60))
-    telefono = Column(String(10))
-    correo = Column(String(100))
-    puesto = Column(String(100))
+    nombre:Mapped[str] = mapped_column(String(100))
+    apellido_paterno:Mapped[str] = mapped_column(String(60))
+    apellido_materno:Mapped[str] = mapped_column(String(60))
+    telefono:Mapped[str] = mapped_column(String(10))
+    correo:Mapped[str] = mapped_column(String(100))
+    puesto:Mapped[str] = mapped_column(String(100))
     proveedores = relationship("Proveedores", back_populates="representante")  # Relación inversa
 
 class Categorias_proveedores(Base):
     __tablename__ = "Categorias_proveedores"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(150))
-    descripcion = Column(Text)
+    nombre:Mapped[str] = mapped_column(String(150))
+    descripcion:Mapped[str] = mapped_column(Text)
     proveedores = relationship(
         "Proveedores", back_populates="categoria", 
     )
 
 class Clientes(Base):
     __tablename__ = "Clientes"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(255))
-    correo = Column(String(255))
-    rfc = Column(String(20))
-    telefono = Column(String(15))
-    pais = Column(String(100))
-    estado = Column(String(100))
-    ciudad = Column(String(255))
-    avenidas = Column(String(255))
-    calles = Column(String(255))
-    codigo_postal = Column(String(20))
-    direccion_adicional = Column(Text)
-    entidad_legalizada = Column(Boolean)
-    categoria_cliente_id = Column(BigInteger, ForeignKey("Categorias_de_clientes.id"))
-    credito = Column(Boolean)
-    estado_credito = Column(String(25))
-    limite_credito = Column(Float)
-    porcentaje_interes = Column(Float)
-    fecha_ultimo_reporte = Column(DateTime)
-    credito_disponible = Column(Float)
-    credito_utilizado = Column(Float)
-    tipo_cliente = Column(String(50))
-    aplica_descuento = Column(Boolean)
-    porcentaje_descuento = Column(Float)
-    comentarios = Column(Text)
+    nombre:Mapped[str] = mapped_column(String(255))
+    correo:Mapped[str] = mapped_column(String(255))
+    rfc:Mapped[str] = mapped_column(String(20))
+    telefono:Mapped[str] = mapped_column(String(15))
+    pais:Mapped[str] = mapped_column(String(100))
+    estado:Mapped[str] = mapped_column(String(100))
+    ciudad:Mapped[str] = mapped_column(String(255))
+    avenidas:Mapped[str] = mapped_column(String(255))
+    calles:Mapped[str] = mapped_column(String(255))
+    codigo_postal:Mapped[str] = mapped_column(String(20))
+    direccion_adicional:Mapped[str] = mapped_column(Text)
+    entidad_legalizada:Mapped[bool] = mapped_column(Boolean)
+    categoria_cliente_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Categorias_de_clientes.id"))
+    credito:Mapped[bool] = mapped_column(Boolean)
+    estado_credito:Mapped[str] = mapped_column(String(25))
+    limite_credito:Mapped[float] = mapped_column(Float)
+    porcentaje_interes:Mapped[float] = mapped_column(Float)
+    fecha_ultimo_reporte:Mapped[datetime] = mapped_column(DateTime)
+    credito_disponible:Mapped[float] = mapped_column(Float)
+    credito_utilizado:Mapped[float] = mapped_column(Float)
+    tipo_cliente:Mapped[str] = mapped_column(String(50))
+    aplica_descuento:Mapped[bool] = mapped_column(Boolean)
+    porcentaje_descuento:Mapped[float] = mapped_column(Float)
+    comentarios:Mapped[str] = mapped_column(Text)
 
     ventas = relationship("Ventas", back_populates="cliente")
-    areas_de_negocios_id = Column(
-        BigInteger, ForeignKey("Areas_negocios.id"), nullable=False
-    )  # Asegúrate de que esto sea correcto
+    areas_de_negocios_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Areas_negocios.id"), nullable=False)
     areas_de_negocios = relationship("Areas_negocios", back_populates="clientes")
     categoria = relationship("Categorias_de_clientes", back_populates="clientes")
 
@@ -491,33 +543,27 @@ class Clientes(Base):
 
 class Categorias_de_clientes(Base):
     __tablename__ = "Categorias_de_clientes"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
-    descripcion = Column(String(255))
+    nombre:Mapped[str] = mapped_column(String(100))
+    descripcion:Mapped[str] = mapped_column(String(255))
     clientes = relationship("Clientes", back_populates="categoria")
 
 class Compras(Base):
     __tablename__ = "Compras"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    proveedor_id = Column(BigInteger, ForeignKey("Proveedores.id"), nullable=False)
-    empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
-    fecha_compra = Column(DateTime)
-    fecha_creacion = Column(DateTime, default=datetime.now())
-    total_compra = Column(Float)
-    estado = Column(String(20), default="PENDIENTE")
-    metodos_pago_id = Column(BigInteger, ForeignKey("Metodos_pagos.id"), nullable=False)
+    proveedor_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Proveedores.id"), nullable=False)
+    empleado_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
+    fecha_compra:Mapped[datetime] = mapped_column(DateTime)
+    fecha_creacion:Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    total_compra:Mapped[float] = mapped_column(Float)
+    estado:Mapped[str] = mapped_column(String(20), default="PENDIENTE")
+    metodos_pago_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Metodos_pagos.id"), nullable=False)
     detalles = relationship("Detalles_compras", 
     back_populates="compra",
     cascade="all, delete-orphan",
@@ -529,50 +575,41 @@ class Compras(Base):
 
 class Detalles_compras(Base):
     __tablename__ = "Detalles_compras"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    compra_id = Column(BigInteger, ForeignKey("Compras.id", ondelete='SET NULL'), nullable=False)
-    producto_id = Column(Text, ForeignKey("Productos.codigo_upc"), nullable=False)
-    cantidad = Column(Float)
-    precio_unitario = Column(Float)
-    subtotal = Column(Float)
+    compra_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Compras.id", ondelete='SET NULL'), nullable=False)
+    producto_id:Mapped[str] = mapped_column(Text, ForeignKey("Productos.codigo_upc"), nullable=False)
+    cantidad:Mapped[float] = mapped_column(Float)
+    precio_unitario:Mapped[float] = mapped_column(Float)
+    subtotal:Mapped[float] = mapped_column(Float)
     compra = relationship("Compras", back_populates="detalles")
     producto = relationship("Productos", back_populates="detalles_compras")
 
 class Turnos(Base):
     __tablename__ = "Turnos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    empleado_id = Column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
-    fecha_turno = Column(DateTime)
-    hora_inicio = Column(DateTime)
-    hora_fin = Column(DateTime)
+    empleado_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
+    fecha_turno:Mapped[datetime] = mapped_column(DateTime)
+    hora_inicio:Mapped[datetime] = mapped_column(DateTime)
+    hora_fin:Mapped[datetime] = mapped_column(DateTime)
     empleado = relationship("Empleados", back_populates="turnos")
     transacciones = relationship("Transacciones", back_populates="turno")
 
 class Transacciones(Base):
     __tablename__ = "Transacciones"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    tipo = Column(String(100))
-    monto = Column(Float)
-    fecha = Column(DateTime)
-    turno_id = Column(
+    tipo:Mapped[str] = mapped_column(String(100))
+    monto:Mapped[float] = mapped_column(Float)
+    fecha:Mapped[datetime] = mapped_column(DateTime)
+    turno_id:Mapped[int] = mapped_column(
         BigInteger, ForeignKey("Turnos.id"), nullable=False
     )  # Relación con Turnos
 
@@ -581,29 +618,26 @@ class Transacciones(Base):
 
 class Areas_negocios(Base):
     __tablename__ = "Areas_negocios"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
-    descripcion = Column(Text)
+    nombre:Mapped[str] = mapped_column(String(100))
+    descripcion:Mapped[str] = mapped_column(Text)
     clientes = relationship("Clientes", back_populates="areas_de_negocios")
 
 class Clientes_fisicos(Clientes):
     __tablename__ = "Clientes_fisicos"
-    id = Column(BigInteger, ForeignKey("Clientes.id", ondelete='CASCADE'), primary_key=True)
-    apellido_paterno = Column(String(255))
-    apellido_materno = Column(String(255))
-    curp = Column(String(18))
-    fecha_nacimiento = Column(Date)
-    num_identificacion = Column(String(20))
-    ocupacion = Column(String(150))
-    ingresos = Column(Float)
-    estado_civil = Column(String(15))
-    foto = Column(Text)
+    id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Clientes.id", ondelete='CASCADE'), primary_key=True)
+    apellido_paterno:Mapped[str] = mapped_column(String(255))
+    apellido_materno:Mapped[str] = mapped_column(String(255))
+    curp:Mapped[str] = mapped_column(String(18))
+    fecha_nacimiento:Mapped[datetime] = mapped_column(Date)
+    num_identificacion:Mapped[str] = mapped_column(String(20))
+    ocupacion:Mapped[str] = mapped_column(String(150))
+    ingresos:Mapped[float] = mapped_column(Float)
+    estado_civil:Mapped[str] = mapped_column(String(15))
+    foto:Mapped[str] = mapped_column(Text)
 
     __mapper_args__ = {
         "polymorphic_identity": "FISICO",
@@ -611,13 +645,13 @@ class Clientes_fisicos(Clientes):
 
 class Clientes_morales(Clientes):
     __tablename__ = "Clientes_morales"
-    id = Column(BigInteger, ForeignKey("Clientes.id", ondelete="CASCADE"), primary_key=True)
-    razon_social = Column(String(255))
-    fecha_constitucion = Column(Date)
-    web =  Column(String(255))
-    sector = Column(String(255))
-    NIF = Column(String(20))
-    representante_id = Column(BigInteger, ForeignKey("Representantes_clientes_morales.id"))
+    id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Clientes.id", ondelete="CASCADE"), primary_key=True)
+    razon_social:Mapped[str] = mapped_column(String(255))
+    fecha_constitucion:Mapped[datetime] = mapped_column(Date)
+    web:Mapped[str] = mapped_column(String(255))
+    sector:Mapped[str] = mapped_column(String(255))
+    NIF:Mapped[str] = mapped_column(String(20))
+    representante_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Representantes_clientes_morales.id"))
     representante = relationship(
         "Representantes_clientes_morales", back_populates="clientes_morales"
     )
@@ -628,53 +662,43 @@ class Clientes_morales(Clientes):
 
 class Metodos_pagos(Base):
     __tablename__ = "Metodos_pagos"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
+    nombre:Mapped[str] = mapped_column(String(100))
     compras = relationship("Compras", back_populates="metodos_de_pago")
     ventas = relationship("Ventas", back_populates="metodos_de_pago")
 
 class Representantes_clientes_morales(Base):
     __tablename__ = "Representantes_clientes_morales"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    nombre = Column(String(100))
-    telefono = Column(String(20))
-    correo = Column(String(100))
-    puesto = Column(String(100))
+    nombre:Mapped[str] = mapped_column(String(100))
+    telefono:Mapped[str] = mapped_column(String(20))
+    correo:Mapped[str] = mapped_column(String(100))
+    puesto:Mapped[str] = mapped_column(String(100))
     clientes_morales = relationship("Clientes_morales", back_populates="representante")
     
 class Detalles_ventas(Base):
     __tablename__ = "Detalles_ventas"
-    
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    venta_id = Column(BigInteger, ForeignKey("Ventas.id", ondelete="RESTRICT"), nullable=False)  # Relación con la venta
-    producto_id = Column(BigInteger, ForeignKey("Productos.id", ondelete="RESTRICT"), nullable=False)  # Relación con el producto vendido
-    cantidad = Column(Float, nullable=False)  # Cantidad del producto vendido
-    precio_unitario = Column(Float, nullable=False)  # Precio unitario del producto en el momento de la venta
-    subtotal = Column(Float, nullable=False)  # Subtotal: cantidad * precio_unitario
-    descuento = Column(Float, default=0.0)  # Descuento aplicado
-    iva = Column(Float, nullable=False)  # IVA del detalle
-    total_con_iva = Column(Float, nullable=False)  # Precio con IVA
-    nombre_producto = Column(String(200), nullable=False)
-    clave_producto = Column(String(200), nullable=False)
-    activo = Column(Boolean, default=True, nullable=False)
+    venta_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Ventas.id", ondelete="RESTRICT"), nullable=False)  # Relación con la venta
+    producto_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Productos.id", ondelete="RESTRICT"), nullable=False)  # Relación con el producto vendido
+    cantidad:Mapped[float] = mapped_column(Float, nullable=False)  # Cantidad del producto vendido
+    precio_unitario:Mapped[float] = mapped_column(Float, nullable=False)  # Precio unitario del producto en el momento de la venta
+    subtotal:Mapped[float] = mapped_column(Float, nullable=False)  # Subtotal: cantidad * precio_unitario
+    descuento:Mapped[float] = mapped_column(Float, default=0.0)  # Descuento aplicado
+    iva:Mapped[float] = mapped_column(Float, nullable=False)  # IVA del detalle
+    total_con_iva:Mapped[float] = mapped_column(Float, nullable=False)  # Precio con IVA
+    nombre_producto:Mapped[str] = mapped_column(String(200), nullable=False)
+    clave_producto:Mapped[str] = mapped_column(String(200), nullable=False)
+    activo:Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relación con la venta
     venta = relationship("Ventas", back_populates="detalles_ventas")
@@ -684,39 +708,36 @@ class Detalles_ventas(Base):
 
 class Ventas(Base):
     __tablename__ = "Ventas"
-    id = Column(
+    id:Mapped[int] = mapped_column(
         BigInteger, 
-        primary_key=True,
-        autoincrement=True, 
-        unique=True, 
-        nullable=False
+        primary_key=True
         )
-    folio = Column(String(100), unique=True, nullable=False)
-    fecha = Column(DateTime)
-    fecha_creacion = Column(DateTime, default=datetime.now())
-    fecha_actualizacion = Column(DateTime, default=datetime.now(), onupdate=datetime.now())
-    subtotal = Column(Float, nullable=False)
-    iva = Column(Float, nullable=False, default=0.0)
-    total = Column(Float)
-    estado = Column(String(100), nullable=False, default='PENDIENTE')
-    comentarios = Column(Text)
-    activo = Column(Boolean, default=True, nullable=False)
-    motivo_cancelacion = Column(String(200), nullable=True)
-    cancelada_por_usuario_id = Column(BigInteger, ForeignKey("Usuarios.id"), nullable=True)
-    fecha_cancelacion = Column(DateTime, nullable=True)
-    forma_pago = Column(String(50), nullable=True)
+    folio:Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    fecha:Mapped[datetime] = mapped_column(DateTime)
+    fecha_creacion:Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    fecha_actualizacion:Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), onupdate=datetime.now())
+    subtotal:Mapped[float] = mapped_column(Float, nullable=False)
+    iva:Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    total:Mapped[float] = mapped_column(Float)
+    estado:Mapped[str] = mapped_column(String(100), nullable=False, default='PENDIENTE')
+    comentarios:Mapped[str] = mapped_column(Text)
+    activo:Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    motivo_cancelacion:Mapped[str] = mapped_column(String(200), nullable=True)
+    cancelada_por_usuario_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Usuarios.id"), nullable=True)
+    fecha_cancelacion:Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    forma_pago:Mapped[str] = mapped_column(String(50), nullable=True)
 
-    cliente_id = Column(
+    cliente_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Clientes.id", ondelete='RESTRICT'),
         nullable=False
     )
-    empleado_id = Column(
+    empleado_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Empleados.id", ondelete='RESTRICT'),
         nullable=False
     )
-    metodos_pagos_id = Column(
+    metodos_pagos_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Metodos_pagos.id", ondelete='RESTRICT'),
         nullable=False

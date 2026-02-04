@@ -895,6 +895,7 @@ class Admin_productosController(QWidget):
             self.WindowsAddProduct_Dialog.txt_proveedor.hide()
             self.WindowsAddProduct_Dialog.etiqueta_proveedor.hide()
             self.WindowsAddProduct_Dialog.tabla_productos.hide()
+            self.WindowsAddProduct_Dialog.etiqueta_tituloProductos.hide()
             self.WindowsAddProduct_Dialog.btn_btn_addProduct_agregar_producto.hide()
             self.WindowsAddProduct_Dialog.btn_btn_addProduct_guardar_producto.hide()
             self.WindowsAddProduct_Dialog.btn_btn_addProduct_cargar_CSVProductos.hide()
@@ -1390,20 +1391,44 @@ class Productos(QWidget):
 
     # FUNCION : AGREGAR PRODUCTO
     def agregar_producto(self):
-        if self.AdminProductos is None:
-            self.AdminProductos = Admin_productosController(self)
-            self.AdminProductos.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
-            if not hasattr(self, '_signals_add_producto_connected'):
-                self.LISTAR_CATEGORIAS_PRODUCTOS.connect(self.AdminProductos.listar_categorias)
-                self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(self.AdminProductos.listar_unidades_medida)
-                self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(self.AdminProductos.listar_presentaciones_productos)
-                self.AdminProductos.VENTANA_CERRADA_PRODUCTOS.connect(self.ventana_productos_cerrada)
-                self.signals_add_product_connected = True
-            self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
+        if self.AdminProductos is None or not self.AdminProductos.isVisible():
+            self.AdminProductos = Admin_productosController(parent=self)
+            
+            # Conectar señales de carga completada desde la ventana hija
+            self.AdminProductos.PRESENTACIONES_CARGADAS.connect(
+                self.__on_presentaciones_cargadas
+            )
+            self.AdminProductos.CATEGORIAS_CARGADAS.connect(
+                self.__on_categorias_cargadas
+            )
+            self.AdminProductos.UNIDADES_MEDIDA_CARGADAS.connect(
+                self.__on_unidades_cargadas
+            )
+            
+            # Conectar señales para listar datos
+            self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(
+                self.AdminProductos.listar_unidades_medida,
+                Qt.UniqueConnection
+            )
+            self.LISTAR_CATEGORIAS_PRODUCTOS.connect(
+                self.AdminProductos.listar_categorias,
+                Qt.UniqueConnection
+            )
+            self.LISTAR_PRESENTACIONES_PRODUCTOS.connect(
+                self.AdminProductos.listar_presentaciones_productos,
+                Qt.UniqueConnection
+            )
+            
+            self.AdminProductos.ClosedWindowAdminProduct.connect(self.ventana_productos_cerrada)
+            
+            # Emitir señales para cargar los datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
+            self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-            self.AdminProductos.setParent(self)
+            
+            # Mostrar la ventana después de iniciar la carga
             self.AdminProductos.show()
+            
         else:
             self.AdminProductos.raise_()
             self.AdminProductos.activateWindow()
@@ -1418,24 +1443,50 @@ class Productos(QWidget):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo("Debes de seleccionar un producto de la tabla para proceder a eliminarlo")
             return
-        self.modal_espera_local()
-        self.consultor = WorkerDB()
-        self.consultor.terminado.connect(self.cargando_cerrar)
-        self.consultor.resultado.connect(self.mensaje_hilo)
-        self.consultor.ejecutar(
-            funcion=self.eliminar_producto_query
-            )
+        respuesta = Mensaje().mensaje_pregunta("¿Estas seguro de eliminar el producto?")
+        if respuesta == QMessageBox.Yes:
+            try:
+                self.manejadorModal.mostrar_modal(self)
+                WorkerDB.cleanup_owner_workers("eliminar_producto")
+                self.id_hilo_eliminar_producto = WorkerDB.create_managed_worker(owner_id="eliminar_producto")
+                self.consultor_eliminar_producto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_producto)
+                if not self.consultor_eliminar_producto:
+                    raise Exception("No se pudo obtener el resultado.")
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_eliminar_producto,
+                    resultado_callback=self.mensaje_hilo,
+                    error_callback= self.mostrar_error_consulta,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+                self.consultor_eliminar_producto.ejecutar(
+                    self.eliminar_producto_query,
+                    codigo_producto = self.producto_actual.codigo_upc
+                )
+            except Exception as e:
+                if hasattr(self, 'id_hilo_eliminar_producto'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_producto)
+                Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
     
-    def eliminar_producto_query(self, session):
-        producto, estado = ProductosModel(session).eliminar_producto(codigo_producto=self.producto_actual.codigo_upc)
-        return producto, estado
+    def eliminar_producto_query(self, session, codigo_producto):
+        producto, estado = ProductosModel(session).eliminar_producto(codigo_producto=codigo_producto)
+        if not estado:
+            return {
+                "exito": estado,
+                "mensaje": "No se elimino el producto",
+                "data": producto
+            }
+        return {
+            "exito": estado,
+            "mensaje": "Eliminado correctamente",
+            "data": producto
+        }
     
-    def mensaje_hilo(self, resultado, estado):
-        if estado:
+    def mensaje_hilo(self, resultado):
+        if resultado["exito"]:
             self.producto_actual = None
-            Mensaje().mensaje_informativo("Eliminado correctamente")
+            Mensaje().mensaje_informativo(resultado["mensaje"])
         else:
-            Mensaje().mensaje_informativo("No se elimino el producto")
+            Mensaje().mensaje_informativo(resultado["mensaje"])
     #TERMINA - ELIMINAR PRODUCTO
 
     # FUNCION : MODIFICAR PRODUCTO
