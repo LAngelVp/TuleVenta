@@ -544,8 +544,14 @@ class Registro_personal_inicial(QDialog):
     def ventana_departamentos(self):
         if self.windowDepartamentos is None or not self.windowDepartamentos.isVisible():
             self.windowDepartamentos = DepartamentosController()
-            self.listar_departamentos_signal.connect(self.windowDepartamentos.obtener_departamentos)
-            self.listar_sucursales_en_departamentos_signal.connect(self.windowDepartamentos.listar_sucursales_existentes)
+            self.listar_departamentos_signal.connect(
+                self.windowDepartamentos.obtener_departamentos,
+                Qt.UniqueConnection
+                )
+            self.listar_sucursales_en_departamentos_signal.connect(
+                self.windowDepartamentos.listar_sucursales_existentes,
+                Qt.UniqueConnection
+                )
             self.windowDepartamentos.signal_departamento_agregado.connect(
                 self.listar_departamentos,
                 Qt.UniqueConnection

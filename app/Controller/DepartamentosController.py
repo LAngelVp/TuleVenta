@@ -464,19 +464,37 @@ class DepartamentosController(QDialog):
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
             
     def listar_sucursales_del_sistema_query(self, session):
-        sucursales, estado = SucursalesModel(session).obtener_todo()
-        return sucursales, estado
+        try:
+            sucursales, estado = SucursalesModel(session).obtener_todo()
+            if not estado:
+                return {
+                    "exito":estado,
+                    "mensaje":f"No se logro obtener las sucursales del sistema",
+                    "data":[]
+                }
+            return {
+                "exito":estado,
+                "mensaje":f"Se encontraron {len(sucursales)}",
+                "data":sucursales
+            }  
+        except Exception as e: 
+            return {
+                "exito":False,
+                "mensaje":f"Ocurrio un problema {e}",
+                "data": []
+            }
     
-    def lista_sucursales_del_sistema(self, sucursales, estado):
+    def lista_sucursales_del_sistema(self, resultado):
         self.sucursales_seleccionadas_existentes.clear()
         sucursales_vinculadas = {}
-        for sucursal in sucursales:
-            if sucursal.id not in sucursales_vinculadas:
-                self.sucursales_seleccionadas_existentes[sucursal.id] = sucursal
-                item = QListWidgetItem(sucursal.nombre_sucursal)
-                item.setIcon(self.iconSucursal)
-                item.setData(Qt.UserRole, sucursal)
-                self.ui.lista_sucursalesexistentes.addItem(item)
+        if resultado["exito"]:
+            for sucursal in resultado["data"]:
+                if sucursal.id not in sucursales_vinculadas:
+                    self.sucursales_seleccionadas_existentes[sucursal.id] = sucursal
+                    item = QListWidgetItem(sucursal.nombre_sucursal)
+                    item.setIcon(self.iconSucursal)
+                    item.setData(Qt.UserRole, sucursal)
+                    self.ui.lista_sucursalesexistentes.addItem(item)
         
     def obtener_departamentos(self):
         self.ui.lista_departamentosexistentes.clear()
@@ -514,14 +532,14 @@ class DepartamentosController(QDialog):
             else:
                 return {
                     'exito': estado,
-                    'mensaje': f'Ocurrio un error en la operación: {departamentos}',
-                    'data': None
+                    'mensaje': f'No se encontraron departamentos',
+                    'data': []
                 }
         except Exception as e:
             return {
                 'exito': False,
                 'mensaje': f'Ocurrio un error en la operación: {e}',
-                'data': None
+                'data': []
             }
         
     def listar_puestos_asignados(self, puestos):
@@ -542,8 +560,8 @@ class DepartamentosController(QDialog):
             self.ui.lista_puestosasignados.clear()
     
     def listar_departamentos(self, resultado):
-        Mensaje().mensaje_informativo(resultado['mensaje'])
         if resultado['exito']:
+            Mensaje().mensaje_informativo(resultado['mensaje'])
             departamentos = resultado['data']
             self.ui.lista_puestosasignados.clear()
             self.ui.lista_departamentosexistentes.clear()

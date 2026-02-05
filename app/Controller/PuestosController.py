@@ -484,17 +484,16 @@ class PuestosController(QDialog):
                     'mensaje': f'Se encontraron {len(puestos)} puestos',
                     'data': puestos
                 }
-            else:
-                return {
-                    'exito': estado,
-                    'mensaje': f'Ocurrio un error en la operación: {puestos}',
-                    'data': None
-                }
+            return {
+                'exito': estado,
+                'mensaje': f'No se encontraron puestos',
+                'data': []
+            }
         except Exception as e:
             return {
                 'exito': False,
                 'mensaje': f'Ocurrio un error en la operación: {e}',
-                'data': None
+                'data': []
             }
 
     def __configurar_tabla_puestos(self):
@@ -532,11 +531,11 @@ class PuestosController(QDialog):
         if self.ui.tabla_listapuestos is None:
             Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
             return
-        Mensaje().mensaje_informativo(resultado['mensaje'])
         if not resultado['exito'] or not resultado['data']:
             Mensaje().mensaje_informativo("No hay puestos para mostrar")
             self.modelo_tabla_puestos.clear()
             return
+        Mensaje().mensaje_informativo(resultado['mensaje'])
         self.modelo_tabla_puestos.update_data(resultado['data'], reset=True)
 
     def obtener_id_elemento_tabla_puestos(self, current):
