@@ -4,7 +4,6 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import QPixmap
 from PySide6.QtGui import QRegularExpressionValidator
 from ..Source.iconos_rc import *
-# from .Source.img import *
 from ..Source.ibootstrap_rc import *
 from .FuncionesAuxiliares import *
 from ..DataBase.conexionBD import Conexion_base_datos
@@ -162,16 +161,53 @@ class Registro_personal_inicial(QDialog):
     def eliminar_credenciales(self):
         id_empleado = self.id_empleado
         if id_empleado is not None:
-            self.manejadorModal.mostrar_modal(self)
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                with session.begin():
-                    credenciales = EmpleadosModel(session).eliminar_credenciales(id_empleado)
-                    self.manejadorModal.cerrar_modal()
-                    if credenciales:
-                        Mensaje().mensaje_informativo("Se elimino el usuario del empleado.")
-                    else:
-                        Mensaje().mensaje_alerta("No se pudo eliminar el usuario del empleado. Por que no tiene uno asignado")
+            respuesta = Mensaje().mensaje_pregunta("Quieres eliminar las credenciales")
+            if respuesta == QMessageBox.Yes:
+                try:
+                    self.manejadorModal.mostrar_modal(self)
+                    WorkerDB.cleanup_owner_workers("elminarCredencialesUsuario_thread")
+                    self.id_hilo_elminarCredencialesUsuario_thread = WorkerDB.create_managed_worker(owner_id="elminarCredencialesUsuario_thread")
+                    self.consultor_elminarCredencialesUsuario_thread = WorkerDB.get_managed_worker(self.id_hilo_elminarCredencialesUsuario_thread)
+                    if not self.consultor_elminarCredencialesUsuario_thread:
+                        raise Exception("No se logro obtener el worker gestionado al agregar")
+                    WorkerDB.connect_managed_signals(
+                        worker_id=self.id_hilo_elminarCredencialesUsuario_thread,
+                        resultado_callback=self.mostrar_status_hilo,
+                        error_callback= self.mostrar_error_hilo,
+                        terminado_callback=self.manejadorModal.cerrar_modal
+                    )
+                    self.consultor_elminarCredencialesUsuario_thread.ejecutar(
+                            funcion=self.eliminar_credenciales_usuario_query,
+                            id_empleado = id_empleado
+                            )
+                except Exception as e:
+                    if hasattr(self, 'id_hilo_elminarCredencialesUsuario_thread'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_elminarCredencialesUsuario_thread)
+                    Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+
+    def eliminar_credenciales_usuario_query(self, session, id_empleado):
+        try:
+            credencial, estado = EmpleadosModel(session).eliminar_credenciales(id_empleado)
+            if estado:
+                session.commit()
+                return {
+                    "exito":estado,
+                    "mensaje": f"Credenciales eliminadas",
+                    "data":None
+                }
+            session.rollback()
+            return {
+                "exito":estado,
+                "mensaje": f"No se lograron eliminar las credenciales",
+                "data":None
+            }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito":False,
+                "mensaje": f"Ocurrio un error al eliminar las credenciales: {e}",
+                "data":None
+            }
     
     def actualizar_credenciales(self):
         print(self.empleado_existente.usuario.id)
@@ -1208,3 +1244,9 @@ class Registro_personal_inicial(QDialog):
             
         # Permitir otras teclas
         super().keyPressEvent(event)
+
+    def mostrar_status_hilo(self, respuesta):
+        Mensaje().mensaje_informativo(respuesta["mensaje"])
+        
+    def mostrar_error_hilo(self, error):
+        Mensaje().mensaje_alerta(error)
