@@ -58,12 +58,14 @@ class RolesModel:
                 rol_creado = Roles(nombre = self.rol_propietario['nombre'].upper(),
                                 descripcion = self.rol_propietario['descripcion'].upper(),
                                 )
-                permiso = PermisosModel(self.session).buscar_por_nombre(self.rol_propietario['permisos'].upper())
-                if permiso:
+                permiso, estadoPermiso = PermisosModel(self.session).buscar_por_nombre(self.rol_propietario['permisos'].upper())
+                if estadoPermiso:
                     rol_creado.permisos.append(permiso)
                 self.session.add(rol_creado)
+            self.session.flush()
+            return True
         except Exception as e:
-            pass
+            return False
 
     def crear_Rol(self, nombre, descripcion = None, permisos=None):
         rol_existente = self.session.query(Roles).filter_by(nombre=nombre).first()

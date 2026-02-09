@@ -49,16 +49,15 @@ class EmpleadosModel:
             num_exterior=num_exterior,
             direccion_adicional=direccion_adicional,
             activo=activo,
-            foto=foto,
+            foto_empleado=foto,
             puesto_id=puesto_id,
             usuario_id=usuario_id,
             departamento_id=departamento_id,
             sucursal_id=sucursal_id
         )
         
-        # Agregar a la sesión, pero no hacer commit aquí
         self.session.add(nuevo_empleado)
-        self.session.flush()  # Generar el ID sin hacer commit
+        self.session.flush()
         return nuevo_empleado, True
         
     def obtener_empleados_detallados(self):
@@ -197,7 +196,7 @@ class EmpleadosModel:
             empleado.num_interior = num_interior
             empleado.num_exterior = num_exterior
             empleado.direccion_adicional = direccion_adicional
-            empleado.foto = foto
+            empleado.foto_empleado = foto
             empleado.puesto_id = puesto_id
             empleado.departamento_id = departamento_id
             empleado.sucursal_id = sucursal_id
@@ -207,17 +206,14 @@ class EmpleadosModel:
             self.session.rollback()
             return None, False
         
-    def eliminar_credenciales(self, id):
-        empleado = self.session.query(Empleados).filter(Empleados.id == id).first()
-        if empleado is not None:
-            if empleado.usuario is not None:
-                usuario = UsuarioModel(self.session).eliminar(empleado.usuario_id)
-            else:
-                return None, False
-            
-            empleado.usuario_id = None
-            return None, True
-        return None, False
+    def eliminar_credenciales(self, empleado):
+        if not empleado or not empleado.usuario:
+            return False
+        try:
+            UsuarioModel(self.session).eliminar(empleado.usuario)
+            return True
+        except:
+            return False
         
     def obtener_empleado_detallado_porId(self, id_empleado):
         try:

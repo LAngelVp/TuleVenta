@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_REGISTRO_EMPLEADO.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -397,9 +397,10 @@ class Ui_RegistroAdministrador(object):
 "	max-width: 180px;\n"
 "	height: 180px;\n"
 "	width: 180px;\n"
-"background-color: #F5F5F5;\n"
-"border: 1px solid #1f3a5f;\n"
+"	background-color: #F5F5F5;\n"
+"	image: url(:/Icons/Bootstrap/image-alt.svg);\n"
 "}\n"
+"\n"
 "[objectName^=\"fecha_\"]{\n"
 "	color: #1d1c1c;\n"
 "border: none;\n"
@@ -424,10 +425,10 @@ class Ui_RegistroAdministrador(object):
 "width: 17%;\n"
 "height: 17%;\n"
 "padding-left:5px;\n"
-"padding-right:5px;\n"
+"padding-"
+                        "right:5px;\n"
 "}\n"
-"*[ob"
-                        "jectName^=\"fecha_\"]::focus{\n"
+"*[objectName^=\"fecha_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName*=\"tiempo_\"]{\n"
@@ -518,7 +519,7 @@ class Ui_RegistroAdministrador(object):
         self.contenedor_scrollArea.setWidgetResizable(True)
         self.contenedor_scroll = QWidget()
         self.contenedor_scroll.setObjectName(u"contenedor_scroll")
-        self.contenedor_scroll.setGeometry(QRect(-349, 0, 1198, 625))
+        self.contenedor_scroll.setGeometry(QRect(-351, 0, 1198, 634))
         self.gridLayout_11 = QGridLayout(self.contenedor_scroll)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -638,9 +639,11 @@ class Ui_RegistroAdministrador(object):
 
         self.foto_usuario = QLabel(self.contenedor_datosderecha)
         self.foto_usuario.setObjectName(u"foto_usuario")
-        self.foto_usuario.setMinimumSize(QSize(182, 182))
+        self.foto_usuario.setMinimumSize(QSize(180, 180))
         self.foto_usuario.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.foto_usuario.setFrameShadow(QFrame.Shadow.Sunken)
         self.foto_usuario.setScaledContents(False)
+        self.foto_usuario.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.gridLayout_3.addWidget(self.foto_usuario, 0, 0, 1, 1)
 
@@ -1127,12 +1130,6 @@ class Ui_RegistroAdministrador(object):
         self.fecha_fechadespido.setDisplayFormat(QCoreApplication.translate("RegistroAdministrador", u"dd/MM/yyyy", None))
         self.etiqueta_puesto.setText(QCoreApplication.translate("RegistroAdministrador", u"Puesto", None))
         self.Button_nuevasucursal.setText("")
-        self.foto_usuario.setText(QCoreApplication.translate("RegistroAdministrador", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>\n"
-"<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>", None))
         self.etiqueta_departamento.setText(QCoreApplication.translate("RegistroAdministrador", u"Departamento", None))
         self.Button_eliminarfoto.setText(QCoreApplication.translate("RegistroAdministrador", u"Eliminar foto", None))
         self.etiquetaTitulo_agregarpersona.setText(QCoreApplication.translate("RegistroAdministrador", u"REGISTRO DE PERSONAL", None))

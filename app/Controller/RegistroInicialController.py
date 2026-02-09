@@ -18,14 +18,11 @@ from ..Model.DepartamentosModel import DepartamentosModel
 from ..Model.SucursalesModel import SucursalesModel
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
-
 from .ControlSucursalesController import SucursalesController
 from .DepartamentosController import DepartamentosController
 from .PuestosController import PuestosController
-
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import *
-
 import traceback
 
 class Registro_personal_inicial(QDialog):
@@ -45,10 +42,9 @@ class Registro_personal_inicial(QDialog):
         self.parentesco_contacto = ['BISABUELO/A', 'ABUELO/A', 'MADRE', 'PADRE', 'TIO/A', 'ESPOSO/A', 'NIETO/A', 'HIJO/A', 'HERMANO/A', 'SOBRINO/A', 'PRIMO/A', 'CUÑADO/A' 'SUEGRO/A', 'YERNO', 'NUERA', 'OTRO']
         self.generos = ["MASCULINO","FEMENINO", "NO BINARIO", "TRANSEXUAL", "INTERGÉNERO", "AGÉNERO", "OTRO"]
         self.drag_start_position = None
-        self.file_name = '' # ALMACENAMOS LA FOTO
+        self.file_name = ''
         self.windowDepartamentos = None
         self.windowPuestos = None
-        # self.sucursales = SucursalesController()
         self.windowSucursales = None
         self.lista_puestos = []
         self.variable_primer_registro = False
@@ -56,15 +52,12 @@ class Registro_personal_inicial(QDialog):
         self._ventanaCerradaRegistro = False
         self.cargando = None
         self.consultor = None
+        self.manejadorModal = ModalManager()
+        # ====================== INICIALIZACION DE LA VENTANA ========================
         super().__init__(parent)
-        # comment: variables globales:
-        
-        # comment: inicializacion de la ventana
         self.ui = Ui_RegistroAdministrador()
         self.ui.setupUi(self)
-
-        #// edicion de la ventana:
-        self.setWindowTitle("Formulario del perosonal")
+        self.setWindowTitle("Formulario del personal")
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.ui.contenedor_credencialesusuario.hide()
@@ -84,15 +77,12 @@ class Registro_personal_inicial(QDialog):
         self.ui.btc_minimizar.hide()
         self.ui.btc_maximizar.hide()
         self.ui.txt_nombre.setFocus()
-#// mostrar ventana en el centro de la pantalla:
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        
-# señales: acciones de los botones
+        # ====================== BOTONES ========================
         self.ui.btc_cerrar.clicked.connect(self.close)
         self.ui.Button_cancelar.clicked.connect(self.close)
-        self.ui.foto_usuario.mousePressEvent = self.cargar_imagen
         self.ui.btc_maximizar.clicked.connect(self.maximizar)
         self.ui.Button_nuevasucursal.clicked.connect(self.agregar_sucursal)
         self.ui.Button_aceptar.clicked.connect(self.agregar_nuevo_empleado)
@@ -105,8 +95,8 @@ class Registro_personal_inicial(QDialog):
         self.ui.Button_eliminar_credenciales.clicked.connect(self.eliminar_credenciales)
         self.ui.Button_actualizar.clicked.connect(self.actualizar_empleado)
         self.ui.Button_agregarUsuario.clicked.connect(self.agregar_usuario)
-#// agregar elementos:
-        
+        self.ui.Button_eliminarfoto.clicked.connect(self.eliminar_foto)
+        # ====================== LLENAR LISTA DESPLEGANBLE ====================
         self.ui.cajaOpciones_nivelacademico.addItems(self.niveles_academicos)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_nivelacademico)
         self.ui.cajaOpciones_estadocvil.addItems(self.estados_civiles)
@@ -116,11 +106,7 @@ class Registro_personal_inicial(QDialog):
         self.ui.cajaOpciones_genero.addItems(self.generos)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_genero)
         
-#// variables globales:
-        
-        
-#funciones principales:
-        self.manejadorModal = ModalManager()
+        # ====================== INICIALIZACION DE FUNCIONES ========================
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.ingresar_validaciones()
         self.listar_grupo_permisos_rol()
@@ -128,12 +114,15 @@ class Registro_personal_inicial(QDialog):
         self.listar_puestos()
         self.obtener_sucursales()
 
-# señales y slots:
+        # ============================ SEÑALES Y SLOTS ============================
         self.CAMBIO_DE_ESTADO_CONTRATACION.connect(self.mostrar_estatus_empleado)
+        self.ui.foto_usuario.mousePressEvent = self.cargar_imagen
         
+        # ====================== COMPROBAR SI SE PASO UN EMPLEADO ========================
         if empleado is not None:
             self.cargar_datos_empleado()
-    
+
+    # ====================== FUNCIONES DE LA VENTANA ========================
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCerradaRegistro:
@@ -144,8 +133,6 @@ class Registro_personal_inicial(QDialog):
         self.VENTANA_REGISTRO_CERRADA.emit()
         event.accept()
         
-# FUNCIONES GENERALES:
-    #// VENTANA DE SUCURSAL:
     def permiso_actualizar_credenciales(self):
         if self.ui.opcion_actualizar_datoscredenciales.isChecked():
             self.ui.txt_usuario_iniciosesion.setEnabled(True)
@@ -159,59 +146,58 @@ class Registro_personal_inicial(QDialog):
             self.ui.Button_eliminar_credenciales.setEnabled(False)
             
     def eliminar_credenciales(self):
-        id_empleado = self.id_empleado
-        if id_empleado is not None:
-            respuesta = Mensaje().mensaje_pregunta("Quieres eliminar las credenciales")
+        empleado = self.empleado_existente
+        if empleado:
+            respuesta = Mensaje().mensaje_pregunta("¿Quieres eliminar las credenciales del empleado?")
             if respuesta == QMessageBox.Yes:
                 try:
-                    self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("elminarCredencialesUsuario_thread")
-                    self.id_hilo_elminarCredencialesUsuario_thread = WorkerDB.create_managed_worker(owner_id="elminarCredencialesUsuario_thread")
-                    self.consultor_elminarCredencialesUsuario_thread = WorkerDB.get_managed_worker(self.id_hilo_elminarCredencialesUsuario_thread)
-                    if not self.consultor_elminarCredencialesUsuario_thread:
-                        raise Exception("No se logro obtener el worker gestionado al agregar")
+                    self.manejadorModal.mostrar_modal()
+                    WorkerDB.cleanup_owner_workers("eliminar_credenciales_usuario")
+                    self.id_hilo_eliminar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id="eliminar_credenciales_usuario")
+                    self.consultor_eliminar_credenciales = WorkerDB.get_managed_worker(self.id_hilo_eliminar_credenciales_usuario)
+                    if not self.consultor_eliminar_credenciales:
+                        raise Exception("No se pudo obtener el worker gestionado")
                     WorkerDB.connect_managed_signals(
-                        worker_id=self.id_hilo_elminarCredencialesUsuario_thread,
-                        resultado_callback=self.mostrar_status_hilo,
+                        worker_id=self.id_hilo_eliminar_credenciales_usuario,
+                        resultado_callback=self.mostrar_estado_usuario_eliminado,
                         error_callback= self.mostrar_error_hilo,
                         terminado_callback=self.manejadorModal.cerrar_modal
                     )
-                    self.consultor_elminarCredencialesUsuario_thread.ejecutar(
-                            funcion=self.eliminar_credenciales_usuario_query,
-                            id_empleado = id_empleado
-                            )
+                    self.consultor_eliminar_credenciales.ejecutar(
+                        funcion=self.eliminar_credenciales_query,
+                        empleado_eliminar = empleado
+                        )
                 except Exception as e:
-                    if hasattr(self, 'id_hilo_elminarCredencialesUsuario_thread'):
-                        WorkerDB.cleanup_managed_worker(self.id_hilo_elminarCredencialesUsuario_thread)
-                    Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+                    if hasattr(self, 'id_hilo_eliminar_credenciales_usuario'):
+                        WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_credenciales_usuario)
+                    Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
-    def eliminar_credenciales_usuario_query(self, session, id_empleado):
+    def eliminar_credenciales_query(self, session, empleado_eliminar):
         try:
-            credencial, estado = EmpleadosModel(session).eliminar_credenciales(id_empleado)
-            if estado:
-                session.commit()
+            estado = EmpleadosModel(session).eliminar_credenciales(empleado_eliminar)
+            if not estado:
+                session.rollback()
                 return {
-                    "exito":estado,
-                    "mensaje": f"Credenciales eliminadas",
-                    "data":None
+                    "exito": estado,
+                    "mensaje": "No se pudo eliminar el usuario del empleado. Por que no tiene uno asignado",
+                    "resultado":None
                 }
-            session.rollback()
+            session.commit()
             return {
-                "exito":estado,
-                "mensaje": f"No se lograron eliminar las credenciales",
-                "data":None
+                "exito": estado,
+                "mensaje": "Se elimino el usuario del empleado.",
+                "resultado":None
             }
         except Exception as e:
             session.rollback()
             return {
-                "exito":False,
-                "mensaje": f"Ocurrio un error al eliminar las credenciales: {e}",
-                "data":None
+                "exito": estado,
+                "mensaje": f"Error al eliminar las credenciales: {str(e)}",
+                "resultado":None
             }
     
     def actualizar_credenciales(self):
-        print(self.empleado_existente.usuario.id)
-        id_usuario = self.empleado_existente.usuario
+        id_usuario = self.empleado_existente.usuario.id
         usuario = self.ui.txt_usuario_iniciosesion.text()
         password = self.ui.txt_contrasenia_usuario_iniciosesion.text()
         fecha_actualizacion = datetime.now().date()
@@ -230,14 +216,14 @@ class Registro_personal_inicial(QDialog):
                     raise Exception("No se pudo obtener el worker gestionado")
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_credenciales_usuario,
-                    resultado_callback=self.mostrar_estado_hilo,
+                    resultado_callback=self.mostrar_estado_usuario_actualizado,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_actualizar_credenciales.ejecutar(
                     funcion=self.actualizar_credenciales_query,
                     empleado = self.empleado_existente,
-                    usuario= id_usuario,
+                    id_usuario= id_usuario,
                     nuevo_nombre = usuario,
                     nueva_password = password,
                     fecha_actualizacion = fecha_actualizacion,
@@ -248,10 +234,10 @@ class Registro_personal_inicial(QDialog):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
     
-    def actualizar_credenciales_query(self, session, empleado, usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
+    def actualizar_credenciales_query(self, session, empleado, id_usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
         try:
             usuario_actualizado = UsuarioModel(session).actualizar_usuario(
-                        usuario.id , nuevo_nombre, nueva_password, fecha_actualizacion, rol.id
+                        id_usuario , nuevo_nombre, nueva_password, fecha_actualizacion, rol.id
                     )
             if not usuario_actualizado:
                 session.rollback()
@@ -259,20 +245,18 @@ class Registro_personal_inicial(QDialog):
                     "exito": usuario_actualizado,
                     "mensaje" : f"No se logro actualizar el usuario {empleado.nombre}"
                 }
+            session.commit()
+            return {
+                "exito": usuario_actualizado,
+                "mensaje": f"Credenciales actualizadas del usuario {empleado.nombre}"
+            }
         except Exception as e:
-            print(e)
             session.rollback()
             return {
                 "exito": False,
                 "mensaje": f"Ocurrio un error en el sistema. {e}"
             }
             
-        session.commit()
-        return {
-            "exito": usuario_actualizado,
-            "mensaje": f"Credenciales actualizadas del usuario {empleado.nombre}"
-        }
-        
     def alta_empleado(self):
         fecha_actual = datetime.now().date().strftime("%Y/%m/%d")
         if self.empleado_existente is None:
@@ -384,6 +368,7 @@ class Registro_personal_inicial(QDialog):
         if not empleado_seleccionado:
             Mensaje().mensaje_informativo("No se ha seleccionado un empleado de la base de datos")
             return
+        self.empleado_existente = empleado_seleccionado
         self.ui.txt_nombre.setText(empleado_seleccionado.nombre)
         self.ui.txt_apellidop.setText(empleado_seleccionado.apellido_paterno)
         self.ui.txt_apellidom.setText(empleado_seleccionado.apellido_materno)
@@ -408,23 +393,15 @@ class Registro_personal_inicial(QDialog):
         self.ui.txt_ninterior.setText(empleado_seleccionado.num_interior)
         self.ui.txt_nexterior.setText(empleado_seleccionado.num_exterior)
         self.ui.txtlargo_direccion_completa.setPlainText(empleado_seleccionado.direccion_adicional)
-        if empleado_seleccionado.foto is not None and empleado_seleccionado.foto != "":
+        if empleado_seleccionado.foto_empleado is not None and empleado_seleccionado.foto_empleado != "":
             # Si hay foto, cargarla como QPixmap
-            pixmap = QPixmap(empleado_seleccionado.foto).scaled(self.ui.foto_usuario.size())
+            pixmap = QPixmap(empleado_seleccionado.foto_empleado).scaled(self.ui.foto_usuario.size())
             self.ui.foto_usuario.setPixmap(pixmap)
         else:
             # Si no hay foto, establecer el texto HTML
-            self.ui.foto_usuario.setText(QCoreApplication.translate(
-                "RegistroAdministrador", 
-                u"""<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">
-                <html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">
-                p, li { white-space: pre-wrap; }
-                </style></head><body style=\" font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;\">
-                <p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\" /></p>
-                <p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial\">Cargar Imagen</span></p></body></html>""", 
-                None
-            ))
-        self.file_name = empleado_seleccionado.foto
+            self.ui.foto_usuario.clear()
+            
+        self.file_name = empleado_seleccionado.foto_empleado
         
         self.ui.Button_aceptar.hide()
         self.ui.Button_actualizar.show()
@@ -641,7 +618,6 @@ class Registro_personal_inicial(QDialog):
 
     def listar_grupo_permisos_rol(self):
         self.ui.cajaOpciones_rol_usuario.clear()
-        grupo_permiso = None
         try:
             WorkerDB.cleanup_owner_workers("obtener_grupos_thread")
             self.id_hilo_obtener_grupos = WorkerDB.create_managed_worker(owner_id="obtener_grupos_thread")
@@ -662,15 +638,32 @@ class Registro_personal_inicial(QDialog):
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
     
     def obtener_grupos_query(self, session):
-        grupos, estado = RolesModel(session).obtener_todos()
-        return grupos, estado
+        try:
+            grupos, estado = RolesModel(session).obtener_todos()
+            if estado:
+                return {
+                    "exito": True,
+                    "mensaje": "Grupos obtenidos correctamente",
+                    "data": grupos
+                }
+            return {
+                "exito": False,
+                "mensaje": "No se pudo obtener los grupos",
+                "data": []
+            }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f"Ocurrio un error en la operacion.\n{e}",
+                "data": []
+            }
     
-    def listar_grupos_opciones(self, grupos, estado):
+    def listar_grupos_opciones(self, resultado):
         if hasattr(self, 'id_hilo_obtener_grupos'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
-        if estado:
-            for grupo in grupos:
-                self.ui.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo.id)
+            WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
+        if resultado['exito']:
+            for grupo in resultado['data']:
+                self.ui.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo)
             AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_rol_usuario)
 
     def listar_departamentos(self):
@@ -752,7 +745,11 @@ class Registro_personal_inicial(QDialog):
             else:
                 Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
         return
-        
+    
+    def eliminar_foto(self):
+        self.ui.foto_usuario.clear()
+        self.file_name = None 
+
     def ingresar_validaciones(self):
         self.ui.txt_nombre.setMaxLength(60)
         self.ui.txt_apellidop.setMaxLength(60)
@@ -920,8 +917,8 @@ class Registro_personal_inicial(QDialog):
         Mensaje().mensaje_alerta(f"{error}")
         
     def mostrar_estado_usuario(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         if objetoMensaje["exito"]:
+            Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
             self.cerrar()
             self.registro_agregado_signal.emit()
             if self.empleado is None:
@@ -936,28 +933,28 @@ class Registro_personal_inicial(QDialog):
         
     def almacenar_informacion_query(self, session, uso_del_sistema, id_empleado, imagen, nombre_usuario, password_usuario, fecha_creacion, fecha_actualizacion, current_data_rol, datos):
         try:
+            usuario = None
             if uso_del_sistema and id_empleado is None:
-                usuario, status_usuario = UsuarioModel(session).crear_usuario(
+                usuario, estadoUsuario = UsuarioModel(session).crear_usuario(
                     usuario=nombre_usuario,
                     password=password_usuario,
                     fecha_creacion=fecha_creacion,
                     fecha_actualizacion=fecha_actualizacion,
-                    rol_id=current_data_rol
+                    rol_id=current_data_rol.id
                 )
-                if not status_usuario:
+                if not estadoUsuario:
                     return {
                         "exito": False,
-                        "mensaje" : f"El usuario {nombre_usuario} que estas intentando asignar ya existe"
+                        "mensaje" : f"El usuario {nombre_usuario} que estas intentando asignar ya existe",
+                        "data": usuario
                     }
-            else:
-                usuario = None
 
-            empleado, status_empleado = EmpleadosModel(session).crear_empleado(
+            empleado, estadoEmpleado = EmpleadosModel(session).crear_empleado(
                 nombre=datos['nombre'],
                 apellido_paterno=datos['apellido_paterno'],
                 apellido_materno=datos['apellido_materno'],
                 fecha_nacimiento=datos['fecha_nacimiento'],
-                estado_civil=datos['estado_civil'],  # ← no accedes self.ui aquí
+                estado_civil=datos['estado_civil'],
                 genero=datos['genero'],
                 curp=datos['curp'],
                 rfc=datos['rfc'],
@@ -989,32 +986,39 @@ class Registro_personal_inicial(QDialog):
                 sucursal_id=datos['sucursal'].id
             )
 
-            if status_empleado:
+            if estadoEmpleado:
                 session.commit()
                 return {
                         "exito": True,
-                        "mensaje" : f"El registro {datos['nombre']} se registro con exito"
+                        "mensaje" : f"El registro {datos['nombre']} se registro con exito",
+                        "data": empleado
                     }
             else:
+                session.rollback()
                 return  {
                         "exito": False,
-                        "mensaje" : f"No se pudo registrar el empleado."
+                        "mensaje" : f"No se pudo registrar el empleado.",
+                        "data": None
                     }
-
         except Exception as e:
             session.rollback()
-            traceback.print_exc()
             return  {
-                        "exito": False,
-                        "mensaje" : f"Ocurrió un error inesperado: {str(e)}"
-                    }
+                    "exito": False,
+                    "mensaje" : f"Ocurrió un error inesperado: {str(e)}",
+                    "data": None
+                }
 
     def mostrar_estado_usuario_actualizado(self, objetoMensaje):
         if objetoMensaje["exito"]:
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
             self.cerrar()
             self.registro_agregado_signal.emit()
-        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+
+    def mostrar_estado_usuario_eliminado(self, objetoMensaje):
+        if objetoMensaje["exito"]:
+            Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+            self.cerrar()
+            self.registro_agregado_signal.emit()
 
     def actualizar_empleado(self):
         id_empleado = self.empleado_existente.id if self.empleado_existente else None
@@ -1112,7 +1116,6 @@ class Registro_personal_inicial(QDialog):
             }
             
     def agregar_usuario(self):
-        print(self.empleado_existente.id)
         if not self.empleado_existente:
             Mensaje().mensaje_alerta("No se encuentra vinculado el empleado a la session de base de datos")
             return
@@ -1143,8 +1146,9 @@ class Registro_personal_inicial(QDialog):
             
             # ✅ Ejecutar
             self.consultor_agregar_usuario.ejecutar(
-                funcion=self.almacenar_informacion_query,
-                usuario = usuario,
+                funcion=self.agregar_usuario_query,
+                empleado = self.empleado_existente,
+                nombre_usuario = usuario,
                 password = password,
                 fecha_actual = fecha_actual,
                 fecha_actualizacion = fecha_actual,
@@ -1157,35 +1161,43 @@ class Registro_personal_inicial(QDialog):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_usuario)
             Mensaje.mensaje_alerta(f"Error al iniciar el proceso: {e}")
             
-    def agregar_usuario_query(self, session, nombre_usuario, password, fecha_actual, rol):
+    def agregar_usuario_query(self, session, empleado, nombre_usuario, password, fecha_actual, fecha_actualizacion, rol):
         try:
             usuario, estado = UsuarioModel(session).crear_usuario(
-                                            usuario = usuario,
+                                            usuario = nombre_usuario,
                                             password = password,
                                             fecha_creacion = fecha_actual,
-                                            fecha_actualizacion = fecha_actual,
-                                            rol_id = rol)
+                                            fecha_actualizacion = fecha_actualizacion,
+                                            rol_id = rol.id)
             if not estado:
                 session.rollback()
                 return {
                     "exito": estado,
-                    "mensaje": f"El usuario {nombre_usuario}, ya esta registrado en el sistema."
+                    "mensaje": f"No se logro agregar el usuario",
+                    "data": None
                 }
+            estado_asignacion = UsuarioModel(session).asignar_usuario_empleado(empleado = empleado, usuario = usuario)
+            if not estado_asignacion:
+                session.rollback()
+                return {
+                    "exito": estado_asignacion,
+                    "mensaje": f"No se logro asignar el usuario al empleado",
+                    "data": None
+                }
+            session.commit()
+            return {
+                "exito": estado_asignacion,
+                "mensaje" : f"El usuario {nombre_usuario} a sido agregado con exito",
+                "data": usuario
+            }
         except Exception as e:
             session.rollback()
             return {
                     "exito": False,
-                    "mensaje": f"Ocurrio un problema con el sistema al agregar el usuario"
+                    "mensaje": f"Ocurrio un problema con el sistema al agregar el usuario",
+                    "data": None
                 }
             
-        self.empleado_existente.usuario_id = usuario.id
-        session.add(self.empleado_existente)
-        session.commit()
-        return {
-            "exito": estado,
-            "mensaje" : f"El usuario {usuario.nombre} a sido agregado con exito"
-        }
-        
     def abrir_inicio(self):
         if self.variable_primer_registro:
             from app.Controller.InicioDeSesionController import Login  # Mover la importación aquí

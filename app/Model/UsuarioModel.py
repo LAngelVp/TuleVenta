@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import select
-from .BaseDatosModel import Usuarios, Roles
+from .BaseDatosModel import Usuarios, Roles, Empleados
 from ..Controller.CodificarPasswordController import *
 from datetime import datetime
 class UsuarioModel:
@@ -10,28 +10,11 @@ class UsuarioModel:
         self.session = session
 
     def crear_usuario(self, usuario, password, fecha_creacion, fecha_actualizacion = None, rol_id=None):
-        # Hash de la contraseña
-        contraseña_hasheada = EncriptarPasswordConrtoller(password).hashear_password()
-        
-        # Verificar si el usuario ya existe
         usuario_existente = self.session.query(Usuarios).filter_by(usuario=usuario).first()
         if usuario_existente:
             return usuario_existente, False
-            # return self.actualizar_usuario(usuario_existente.id, usuario, password, fecha_actualizacion, rol_id)
-
-        # Crear el nuevo usuario
+        contraseña_hasheada = EncriptarPasswordConrtoller(password).hashear_password()
         nuevo_usuario = Usuarios(usuario=usuario, contraseña=contraseña_hasheada, fecha_creacion = fecha_creacion, fecha_actualizacion  = fecha_actualizacion, rol_id = rol_id)
-
-
-        # Si se especificó un rol, asociarlo
-        if rol_id:
-            rol = self.session.query(Roles).filter_by(id=rol_id).first()
-            if rol:
-                nuevo_usuario.rol = rol
-            else:
-                return None, False
-        
-        # Agregar el usuario a la sesión, pero no hacer commit aquí
         try:
             self.session.add(nuevo_usuario)
             self.session.flush()
@@ -46,36 +29,25 @@ class UsuarioModel:
         return None, False
     
     def actualizar_usuario(self, id, nuevo_usuario, nuevo_password, fecha_actualizacion, nuevo_rol_id = None):
-        # Aquí puedes actualizar los atributos del usuario según los parámetros que quieras cambiar
-        if id:
-            usuario = self.session.get(Usuarios, id)
-            if usuario:
-                # Actualizar el nombre de usuario si se proporciona un nuevo nombre
-                if nuevo_usuario:
-                    usuario.usuario = nuevo_usuario  # Actualizamos el nombre de usuario
-
-                # Si se proporciona una nueva contraseña, actualizamos la contraseña
-                if nuevo_password:
-                    nueva_contraseña_hash = EncriptarPasswordConrtoller(nuevo_password).hashear_password()  # Hasheamos la nueva contraseña
-                    usuario.contraseña = nueva_contraseña_hash  # Actualizamos la contraseña
-
-                # Actualizar la fecha de actualización
-                usuario.fecha_actualizacion = fecha_actualizacion
-
-                # Si se proporciona un nuevo rol, lo actualizamos
-                if nuevo_rol_id:
-                    rol = self.session.get(Roles, nuevo_rol_id)
-                    if rol:
-                        usuario.rol = rol  # Actualizamos el rol
-                    else:
-                        return False
-                return True
+        if not id:
             return False
-        else:
-            return False
-
-    def eliminar(self, id):
         usuario = self.session.get(Usuarios, id)
+        if not usuario:
+            return False
+        try:
+            if nuevo_usuario:
+                usuario.usuario = nuevo_usuario
+            if nuevo_password:
+                usuario.contraseña = EncriptarPasswordConrtoller(nuevo_password).hashear_password()
+            if nuevo_rol_id is not None:
+                usuario.rol_id = nuevo_rol_id
+            usuario.fecha_actualizacion = fecha_actualizacion or datetime.now()
+            self.session.flush()
+            return True
+        except Exception as e:
+            return False
+
+    def eliminar(self, usuario):
         if usuario:
             self.session.delete(usuario)
             return True
@@ -89,3 +61,18 @@ class UsuarioModel:
         if data:
             return data, True
         return None, False
+
+    def asignar_usuario_empleado(self, empleado, usuario):
+        if not empleado or not usuario:
+            return False
+        try:
+            stmt = (
+                update(Empleados)
+                .where(Empleados.id == empleado.id)
+                .values(usuario_id=usuario.id)
+            )
+            self.session.execute(stmt)
+            self.session.flush()
+            return True
+        except Exception as e:
+            return False

@@ -182,99 +182,8 @@ class Empleados(Base):
     departamento = relationship(
         "Departamentos", back_populates="empleados", lazy="joined"
     )
-    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
-    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
-    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
-    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
-    estado:Mapped[str] = mapped_column(String(100), nullable=True)
-    pais:Mapped[str] = mapped_column(String(100), nullable=True)
-    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
-    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
-    contacto_emergencia:Mapped[str] = mapped_column(String(10))
-    parentesco_contacto:Mapped[str] = mapped_column(String(20))
-    calles:Mapped[str] = mapped_column(String(100), nullable=True)
-    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
-    colonia:Mapped[str] = mapped_column(String(100))
-    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
-    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
-    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
-    puesto_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Puestos.id", ondelete='SET NULL'),
-        nullable=True
-    )
-    puesto = relationship("Puestos", back_populates="empleados")
-    departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Departamentos.id", ondelete='SET NULL'),
-        nullable=True
-    )
-    departamento = relationship(
-        "Departamentos", back_populates="empleados", lazy="joined"
-    )
-    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
-    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
-    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
-    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
-    estado:Mapped[str] = mapped_column(String(100), nullable=True)
-    pais:Mapped[str] = mapped_column(String(100), nullable=True)
-    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
-    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
-    contacto_emergencia:Mapped[str] = mapped_column(String(10))
-    parentesco_contacto:Mapped[str] = mapped_column(String(20))
-    calles:Mapped[str] = mapped_column(String(100), nullable=True)
-    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
-    colonia:Mapped[str] = mapped_column(String(100))
-    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
-    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
-    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
-    puesto_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Puestos.id", ondelete='SET NULL'),
-        nullable=True
-    )
-    puesto = relationship("Puestos", back_populates="empleados")
-    departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Departamentos.id", ondelete='SET NULL'),
-        nullable=True
-    )
-    departamento = relationship(
-        "Departamentos", back_populates="empleados", lazy="joined"
-    )
-    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
-    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
-    ciudad:Mapped[str] = mapped_column(String(100), nullable=True)
-    codigo_postal:Mapped[str] = mapped_column(String(5), nullable=True)
-    estado:Mapped[str] = mapped_column(String(100), nullable=True)
-    pais:Mapped[str] = mapped_column(String(100), nullable=True)
-    numero_telefonico:Mapped[str] = mapped_column(String(10), nullable=True)
-    nombre_contacto:Mapped[str] = mapped_column(String(100), nullable=True)
-    estado_civil:Mapped[str] = mapped_column(String(20))
-    curp:Mapped[str] = mapped_column(String(18), unique=True)
-    rfc:Mapped[str] = mapped_column(String(13), unique=True)
-    nivel_academico:Mapped[str] = mapped_column(String(100))
-    carrera:Mapped[str] = mapped_column(String(150))
-    correo_electronico:Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
-    numero_seguro_social:Mapped[str] = mapped_column(String(13), unique=True)
-    fecha_contratacion:Mapped[datetime] = mapped_column(Date)
-    fecha_despido:Mapped[datetime] = mapped_column(Date, nullable=True)
-    contacto_emergencia:Mapped[str] = mapped_column(String(10))
-    parentesco_contacto:Mapped[str] = mapped_column(String(20))
-    calles:Mapped[str] = mapped_column(String(100), nullable=True)
-    avenidas:Mapped[str] = mapped_column(String(100), nullable=True)
-    colonia:Mapped[str] = mapped_column(String(100))
-    num_interior:Mapped[str] = mapped_column(String(10), nullable=True)
-    num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
-    direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
-    activo:Mapped[bool] = mapped_column(Boolean, default=True)
-    foto:Mapped[str] = mapped_column(Text, nullable=True)
-    puesto_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Puestos.id", ondelete='SET NULL'),
-        nullable=True
-    )
-    puesto = relationship("Puestos", back_populates="empleados", lazy="joined")
+    activo:Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    foto_empleado:Mapped[str] = mapped_column(Text, nullable=True)
     usuario_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Usuarios.id", ondelete='SET NULL'),
@@ -283,12 +192,6 @@ class Empleados(Base):
     usuario = relationship("Usuarios", back_populates="empleado")
     ventas = relationship("Ventas", back_populates="empleado")
     turnos = relationship("Turnos", back_populates="empleado")
-    departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
-        ForeignKey("Departamentos.id", ondelete='RESTRICT'),
-        nullable=True
-    )
-    departamento = relationship("Departamentos", back_populates="empleados", lazy="joined")
     sucursal_id:Mapped[int] = mapped_column(
         BigInteger, 
         ForeignKey("Sucursales.id", ondelete='RESTRICT'),
