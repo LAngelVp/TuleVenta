@@ -18,11 +18,12 @@ class SucursalesController(QDialog):
     signal_sucursal_agregada = Signal()
     def __init__(self, parent = None, cabecera = True):
         super().__init__(parent)
-        
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaSucursales = False
         self.idSucursal = None
         self.sucursales = None
         self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
+        self.manejadorModal = ModalManager()
         
         self.windowSucursales = Ui_Nueva_sucursal()
         self.windowSucursales.setupUi(self)
@@ -35,20 +36,8 @@ class SucursalesController(QDialog):
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         
-        #// LIMITE CARACTERES
-        self.windowSucursales.txt_nombre.setMaxLength(50)
-        self.windowSucursales.txt_codigopostal.setMaxLength(5)
-        self.windowSucursales.txt_ciudad.setMaxLength(50)
-        self.windowSucursales.txt_estado.setMaxLength(50)
-        self.windowSucursales.txt_pais.setMaxLength(50)
-        self.windowSucursales.txt_ntelefono.setMaxLength(10)
-        self.windowSucursales.txt_razonsocial.setMaxLength(300)
-        self.windowSucursales.txt_rfcsucursal.setMaxLength(13)
-        #// Validaciones
-        self.windowSucursales.txt_codigopostal.setValidator(Validaciones().get_int_validator)
-        self.windowSucursales.txt_ntelefono.setValidator(Validaciones().get_int_validator)
-        self.windowSucursales.txt_rfcsucursal.setValidator(Validaciones().get_rfc_validator)
         
+        # ======================== BOTONES ========================
         self.windowSucursales.btn_btn_agregar.clicked.connect(self.agregar)
         self.windowSucursales.lista_sucursales.itemClicked.connect(self.obtenerId)
         self.windowSucursales.btn_btn_limpiar.clicked.connect(self.limpiar)
@@ -57,13 +46,32 @@ class SucursalesController(QDialog):
         self.windowSucursales.btn_cerrar_encabezado.clicked.connect(self.close)
         self.windowSucursales.btn_RefrescarTabla.clicked.connect(self.obtener_sucursales)
         self.windowSucursales.btn_btn_buscar_sucursal.clicked.connect(self.buscar_sucursal)
+
         
-        #funciones:
-        self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.ingresarValidaciones()
         
         if cabecera is False:
             self.windowSucursales.contenedor_encabezado.hide()
+
+    def ingresarValidaciones(self):
+        # =============== VALIDACIONES ================
+        self.windowSucursales.txt_codigopostal.setMaxLength(5)
+        self.windowSucursales.txt_ntelefono.setMaxLength(10)
+        self.windowSucursales.txt_rfcsucursal.setMaxLength(13)
+        self.windowSucursales.txt_nombre.setMaxLength(50)
+        self.windowSucursales.txt_ciudad.setMaxLength(50)
+        self.windowSucursales.txt_estado.setMaxLength(50)
+        self.windowSucursales.txt_pais.setMaxLength(50)
+        self.windowSucursales.txt_razonsocial.setMaxLength(300)
+        self.windowSucursales.txt_codigopostal.setValidator(Validaciones().get_int_validator(self.windowSucursales.txt_codigopostal))
+        self.windowSucursales.txt_ntelefono.setValidator(Validaciones().get_int_validator(self.windowSucursales.txt_ntelefono))
+        self.windowSucursales.txt_rfcsucursal.setValidator(Validaciones().get_rfc_validator(self.windowSucursales.txt_rfcsucursal))
+        self.windowSucursales.txt_nombre.setValidator(Validaciones().get_text_validator(self.windowSucursales.txt_nombre))
+        self.windowSucursales.txt_ciudad.setValidator(Validaciones().get_text_validator(self.windowSucursales.txt_ciudad))
+        self.windowSucursales.txt_estado.setValidator(Validaciones().get_text_validator(self.windowSucursales.txt_estado))
+        self.windowSucursales.txt_pais.setValidator(Validaciones().get_text_validator(self.windowSucursales.txt_pais))
+        self.windowSucursales.txt_razonsocial.setValidator(Validaciones().get_text_validator(self.windowSucursales.txt_razonsocial))
 
     def showEvent(self, event):
         super().showEvent(event)

@@ -89,9 +89,9 @@ class Control_proveedores(QWidget):
         self.WindowSupplier.txt_telefonorepresentante.setMaxLength(10)
         self.WindowSupplier.txt_correorepresentante.setMaxLength(100)
         self.WindowSupplier.txt_puestorepresentante.setMaxLength(100)
-        self.WindowSupplier.txt_telefono.setValidator(Validaciones().get_phone_validator)
-        self.WindowSupplier.txt_codigopostal.setValidator(Validaciones().get_int_validator)
-        self.WindowSupplier.txt_telefonorepresentante.setValidator(Validaciones().get_phone_validator)
+        self.WindowSupplier.txt_telefono.setValidator(Validaciones().get_phone_validator(self.WindowSupplier.txt_telefono))
+        self.WindowSupplier.txt_codigopostal.setValidator(Validaciones().get_int_validator(self.WindowSupplier.txt_codigopostal))
+        self.WindowSupplier.txt_telefonorepresentante.setValidator(Validaciones().get_phone_validator(self.WindowSupplier.txt_telefonorepresentante))
         
     def ventana_cerrada_productos_proveedor(self):
         self.ventana_productos_precios = None

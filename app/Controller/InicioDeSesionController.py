@@ -46,8 +46,8 @@ class Login(QWidget):
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         
-        self.ui.txt_User.setValidator(Validaciones().get_text_validator)
-        self.ui.txt_Password.setValidator(Validaciones().get_password_validator)
+        self.ui.txt_User.setValidator(Validaciones().get_text_validator(self.ui.txt_User))
+        self.ui.txt_Password.setValidator(Validaciones().get_password_validator(self.ui.txt_Password))
         
         self.ui.txt_User.setFocus()
 

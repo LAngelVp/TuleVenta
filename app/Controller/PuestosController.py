@@ -20,6 +20,7 @@ class PuestosController(QDialog):
     VENTANA_PUESTOS_CERRADA = Signal()
     def __init__(self, parent = None, cabecera = True):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaPuestos = False
         self.ui = Ui_Formulario_puestos()
         self.ui.setupUi(self)
@@ -74,10 +75,17 @@ class PuestosController(QDialog):
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.__configurar_tabla_puestos()
 
+        self.insertarValidaciones()
+
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
 
     # ================ FUNCIONES ===================
+    def insertarValidaciones(self):
+        self.ui.txt_nombrepuesto.setMaxLength(100)
+        self.ui.txt_nombrepuesto.setValidator(Validaciones().get_text_validator(self.ui.txt_nombrepuesto))
+        self.ui.txt_buscarpuesto.setValidator(Validaciones().get_text_validator(self.ui.txt_buscarpuesto))
+
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentradaPuestos:

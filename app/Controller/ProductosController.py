@@ -1303,8 +1303,8 @@ class Productos(QWidget):
         self.WindowProducts = Ui_Control_Productos()
         self.WindowProducts.setupUi(self)
         
-        self.WindowProducts.txt_buscar.setValidator(Validaciones().get_text_validator)
-        self.WindowProducts.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator)
+        self.WindowProducts.txt_buscar.setValidator(Validaciones().get_text_validator(self.WindowProducts.txt_buscar))
+        self.WindowProducts.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator(self.WindowProducts.txt_buscar_productoUPC))
         self.WindowProducts.btn_btn_adminProductos_agregar.clicked.connect(self.agregar_producto)
         self.WindowProducts.btn_btn_adminProductos_eliminar.clicked.connect(self.eliminar_producto)
         self.WindowProducts.btn_btn_adminProductos_modificar.clicked.connect(self.modificar_producto)

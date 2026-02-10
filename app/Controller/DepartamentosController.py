@@ -16,9 +16,10 @@ class DepartamentosController(QDialog):
     VENTANA_DEPARTAMENTOS_CERRADA = Signal()
     def __init__(self, parent = None, cabecera = True):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaDepartamentos = False
-        self.ui = Ui_Control_departamentos()
-        self.ui.setupUi(self)
+        self.WindowRegistroDepartamentos = Ui_Control_departamentos()
+        self.WindowRegistroDepartamentos.setupUi(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
@@ -26,20 +27,20 @@ class DepartamentosController(QDialog):
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         #// LIMITE CARACTERES
-        self.ui.txt_nombredepartamento.setMaxLength(70)
+        
 
         #botones:
-        self.ui.btn_btn_guardar.clicked.connect(self.guardar)
-        self.ui.btn_btn_eliminar.clicked.connect(self.eliminar)
-        self.ui.btn_btn_actualizar.clicked.connect(self.actualizar)
-        self.ui.btn_btn_vincular.clicked.connect(self.vincular_sucursal)
-        self.ui.btn_btn_desvincular.clicked.connect(self.desvincular_sucursal)
-        self.ui.btn_btn_limpiar.clicked.connect(self.limpiar)
-        self.ui.btn_cerrar.clicked.connect(self.close)
+        self.WindowRegistroDepartamentos.btn_btn_guardar.clicked.connect(self.guardar)
+        self.WindowRegistroDepartamentos.btn_btn_eliminar.clicked.connect(self.eliminar)
+        self.WindowRegistroDepartamentos.btn_btn_actualizar.clicked.connect(self.actualizar)
+        self.WindowRegistroDepartamentos.btn_btn_vincular.clicked.connect(self.vincular_sucursal)
+        self.WindowRegistroDepartamentos.btn_btn_desvincular.clicked.connect(self.desvincular_sucursal)
+        self.WindowRegistroDepartamentos.btn_btn_limpiar.clicked.connect(self.limpiar)
+        self.WindowRegistroDepartamentos.btn_cerrar.clicked.connect(self.close)
 
         # señales:
-        self.ui.lista_departamentosexistentes.itemClicked.connect(self.obtenerId)
-        self.ui.btn_btn_buscar_departamento.clicked.connect(self.buscar)
+        self.WindowRegistroDepartamentos.lista_departamentosexistentes.itemClicked.connect(self.obtenerId)
+        self.WindowRegistroDepartamentos.btn_btn_buscar_departamento.clicked.connect(self.buscar)
         
 
         #// variables globales:
@@ -53,11 +54,17 @@ class DepartamentosController(QDialog):
         
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.insertarValidaciones()
 
         if cabecera is False:
-            self.ui.contenedor_encabezado.hide()
+            self.WindowRegistroDepartamentos.contenedor_encabezado.hide()
         
-        #// funciones iniciales:
+    def insertarValidaciones(self):
+        self.WindowRegistroDepartamentos.txt_nombredepartamento.setMaxLength(70)
+        self.WindowRegistroDepartamentos.txt_nombredepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txt_nombredepartamento))
+        self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento))
+        self.WindowRegistroDepartamentos.txt_buscardepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txt_buscardepartamento))
+
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -71,7 +78,7 @@ class DepartamentosController(QDialog):
     
     #funciones:
     def buscar(self):
-        nombre = self.ui.txt_buscardepartamento.text().strip()
+        nombre = self.WindowRegistroDepartamentos.txt_buscardepartamento.text().strip()
         if not nombre:
             Mensaje().mensaje_informativo("No haz ingresado lo que quieres buscar")
             return
@@ -129,7 +136,7 @@ class DepartamentosController(QDialog):
                 campo.clear()
 
         self.id_departamento = None
-        self.ui.lista_sucursalesvinculadas.clear()
+        self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.clear()
         self.sucursales_seleccionadas.clear()
         self.sucursales_seleccionadas_existentes.clear()
 
@@ -138,8 +145,8 @@ class DepartamentosController(QDialog):
 
     def campos(self):
         return{
-            'nombre': self.ui.txt_nombredepartamento,
-            'descripcion': self.ui.txtlargo_descripciondepartamento
+            'nombre': self.WindowRegistroDepartamentos.txt_nombredepartamento,
+            'descripcion': self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento
         }
     
     def obtener_contenido_campos(self):
@@ -355,7 +362,7 @@ class DepartamentosController(QDialog):
             }, False
 
     def vincular_sucursal(self):
-        sucursal_seleccionada = self.ui.lista_sucursalesexistentes.currentItem()
+        sucursal_seleccionada = self.WindowRegistroDepartamentos.lista_sucursalesexistentes.currentItem()
         if sucursal_seleccionada:
             sucursal = sucursal_seleccionada.data(Qt.UserRole)
             
@@ -378,9 +385,9 @@ class DepartamentosController(QDialog):
                 elemento_vinculado.setData(Qt.UserRole, sucursal)  # Guardar objeto completo
 
                 # Mover entre listas
-                self.ui.lista_sucursalesvinculadas.addItem(elemento_vinculado)
-                self.ui.lista_sucursalesexistentes.takeItem(
-                    self.ui.lista_sucursalesexistentes.row(sucursal_seleccionada)
+                self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.addItem(elemento_vinculado)
+                self.WindowRegistroDepartamentos.lista_sucursalesexistentes.takeItem(
+                    self.WindowRegistroDepartamentos.lista_sucursalesexistentes.row(sucursal_seleccionada)
                 )
                 
                 print(f"✅ Sucursal vinculada: {sucursal.nombre_sucursal} (ID: {sucursal.id})")
@@ -390,7 +397,7 @@ class DepartamentosController(QDialog):
             Mensaje().mensaje_informativo("Selecciona una sucursal para vincular")
 
     def desvincular_sucursal(self):
-        sucursal_seleccionada = self.ui.lista_sucursalesvinculadas.currentItem()
+        sucursal_seleccionada = self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.currentItem()
         if sucursal_seleccionada:
             # Obtener el objeto sucursal completo, no solo el ID
             sucursal = sucursal_seleccionada.data(Qt.UserRole)
@@ -415,9 +422,9 @@ class DepartamentosController(QDialog):
                 item_devolver.setIcon(self.iconSucursal)
                 item_devolver.setData(Qt.UserRole, sucursal)  # Guardar objeto completo
 
-                self.ui.lista_sucursalesexistentes.addItem(item_devolver)
-                self.ui.lista_sucursalesvinculadas.takeItem(
-                    self.ui.lista_sucursalesvinculadas.row(sucursal_seleccionada)
+                self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item_devolver)
+                self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.takeItem(
+                    self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.row(sucursal_seleccionada)
                 )
 
                 print(f"❌ Sucursal desvinculada: {sucursal.nombre_sucursal} (ID: {sucursal.id})")
@@ -427,7 +434,7 @@ class DepartamentosController(QDialog):
             Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal para desvincular.")
 
     def actualizar_sucursales_existentes(self):
-        self.ui.lista_sucursalesexistentes.clear()
+        self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
         # Filtrar sucursales no vinculadas
         sucursales_vinculadas_ids = self.sucursales_seleccionadas
         
@@ -438,10 +445,10 @@ class DepartamentosController(QDialog):
             item = QListWidgetItem(sucursal.nombre_sucursal)
             item.setIcon(self.iconSucursal)
             item.setData(Qt.UserRole, sucursal.id)
-            self.ui.lista_sucursalesexistentes.addItem(item)
+            self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item)
 
     def listar_sucursales_existentes(self):
-        self.ui.lista_sucursalesexistentes.clear()
+        self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
         try:
             WorkerDB.cleanup_owner_workers("listar_sucursales_del_sistema_thread")
             self.id_hilo_listar_sucursales_del_sistema = WorkerDB.create_managed_worker(owner_id="listar_sucursales_del_sistema_thread")
@@ -494,10 +501,10 @@ class DepartamentosController(QDialog):
                     item = QListWidgetItem(sucursal.nombre_sucursal)
                     item.setIcon(self.iconSucursal)
                     item.setData(Qt.UserRole, sucursal)
-                    self.ui.lista_sucursalesexistentes.addItem(item)
+                    self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item)
         
     def obtener_departamentos(self):
-        self.ui.lista_departamentosexistentes.clear()
+        self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
@@ -544,7 +551,7 @@ class DepartamentosController(QDialog):
         
     def listar_puestos_asignados(self, puestos):
         if puestos is not None:
-            self.ui.lista_puestosasignados.clear()
+            self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
             for  puesto in puestos:
                 # Crear un QListWidgetItem
                 item = QListWidgetItem(puesto.nombre)
@@ -555,16 +562,16 @@ class DepartamentosController(QDialog):
                 
                 # Agregar el ítem a la lista
                 
-                self.ui.lista_puestosasignados.addItem(item)
+                self.WindowRegistroDepartamentos.lista_puestosasignados.addItem(item)
         else:
-            self.ui.lista_puestosasignados.clear()
+            self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
     
     def listar_departamentos(self, resultado):
         if resultado['exito']:
             Mensaje().mensaje_informativo(resultado['mensaje'])
             departamentos = resultado['data']
-            self.ui.lista_puestosasignados.clear()
-            self.ui.lista_departamentosexistentes.clear()
+            self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
+            self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
             for  departamento in departamentos:
                 # Crear un QListWidgetItem
                 item = QListWidgetItem(departamento.nombre)
@@ -574,18 +581,18 @@ class DepartamentosController(QDialog):
                 item.setData(Qt.UserRole, departamento)
                 
                 # Agregar el ítem a la lista
-                self.ui.lista_departamentosexistentes.addItem(item)
+                self.WindowRegistroDepartamentos.lista_departamentosexistentes.addItem(item)
         else:
             Mensaje().mensaje_informativo(resultado['mensaje'])
-            self.ui.lista_departamentosexistentes.clear()
+            self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
 
     def obtenerId(self, item):
         try:
             self.objetoDepartamento = item.data(Qt.UserRole)
             
             # Limpiar interfaces
-            self.ui.lista_sucursalesvinculadas.clear()
-            self.ui.lista_sucursalesexistentes.clear()
+            self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.clear()
+            self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
             
             # Reinicializar diccionarios (pero mantener las existentes del sistema)
             self.sucursales_seleccionadas = {}  # Solo limpiar vinculadas
@@ -595,8 +602,8 @@ class DepartamentosController(QDialog):
                 return
 
             # 1. CARGAR DATOS BÁSICOS DEL DEPARTAMENTO
-            self.ui.txt_nombredepartamento.setText(self.objetoDepartamento.nombre or "")
-            self.ui.txtlargo_descripciondepartamento.setPlainText(self.objetoDepartamento.descripcion or "")
+            self.WindowRegistroDepartamentos.txt_nombredepartamento.setText(self.objetoDepartamento.nombre or "")
+            self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento.setPlainText(self.objetoDepartamento.descripcion or "")
 
             # 2. CARGAR SUCURSALES VINCULADAS (las que ya tiene el departamento)
             self._cargar_sucursales_vinculadas(self.objetoDepartamento.sucursales)
@@ -639,17 +646,17 @@ class DepartamentosController(QDialog):
     def _mostrar_sucursales_vinculadas_en_lista(self):
         """Mostrar las sucursales vinculadas en la lista visual"""
         try:
-            self.ui.lista_sucursalesvinculadas.clear()
+            self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.clear()
             
             for sucursal_id, sucursal in self.sucursales_seleccionadas.items():
                 item = QListWidgetItem(sucursal.nombre_sucursal)
                 item.setIcon(self.iconSucursal)
                 item.setData(Qt.UserRole, sucursal)
-                self.ui.lista_sucursalesvinculadas.addItem(item)
+                self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.addItem(item)
                 
                 print(f"🔗 Mostrando sucursal vinculada: {sucursal.nombre_sucursal} (ID: {sucursal_id})")
             
-            print(f"✅ Sucursales vinculadas mostradas: {self.ui.lista_sucursalesvinculadas.count()}")
+            print(f"✅ Sucursales vinculadas mostradas: {self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.count()}")
             
         except Exception as e:
             print(f"Error al mostrar sucursales vinculadas: {e}")
@@ -684,18 +691,18 @@ class DepartamentosController(QDialog):
         """Mostrar las sucursales del diccionario existentes en la lista visual"""
         try:
             # Limpiar lista visual
-            self.ui.lista_sucursalesexistentes.clear()
+            self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
             
             # Recorrer el diccionario filtrado y mostrar cada sucursal
             for sucursal_id, sucursal in self.sucursales_seleccionadas_existentes.items():
                 item = QListWidgetItem(sucursal.nombre_sucursal)
                 item.setIcon(self.iconSucursal)
                 item.setData(Qt.UserRole, sucursal)
-                self.ui.lista_sucursalesexistentes.addItem(item)
+                self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item)
                 
                 print(f"🏢 Mostrando sucursal disponible: {sucursal.nombre_sucursal} (ID: {sucursal_id})")
             
-            print(f"✅ Sucursales mostradas en lista existentes: {self.ui.lista_sucursalesexistentes.count()}")
+            print(f"✅ Sucursales mostradas en lista existentes: {self.WindowRegistroDepartamentos.lista_sucursalesexistentes.count()}")
             
         except Exception as e:
             print(f"Error al mostrar sucursales en lista: {e}")

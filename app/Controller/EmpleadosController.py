@@ -41,7 +41,7 @@ class EmpleadosController(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 # ================ VALIDACIONES ================
-        self.WindowEmployee.txt_idempleado.setValidator(Validaciones().get_int_validator)
+        self.WindowEmployee.txt_idempleado.setValidator(Validaciones().get_int_validator(self.WindowEmployee.txt_idempleado))
         
 # ================ SEÑALES DE LOS BOTONES ===================
         self.WindowEmployee.btn_btn_agregar.clicked.connect(self.agregar_empleado)

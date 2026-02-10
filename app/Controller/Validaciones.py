@@ -12,30 +12,30 @@ class Validaciones:
         self.REGEX_PASSWORD = QRegularExpression("^[a-zA-ZñÑ0-9!@#$%^&*()\\-+=\\{\\}\\[\\]:;\"'<>,.?/|~`]+$")
         self.REGEX_WEB = QRegularExpression("^(https?://)?(www\\.)?([a-zA-Z0-9-]+(\\.[a-zA-Z]{2,})+)(/[^\\s]*)?$")
         self.VALIDATOR_INT = QRegularExpression("^[0-9]+")
-    @property
-    def get_text_validator(self):
-        return QRegularExpressionValidator(self.REGEX_TEXT)
-    @property
-    def get_curp_validator(self):
-        return QRegularExpressionValidator(self.REGEX_CURP)
-    @property
-    def get_rfc_validator(self):
-        return QRegularExpressionValidator(self.REGEX_RFC)
-    @property
-    def get_email_validator(self):
-        return QRegularExpressionValidator(self.REGEX_EMAIL)
-    @property
-    def get_nss_validator(self):
-        return QRegularExpressionValidator(self.REGEX_NSS)
-    @property
-    def get_phone_validator(self):
-        return QRegularExpressionValidator(self.REGEX_PHONE)
-    @property
-    def get_int_validator(self):
-        return QRegularExpressionValidator(self.VALIDATOR_INT)
-    @property
-    def get_password_validator(self):
-        return QRegularExpressionValidator(self.REGEX_PASSWORD)
-    @property
-    def get_web_validator(self):
-        return QRegularExpressionValidator(self.REGEX_WEB)
+    
+    def get_text_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_TEXT, parent)
+    
+    def get_curp_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_CURP, parent)
+    
+    def get_rfc_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_RFC, parent)
+    
+    def get_email_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_EMAIL, parent)
+    
+    def get_nss_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_NSS, parent)
+    
+    def get_phone_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_PHONE, parent)
+    
+    def get_int_validator(self, parent):
+        return QRegularExpressionValidator(self.VALIDATOR_INT, parent)
+    
+    def get_password_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_PASSWORD, parent)
+    
+    def get_web_validator(self, parent):
+        return QRegularExpressionValidator(self.REGEX_WEB, parent)
