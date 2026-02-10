@@ -22,6 +22,7 @@ class SucursalesController(QDialog):
         self._ventanaCentradaSucursales = False
         self.idSucursal = None
         self.sucursales = None
+        self.listaHilosSucursales = []
         self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         self.manejadorModal = ModalManager()
         
@@ -80,6 +81,9 @@ class SucursalesController(QDialog):
             self._ventanaCentradaSucursales = True
     
     def closeEvent(self, event):
+        for hilos in self.listaHilosSucursales:
+            WorkerDB.cleanup_managed_worker(hilos)
+        self.listaHilosSucursales.clear()
         self.VENTANA_SUCURSALES_CERRADA.emit() 
         super().closeEvent(event)
 
@@ -96,6 +100,7 @@ class SucursalesController(QDialog):
             self.consultor_buscar_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_buscar_sucursal)
             if not self.consultor_buscar_sucursal_hilo:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
+            self.listaHilosSucursales.append(self.id_hilo_buscar_sucursal)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_sucursal,
                 resultado_callback=self.listar_sucursales,
@@ -183,6 +188,7 @@ class SucursalesController(QDialog):
             self.consultor_agregar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_agregar_sucursal)
             if not self.consultor_agregar_sucursal:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
+            self.listaHilosSucursales.append(self.id_hilo_agregar_sucursal)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_sucursal,
                 resultado_callback=self.mostrar_resultado_hilo,
@@ -236,6 +242,7 @@ class SucursalesController(QDialog):
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
             if not self.consultor_obtener_sucursal_hilo:
                 raise Exception("No se pudo obtener el worker gestionado al obtener la sucursal")
+            self.listaHilosSucursales.append(self.id_hilo_obtener_sucursales)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_sucursales,
                 resultado_callback=self.listar_sucursales,
@@ -333,6 +340,7 @@ class SucursalesController(QDialog):
                 self.consultor_eliminar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_eliminar_sucursal)
                 if not self.consultor_eliminar_sucursal:
                     raise Exception("No se logro hacer la operación para eliminar el registro")
+                self.listaHilosSucursales.append(self.id_hilo_eliminar_sucursal)
                 
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_sucursal,
@@ -379,6 +387,7 @@ class SucursalesController(QDialog):
                     self.consultor_actualizar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_actualizar_sucursal)
                     if not self.consultor_actualizar_sucursal:
                         raise Exception("No se pudo obtener el worker gestionado al actualizar")
+                    self.listaHilosSucursales.append(self.id_hilo_actualizar_sucursal)
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_actualizar_sucursal,
                         resultado_callback=self.mostrar_resultado_hilo,

@@ -3,7 +3,6 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from datetime import  datetime, timedelta
-
 from app.Model.AbstractTableModel import ComprobarModelosTablas
 from ..DataBase.conexionBD import Conexion_base_datos
 from .FuncionesAuxiliares import *
@@ -60,6 +59,7 @@ class Clientes(QWidget):
         self.clienteSeleccionadoVariable = None
         self.nombre_cliente_fisico = None
         self.nombre_cliente_moral = None
+        self.lista_hilos_clientes = []
         self._translate = QtCore.QCoreApplication.translate
         self.estadosCivilesClientesFisicos = [
             "SOLTERO/A",
@@ -114,6 +114,12 @@ class Clientes(QWidget):
         self.__configuracion_tabla_clientes_morales()
         self.cargar_estados_civiles()
 # ================= FUNCIONES PRINCIPALES =================
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_clientes:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_clientes.clear()
+        super().hideEvent(event)
+
     def agregar_cliente(self):
         fecha_actual = datetime.now().date()
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
@@ -129,14 +135,14 @@ class Clientes(QWidget):
             try:
                 self.manejadorModal.mostrar_modal()
                 WorkerDB.cleanup_owner_workers("agregar_cliente_fisico_thread")
-                self.id_hilo_agregar_cliente = WorkerDB.create_managed_worker(owner_id="agregar_cliente_fisico_thread")
-                self.consultor_agregar_cliente = WorkerDB.get_managed_worker(self.id_hilo_agregar_cliente)
+                self.id_hilo_agregar_clienteFisico = WorkerDB.create_managed_worker(owner_id="agregar_cliente_fisico_thread")
+                self.consultor_agregar_clienteFisico = WorkerDB.get_managed_worker(self.id_hilo_agregar_clienteFisico)
                 
-                if not self.consultor_agregar_cliente:
+                if not self.consultor_agregar_clienteFisico:
                     raise Exception("No se pudo obtener el worker gestionado")
-                
+                self.lista_hilos_clientes.append(self.id_hilo_agregar_clienteFisico)
                 WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_agregar_cliente,
+                    worker_id=self.id_hilo_agregar_clienteFisico,
                     resultado_callback=self.mostrar_estado_hilo,
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
@@ -179,14 +185,14 @@ class Clientes(QWidget):
                     'foto': foto
                 }
                 
-                self.consultor_agregar_cliente.ejecutar(
+                self.consultor_agregar_clienteFisico.ejecutar(
                     funcion=self.agregar_cliente_fisico_query,
                     datos_cliente=datos_cliente_fisico
                 )
                 
             except Exception as e:
-                if hasattr(self, 'id_hilo_agregar_cliente'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_cliente)
+                if hasattr(self, 'id_hilo_agregar_clienteFisico'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_clienteFisico)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {str(e)}")
 
         elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
@@ -202,14 +208,14 @@ class Clientes(QWidget):
             try:
                 self.manejadorModal.mostrar_modal()
                 WorkerDB.cleanup_owner_workers("agregar_cliente_moral_thread")
-                self.id_hilo_agregar_cliente = WorkerDB.create_managed_worker(owner_id="agregar_cliente_moral_thread")
-                self.consultor_agregar_cliente = WorkerDB.get_managed_worker(self.id_hilo_agregar_cliente)
+                self.id_hilo_agregar_clienteMoral = WorkerDB.create_managed_worker(owner_id="agregar_cliente_moral_thread")
+                self.consultor_agregar_clienteMoral = WorkerDB.get_managed_worker(self.id_hilo_agregar_clienteMoral)
                 
-                if not self.consultor_agregar_cliente:
+                if not self.consultor_agregar_clienteMoral:
                     raise Exception("No se pudo obtener el worker gestionado")
-                
+                self.lista_hilos_clientes.append(self.id_hilo_agregar_clienteMoral)
                 WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_agregar_cliente,
+                    worker_id=self.id_hilo_agregar_clienteMoral,
                     resultado_callback=self.mostrar_estado_hilo,
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
@@ -254,14 +260,14 @@ class Clientes(QWidget):
                     }
                 }
                 
-                self.consultor_agregar_cliente.ejecutar(
+                self.consultor_agregar_clienteMoral.ejecutar(
                     funcion=self.agregar_cliente_moral_query,
                     datos_cliente=datos_cliente_moral
                 )
                 
             except Exception as e:
-                if hasattr(self, 'id_hilo_agregar_cliente'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_cliente)
+                if hasattr(self, 'id_hilo_agregar_clienteMoral'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_clienteMoral)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {str(e)}")
 
     def agregar_cliente_moral_query(self, session, datos_cliente):
@@ -305,7 +311,6 @@ class Clientes(QWidget):
                 
         except Exception as e:
             session.rollback()
-            print(f"💥 Error en agregar_cliente_moral_query: {e}")
             return {
                 "exito": False,
                 "mensaje": f"Error al agregar cliente moral: {str(e)}",
@@ -337,7 +342,7 @@ class Clientes(QWidget):
                 
                 if not self.consultor_actualizar_clientes_vclientes:
                     raise Exception("No se pudo obtener el worker gestionado")
-                
+                self.lista_hilos_clientes.append(self.id_hilo_actualizar_cliente_vclientes)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_cliente_vclientes,
                     resultado_callback=self.mostrar_estado_hilo,
@@ -468,6 +473,7 @@ class Clientes(QWidget):
                 self.consultor_eliminar_cliente_vclientes = WorkerDB.get_managed_worker(self.id_hilo_eliminar_cliente_vclientes)
                 if not self.consultor_eliminar_cliente_vclientes:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
+                self.lista_hilos_clientes.append(self.id_hilo_eliminar_cliente_vclientes)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_cliente_vclientes,
                     resultado_callback=self.mostrar_estado_hilo,
@@ -550,7 +556,7 @@ class Clientes(QWidget):
             self.consultor_obtener_areas_negocio = WorkerDB.get_managed_worker(self.id_hilo_obtener_areas_negocio)
             if not self.consultor_obtener_areas_negocio:
                 raise Exception("No se logro hacer la operación para listar")
-            
+            self.lista_hilos_clientes.append(self.id_hilo_obtener_areas_negocio)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_areas_negocio,
                 resultado_callback=self.listar_areas_negocio,
@@ -606,41 +612,27 @@ class Clientes(QWidget):
         else:
             self.WindowClient.cajaOpciones_categoriaMoral.clear()
         try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="clientes")
-                if estado:
-                    if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
-                        for c in categorias:
-                            self.WindowClient.cajaOpciones_categoriaFisico.addItem(c.nombre, c)
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaFisico)
-                    else:
-                        for c in categorias:
-                            self.WindowClient.cajaOpciones_categoriaMoral.addItem(c.nombre, c)
-                        AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowClient.cajaOpciones_categoriaMoral)
+            WorkerDB.cleanup_owner_workers("obtener_categorias_thread")
+            self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id="obtener_categorias_thread")
+            self.consultor_obtener_categorias_cliente = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_cliente)
+            if not self.consultor_obtener_categorias_cliente:
+                raise Exception("No se logro hacer la operación para listar")
+            self.lista_hilos_clientes.append(self.id_hilo_obtener_categorias_cliente)
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_obtener_categorias_cliente,
+                resultado_callback=self.listar_categorias_clientes,
+                error_callback=self.mostrar_error_hilo
+            )
+            self.consultor_obtener_categorias_cliente.ejecutar(
+                funcion=self.obtener_categorias_clientes,
+                tipo_categoria="clientes"
+            )
         except Exception as e:
-            Mensaje().mensaje_critico(f"No se logro listar las categorias por lo siguiente: {e}")
-            try:
-                WorkerDB.cleanup_owner_workers("obtener_categorias_thread")
-                self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id="obtener_categorias_thread")
-                self.consultor_obtener_categorias_cliente = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_cliente)
-                if not self.consultor_obtener_categorias_cliente:
-                    raise Exception("No se logro hacer la operación para listar")
+            Mensaje().mensaje_critico(f"No se logro listar las areas por lo siguiente: {e}")
                 
-                WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_obtener_categorias_cliente,
-                    resultado_callback=self.listar_categorias_clientes,
-                    error_callback=self.mostrar_error_hilo
-                )
-                self.consultor_obtener_categorias_cliente.ejecutar(
-                    funcion=self.obtener_categorias_clientes
-                )
-            except Exception as e:
-                Mensaje().mensaje_critico(f"No se logro listar las areas por lo siguiente: {e}")
-                
-    def obtener_categorias_clientes(self, session, tipo_categoria):
+    def obtener_categorias_clientes(self, session, tipo_categoria = "clientes"):
         try:
-            categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="clientes")
+            categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria = tipo_categoria)
             if not estado:
                 session.rollback()
                 return {
@@ -917,6 +909,7 @@ class Clientes(QWidget):
                     self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
                     if not self.consultor_clientes_fisicos:
                         raise Exception("No se pudo obtener el worker gestionado")
+                    self.lista_hilos_clientes.append(self.id_hilo_clientes_fisicos)
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_clientes_fisicos,
                         resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
@@ -942,6 +935,7 @@ class Clientes(QWidget):
                 self.consultor_obtener_clientes_paginados_fisicos = WorkerDB.get_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 if not self.consultor_obtener_clientes_paginados_fisicos:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_clientes.append(self.id_hilo_obtener_clientes_paginados_fisicos)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_clientes_paginados_fisicos,
                     resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
@@ -1016,6 +1010,7 @@ class Clientes(QWidget):
                 self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
                 if not self.consultor_clientes_fisicos:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_clientes.append(self.id_hilo_clientes_fisicos)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_clientes_fisicos,
                     resultado_callback=self.mostrar_clientes_resultado_fisicos,
@@ -1115,6 +1110,7 @@ class Clientes(QWidget):
             self.consultor_buscar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             if not self.consultor_buscar_clientes_vclientes:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_clientes.append(self.id_hilo_buscar_clientes_vclientes)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_clientes_vclientes,
                 resultado_callback=self.llenar_tabla_clientes_fisicos,
@@ -1187,6 +1183,7 @@ class Clientes(QWidget):
             self.consultor_buscar_clientes_morales_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
             if not self.consultor_buscar_clientes_morales_vclientes:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_clientes.append(self.id_hilo_buscar_clientes_morales_vclientes)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_clientes_morales_vclientes,
                 resultado_callback=self.llenar_tabla_clientes_morales,
@@ -1478,6 +1475,7 @@ class Clientes(QWidget):
                 self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
                 if not self.consultor_clientes_morales:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_clientes.append(self.id_hilo_clientes_morales)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_clientes_morales,
                     resultado_callback=self.mostrar_clientes_resultado_morales,
@@ -1561,6 +1559,7 @@ class Clientes(QWidget):
                     self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
                     if not self.consultor_clientes_morales:
                         raise Exception("No se pudo obtener el worker gestionado")
+                    self.lista_hilos_clientes.append(self.id_hilo_clientes_morales)
                     WorkerDB.connect_managed_signals(
                         worker_id=self.id_hilo_clientes_morales,
                         resultado_callback=self.agregar_clientes_paginados_tabla_morales,
@@ -1586,6 +1585,7 @@ class Clientes(QWidget):
                 self.consultor_obtener_clientes_paginados_morales = WorkerDB.get_managed_worker(self.id_hilo_obtener_clientes_paginados_morales)
                 if not self.consultor_obtener_clientes_paginados_morales:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_clientes.append(self.id_hilo_obtener_clientes_paginados_morales)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_clientes_paginados_morales,
                     resultado_callback=self.agregar_clientes_paginados_tabla_morales,

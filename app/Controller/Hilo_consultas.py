@@ -79,7 +79,7 @@ class WorkerDBManager:
         if worker_id not in cls._workers:
             return
         
-        worker = cls._workers[worker_id]
+        worker = cls._workers.pop(worker_id)
         
         try:
             # Desconectar todas las señales
@@ -93,9 +93,9 @@ class WorkerDBManager:
                 thread = worker.thread
                 if thread.isRunning():
                     thread.quit()
-                    if not thread.wait(500):
+                    if not thread.wait(50):
                         thread.terminate()
-                        thread.wait(300)
+                        thread.wait(30)
             
             # Eliminar el worker
             try:

@@ -134,6 +134,7 @@ class Registro_personal_inicial(QDialog):
     def closeEvent(self, event):
         for hilo in self.lista_hilos_registroEmpleado:
             WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_registroEmpleado.clear()
         self.empleado_existente = None
         self.VENTANA_REGISTRO_CERRADA.emit()
         event.accept()

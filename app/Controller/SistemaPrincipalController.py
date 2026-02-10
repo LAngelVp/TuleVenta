@@ -78,6 +78,19 @@ class SistemaPrincipal(QWidget):
 
         self.ui.btn_laterales_btn_opciones.clicked.connect(self.mostrar_opciones)
 
+        self.LISTAR_CATEGORIAS_VPROVEEDORES.connect(
+                self.proveedores.mostrar_categorias_proveedor,
+                Qt.UniqueConnection
+                )
+        self.LISTAR_AREAS_VCLIENTES.connect(
+            self.clientes.listar_areas,
+            Qt.UniqueConnection
+            )
+        self.LISTAR_CATEGORIAS_VCLIENTES.connect(
+            self.clientes.listar_categorias,
+            Qt.UniqueConnection
+            )
+
     def mostrar_opciones(self):
         self.opciones = OpcionesSistemaController()
         self.opciones.show()
@@ -101,26 +114,17 @@ class SistemaPrincipal(QWidget):
     def mostrar_empleados(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.empleados:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.empleados)
-            # self.LISTAR_EMPLEADOS_VEMPLEADOS.connect(self.empleados.listar_empleados)
-            self.LISTAR_EMPLEADOS_VEMPLEADOS.emit()
 
     def mostrar_proveedores(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.proveedores:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.proveedores)
-            self.LISTAR_CATEGORIAS_VPROVEEDORES.connect(self.proveedores.mostrar_categorias_proveedor)
-            # self.LIMPIAR_CAMPOS_PROVEEDORES.connect(self.proveedores.limpiar_campos)
             self.LISTAR_CATEGORIAS_VPROVEEDORES.emit()
-        # self.LIMPIAR_CAMPOS_PROVEEDORES.emit()
 
     def mostrar_clientes(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.clientes:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.clientes)
-            self.LISTAR_AREAS_VCLIENTES.connect(self.clientes.listar_areas)
-            self.LISTAR_CATEGORIAS_VCLIENTES.connect(self.clientes.listar_categorias)
-            # self.LISTAR_CLIENTES_VCLIENTES.connect(self.clientes.tabla_listar_clientes)
             self.LISTAR_AREAS_VCLIENTES.emit()
             self.LISTAR_CATEGORIAS_VCLIENTES.emit()
-            # self.LISTAR_CLIENTES_VCLIENTES.emit()
     
     def mostrar_productos(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.productos:

@@ -42,6 +42,7 @@ class Control_proveedores(QWidget):
         self.seleccion_conectada_proveedores = None
         self.categoriasBase = None
         self.ventana_productos_precios = None
+        self.lista_hilos_proveedores = []
         self.manejadorModal = ModalManager()
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_categoria_proveedor = AjustarcajaOpciones()
@@ -70,6 +71,15 @@ class Control_proveedores(QWidget):
         self.__configuracion_tabla_proveedores()
 # ------------------------------------------------------------------------------
 # FUNCIONALIDADES
+    def hideEvent(self, event):
+        print(self.lista_hilos_proveedores)
+        for hilo in self.lista_hilos_proveedores:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_proveedores.clear()
+        print(self.lista_hilos_proveedores)
+        super().hideEvent(event)
+
+    
     def validaciones(self):
         self.WindowSupplier.txt_nombre.setMaxLength(150)
         self.WindowSupplier.txt_pais.setMaxLength(50)
@@ -123,6 +133,7 @@ class Control_proveedores(QWidget):
             self.consultor_categorias_proveedores = WorkerDB.get_managed_worker(self.id_hilo_categorias_proveedores)
             if not self.consultor_categorias_proveedores:
                 raise Exception("No se logro obtener el worker gestionado al agregar")
+            self.lista_hilos_proveedores.append(self.id_hilo_categorias_proveedores)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_categorias_proveedores,
                 resultado_callback=self.listar_categorias_proveedores,
@@ -274,6 +285,7 @@ class Control_proveedores(QWidget):
             self.consultor_agregar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_agregar_proveedor)
             if not self.consultor_agregar_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_proveedores.append(self.id_hilo_agregar_proveedor)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_proveedor,
                 resultado_callback=self.mostrar_estado_hilo,
@@ -358,6 +370,7 @@ class Control_proveedores(QWidget):
             self.consultor_obtener_proveedores = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores)
             if not self.consultor_obtener_proveedores:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_proveedores.append(self.id_hilo_obtener_proveedores)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_proveedores,
                 resultado_callback=self.llenar_tabla_proveedores,
@@ -478,7 +491,7 @@ class Control_proveedores(QWidget):
                 
                 if not self.consultor_actualizar_proveedor:
                     raise Exception("No se pudo obtener el worker gestionado")
-                
+                self.lista_hilos_proveedores.append(self.id_hilo_actualizar_proveedor)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_proveedor,
                     resultado_callback=self.mostrar_estado_hilo,
@@ -623,6 +636,7 @@ class Control_proveedores(QWidget):
             self.consultor_buscar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_buscar_proveedor)
             if not self.consultor_buscar_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_proveedores.append(self.id_hilo_buscar_proveedor)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_proveedor,
                 resultado_callback=self.llenar_tabla_proveedores,
@@ -678,6 +692,7 @@ class Control_proveedores(QWidget):
                 self.consultor_eliminar_proveedor_vproveedor = WorkerDB.get_managed_worker(self.id_hilo_eliminar_proveedor_vproveedor)
                 if not self.consultor_eliminar_proveedor_vproveedor:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
+                self.lista_hilos_proveedores.append(self.id_hilo_eliminar_proveedor_vproveedor)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_proveedor_vproveedor,
                     resultado_callback=self.mostrar_estado_hilo,

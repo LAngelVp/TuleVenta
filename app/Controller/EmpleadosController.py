@@ -37,6 +37,7 @@ class EmpleadosController(QWidget):
         self.cargando = None
         self.consultor = None
         self.empleado_actual = None
+        self.lista_hilos_empleados = []
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
@@ -55,6 +56,14 @@ class EmpleadosController(QWidget):
         self.registro_listar_puestos.connect(Registro_personal_inicial().listar_puestos)
         
 # ========================= FUNCIONES ==================== 
+
+    def hideEvent(self, event):
+        print("hilos eliminados:", self.lista_hilos_empleados)
+        for hilo in self.lista_hilos_empleados:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_empleados.clear()
+        print("Lista:", self.lista_hilos_empleados)
+        super().hideEvent(event)
         
     def agregar_empleado(self):
         if self.ventana_registro is None or self.ventana_registro.isVisible():
@@ -84,6 +93,7 @@ class EmpleadosController(QWidget):
             self.consultor_buscar_empleado = WorkerDB.get_managed_worker(self.id_hilo_buscar_empleado)
             if not self.consultor_buscar_empleado:
                 raise Exception("No se logro realizar la busqueda del empleado")
+            self.lista_hilos_empleados.append(self.id_hilo_buscar_empleado)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_buscar_empleado,
                 resultado_callback=self.llenar_tabla_empleados,
@@ -119,7 +129,7 @@ class EmpleadosController(QWidget):
                 self.consultor_eliminar_empleado = WorkerDB.get_managed_worker(self.id_hilo_eliminar_empleado)
                 if not self.consultor_eliminar_empleado:
                     raise Exception("No se logro hacer la operación para eliminar el registro")
-                
+                self.lista_hilos_empleados.append(self.id_hilo_eliminar_empleado)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_empleado,
                     resultado_callback=self.mensaje_estado_eliminado,
@@ -177,6 +187,7 @@ class EmpleadosController(QWidget):
             self.consultor_listarEmpleados = WorkerDB.get_managed_worker(self.id_hilo_listar_empleados)
             if not self.consultor_listarEmpleados:
                 raise Exception("No se pudo obtener la lista de empleados.")
+            self.lista_hilos_empleados.append(self.id_hilo_listar_empleados)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_listar_empleados,
                 resultado_callback=self.llenar_tabla_empleados,

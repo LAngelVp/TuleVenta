@@ -70,6 +70,7 @@ class PuestosController(QDialog):
         self.id_departamento = None
         self.puesto_actual = None
         self.puestos = None
+        self.lista_hilos_puestos = []
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
@@ -93,6 +94,9 @@ class PuestosController(QDialog):
             self._ventanaCentradaPuestos = True
     
     def closeEvent(self, event):
+        for hilo in self.lista_hilos_puestos:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_puestos.clear()
         self.VENTANA_PUESTOS_CERRADA.emit() 
         event.accept()
         
@@ -108,6 +112,7 @@ class PuestosController(QDialog):
             self.consultor_filtrar_puestos = WorkerDB.get_managed_worker(self.id_hilo_filtrar_puestos)
             if not self.consultor_filtrar_puestos:
                 raise Exception("No se pudo obtener la lista.")
+            self.lista_hilos_puestos.append(self.id_hilo_filtrar_puestos)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_filtrar_puestos,
                 resultado_callback=self.llenar_tabla,
@@ -213,6 +218,7 @@ class PuestosController(QDialog):
             self.consultor_agregar_puesto = WorkerDB.get_managed_worker(self.id_hilo_agregar_puesto)
             if not self.consultor_agregar_puesto:
                 raise Exception("No se logro obtener el worker gestionado al agregar")
+            self.lista_hilos_puestos.append(self.id_hilo_agregar_puesto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_puesto,
                 resultado_callback=self.mostrar_resultado_hilo,
@@ -272,6 +278,7 @@ class PuestosController(QDialog):
                 self.consultor_eliminar_puesto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_puesto)
                 if not self.consultor_eliminar_puesto:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
+                self.lista_hilos_puestos.append(self.id_hilo_eliminar_puesto)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_puesto,
                     resultado_callback=self.mensaje_estado_eliminado,
@@ -339,7 +346,7 @@ class PuestosController(QDialog):
                         self.consultor_actualizar_puesto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_puesto)
                         if not self.consultor_actualizar_puesto:
                             raise Exception("No se logro hacer la operación para actualizar")
-                        
+                        self.lista_hilos_puestos.append(self.id_hilo_actualizar_puesto)
                         WorkerDB.connect_managed_signals(
                             worker_id=self.id_hilo_actualizar_puesto,
                             resultado_callback=self.mostrar_resultado_hilo,
@@ -400,7 +407,7 @@ class PuestosController(QDialog):
             self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
             if not self.consultor_listar_departamentos:
                 raise Exception("No se logro hacer la operación para listar")
-            
+            self.lista_hilos_puestos.append(self.id_hilo_listar_departamentos)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_listar_departamentos,
                 resultado_callback=self.ingresar_departamentos_opciones,
@@ -469,6 +476,7 @@ class PuestosController(QDialog):
             self.consultor_listar_puestos = WorkerDB.get_managed_worker(self.id_hilo_listar_puestos)
             if not self.consultor_listar_puestos:
                 raise Exception("No se pudo obtener la lista.")
+            self.lista_hilos_puestos.append(self.id_hilo_listar_puestos)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_listar_puestos,
                 resultado_callback=self.llenar_tabla,
