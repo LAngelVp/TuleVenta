@@ -40,6 +40,7 @@ class ExistenciasClase(QWidget):
         self.consultor = None
         self.cargando = None
         self.codigo_producto_upc = None
+        self.lista_hilos_existenciasProductos = []
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         # ================== SEÑALES DE BOTONES ===================
@@ -49,7 +50,7 @@ class ExistenciasClase(QWidget):
         # ================== SEÑALES PERSONALIZADAS =================
         self.RECIBIR_PRODUCTO_ID_EXISTENCIA.connect(self.mostrar_datos_en_ui)
 
-    # ========================= FUNCIONES ========================
+    # ======================== FUNCIONES ========================
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentrada:
@@ -57,6 +58,9 @@ class ExistenciasClase(QWidget):
             self._ventanaCentrada = True
     
     def closeEvent(self, event):
+        for hilo in self.lista_hilos_existenciasProductos:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_existenciasProductos.clear()
         self.VENTANA_CERRADA_EXISTENCIA.emit() 
         event.accept()
         
@@ -80,6 +84,7 @@ class ExistenciasClase(QWidget):
                 self.consultor_actualizar_existencia_producto_vexistencia = WorkerDB.get_managed_worker(self.id_hilo_actualizar_existencia_producto_vexistencia)
                 if not self.consultor_actualizar_existencia_producto_vexistencia:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_existenciasProductos.append(self.id_hilo_actualizar_existencia_producto_vexistencia)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_existencia_producto_vexistencia,
                     resultado_callback=self.mensaje_estado_resultado,
@@ -134,7 +139,6 @@ class Admin_productosController(QWidget):
     RECIBIR_PRODUCTO_ACTUALIZAR_ID = Signal(object)
     VENTANA_CERRADA_PRODUCTOS = Signal()
     ClosedWindowAdminProduct = Signal()
-
     PRESENTACIONES_CARGADAS = Signal()
     UNIDADES_MEDIDA_CARGADAS = Signal()
     CATEGORIAS_CARGADAS = Signal()
@@ -181,6 +185,7 @@ class Admin_productosController(QWidget):
         self.unidadesMedidaCargadas = False
         self.categoriasCargadas = False
         self.producto_para_actualizar = None
+        self.lista_hilos_productos = []
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
@@ -276,6 +281,7 @@ class Admin_productosController(QWidget):
             self.consultor_obtener_presentaciones_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_presentaciones_vagregarproducto)
             if not self.consultor_obtener_presentaciones_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
+            self.lista_hilos_productos.append(self.id_hilo_obtener_presentaciones_vagregarproducto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_presentaciones_vagregarproducto,
                 resultado_callback=self.listar_presentaciones_cajaopciones,
@@ -329,6 +335,7 @@ class Admin_productosController(QWidget):
             self.consultor_obtener_unidades_medida_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_unidades_medida_vagregarproducto)
             if not self.consultor_obtener_unidades_medida_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
+            self.lista_hilos_productos.append(self.id_hilo_obtener_unidades_medida_vagregarproducto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_unidades_medida_vagregarproducto,
                 resultado_callback=self.listar_unidades_medida_cajaopciones,
@@ -382,6 +389,7 @@ class Admin_productosController(QWidget):
             self.consultor_obtener_categorias_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_productos_vagregarproducto)
             if not self.consultor_obtener_categorias_producto_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
+            self.lista_hilos_productos.append(self.id_hilo_obtener_categorias_productos_vagregarproducto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_categorias_productos_vagregarproducto,
                 resultado_callback=self.listar_categorias_cajaopciones,
@@ -654,6 +662,7 @@ class Admin_productosController(QWidget):
             self.consultor_agregar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_agregar_producto_vagregarproducto)
             if not self.consultor_agregar_producto_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado de agregar producto.")
+            self.lista_hilos_productos.append(self.id_hilo_agregar_producto_vagregarproducto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_producto_vagregarproducto,
                 resultado_callback=self.productos_agregados_finalizado,
@@ -781,6 +790,7 @@ class Admin_productosController(QWidget):
                 self.consultor_actualizar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
                 if not self.consultor_actualizar_producto_vagregarproducto:
                     raise Exception("No se pudo obtener el resultado de actualizar producto.")
+                self.lista_hilos_productos.append(self.id_hilo_actualizar_producto_vagregarproducto)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_producto_vagregarproducto,
                     resultado_callback=self.mensaje_producto_actualizado,
@@ -1037,6 +1047,7 @@ class Admin_productosController(QWidget):
             self.consultor_obtener_proveedores_vagregarproductos = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores_vagregarproducto)
             if not self.consultor_obtener_proveedores_vagregarproductos:
                 raise Exception("No se pudo obtener el resultado de la consulta de proveedores.")
+            self.lista_hilos_productos.append(self.id_hilo_obtener_proveedores_vagregarproducto)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_proveedores_vagregarproducto,
                 resultado_callback=self.__almacenar_proveedores_del_sistema,
@@ -1263,6 +1274,9 @@ class Admin_productosController(QWidget):
             self._ventanaCentradaProductoExistente = True
 
     def closeEvent(self, event):
+        for hilo in self.lista_hilos_productos:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_productos.clear()
         self.ClosedWindowAdminProduct.emit()
         event.accept()
     
