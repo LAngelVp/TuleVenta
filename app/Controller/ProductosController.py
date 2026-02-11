@@ -1325,7 +1325,6 @@ class Productos(QWidget):
         self.lista_hilos_productos_principal.clear()
         super().hideEvent(event)
 
-
     def  buscar_producto(self):
         nuevo_nombre = self.WindowProducts.txt_buscar.text().strip()
         nuevo_codigo = self.WindowProducts.txt_buscar_productoUPC.text().strip()
@@ -1393,6 +1392,7 @@ class Productos(QWidget):
             "mensaje": "Productos obtenidos correctamente" if estado else "No se encontraron productos",
             "resultado": datos
         }
+    
     def agregar_producto(self):
         if self.AdminProductos is None or not self.AdminProductos.isVisible():
             self.AdminProductos = Admin_productosController(parent=self)
@@ -1749,9 +1749,6 @@ class Productos(QWidget):
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
-    
-    def closeEvent(self, event):
-        event.accept()
     
     def mostrar_error_db(self, error_msg):
         self.WindowProducts.btn_RefrescarTabla.setEnabled(True)

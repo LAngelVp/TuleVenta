@@ -77,7 +77,6 @@ class Control_proveedores(QWidget):
         self.lista_hilos_proveedores.clear()
         super().hideEvent(event)
 
-    
     def validaciones(self):
         self.WindowSupplier.txt_nombre.setMaxLength(150)
         self.WindowSupplier.txt_pais.setMaxLength(50)

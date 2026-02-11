@@ -33,51 +33,47 @@ class Compras(QWidget):
         self.cantidad_final_consulta_compras_pendientes = 100
         self.no_hay_mas_registros_compras_pendientes = False
         self.busqueda_realizada_compras_pendientes = None
+        self.lista_hilos_compras = []
         self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.__configuracionTablaOrdenesDeCompra()
+        self.__configuracionTablaOrdenesDeCompraPendientes()
         self.__configuracionTablaOrdenesDeCompraRealizadas()
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_compras:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_compras.clear()
+        super().hideEvent(event)
+
     def generar_orden_compra_pdf(self):
         if not self.orderSelected:
-            print("Debe seleccionar una orden de compra.")
+            Mensaje().mensaje_alerta("Debe seleccionar una orden de compra.")
             return
-    
         try:
-            # Crear y generar PDF
             pdf_generator = PurchaseOrderPDF(data=self.orderSelected)
             pdf_generator.generar_pdf()
-        
-            # Guardar temporalmente para prueba
             temp_file = pdf_generator.get_temp_file()
-            print(f"PDF guardado temporalmente en: {temp_file}")
-        
-            # Abrir con visor por defecto (para prueba)
             import os
             import platform
-        
             if platform.system() == 'Windows':
                 os.startfile(temp_file)
-            elif platform.system() == 'Darwin':  # macOS
+            elif platform.system() == 'Darwin':
                 os.system(f'open "{temp_file}"')
-            else:  # Linux
+            else:
                 os.system(f'xdg-open "{temp_file}"')
-            
         except Exception as e:
-            print(f"Error: {e}")
+            Mensaje().mensaje_alerta(f"Error al generar PDF: {str(e)}")
 
     def refrescar_tabla_orden_compra(self):
         try:
             self.cantidad_inicial_consulta_compras_pendientes = 0
             self.no_hay_mas_registros_compras_pendientes = False
             self.busqueda_realizada_compras_pendientes = None
-            # self.controlOrdenesDeCompra.txt_codigodelproducto.clear()
-            # self.controlOrdenesDeCompra.txt_nombredelproducto.clear()
             if hasattr(self, 'ultima_carga_cantidad_compras_pendientes'):
                 del self.ultima_carga_cantidad_compras_pendientes
             indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
@@ -86,22 +82,19 @@ class Compras(QWidget):
             elif indicePestañaActual == 1:
                 self.obtener_compras_pendientes_hilo(reset_paginacion_compras_pendientes = True)
         except Exception as e:
-            print(f"error: {e}")
             Mensaje().mensaje_alerta("Error al consultar productos del proveedor.")
 
     def obtener_compras_pendientes_hilo(self, reset_paginacion_compras_pendientes = False):
         try:
             if reset_paginacion_compras_pendientes:
                 self.cantidad_inicial_consulta_compras_pendientes = 0
-                print("DEBUG - Paginación reiniciada")
-                
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_compras_pendientes_thread")
             self.id_obtener_compras_pendientes = WorkerDB.create_managed_worker(owner_id="obtener_compras_pendientes_thread")
             self.consultor_obtener_compras_pendientes = WorkerDB.get_managed_worker(self.id_obtener_compras_pendientes)
             if not self.consultor_obtener_compras_pendientes:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_compras.append(self.id_obtener_compras_pendientes)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_obtener_compras_pendientes,
                 resultado_callback=self.compras_pendientes_tabla_compras,
@@ -158,7 +151,7 @@ class Compras(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras pendientes: {e}")
     
-    def __configuracionTablaOrdenesDeCompra(self):
+    def __configuracionTablaOrdenesDeCompraPendientes(self):
         cabeceras = [
             "ID",
             "PROVEEDOR",  
@@ -184,11 +177,11 @@ class Compras(QWidget):
             editable=False,
             autoAjustarColumnas=True,
             signalPersonalizada=None,
-            signalSeleccion=self.seleccionar_orden_compra,
+            signalSeleccion=self.seleccionar_orden_compra_pendiente,
         )
         return self.modeloTablaOrdenesDeCompraPendientes
 
-    def seleccionar_orden_compra(self, current, previus = None):
+    def seleccionar_orden_compra_pendiente(self, current, previus = None):
         if current.isValid():
             fila = current.row()
             orden_compra = self.modeloTablaOrdenesDeCompraPendientes.get_item(current)
@@ -223,15 +216,26 @@ class Compras(QWidget):
             editable=False,
             autoAjustarColumnas=True,
             signalPersonalizada=None,
-            signalSeleccion=self.seleccionar_orden_compra,
+            signalSeleccion=self.seleccionar_orden_compra_realizada,
         )
         return self.modeloTablaOrdenesDeCompraRealizadas
+
+    def seleccionar_orden_compra_realizada(self, current, previus = None):
+        if current.isValid():
+            fila = current.row()
+            orden_compra = self.modeloTablaOrdenesDeCompraRealizadas.get_item(current)
+            if orden_compra:
+                self.orderSelected = orden_compra
 
     def nueva_orden_compra(self):
         if self.orden_compra is None or not self.orden_compra.isVisible():
             self.orden_compra = Orden_compra(parent = self, usuario = self.usuario)
-            self.orden_compra.VENTANA_CERRADA_NUEVA_COMPRA.connect(self.close)
-            self.orden_compra.show()
+            self.orden_compra.VENTANA_CERRADA_NUEVA_COMPRA.connect(
+                self.ventana_cerrada_nueva_compra,
+                Qt.UniqueConnection
+            )
+            self.orden_compra.setWindowModality(Qt.ApplicationModal)
+            self.orden_compra.exec_()
         else:
             self.orden_compra.raise_()
             self.orden_compra.activateWindow()
@@ -247,7 +251,7 @@ class Compras(QWidget):
             self.consultor_eliminar_orden_compra = WorkerDB.get_managed_worker(self.id_eliminar_orden_compra)
             if not self.consultor_eliminar_orden_compra:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_compras.append(self.id_eliminar_orden_compra)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_eliminar_orden_compra,
                 resultado_callback=self.mostrar_estado_hilo,
@@ -285,14 +289,14 @@ class Compras(QWidget):
         Mensaje().mensaje_alerta(objetoMensaje)
         self.orderSelected = None
     
-    def closeEvent(self, event):
+    def ventana_cerrada_nueva_compra(self):
         self.orden_compra = None
-        event.accept()
 
-class Orden_compra(QWidget):
+class Orden_compra(QDialog):
     VENTANA_CERRADA_NUEVA_COMPRA = Signal()
     def __init__(self, parent = None, usuario = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaNuevaCompra = False
         self.usuario = usuario
         self.proveedores = {}
@@ -302,10 +306,16 @@ class Orden_compra(QWidget):
         self.setConjuntoProductosDelProveedor = set()
         self.setProductoDelProveedor = set()
         self.codigos_agregados = set()
+        self.lista_hilos_crearOrdenCompra = []
         self.ordenCompraUI = Ui_Orden_compra()
         self.ordenCompraUI.setupUi(self)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
         self.ordenCompraUI.btn_btn_agregar.hide()
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        pantalla = self.frameGeometry()
+        pantalla.moveCenter(self.screen().availableGeometry().center())
+        self.move(pantalla.topLeft())
         self.ordenCompraUI.btn_btn_cerrar.clicked.connect(self.close)
         self.ordenCompraUI.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
         self.ordenCompraUI.txt_buscarproducto.setFocus()
@@ -332,7 +342,7 @@ class Orden_compra(QWidget):
             self.consultor_obtener_metodos_pagos = WorkerDB.get_managed_worker(self.id_obtener_metodos_pagos)
             if not self.consultor_obtener_metodos_pagos:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_crearOrdenCompra.append(self.id_obtener_metodos_pagos)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_obtener_metodos_pagos,
                 resultado_callback=self.metodos_pagos_caja_opciones,
@@ -355,11 +365,9 @@ class Orden_compra(QWidget):
             else:
                 return {"data": [], "estado": estado, "mensaje": "Error al consultar metodos de pago"}
         except Exception as e:
-            print(f'Existio un error en la consulta de metodos de pago: {e}')
             return {"data": [], "estado": False, "mensaje": "Error al consultar metodos de pago"}
 
     def metodos_pagos_caja_opciones(self, objetoMensaje):
-        """Muestra la ventana correspondiente cuando el hilo termina"""
         if hasattr(self, 'id_obtener_metodos_pagos'):
             WorkerDB.cleanup_managed_worker(self.id_obtener_metodos_pagos)
         if objetoMensaje["estado"]:
@@ -375,29 +383,24 @@ class Orden_compra(QWidget):
         if self.proveedor is None or len(self.setConjuntoProductosDelProveedor) == 0:
             Mensaje().mensaje_informativo("Debe seleccionar un proveedor y al menos un producto.")
             return
-        """Método específico para procesar la tabla completa"""
         orden_items = []
         modelo = self.modeloTablaProductosOrden
         
         for i in range(modelo.rowCount()):
-            # PASO 1: Obtener el objeto (ProductoProveedor)
             index_producto = modelo.index(i, 0)
             producto_proveedor = modelo.get_item(index_producto)
             
             if not producto_proveedor:
-                continue  # Saltar si no hay objeto
+                continue
             
-            # PASO 2: Obtener la cantidad de la columna 5
             index_cantidad = modelo.index(i, 6)
             cantidad_str = modelo.data(index_cantidad, Qt.DisplayRole)
             
-            # Convertir a float, si hay error usar 1.0
             try:
                 cantidad = float(cantidad_str) if cantidad_str else 1.0
             except:
                 cantidad = 1.0
             
-            # PASO 3: Extraer información del producto
             producto = producto_proveedor.producto
             
             orden_items.append({
@@ -430,6 +433,7 @@ class Orden_compra(QWidget):
             self.consultor_createOrderThread = WorkerDB.get_managed_worker(self.id_hilo_createOrderThread)
             if not self.consultor_createOrderThread:
                 raise Exception("No se pudo obtener el resultado de la creación de la orden de compra.")
+            self.lista_hilos_crearOrdenCompra.append(self.id_hilo_createOrderThread)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_createOrderThread,
                 resultado_callback=self.mostrar_estado_hilo,
@@ -444,7 +448,6 @@ class Orden_compra(QWidget):
         except Exception as e:
             if hasattr(self, 'id_hilo_createOrderThread'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_createOrderThread)
-            print(f"Error al iniciar el proceso: {e}")
 
     def __createOrder_query(self, session, contentData, orden_items):
         try:
@@ -462,7 +465,6 @@ class Orden_compra(QWidget):
             }
         except Exception as e:
             session.rollback()
-            print(f"Error al iniciar el proceso: {e}")
             return {
                 "exito": False,
                 "mensaje": "Error al iniciar el proceso",
@@ -470,7 +472,6 @@ class Orden_compra(QWidget):
             }    
     
     def limpiar_productos_seleccionados(self):
-        """Limpia todos los productos seleccionados"""
         if hasattr(self, 'setConjuntoProductosDelProveedor'):
             self.setConjuntoProductosDelProveedor.clear()
         
@@ -479,8 +480,6 @@ class Orden_compra(QWidget):
         
         if hasattr(self, 'modeloTablaProductosOrden'):
             self.modeloTablaProductosOrden.clear()
-        
-        print("✅ Todos los productos limpiados")
 
     def __buscar_producto_del_proveedor(self):
         codigo_upc = self.ordenCompraUI.txt_buscarproducto.text().strip()
@@ -491,6 +490,7 @@ class Orden_compra(QWidget):
             self.consultor_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_hilo_consultar_productos_del_proveedor)
             if not self.consultor_productos_del_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_crearOrdenCompra.append(self.id_hilo_consultar_productos_del_proveedor)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_consultar_productos_del_proveedor,
                 resultado_callback=self.agregarProductoALConjuntoTabla,
@@ -503,7 +503,6 @@ class Orden_compra(QWidget):
             )
 
     def agregarProductoALConjuntoTabla(self, resultado):
-        """Versión SUPER rápida con set de códigos"""
         if not resultado["exito"]:
             Mensaje().mensaje_alerta(resultado["mensaje"])
             return False
@@ -511,16 +510,13 @@ class Orden_compra(QWidget):
         producto = resultado["data"]
         codigo = producto.producto.codigo_upc
         
-        # VERIFICACIÓN INSTANTÁNEA (O(1))
         if codigo in self.codigos_agregados:
             Mensaje().mensaje_alerta(f"Producto {codigo} ya existe")
             return False
         
-        # AGREGAR
         self.setConjuntoProductosDelProveedor.add(producto)
         self.codigos_agregados.add(codigo)
         
-        # ACTUALIZAR
         self.modeloTablaProductosOrden.update_data(
             list(self.setConjuntoProductosDelProveedor), 
             reset=True
@@ -597,16 +593,11 @@ class Orden_compra(QWidget):
         self.modeloTablaProductosOrden.actualizarCelda(self.fila, 6, cantidad)
 
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
-        """Versión mínima - Solo filtra y agrega"""
-        
-        # Asegurar que existe codigos_agregados
         if not hasattr(self, 'codigos_agregados'):
             self.codigos_agregados = set()
         
-        # Convertir a lista
         lista = list(conjuntoProductosDelProveedor) if isinstance(conjuntoProductosDelProveedor, set) else conjuntoProductosDelProveedor
         
-        # Filtrar solo productos nuevos
         productos_nuevos = []
         
         for p in lista:
@@ -617,16 +608,11 @@ class Orden_compra(QWidget):
                     productos_nuevos.append(p)
                     self.codigos_agregados.add(codigo)
         
-        # Si hay productos nuevos, agregarlos al set y actualizar tabla
         if productos_nuevos:
             if not hasattr(self, 'setConjuntoProductosDelProveedor'):
                 self.setConjuntoProductosDelProveedor = set()
-            
-            # Agregar al set
             for p in productos_nuevos:
                 self.setConjuntoProductosDelProveedor.add(p)
-            
-            # Actualizar tabla
             self.modeloTablaProductosOrden.update_data(list(self.setConjuntoProductosDelProveedor), reset=True)
         
         return len(productos_nuevos)
@@ -634,7 +620,15 @@ class Orden_compra(QWidget):
     def mostrar_productos_proveedores(self):
         if self.ventana_productos_proveedor is None or not self.ventana_productos_proveedor.isVisible():
             self.ventana_productos_proveedor = SeleccionProductosProveedor(parent=self, proveedor=self.proveedor)
-            self.ventana_productos_proveedor.enviarProductosSignal.connect(self.productos_orden_tabla_compras_seleccionados)
+            self.ventana_productos_proveedor.enviarProductosSignal.connect(
+                self.productos_orden_tabla_compras_seleccionados,
+                Qt.UniqueConnection
+            )
+            self.ventana_productos_proveedor.VENTANA_CERRADA_SELECCION_PRODUCTOS_PROVEEDOR.connect(
+                self.limpiarVentanaSeleccionProductosProveedor,
+                Qt.UniqueConnection
+            )
+            self.ventana_productos_proveedor.setWindowModality(Qt.ApplicationModal)
             self.ventana_productos_proveedor.exec_()
         else:
             self.ventana_productos_proveedor.raise_()
@@ -648,6 +642,7 @@ class Orden_compra(QWidget):
             self.consultor_obtener_proveedores_vcompras = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores_vcompras)
             if not self.consultor_obtener_proveedores_vcompras:
                 raise Exception("No se pudo obtener el resultado de la consulta de proveedores.")
+            self.lista_hilos_crearOrdenCompra.append(self.id_hilo_obtener_proveedores_vcompras)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_proveedores_vcompras,
                 resultado_callback=self.__almacenar_proveedores_del_sistema,
@@ -676,7 +671,6 @@ class Orden_compra(QWidget):
         self.ordenCompraUI.txt_buscarproveedor.setCompleter(completar)
 
     def __proveedor_seleccionado(self, texto):
-        # Buscar el ID del proveedor por su nombre (valor) en el diccionario
         for id_proveedor, proveedor in self.proveedores_generales_del_sistema_dict.items():
             if proveedor.nombre == texto:
                 self.proveedor = proveedor
@@ -689,18 +683,32 @@ class Orden_compra(QWidget):
     
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(error)
-                    
+    
+    def limpiarVentanaSeleccionProductosProveedor(self):
+        self.ventana_productos_proveedor = None
+    
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentradaNuevaCompra:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaNuevaCompra = True
-        
+    
+    def closeEvent(self, event):
+        print(self.lista_hilos_crearOrdenCompra)
+        for hilo in self.lista_hilos_crearOrdenCompra:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_crearOrdenCompra.clear()
+        print(self.lista_hilos_crearOrdenCompra)
+        self.VENTANA_CERRADA_NUEVA_COMPRA.emit()
+        super().closeEvent(event)
+
 class SeleccionProductosProveedor(QDialog):
     enviarProductosSignal = Signal(set)
     productoSeleccionadoSignal = Signal(object)
+    VENTANA_CERRADA_SELECCION_PRODUCTOS_PROVEEDOR = Signal()
     def __init__(self, parent = None, proveedor = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.ui = Ui_Seleccion_Productos_Proveedor()
         self.ui.setupUi(self)
         self.proveedor = proveedor
@@ -710,6 +718,7 @@ class SeleccionProductosProveedor(QDialog):
         self.nombre_producto_proveedor_compras=None
         self.codigo_upc_producto_proveedor_compras = None
         self.conjuntoProductosDelProveedor = set()
+        self.lista_hilos_seleccion_productos_proveedor = []
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         pantalla = self.frameGeometry()
@@ -860,7 +869,7 @@ class SeleccionProductosProveedor(QDialog):
             self.consultar_productos_del_proveedor_compras = WorkerDB.get_managed_worker(self.id_filtrar_productos_del_proveedor_compras)
             if not self.consultar_productos_del_proveedor_compras:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_seleccion_productos_proveedor.append(self.id_filtrar_productos_del_proveedor_compras)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_filtrar_productos_del_proveedor_compras,
                 resultado_callback=self.productos_proveedores_tabla_compras,
@@ -963,7 +972,7 @@ class SeleccionProductosProveedor(QDialog):
             self.consultor_obtener_productos_proveedor_compras = WorkerDB.get_managed_worker(self.id_obtener_productos_proveedor_compras)
             if not self.consultor_obtener_productos_proveedor_compras:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_seleccion_productos_proveedor.append(self.id_obtener_productos_proveedor_compras)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_obtener_productos_proveedor_compras,
                 resultado_callback=self.productos_proveedores_tabla_compras,
@@ -1034,23 +1043,23 @@ class SeleccionProductosProveedor(QDialog):
         try:
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_productos_proveedor_compras_thread")
-            self.id_obtener_productos_proveedor_compras = WorkerDB.create_managed_worker(owner_id="obtener_productos_proveedor_compras_thread")
-            self.consultor_obtener_productos_proveedor_compras = WorkerDB.get_managed_worker(self.id_obtener_productos_proveedor_compras)
-            if not self.consultor_obtener_productos_proveedor_compras:
+            self.id_obtener_productos_proveedor_comprasPaginacion = WorkerDB.create_managed_worker(owner_id="obtener_productos_proveedor_compras_thread")
+            self.consultor_obtener_productos_proveedor_comprasPaginacion = WorkerDB.get_managed_worker(self.id_obtener_productos_proveedor_comprasPaginacion)
+            if not self.consultor_obtener_productos_proveedor_comprasPaginacion:
                 raise Exception("No se logro hacer la operación")
-            
+            self.lista_hilos_seleccion_productos_proveedor.append(self.id_obtener_productos_proveedor_comprasPaginacion)
             WorkerDB.connect_managed_signals(
-                worker_id=self.id_obtener_productos_proveedor_compras,
+                worker_id=self.id_obtener_productos_proveedor_comprasPaginacion,
                 resultado_callback=self.agregar_productos_proveedor_tabla,
                 error_callback=self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
-            self.consultor_obtener_productos_proveedor_compras.ejecutar(
+            self.consultor_obtener_productos_proveedor_comprasPaginacion.ejecutar(
                 funcion=self.obtener_productos_proveedor_compras_query
             )
         except Exception as e:
-            if hasattr(self, 'id_obtener_productos_proveedor_compras'):
-                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_compras)
+            if hasattr(self, 'id_obtener_productos_proveedor_comprasPaginacion'):
+                WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_comprasPaginacion)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def agregar_productos_proveedor_tabla(self, resultado):
@@ -1071,6 +1080,7 @@ class SeleccionProductosProveedor(QDialog):
             self.consultor_obtener_productos_proveedor_paginados = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_proveedor_paginados)
             if not self.consultor_obtener_productos_proveedor_paginados:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_seleccion_productos_proveedor.append(self.id_hilo_obtener_productos_proveedor_paginados)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_productos_proveedor_paginados,
                 resultado_callback=self.agregar_productos_del_proveedor_en_tabla,
@@ -1112,6 +1122,10 @@ class SeleccionProductosProveedor(QDialog):
         Mensaje().mensaje_alerta(objetoMensaje)
 
     def closeEvent(self, event):
+        for hilo in self.lista_hilos_seleccion_productos_proveedor:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_seleccion_productos_proveedor.clear()
+        self.VENTANA_CERRADA_SELECCION_PRODUCTOS_PROVEEDOR.emit()
         event.accept()
     
     def pasarProductoSeleccionado(self, producto):
@@ -1120,3 +1134,5 @@ class SeleccionProductosProveedor(QDialog):
     def aceptar(self):
         self.enviarProductosSignal.emit(self.conjuntoProductosDelProveedor)
         self.close()
+
+

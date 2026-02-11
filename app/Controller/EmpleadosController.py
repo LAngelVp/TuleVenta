@@ -68,7 +68,10 @@ class EmpleadosController(QWidget):
     def agregar_empleado(self):
         if self.ventana_registro is None or self.ventana_registro.isVisible():
             self.ventana_registro = Registro_personal_inicial(parent=self)
-            self.ventana_registro.VENTANA_REGISTRO_CERRADA.connect(self.ventana_cerrada_nuevo_personal)
+            self.ventana_registro.VENTANA_REGISTRO_CERRADA.connect(
+                self.ventana_cerrada_nuevo_personal,
+                Qt.UniqueConnection
+            )
             self.registro_listar_puestos.emit()
             self.ventana_registro.show()
         else:
