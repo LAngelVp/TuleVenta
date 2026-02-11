@@ -72,11 +72,9 @@ class Control_proveedores(QWidget):
 # ------------------------------------------------------------------------------
 # FUNCIONALIDADES
     def hideEvent(self, event):
-        print(self.lista_hilos_proveedores)
         for hilo in self.lista_hilos_proveedores:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_proveedores.clear()
-        print(self.lista_hilos_proveedores)
         super().hideEvent(event)
 
     

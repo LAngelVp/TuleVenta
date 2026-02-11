@@ -284,7 +284,7 @@ class ProductosModel:
         producto_actual.presentacion_producto_id = presentacion_producto_id
         producto_actual.unidad_medida_productos_id = unidad_medida_productos_id
         producto_actual.categoria_id = categoria_id
-        producto_actual.sucursales = sucursales
+        # producto_actual.sucursales = sucursales
         producto_actual.proveedores = []
 
         proveedores_fusionados = []

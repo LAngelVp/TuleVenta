@@ -17,6 +17,7 @@ from .Validaciones import Validaciones
 class Login(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.ventana = None
         self.datos_usuario = None
         self.ventana_saludo = None
@@ -51,7 +52,7 @@ class Login(QWidget):
         
         self.ui.txt_User.setFocus()
 
-        self.ui.btnCerrar.clicked.connect(self.cerrar)
+        self.ui.btnCerrar.clicked.connect(self.close)
         self.ui.btnMinimizar.clicked.connect(self.minimizar)
         self.ui.btnAceptar.clicked.connect(self.ingresar)
         self.ui.txt_Password.returnPressed.connect(self.ingresar)
@@ -59,7 +60,6 @@ class Login(QWidget):
     def mostrar_saludos(self):
         if self.ventana_saludo is None or not self.ventana_saludo.isVisible():
             self.ventana_saludo = SaludoIngreso(usuario=self.datos_usuario)
-            # self.ventana_saludo = Ventana_proceso_cargando(parent=None)
             self.ventana_saludo.show()
         else:
             self.ventana_saludo.raise_()
@@ -94,8 +94,8 @@ class Login(QWidget):
     def empresa(self):
         pass
 
-    def cerrar(self):
-        sys.exit()
+    def closeEvent(self, event):
+        super().closeEvent(event)
 
     def minimizar(self):
         self.showMinimized()
@@ -103,6 +103,7 @@ class Login(QWidget):
 class SaludoIngreso(QWidget):
     def __init__(self, parent = None, usuario = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.usuario = usuario
         self.ui = Ui_Saludo_bienvenida()
         self.ui.setupUi(self)
@@ -135,7 +136,6 @@ class SaludoIngreso(QWidget):
         tiempo = self.diferenciar_tiempo_dia()
         self.ui.etiquetaBuendia.setText(f"Excelente {tiempo}")
         
-        
     def diferenciar_tiempo_dia(self):
         hora_actual = datetime.now().hour
         saludo = None
@@ -146,3 +146,6 @@ class SaludoIngreso(QWidget):
         else:
             saludo = "Noche"
         return saludo
+
+    def closeEvent(self, event):
+        super().closeEvent(event)

@@ -145,10 +145,10 @@ class Admin_productosController(QWidget):
 
     def __init__(self, parent = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.WindowsAddProduct_Dialog = Ui_contenedorModal_agregar_productos()
         self.WindowsAddProduct_Dialog.setupUi(self)
-        self.setAttribute(Qt.WA_DeleteOnClose)
         icon = QIcon(':Icons/IconosSVG/productos.png')
         self.setWindowIcon(icon)
         self.setWindowTitle("Administración de productos")
@@ -260,18 +260,13 @@ class Admin_productosController(QWidget):
                 self.producto_para_actualizar = None
 
     def __prepararProductoExistente(self, producto):
-        """Método llamado cuando se recibe un producto para actualizar"""
-        # Guardar el producto
         self.producto_para_actualizar = producto
         
-        # Verificar si ya están cargados todos los combobox
         if (self.presentacionesCargadas and 
             self.unidadesMedidaCargadas and 
             self.categoriasCargadas):
-            # Si ya están cargados, procesar inmediatamente
             self.__procesar_producto_actualizar(producto)
         else:
-            # Si no, esperar a que se carguen (se llamará desde __verificar_todo_cargado)
             pass
 
     def listar_presentaciones_productos(self):
@@ -549,8 +544,6 @@ class Admin_productosController(QWidget):
             if not datos["codigo_barras"]:
                 Mensaje().mensaje_alerta("El campo Código de Barras es obligatorio")
                 return
-            
-            # Verificar si el producto ya existe antes de procesar
             producto_existente = any(
                 p["codigo_barras"] == datos["codigo_barras"] 
                 for p in self.lista_productos
@@ -558,13 +551,11 @@ class Admin_productosController(QWidget):
 
             if producto_existente:
                 Mensaje().mensaje_alerta(f"El producto con código {datos['codigo_barras']} ya existe")
-                # Limpiar la imagen actual antes de retornar
                 imagen_temp = self.imagenProducto
                 self.imagenProducto = None
                 self.__limpiar_campos()
                 return
             
-            # Si el producto no existe, crear el nuevo producto
             nuevo_producto = {
                 "proveedor": datos["proveedor"] if datos["proveedor"] else None,
                 "codigo_barras": datos["codigo_barras"],
@@ -594,23 +585,18 @@ class Admin_productosController(QWidget):
                 "imagen": self.imagenProducto if self.imagenProducto else None  
             }
             
-            # Agregar producto a la lista y tabla
             self.lista_productos.append(nuevo_producto)
             if not hasattr(self, 'modelo_tabla_productos'):
                 self.__configurar_tabla_productos()
             self.modelo_tabla_productos.append_data([nuevo_producto])
             
-            # Limpiar campos y resetear imagen
             self.__limpiar_campos()
             Mensaje().mensaje_informativo(f"Producto '{nuevo_producto['nombre']}' agregado correctamente")
             
-            # RESETEAR LA IMAGEN DESPUÉS DE USARLA
             self.imagenProducto = None
             
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al agregar producto: {str(e)}")
-            print(f"Error detallado: {e}")
-            # Asegurar que la imagen se limpie incluso en caso de error
             self.imagenProducto = None
             
     def __configurar_tabla_productos(self):
@@ -810,7 +796,6 @@ class Admin_productosController(QWidget):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
-# TODO DEBO DE ACTUALIZAR SOLO LOS DATOS DEL PRODUCTO NO LAS SUCURSALES.
     def __actualizar_producto_query(self, session, id_producto, todos_los_proveedores, imagen, caducidad, datos_producto):
         try:
             datos, estado = ProductosModel(session).actualizar_producto(
@@ -1278,7 +1263,7 @@ class Admin_productosController(QWidget):
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_productos.clear()
         self.ClosedWindowAdminProduct.emit()
-        event.accept()
+        super().closeEvent(event)
     
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
@@ -1313,6 +1298,7 @@ class Productos(QWidget):
         self.codigo_del_producto = None
         self._signals_connected = None
         self.WindowEditProduct = None
+        self.lista_hilos_productos_principal = []
         
         self.WindowProducts = Ui_Control_Productos()
         self.WindowProducts.setupUi(self)
@@ -1333,8 +1319,13 @@ class Productos(QWidget):
         self.ajustador = AjustarcajaOpciones()
         self.__configurar_tabla_productos_principal()
         
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_productos_principal:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_productos_principal.clear()
+        super().hideEvent(event)
 
-    # FUNCION : FILTRAR PRODUCTOS
+
     def  buscar_producto(self):
         nuevo_nombre = self.WindowProducts.txt_buscar.text().strip()
         nuevo_codigo = self.WindowProducts.txt_buscar_productoUPC.text().strip()
@@ -1371,6 +1362,7 @@ class Productos(QWidget):
             self.consultor_filtrar_productos_vprincipal = WorkerDB.get_managed_worker(self.id_hilo_filtrar_productos_vprincipal)
             if not self.consultor_filtrar_productos_vprincipal:
                 raise Exception("No se pudo obtener el resultado.")
+            self.lista_hilos_productos_principal.append(self.id_hilo_filtrar_productos_vprincipal)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_filtrar_productos_vprincipal,
                 resultado_callback=self.listar_productos,
@@ -1401,14 +1393,9 @@ class Productos(QWidget):
             "mensaje": "Productos obtenidos correctamente" if estado else "No se encontraron productos",
             "resultado": datos
         }
-    #TERMINA : FILTRAR PRODUCTO ++++++++++++++++++++
-
-    # FUNCION : AGREGAR PRODUCTO
     def agregar_producto(self):
         if self.AdminProductos is None or not self.AdminProductos.isVisible():
             self.AdminProductos = Admin_productosController(parent=self)
-            
-            # Conectar señales de carga completada desde la ventana hija
             self.AdminProductos.PRESENTACIONES_CARGADAS.connect(
                 self.__on_presentaciones_cargadas
             )
@@ -1418,8 +1405,6 @@ class Productos(QWidget):
             self.AdminProductos.UNIDADES_MEDIDA_CARGADAS.connect(
                 self.__on_unidades_cargadas
             )
-            
-            # Conectar señales para listar datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(
                 self.AdminProductos.listar_unidades_medida,
                 Qt.UniqueConnection
@@ -1432,17 +1417,11 @@ class Productos(QWidget):
                 self.AdminProductos.listar_presentaciones_productos,
                 Qt.UniqueConnection
             )
-            
             self.AdminProductos.ClosedWindowAdminProduct.connect(self.ventana_productos_cerrada)
-            
-            # Emitir señales para cargar los datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-            
-            # Mostrar la ventana después de iniciar la carga
             self.AdminProductos.show()
-            
         else:
             self.AdminProductos.raise_()
             self.AdminProductos.activateWindow()
@@ -1450,9 +1429,7 @@ class Productos(QWidget):
     def ventana_productos_cerrada(self):
         self.AdminProductos = None
         self.producto_actual = None
-    # TERMINA - AGREGAR PRODUCTO ++++++++++
 
-    # FUNCION : ELIMINAR PRODUCTO
     def eliminar_producto(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo("Debes de seleccionar un producto de la tabla para proceder a eliminarlo")
@@ -1466,6 +1443,7 @@ class Productos(QWidget):
                 self.consultor_eliminar_producto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_producto)
                 if not self.consultor_eliminar_producto:
                     raise Exception("No se pudo obtener el resultado.")
+                self.lista_hilos_productos_principal.append(self.id_hilo_eliminar_producto)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_producto,
                     resultado_callback=self.mensaje_hilo,
@@ -1501,9 +1479,7 @@ class Productos(QWidget):
             Mensaje().mensaje_informativo(resultado["mensaje"])
         else:
             Mensaje().mensaje_informativo(resultado["mensaje"])
-    #TERMINA - ELIMINAR PRODUCTO
 
-    # FUNCION : MODIFICAR PRODUCTO
     def modificar_producto(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo("No has seleccionado un producto de la tabla para proceder a modificarlo")
@@ -1514,8 +1490,6 @@ class Productos(QWidget):
     def enviar_produto_al_ui(self, producto):
         if self.WindowEditProduct is None or not self.WindowEditProduct.isVisible():
             self.WindowEditProduct = Admin_productosController(parent=self)
-            
-            # Conectar señales de carga completada desde la ventana hija
             self.WindowEditProduct.PRESENTACIONES_CARGADAS.connect(
                 self.__on_presentaciones_cargadas
             )
@@ -1525,8 +1499,6 @@ class Productos(QWidget):
             self.WindowEditProduct.UNIDADES_MEDIDA_CARGADAS.connect(
                 self.__on_unidades_cargadas
             )
-            
-            # Conectar señales para listar datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.connect(
                 self.WindowEditProduct.listar_unidades_medida,
                 Qt.UniqueConnection
@@ -1539,46 +1511,34 @@ class Productos(QWidget):
                 self.WindowEditProduct.listar_presentaciones_productos,
                 Qt.UniqueConnection
             )
-            
             self.WindowEditProduct.ClosedWindowAdminProduct.connect(self.__ventana_destruida)
-            
-            # Emitir señales para cargar los datos
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-            
-            # Mostrar la ventana después de iniciar la carga
             self.WindowEditProduct.show()
-            
-            # Enviar el producto solo cuando la ventana esté lista
-            # Usamos un timer para asegurar que la ventana se haya inicializado
             QTimer.singleShot(100, lambda: self.__enviar_producto_seguro(producto))
         else:
             self.WindowEditProduct.raise_()
             self.WindowEditProduct.activateWindow()
-            # Si la ventana ya está abierta, enviar el producto directamente
             self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
     
     def __enviar_producto_seguro(self, producto):
-        """Envía el producto de manera segura después de que la ventana se haya inicializado"""
         if self.WindowEditProduct:
             self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
     
     def __on_presentaciones_cargadas(self):
-        print("Presentaciones cargadas")
+        pass
     
     def __on_categorias_cargadas(self):
-        print("Categorías cargadas")
+        pass
     
     def __on_unidades_cargadas(self):
-        print("Unidades de medida cargadas")
+        pass
     
     def __ventana_destruida(self):
         self.WindowEditProduct = None
         self.producto_actual = None
-    # TERMINA - MODIFICAR PRODUCTO
     
-    # FUNCION : LISTAR PRODUCTOS EN TABLA
     def listar_productos(self, resultado):
         if hasattr(self, 'id_hilo_obtener_productos_tabla_productos'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
@@ -1614,6 +1574,7 @@ class Productos(QWidget):
                 self.consultor_obtener_productos_tabla_productos = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
                 if not self.consultor_obtener_productos_tabla_productos:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_productos_principal.append(self.id_hilo_obtener_productos_tabla_productos)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_productos_tabla_productos,
                     resultado_callback=self.listar_productos,
@@ -1660,9 +1621,7 @@ class Productos(QWidget):
             "mensaje": f"{len(productos)} productos obtenidos correctamente",
             "resultado": productos
         }
-    # TERMINA - LISTAR PRODUCTOS +++++++++++++++++++
-
-    # FUNCION : AGREGAR MAS PRODUCTOS A LA VISTA DE LA TABLA
+    
     def cargar_mas_productos(self):
         self._is_refreshing = False
         if hasattr(self, 'no_hay_mas_registros') and self.no_hay_mas_registros:
@@ -1672,22 +1631,23 @@ class Productos(QWidget):
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_productos_tablaproductos_thread")
-                self.id_hilo_obtener_productos_tabla_productos = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
-                self.consultor_obtener_productos_tabla_productos = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
-                if not self.consultor_obtener_productos_tabla_productos:
+                self.id_hilo_obtener_productos_tabla_productos_cargarMas = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
+                self.consultor_obtener_productos_tabla_productos_cargarMas = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos_cargarMas)
+                if not self.consultor_obtener_productos_tabla_productos_cargarMas:
                     raise Exception("No se pudo obtener el worker gestionado")
+                self.lista_hilos_productos_principal.append(self.id_hilo_obtener_productos_tabla_productos_cargarMas)
                 WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_obtener_productos_tabla_productos,
+                    worker_id=self.id_hilo_obtener_productos_tabla_productos_cargarMas,
                     resultado_callback=self.agregar_productos_en_tabla,
                     error_callback= self.mostrar_error_db,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
-                self.consultor_obtener_productos_tabla_productos.ejecutar(
+                self.consultor_obtener_productos_tabla_productos_cargarMas.ejecutar(
                     funcion=self.obtener_productos_query
                     )
             except Exception as e:
-                if hasattr(self, 'id_hilo_obtener_productos_tabla_productos'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
+                if hasattr(self, 'id_hilo_obtener_productos_tabla_productos_cargarMas'):
+                    WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_tabla_productos_cargarMas)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
         else:
             self.consulta_hilo_paginar_productos()
@@ -1700,6 +1660,7 @@ class Productos(QWidget):
             self.consultor_obtener_productos_paginados = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_paginados)
             if not self.consultor_obtener_productos_paginados:
                 raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_productos_principal.append(self.id_hilo_obtener_productos_paginados)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_productos_paginados,
                 resultado_callback=self.agregar_productos_en_tabla,
@@ -1773,9 +1734,7 @@ class Productos(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al obtener ID del producto: {str(e)}")
             return None
-    # TERMINA - LISTAR PRODUCTOS++++++++++++++++++++
-
-    # FUNCION : MANIPULACION DE LA EXISTENCIA DE LOS PRODUCTOS
+    
     def existencia_productos(self):
         if self.producto_actual is None:
             Mensaje().mensaje_informativo('Selecciona un producto.')
@@ -1790,57 +1749,11 @@ class Productos(QWidget):
     def ventana_cerrada_form_existencia(self):
         self.ventana_existencia_productos = None
         self.producto_actual = None
-    #TERMINA - EXISTENCIA DE PRODUCTOS +++++++++++++++++++++
-
-    # // EVENTOS
+    
     def closeEvent(self, event):
-        self.cleanup_worker()
         event.accept()
     
-    def cleanup_worker(self):
-        if not hasattr(self, 'consultor') or self.consultor is None:
-            return
-        try:
-            try:
-                if self.consultor is not None:
-                    self.consultor.resultado.disconnect()
-                    self.consultor.error.disconnect()
-                    self.consultor.terminado.disconnect()
-            except (RuntimeError, AttributeError):
-                pass
-            
-            try:
-                if hasattr(self.consultor, 'thread') and self.consultor.thread is not None:
-                    if self.consultor.thread.isRunning():
-                        self.consultor.thread.quit()
-                        self.consultor.thread.wait(500)
-            except (RuntimeError, AttributeError):
-                pass
-            
-            try:
-                self.consultor.deleteLater()
-            except RuntimeError:
-                pass
-            
-        finally:
-            self.consultor = None
-    
-    def modal_espera_local(self):
-        if self.cargando is None or not self.cargando.isVisible():
-            self.cargando = Modal_de_espera(parent=self)
-            self.cargando.show()
-        else:
-            self.cargando.raise_()
-            self.cargando.activateWindow()
-    
-    def cargando_cerrar(self):
-        if self.cargando is not None:
-            self.cargando.close()
-            self.cargando = None
-        self.cleanup_worker()
-    
     def mostrar_error_db(self, error_msg):
-        self.cargando_cerrar()
         self.WindowProducts.btn_RefrescarTabla.setEnabled(True)
     
     def mostrar_error_consulta(self, mensaje):
