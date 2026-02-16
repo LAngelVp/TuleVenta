@@ -13,7 +13,7 @@ from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from .PurchaseOrderPDF import PurchaseOrderPDF
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
@@ -297,6 +297,7 @@ class Orden_compra(QDialog):
     def __init__(self, parent = None, usuario = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        # ================ VARIABLES ===================
         self._ventanaCentradaNuevaCompra = False
         self.usuario = usuario
         self.proveedores = {}
@@ -308,6 +309,10 @@ class Orden_compra(QDialog):
         self.codigos_agregados = set()
         self.lista_hilos_crearOrdenCompra = []
         self.ordenCompraUI = Ui_Orden_compra()
+        self.manejadorModal = ModalManager()
+        self.ajustador = AjustarcajaOpciones()
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        # ================ CONFIGURACION DE LA VENTANA ===================
         self.ordenCompraUI.setupUi(self)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
         self.ordenCompraUI.btn_btn_agregar.hide()
@@ -316,15 +321,17 @@ class Orden_compra(QDialog):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
+        self.ordenCompraUI.etiqueta_periodoMensualNuevaOrdenCompra.hide()
+        self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.hide()
+        self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.hide()
+        # ================ FUNCIONALIDADE DE ACCION =====================
         self.ordenCompraUI.btn_btn_cerrar.clicked.connect(self.close)
         self.ordenCompraUI.btn_btn_productosProveedor.clicked.connect(self.mostrar_productos_proveedores)
+        self.ordenCompraUI.btn_btn_terminar.clicked.connect(self.__terminar_orden_compra)
         self.ordenCompraUI.txt_buscarproducto.setFocus()
         self.ordenCompraUI.txt_buscarproducto.returnPressed.connect(self.__buscar_producto_del_proveedor)
-        self.ordenCompraUI.btn_btn_terminar.clicked.connect(self.__terminar_orden_compra)
-        self.manejadorModal = ModalManager()
+        # ================= INICIALIZACION DE FUNCIONES ===================
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
-        self.ajustador = AjustarcajaOpciones()
         self.__configuracionTablaProductosOrden()
         self.__obtener_proveedores()
         self.__obtener_metodos_pagos()
@@ -333,6 +340,13 @@ class Orden_compra(QDialog):
 
     def __obtenerDatosMetodoPago(self):
         self.metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
+        if self.ordenCompraUI.cajaOpciones_metodosPago.currentText() == "Crédito":
+            self.ordenCompraUI.etiqueta_periodoMensualNuevaOrdenCompra.show()
+            self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.show()
+        else:
+            self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.setValue(0)
+            self.ordenCompraUI.etiqueta_periodoMensualNuevaOrdenCompra.hide()
+            self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.hide()
 
     def __obtener_metodos_pagos(self):
         try:
@@ -380,8 +394,18 @@ class Orden_compra(QDialog):
             Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
 
     def __terminar_orden_compra(self):
-        if self.proveedor is None or len(self.setConjuntoProductosDelProveedor) == 0:
+        if self.proveedor is None:
             Mensaje().mensaje_informativo("Debe seleccionar un proveedor y al menos un producto.")
+            return
+        contentData, orden_items = self.__obtenerDetallesProductosParaComprar()
+        self.createOrder(
+            contentData,
+            orden_items
+        )
+
+    def __obtenerDetallesProductosParaComprar(self):
+        if len(self.setConjuntoProductosDelProveedor) == 0:
+            Mensaje().mensaje_informativo("Debe seleccionar al menos un producto.")
             return
         orden_items = []
         modelo = self.modeloTablaProductosOrden
@@ -409,19 +433,29 @@ class Orden_compra(QDialog):
                 'precio_unitario': producto_proveedor.precio_venta if hasattr(producto_proveedor, 'precio_venta') else 0.0,
                 'subtotal': producto_proveedor.precio_venta * cantidad if hasattr(producto_proveedor, 'precio_venta') else 0.0
             })
+
+        metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
+        plazoPago = self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.value()
         contentData = {
             'proveedor': self.proveedor,
             'empleado': self.usuario["id_empleado"],
             'fecha_creacion': datetime.now().date(),
             'fecha_compra': None,
             'total_compra': sum(item['subtotal'] for item in orden_items),
-            'metodo_pago': 1,
+            'metodo_pago': metodoPago.id,
+            'plazo_pago': plazoPago,
+            'fecha_vencimiento': datetime.now().date() + timedelta(days=plazoPago*30),
             'detalles':orden_items
         }
-        self.createOrder(
-            contentData,
-            orden_items
-        )
+        return contentData, orden_items
+        
+    def __mostrarTotalCompraUI(self):
+        try:
+            currentData, orden_items = self.__obtenerDetallesProductosParaComprar()
+            self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.setText(f"Total: {currentData['total_compra']}")
+            self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.show()
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Ocurrio un error al mostrar el total: {e}")
 
     def createOrder(self, contentData = None, orden_items = None):
         if contentData is None or orden_items is None:
@@ -458,16 +492,22 @@ class Orden_compra(QDialog):
             if estate:
                 self.limpiar_productos_seleccionados()
                 session.commit()
+                return {
+                    "exito": estate,
+                    "mensaje": "Orden de compra creada exitosamente.",
+                    "resultado": resultData
+                }
+            session.rollback()
             return {
                 "exito": estate,
-                "mensaje": "Orden de compra creada exitosamente.",
+                "mensaje": "No se creo la orden de compra",
                 "resultado": resultData
             }
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": "Error al iniciar el proceso",
+                "mensaje": f"Error al iniciar el proceso: {e}",
                 "resultado": None
             }    
     
@@ -521,7 +561,6 @@ class Orden_compra(QDialog):
             list(self.setConjuntoProductosDelProveedor), 
             reset=True
         )
-        
         Mensaje().mensaje_exito("Producto agregado")
         return True
 
@@ -591,6 +630,7 @@ class Orden_compra(QDialog):
     
     def actualizarCantidadProducto(self, cantidad):
         self.modeloTablaProductosOrden.actualizarCelda(self.fila, 6, cantidad)
+        self.__mostrarTotalCompraUI()
 
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
         if not hasattr(self, 'codigos_agregados'):
@@ -614,6 +654,7 @@ class Orden_compra(QDialog):
             for p in productos_nuevos:
                 self.setConjuntoProductosDelProveedor.add(p)
             self.modeloTablaProductosOrden.update_data(list(self.setConjuntoProductosDelProveedor), reset=True)
+            self.__mostrarTotalCompraUI()
         
         return len(productos_nuevos)
         
@@ -701,6 +742,13 @@ class Orden_compra(QDialog):
         print(self.lista_hilos_crearOrdenCompra)
         self.VENTANA_CERRADA_NUEVA_COMPRA.emit()
         super().closeEvent(event)
+
+    def keyPressEvent(self, event):
+        # Si la tecla presionada es Enter o Return, la ignoramos
+        if event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
 
 class SeleccionProductosProveedor(QDialog):
     enviarProductosSignal = Signal(set)

@@ -462,11 +462,13 @@ class Compras(Base):
         )
     proveedor_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Proveedores.id"), nullable=False)
     empleado_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
-    fecha_compra:Mapped[datetime] = mapped_column(DateTime)
+    fecha_compra:Mapped[datetime] = mapped_column(DateTime, nullable=True)
     fecha_creacion:Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
     total_compra:Mapped[float] = mapped_column(Float)
     estado:Mapped[str] = mapped_column(String(20), default="PENDIENTE")
     metodos_pago_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Metodos_pagos.id"), nullable=False)
+    plazo_pago: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
+    fecha_vencimiento: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     detalles = relationship("Detalles_compras", 
     back_populates="compra",
     cascade="all, delete-orphan",

@@ -15,7 +15,9 @@ class OrdenesDeCompraModel:
                 fecha_creacion=orderDatails['fecha_creacion'],
                 empleado_id=orderDatails['empleado'],
                 total_compra=orderDatails['total_compra'],
-                metodos_pago_id=orderDatails['metodo_pago']
+                metodos_pago_id=orderDatails['metodo_pago'],
+                plazo_pago=orderDatails['plazo_pago'],
+                fecha_vencimiento=orderDatails['fecha_vencimiento']
             )
             self.session.add(order)
             self.session.flush()
@@ -30,7 +32,8 @@ class OrdenesDeCompraModel:
                 self.session.add(detalle)
             return order, True
         except Exception as e:
-            raise e
+            print(e)
+            return e, False
 
     def get_all_purchase_orders(self, state = None, cantidad_inicial = 0, cantidad_final = 100):
         try:

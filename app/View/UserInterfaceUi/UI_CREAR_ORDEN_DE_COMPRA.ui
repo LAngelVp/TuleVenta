@@ -455,11 +455,67 @@ padding-top:15px;
          <property name="bottomMargin">
           <number>10</number>
          </property>
-         <property name="spacing">
+         <property name="horizontalSpacing">
+          <number>10</number>
+         </property>
+         <property name="verticalSpacing">
           <number>0</number>
          </property>
+         <item row="0" column="3">
+          <widget class="QSpinBox" name="decimal_mensualidadesPagoNuevaOrdenCompra">
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+           </property>
+           <property name="suffix">
+            <string> Meses</string>
+           </property>
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Forma de pago</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="etiqueta_periodoMensualNuevaOrdenCompra">
+           <property name="text">
+            <string>Periodo Mensual</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
           <widget class="QComboBox" name="cajaOpciones_metodosPago"/>
+         </item>
+         <item row="0" column="5">
+          <widget class="QLabel" name="etiqueta_totalNuevaOrdenCompra">
+           <property name="text">
+            <string>Total</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

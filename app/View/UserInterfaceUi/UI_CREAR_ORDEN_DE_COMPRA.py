@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CREAR_ORDEN_DE_COMPRA.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,10 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFrame,
-    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QTableView, QToolButton, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QComboBox,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout,
+    QHeaderView, QLabel, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QSpinBox, QTableView,
+    QToolButton, QWidget)
 import ibootstrap_rc
 
 class Ui_Orden_compra(object):
@@ -314,13 +315,41 @@ class Ui_Orden_compra(object):
         self.contenedor_grupo.setObjectName(u"contenedor_grupo")
         self.contenedor_grupo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.gridLayout_4 = QGridLayout(self.contenedor_grupo)
-        self.gridLayout_4.setSpacing(0)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.gridLayout_4.setHorizontalSpacing(10)
+        self.gridLayout_4.setVerticalSpacing(0)
         self.gridLayout_4.setContentsMargins(0, 0, 0, 10)
+        self.decimal_mensualidadesPagoNuevaOrdenCompra = QSpinBox(self.contenedor_grupo)
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setObjectName(u"decimal_mensualidadesPagoNuevaOrdenCompra")
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setMaximum(999999999)
+
+        self.gridLayout_4.addWidget(self.decimal_mensualidadesPagoNuevaOrdenCompra, 0, 3, 1, 1)
+
+        self.label_2 = QLabel(self.contenedor_grupo)
+        self.label_2.setObjectName(u"label_2")
+
+        self.gridLayout_4.addWidget(self.label_2, 0, 0, 1, 1)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_4.addItem(self.horizontalSpacer_3, 0, 4, 1, 1)
+
+        self.etiqueta_periodoMensualNuevaOrdenCompra = QLabel(self.contenedor_grupo)
+        self.etiqueta_periodoMensualNuevaOrdenCompra.setObjectName(u"etiqueta_periodoMensualNuevaOrdenCompra")
+
+        self.gridLayout_4.addWidget(self.etiqueta_periodoMensualNuevaOrdenCompra, 0, 2, 1, 1)
+
         self.cajaOpciones_metodosPago = QComboBox(self.contenedor_grupo)
         self.cajaOpciones_metodosPago.setObjectName(u"cajaOpciones_metodosPago")
 
-        self.gridLayout_4.addWidget(self.cajaOpciones_metodosPago, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.cajaOpciones_metodosPago, 0, 1, 1, 1)
+
+        self.etiqueta_totalNuevaOrdenCompra = QLabel(self.contenedor_grupo)
+        self.etiqueta_totalNuevaOrdenCompra.setObjectName(u"etiqueta_totalNuevaOrdenCompra")
+
+        self.gridLayout_4.addWidget(self.etiqueta_totalNuevaOrdenCompra, 0, 5, 1, 1)
 
 
         self.gridLayout_5.addWidget(self.contenedor_grupo, 4, 0, 1, 2)
@@ -384,6 +413,11 @@ class Ui_Orden_compra(object):
         self.txt_buscarproveedor.setPlaceholderText(QCoreApplication.translate("Orden_compra", u"Buscar por nombre", None))
         self.etiqueta_proveedor.setText(QCoreApplication.translate("Orden_compra", u"Proveedor", None))
         self.contenedor_grupo.setTitle(QCoreApplication.translate("Orden_compra", u"METODOS DE PAGO", None))
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setSuffix(QCoreApplication.translate("Orden_compra", u" Meses", None))
+        self.decimal_mensualidadesPagoNuevaOrdenCompra.setPrefix("")
+        self.label_2.setText(QCoreApplication.translate("Orden_compra", u"Forma de pago", None))
+        self.etiqueta_periodoMensualNuevaOrdenCompra.setText(QCoreApplication.translate("Orden_compra", u"Periodo Mensual", None))
+        self.etiqueta_totalNuevaOrdenCompra.setText(QCoreApplication.translate("Orden_compra", u"Total", None))
         self.btn_btn_agregar.setText(QCoreApplication.translate("Orden_compra", u"Agregar", None))
         self.etiqueta_codigobarras.setText(QCoreApplication.translate("Orden_compra", u"Codigo del producto", None))
     # retranslateUi

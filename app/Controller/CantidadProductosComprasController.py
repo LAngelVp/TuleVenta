@@ -24,8 +24,8 @@ class CantidadProductosComprasController(QDialog):
         self.formulario_cantidad_productos_agregar_compras.contenedor_principal.setGraphicsEffect(self.sombra)
         self.formulario_cantidad_productos_agregar_compras.conjuntoBotones_cantidadCompras.accepted.connect(self.aceptar)
         self.formulario_cantidad_productos_agregar_compras.conjuntoBotones_cantidadCompras.rejected.connect(self.rechazar)
+        
     def aceptar(self):
-        print("Aceptar")
         cantidad = self.formulario_cantidad_productos_agregar_compras.decimal_cantidadAgregar.value()
         self.cantidadEnviadaSignal.emit(cantidad)
         self.close()

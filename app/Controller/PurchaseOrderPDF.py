@@ -169,6 +169,9 @@ class PurchaseOrderPDF:
         
         self.fechaOrden = f"{self.data.fecha_creacion.date()}"
         self.proveedor = self.data.proveedor.nombre
+        self.plazoPago = self.data.plazo_pago
+        self.metodoPago = self.data.metodos_de_pago.nombre
+        self.fechaVencimientoCompra = f"{self.data.fecha_vencimiento.date()}"
         self.direccionProveedor = f"{self.data.proveedor.calles}, {self.data.proveedor.avenidas}, colonia {self.data.proveedor.colonia}, CP {self.data.proveedor.codigo_postal}, {self.data.proveedor.ciudad}, {self.data.proveedor.estado}, {self.data.proveedor.pais}"
         self.telefonoProveedor = self.data.proveedor.telefono
         self.correoProveedor = self.data.proveedor.correo
@@ -191,6 +194,9 @@ class PurchaseOrderPDF:
                 Table([
                     [Paragraph(f"<b>Fecha de Orden:</b> {self.fechaOrden}", estilo_compacto)],
                     [Paragraph(f"<b>Proveedor:</b> {self.proveedor}", estilo_compacto)],
+                    [Paragraph(f"<b>Plazo de Pago:</b> {self.plazoPago} meses", estilo_compacto)],
+                    [Paragraph(f"<b>Metodo de Pago:</b> {self.metodoPago}", estilo_compacto)],
+                    [Paragraph(f"<b>Fecha de Vencimiento:</b> {self.fechaVencimientoCompra}", estilo_compacto)],
                     [Paragraph(f"<b>Dirección:</b> {self.direccionProveedor}", estilo_compacto)],
                     [Paragraph(f"<b>Teléfono:</b> {self.telefonoProveedor}", estilo_compacto)],
                     [Paragraph(f"<b>Correo:</b> {self.correoProveedor}", estilo_compacto)]

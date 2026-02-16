@@ -17,6 +17,7 @@ class Inicio_sistema(QObject):
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
         palette = QPalette()
+        
         palette.setColor(QPalette.Window, QColor("#f5f5f5"))
         palette.setColor(QPalette.Base, QColor("#ffffff"))  
         palette.setColor(QPalette.AlternateBase, QColor("#f0f0f0"))
