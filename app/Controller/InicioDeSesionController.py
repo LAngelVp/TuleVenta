@@ -6,7 +6,7 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
-from ..View.UserInterfacePy.UI_INICIO_SESION_ui import *
+from ..View.UserInterfacePy.UI_INICIO_SESION import *
 from ..View.UserInterfacePy.UI_VENTANA_SALUDO_INGRESO import Ui_Saludo_bienvenida
 from .Hilo_consultas import *
 from ..Source.iconos_rc import *
@@ -30,13 +30,13 @@ class Login(QWidget):
         self.ui.imgWhatsapp.mousePressEvent = self.whatsapp()
 
         self.ui.labelNombreEmpresa.mouseDoubleClickEvent = self.empresa()
-        self.setWindowIcon(QIcon(":Icons/IconosSVG/logo_devrous.svg"))
+        self.setWindowIcon(QIcon(":Icons/logos/logotipoSinFondo.png"))
         self.setWindowTitle("TuleVenta POS - Inicio de sesión")
 
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25) 
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra.setColor(QColor("#3D403A")) 
 
         self.ui.principal.setGraphicsEffect(self.sombra)
         

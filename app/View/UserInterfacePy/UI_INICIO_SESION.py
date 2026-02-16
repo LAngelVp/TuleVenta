@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_INICIO_SESION.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -48,7 +48,13 @@ class Ui_Inicio_Sesion(object):
 "border-top-right-radius: 25px;\n"
 "}\n"
 "#imgFormulario{\n"
-"	border-image: url(:/logos/Icons/logos/cuadrado_fondo.png);\n"
+"	border-image: url(:/logos/Icons/logos/logotipoSinFondo.png);\n"
+"	background-color: rgb(242, 239, 233);\n"
+"}\n"
+"#etiqueta_nombreSistema{\n"
+"	font-size:24px;\n"
+"	font-weight: bold;\n"
+"	color: #3D403A;\n"
 "}\n"
 "#img_Login{\n"
 "	image: url(:/Icons/IconosSVG/security.png);\n"
@@ -64,16 +70,16 @@ class Ui_Inicio_Sesion(object):
 "	border-bottom: 1px solid rgb(58, 137, 198);\n"
 "	font-size: 14px;\n"
 "	font-weight: Arial;\n"
-"	background-color:#F5F5F5;\n"
+"	background-c"
+                        "olor:#F5F5F5;\n"
 "	border-radius: 4px;\n"
 "}\n"
 "[objectName^=\"txt\"]:focus{\n"
 "	border: none;\n"
 "	border-bottom: 1px solid rgb(0, 74, 173);\n"
-""
-                        "}\n"
+"}\n"
 "QPushButton{\n"
-"background-color: #023375;\n"
+"background-color: #5A7A56;\n"
 "font-size:14px;\n"
 "color:#fffefb;\n"
 "font-weight:bold;\n"
@@ -81,10 +87,10 @@ class Ui_Inicio_Sesion(object):
 "font-family: 'Lucida sans';\n"
 "}\n"
 "QPushButton:hover{\n"
-"background-color: #2196F3;\n"
+"background-color: #547150;\n"
 "}\n"
 "QPushButton:pressed{\n"
-"background-color: #1B80D0;\n"
+"	background-color: #4c6648;\n"
 "}\n"
 "#labelNombreEmpresa{\n"
 "	color: #313d44;\n"
@@ -96,7 +102,7 @@ class Ui_Inicio_Sesion(object):
 "\n"
 "}\n"
 "#img_User{\n"
-"	background-color: rgb(2, 51, 117);\n"
+"	background-color: #5A7A56;\n"
 "	image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);\n"
 "	border-radius: 12px;\n"
 "	min-width: 20px;\n"
@@ -104,7 +110,7 @@ class Ui_Inicio_Sesion(object):
 "	padding: 2px;\n"
 "}\n"
 "#img_Password{\n"
-"	background-color: rgb(2, 51, 117);\n"
+"	background-color: #5A7A56;\n"
 "	image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);\n"
 "	border-radius: 12px;\n"
 "	min-width: 20px;\n"
@@ -264,6 +270,10 @@ class Ui_Inicio_Sesion(object):
         self.imgFormulario.setGeometry(QRect(80, 30, 361, 481))
         self.imgFormulario.setStyleSheet(u"")
         self.imgFormulario.setScaledContents(False)
+        self.etiqueta_nombreSistema = QLabel(Inicio_Sesion)
+        self.etiqueta_nombreSistema.setObjectName(u"etiqueta_nombreSistema")
+        self.etiqueta_nombreSistema.setGeometry(QRect(180, 430, 161, 31))
+        self.etiqueta_nombreSistema.setAlignment(Qt.AlignmentFlag.AlignCenter)
         QWidget.setTabOrder(self.txt_User, self.txt_Password)
         QWidget.setTabOrder(self.txt_Password, self.btnAceptar)
         QWidget.setTabOrder(self.btnAceptar, self.btnMinimizar)
@@ -289,5 +299,6 @@ class Ui_Inicio_Sesion(object):
         self.img_User.setText("")
         self.txt_User.setPlaceholderText(QCoreApplication.translate("Inicio_Sesion", u"Nombre de Usuario", None))
         self.imgFormulario.setText("")
+        self.etiqueta_nombreSistema.setText(QCoreApplication.translate("Inicio_Sesion", u"TULE VENTA", None))
     # retranslateUi
 

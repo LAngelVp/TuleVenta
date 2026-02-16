@@ -44,7 +44,13 @@ border-bottom-right-radius: 25px;
 border-top-right-radius: 25px;
 }
 #imgFormulario{
-	border-image: url(:/logos/Icons/logos/cuadrado_fondo.png);
+	border-image: url(:/logos/Icons/logos/logotipoSinFondo.png);
+	background-color: rgb(242, 239, 233);
+}
+#etiqueta_nombreSistema{
+	font-size:24px;
+	font-weight: bold;
+	color: #3D403A;
 }
 #img_Login{
 	image: url(:/Icons/IconosSVG/security.png);
@@ -68,7 +74,7 @@ border-top-right-radius: 25px;
 	border-bottom: 1px solid rgb(0, 74, 173);
 }
 QPushButton{
-background-color: #023375;
+background-color: #5A7A56;
 font-size:14px;
 color:#fffefb;
 font-weight:bold;
@@ -76,10 +82,10 @@ border-radius: 5px;
 font-family: 'Lucida sans';
 }
 QPushButton:hover{
-background-color: #2196F3;
+background-color: #547150;
 }
 QPushButton:pressed{
-background-color: #1B80D0;
+	background-color: #4c6648;
 }
 #labelNombreEmpresa{
 	color: #313d44;
@@ -91,7 +97,7 @@ background-color: #1B80D0;
 
 }
 #img_User{
-	background-color: rgb(2, 51, 117);
+	background-color: #5A7A56;
 	image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);
 	border-radius: 12px;
 	min-width: 20px;
@@ -99,7 +105,7 @@ background-color: #1B80D0;
 	padding: 2px;
 }
 #img_Password{
-	background-color: rgb(2, 51, 117);
+	background-color: #5A7A56;
 	image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);
 	border-radius: 12px;
 	min-width: 20px;
@@ -523,6 +529,22 @@ background-color: none;</string>
    </property>
    <property name="scaledContents">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="etiqueta_nombreSistema">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>430</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TULE VENTA</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignmentFlag::AlignCenter</set>
    </property>
   </widget>
  </widget>
