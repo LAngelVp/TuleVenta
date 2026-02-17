@@ -584,13 +584,6 @@ QCalendarWidget QAbstractItemView::item:hover {
                   </property>
                  </widget>
                 </item>
-                <item row="6" column="3">
-                 <widget class="QComboBox" name="cajaOpciones_proveedorOCRealizada">
-                  <property name="sizeAdjustPolicy">
-                   <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
-                  </property>
-                 </widget>
-                </item>
                 <item row="3" column="10">
                  <widget class="QToolButton" name="btn_btn_buscar_OCrealizadas">
                   <property name="cursor">
@@ -616,6 +609,9 @@ QCalendarWidget QAbstractItemView::item:hover {
                    <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
                   </property>
                  </widget>
+                </item>
+                <item row="6" column="3">
+                 <widget class="QLineEdit" name="txt_nombreProveedorOCompraRealizada"/>
                 </item>
                </layout>
               </widget>
@@ -746,13 +742,6 @@ QCalendarWidget QAbstractItemView::item:hover {
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="2">
-                 <widget class="QComboBox" name="cajaOpciones_proveedorPendiente">
-                  <property name="sizeAdjustPolicy">
-                   <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
-                  </property>
-                 </widget>
-                </item>
                 <item row="0" column="0">
                  <widget class="QLabel" name="etiquetaTitulo_buscar_2">
                   <property name="text">
@@ -826,6 +815,9 @@ QCalendarWidget QAbstractItemView::item:hover {
                     <normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</iconset>
                   </property>
                  </widget>
+                </item>
+                <item row="5" column="1" colspan="2">
+                 <widget class="QLineEdit" name="txt_nombreProveedorOComprasPendientes"/>
                 </item>
                </layout>
               </widget>
@@ -1009,7 +1001,6 @@ QCalendarWidget QAbstractItemView::item:hover {
               <property name="font">
                <font>
                 <family>Arial</family>
-                <pointsize>-1</pointsize>
                 <bold>false</bold>
                </font>
               </property>

@@ -1486,7 +1486,6 @@ class Productos(QWidget):
             return
         self.enviar_produto_al_ui(self.producto_actual)
 
-    # TODO : COMPROBAR ESTA FUNCIONALIDAD DE EDITAR PRODUCTO.
     def enviar_produto_al_ui(self, producto):
         if self.WindowEditProduct is None or not self.WindowEditProduct.isVisible():
             self.WindowEditProduct = Admin_productosController(parent=self)

@@ -61,9 +61,11 @@ class OrdenesDeCompraModel:
                 .limit(cantidad_final)
                 .all()
             )
+            if len(result) == 0:
+                return [], False
             return result, True
         except Exception as e:
-            return None, False
+            return [], False
 
     def get_purchase_order_by_id(self, orderId):
         try:
@@ -93,3 +95,46 @@ class OrdenesDeCompraModel:
             return False
         except Exception as e:
             raise e
+
+    def get_purchase_orders_by_criteria(self, state, cantidad_inicial=0, cantidad_final=100, id_orden_compra=None, quien_realizo_compra=None, fecha_creacion_orden_compra=None, nombre_proveedor=None):
+        try:
+            # 1. Definir la base y los JOINs
+            query = (self.session.query(Compras)
+                .options(
+                    joinedload(Compras.proveedor),
+                    joinedload(Compras.empleado).options(
+                        joinedload(Empleados.sucursal),
+                        joinedload(Empleados.departamento),
+                        joinedload(Empleados.puesto)
+                    ),
+                    joinedload(Compras.metodos_de_pago),
+                    joinedload(Compras.detalles).joinedload(Detalles_compras.producto).options(
+                        joinedload(Productos.unidad_medida_productos),
+                        joinedload(Productos.presentacion_productos)
+                    )
+                )
+                .filter(Compras.estado == state)
+            )
+
+            # 2. Aplicar filtros condicionales (SIEMPRE ANTES DE OFFSET/LIMIT)
+            if id_orden_compra:
+                query = query.filter(Compras.id == id_orden_compra)
+            if quien_realizo_compra:
+                query = query.filter(Compras.empleado.has(Empleados.nombre.ilike(f"%{quien_realizo_compra}%")))
+            if fecha_creacion_orden_compra:
+                query = query.filter(Compras.fecha_creacion == fecha_creacion_orden_compra)
+            if nombre_proveedor:
+                query = query.filter(Compras.proveedor.has(Proveedores.nombre == nombre_proveedor))
+
+            # 3. Ordenar y finalmente aplicar paginación
+            query = query.order_by(Compras.fecha_creacion.desc())
+            query = query.offset(cantidad_inicial).limit(cantidad_final)
+
+            result = query.all()
+
+            if len(result) == 0:
+                return [], False
+            return result, True
+        except Exception as e:
+            print(f"Error en el modelo: {e}")
+            return [], False

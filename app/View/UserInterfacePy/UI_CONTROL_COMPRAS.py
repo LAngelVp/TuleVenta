@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_COMPRAS.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDateEdit,
-    QFrame, QGridLayout, QHBoxLayout, QHeaderView,
-    QLabel, QLayout, QLineEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QTabWidget, QTableView,
-    QToolButton, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QDateEdit, QFrame,
+    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
+    QLayout, QLineEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QTabWidget, QTableView, QToolButton,
+    QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconosSVG_rc
 from ...Source import iconsdvg_rc
@@ -480,12 +480,6 @@ class Ui_control_compras(object):
 
         self.gridLayout_4.addWidget(self.etiqueta_fechacompra, 4, 0, 1, 2)
 
-        self.cajaOpciones_proveedorOCRealizada = QComboBox(self.contenedor_contenido)
-        self.cajaOpciones_proveedorOCRealizada.setObjectName(u"cajaOpciones_proveedorOCRealizada")
-        self.cajaOpciones_proveedorOCRealizada.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_4.addWidget(self.cajaOpciones_proveedorOCRealizada, 6, 3, 1, 1)
-
         self.btn_btn_buscar_OCrealizadas = QToolButton(self.contenedor_contenido)
         self.btn_btn_buscar_OCrealizadas.setObjectName(u"btn_btn_buscar_OCrealizadas")
         self.btn_btn_buscar_OCrealizadas.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -496,6 +490,11 @@ class Ui_control_compras(object):
         self.btn_btn_buscar_OCrealizadas.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
         self.gridLayout_4.addWidget(self.btn_btn_buscar_OCrealizadas, 3, 10, 1, 1)
+
+        self.txt_nombreProveedorOCompraRealizada = QLineEdit(self.contenedor_contenido)
+        self.txt_nombreProveedorOCompraRealizada.setObjectName(u"txt_nombreProveedorOCompraRealizada")
+
+        self.gridLayout_4.addWidget(self.txt_nombreProveedorOCompraRealizada, 6, 3, 1, 1)
 
 
         self.gridLayout_2.addWidget(self.contenedor_contenido, 0, 0, 1, 1)
@@ -558,12 +557,6 @@ class Ui_control_compras(object):
 
         self.gridLayout_8.addWidget(self.fecha_fechaCreacionOCPendiente, 5, 0, 1, 1)
 
-        self.cajaOpciones_proveedorPendiente = QComboBox(self.contenedor_contenidocompras_pendientes)
-        self.cajaOpciones_proveedorPendiente.setObjectName(u"cajaOpciones_proveedorPendiente")
-        self.cajaOpciones_proveedorPendiente.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-
-        self.gridLayout_8.addWidget(self.cajaOpciones_proveedorPendiente, 5, 2, 1, 1)
-
         self.etiquetaTitulo_buscar_2 = QLabel(self.contenedor_contenidocompras_pendientes)
         self.etiquetaTitulo_buscar_2.setObjectName(u"etiquetaTitulo_buscar_2")
 
@@ -600,6 +593,11 @@ class Ui_control_compras(object):
         self.btn_btn_generarOrdenCompra.setIcon(icon2)
 
         self.gridLayout_8.addWidget(self.btn_btn_generarOrdenCompra, 5, 9, 1, 1)
+
+        self.txt_nombreProveedorOComprasPendientes = QLineEdit(self.contenedor_contenidocompras_pendientes)
+        self.txt_nombreProveedorOComprasPendientes.setObjectName(u"txt_nombreProveedorOComprasPendientes")
+
+        self.gridLayout_8.addWidget(self.txt_nombreProveedorOComprasPendientes, 5, 1, 1, 2)
 
 
         self.gridLayout_7.addWidget(self.contenedor_contenidocompras_pendientes, 0, 0, 1, 1)

@@ -23,10 +23,14 @@ from .CantidadProductosComprasController import CantidadProductosComprasControll
 class Compras(QWidget):
     def __init__(self, parent = None, usuario = None):
         super().__init__(parent)
-        self.usuario = usuario
-        self.orden_compra = None
         self.controlOrdenesDeCompra = Ui_control_compras()
         self.controlOrdenesDeCompra.setupUi(self)
+        self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setDateTime(QDateTime.currentDateTime())
+        self.controlOrdenesDeCompra.fecha_fechaCompraRealizada.setDateTime(QDateTime.currentDateTime())
+        self.controlOrdenesDeCompra.fecha_fechaCreacionOCRealizada.setDateTime(QDateTime.currentDateTime())
+        # ==================== VARIABLES ====================
+        self.usuario = usuario
+        self.orden_compra = None
         self.orderSelected = None
         self.clienteFisico = True
         self.cantidad_inicial_consulta_compras_pendientes = 0
@@ -34,21 +38,132 @@ class Compras(QWidget):
         self.no_hay_mas_registros_compras_pendientes = False
         self.busqueda_realizada_compras_pendientes = None
         self.lista_hilos_compras = []
+        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.manejadorModal = ModalManager()
+        # ================ FUNCIONALIDADES DE ACCION =====================
         self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
-        self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
+        self.controlOrdenesDeCompra.btn_btn_buscar_OCpendientes.clicked.connect(self.buscarOrdenCompraPendiente)
+        self.controlOrdenesDeCompra.btn_btn_buscar_OCrealizadas.clicked.connect(self.buscarOrdenCompraRealizada)
+        self.controlOrdenesDeCompra.btn_paginarTabla.clicked.connect(self.paginarOrdenesDeCompra)
+        # ================ FUNCIONES INICIALES =====================
         self.__configuracionTablaOrdenesDeCompraPendientes()
         self.__configuracionTablaOrdenesDeCompraRealizadas()
-        self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
+    # ====================== FUNCIONALIDADES ========================
     def hideEvent(self, event):
         for hilo in self.lista_hilos_compras:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_compras.clear()
         super().hideEvent(event)
+
+    def paginarOrdenesDeCompra(self):
+        indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
+        if indicePestañaActual == 0:
+            self.paginarOrdenesDeCompraRealizadas()
+        elif indicePestañaActual == 1:
+            self.paginarOrdenesDeCompraPendientes()
+
+    def buscarOrdenCompraPendiente(self):
+        id_orden_compra = self.controlOrdenesDeCompra.txt_idCompraPendiente.text().strip()
+        quien_realizo_compra = self.controlOrdenesDeCompra.txt_quienRealizoOCpendiente.text().strip()
+        fecha_creacion_orden_compra = self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.date().toString("yyyy-MM-dd")
+        nombre_proveedor = self.controlOrdenesDeCompra.txt_nombreProveedorOComprasPendientes.text().strip()
+        if not id_orden_compra and not quien_realizo_compra and not fecha_creacion_orden_compra and not nombre_proveedor:
+            Mensaje().mensaje_alerta("Debe ingresar al menos un criterio de busqueda.")
+            return
+        nueva_busqueda_datos = {
+            "id_orden_compra": int(id_orden_compra) if id_orden_compra else None,
+            "quien_realizo_compra": quien_realizo_compra if quien_realizo_compra else None,
+            "fecha_creacion_orden_compra": fecha_creacion_orden_compra if fecha_creacion_orden_compra else None,
+            "nombre_proveedor": nombre_proveedor if nombre_proveedor else None
+        }
+        self.busqueda_realizada_compras_pendientes = nueva_busqueda_datos
+        if not hasattr(self, 'cantidad_inicial_consulta_compras_pendientes'):
+            self.cantidad_inicial_consulta_compras_pendientes = 0
+
+        if nueva_busqueda_datos:
+            self.cantidad_inicial_consulta_compras_pendientes = 0
+            self.no_hay_mas_registros_compras_pendientes = False
+            self.nueva_busqueda_compras_pendientes = True
+        if nueva_busqueda_datos and hasattr(self, 'modeloTablaOrdenesDeCompraPendientes'):
+            self.modeloTablaOrdenesDeCompraPendientes.clear()
+        self.obtener_compras_pendientes_busqueda_hilo()
+
+    def obtener_compras_pendientes_busqueda_hilo(self, paginacion = False):
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("buscar_ordenes_de_compra_pendientes")
+            self.id_hilo_buscar_ordenes_de_compra_pendientes = WorkerDB.create_managed_worker(owner_id="buscar_ordenes_de_compra_pendientes")
+            self.consultor_buscar_ordenes_de_compra_pendientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_ordenes_de_compra_pendientes)
+            if not self.consultor_buscar_ordenes_de_compra_pendientes:
+                raise Exception("No se pudo obtener el resultado.")
+            self.lista_hilos_compras.append(self.id_hilo_buscar_ordenes_de_compra_pendientes)
+            if paginacion:
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_buscar_ordenes_de_compra_pendientes,
+                    resultado_callback=self.compras_pendientes_tabla_compras_paginadas,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+            else:
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_hilo_buscar_ordenes_de_compra_pendientes,
+                    resultado_callback=self.compras_pendientes_tabla_compras,
+                    error_callback= self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+            self.consultor_buscar_ordenes_de_compra_pendientes.ejecutar(
+                self.buscar_ordenes_de_compra_pendientes_query
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_buscar_ordenes_de_compra_pendientes'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_ordenes_de_compra_pendientes)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+        
+    def buscar_ordenes_de_compra_pendientes_query(self, session):
+        try:
+            resultado, estado = OrdenesDeCompraModel(session).get_purchase_orders_by_criteria(
+                state="PENDIENTE", 
+                cantidad_inicial=self.cantidad_inicial_consulta_compras_pendientes,
+                cantidad_final=self.cantidad_final_consulta_compras_pendientes,
+                **self.busqueda_realizada_compras_pendientes
+            )
+            if estado:
+                self.nueva_busqueda_compras_pendientes = True
+                self.cantidad_inicial_consulta_compras_pendientes = self.cantidad_inicial_consulta_compras_pendientes + self.cantidad_final_consulta_compras_pendientes
+            return {
+                "exito": True,
+                "mensaje": "Ordenes de compra pendientes encontradas.",
+                "data": resultado
+            }
+        except Exception as e:
+            return {
+                "exito": False,
+                "mensaje": f"Error al buscar las ordenes de compra pendientes: {e}",
+                "data": []
+            }
+    
+    def paginarOrdenesDeCompraPendientes(self):
+        self._is_refreshing_compras_pendientes = False
+        if hasattr(self, 'no_hay_mas_registros_compras_pendientes') and self.no_hay_mas_registros_compras_pendientes:
+            Mensaje().mensaje_informativo("No hay más productos por mostrar")
+            return
+        if not hasattr(self, 'nueva_busqueda_compras_pendientes') or not self.nueva_busqueda_compras_pendientes:
+            self.consulta_hilo_compras_pendientes(paginacion = True)
+        else:
+            self.obtener_compras_pendientes_busqueda_hilo(paginacion = True)
+
+    def buscarOrdenCompraRealizada(self):
+        # buscar por el id de la orden de compra: txt_idCompraRealizada
+        # buscar por quien realizo la orden de compra: txt_quienRealizoCompraRealizada
+        # buscar por fecha en la que se realizo la compra: fecha_fechaCompraRealizada
+        # buscar por la fecha en la que se realizo la orden de compra: fecha_fechaCreacionOCRealizada
+        # buscar por el nombre del proveedor: txt_nombreProveedorOCompraRealizada
+        pass
 
     def generar_orden_compra_pdf(self):
         if not self.orderSelected:
@@ -80,14 +195,18 @@ class Compras(QWidget):
             if indicePestañaActual == 0:
                 self.obtener_compras_realizadas_hilo(reset_paginacion_compras_pendientes = True)
             elif indicePestañaActual == 1:
+                # TODO : FILTROS DE COMPRAS PENDIENTES
                 self.obtener_compras_pendientes_hilo(reset_paginacion_compras_pendientes = True)
         except Exception as e:
             Mensaje().mensaje_alerta("Error al consultar productos del proveedor.")
 
     def obtener_compras_pendientes_hilo(self, reset_paginacion_compras_pendientes = False):
+        if reset_paginacion_compras_pendientes:
+            self.cantidad_inicial_consulta_compras_pendientes = 0
+        self.consulta_hilo_compras_pendientes()
+
+    def consulta_hilo_compras_pendientes(self, paginacion = False):
         try:
-            if reset_paginacion_compras_pendientes:
-                self.cantidad_inicial_consulta_compras_pendientes = 0
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_compras_pendientes_thread")
             self.id_obtener_compras_pendientes = WorkerDB.create_managed_worker(owner_id="obtener_compras_pendientes_thread")
@@ -95,11 +214,19 @@ class Compras(QWidget):
             if not self.consultor_obtener_compras_pendientes:
                 raise Exception("No se logro hacer la operación")
             self.lista_hilos_compras.append(self.id_obtener_compras_pendientes)
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_obtener_compras_pendientes,
-                resultado_callback=self.compras_pendientes_tabla_compras,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
+            if paginacion:
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_obtener_compras_pendientes,
+                    resultado_callback=self.compras_pendientes_tabla_compras_paginadas,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
+                )
+            else:
+                WorkerDB.connect_managed_signals(
+                    worker_id=self.id_obtener_compras_pendientes,
+                    resultado_callback=self.compras_pendientes_tabla_compras,
+                    error_callback=self.mostrar_error_hilo,
+                    terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_compras_pendientes.ejecutar(
                 funcion=self.obtener_compras_pendientes_query,
@@ -111,30 +238,28 @@ class Compras(QWidget):
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def obtener_compras_pendientes_query(self, session, state = None):
-        print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_compras_pendientes}, limit={self.cantidad_final_consulta_compras_pendientes}")
-        
         try:
             compras, estado = OrdenesDeCompraModel(session).get_all_purchase_orders(
                 cantidad_inicial=self.cantidad_inicial_consulta_compras_pendientes,
                 cantidad_final=self.cantidad_final_consulta_compras_pendientes,
                 state = state
             )
-            print(f"DEBUG - Obtenidos compras: {len(compras) if compras else 0} registros")
-            print(f"DEBUG - Estado de la consulta: {estado}")
-            # LÓGICA CORREGIDA: Solo incrementar si no es un refresh y hay compras
-            if (not hasattr(self, '_is_refreshing_productos_proveedor_compras') or not self._is_refreshing_productos_proveedor_compras) and compras:
-                # Incrementar por el límite, no por la cantidad recibida
-                # Esto mantiene la paginación consistente
-                self.cantidad_inicial_consulta_compras_pendientes += self.cantidad_final_consulta_compras_pendientes
-                print(f"DEBUG - Nuevo offset compras: {self.cantidad_inicial_consulta_compras_pendientes}")
-            elif not compras:
-                print("DEBUG - No se obtuvieron compras, offset no incrementado")
+            if not estado:
+                session.rollback()
+                return {
+                    "exito": False,
+                    "mensaje": f'Ocurrio un problema critico en el proceso',
+                    "data": []
+                }
         except Exception as e:
+            session.rollback()
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
                 "data": []
             }
+        if (not hasattr(self, '_is_refreshing_compras_pendientes') or not self._is_refreshing_compras_pendientes) and compras:
+            self.cantidad_inicial_consulta_compras_pendientes += self.cantidad_final_consulta_compras_pendientes
         return {
             "exito": estado,
             "mensaje": f'Se encontraron {len(compras) if compras else 0} registros',
@@ -150,7 +275,17 @@ class Compras(QWidget):
             print(f"Tabla actualizada: {len(result['data']) if result['data'] else 0} compras")
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras pendientes: {e}")
-    
+
+    def compras_pendientes_tabla_compras_paginadas(self, result):
+        try:
+            if not result["exito"]:
+                Mensaje().mensaje_informativo(f"No hay compras pendientes")
+                return
+            self.modeloTablaOrdenesDeCompraPendientes.update_data(result["data"], reset=False)
+            print(f"Tabla actualizada: {len(result['data']) if result['data'] else 0} compras")
+        except Exception as e:
+            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras pendientes: {e}")
+
     def __configuracionTablaOrdenesDeCompraPendientes(self):
         cabeceras = [
             "ID",
