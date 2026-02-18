@@ -484,7 +484,7 @@ class Detalles_compras(Base):
         BigInteger, 
         primary_key=True
         )
-    compra_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Compras.id", ondelete='SET NULL'), nullable=False)
+    compra_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("Compras.id", ondelete='CASCADE'), nullable=False)
     producto_id:Mapped[str] = mapped_column(Text, ForeignKey("Productos.codigo_upc"), nullable=False)
     cantidad:Mapped[float] = mapped_column(Float)
     precio_unitario:Mapped[float] = mapped_column(Float)

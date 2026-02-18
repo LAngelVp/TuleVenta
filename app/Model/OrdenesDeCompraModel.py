@@ -96,7 +96,7 @@ class OrdenesDeCompraModel:
         except Exception as e:
             raise e
 
-    def get_purchase_orders_by_criteria(self, state, cantidad_inicial=0, cantidad_final=100, id_orden_compra=None, quien_realizo_compra=None, fecha_creacion_orden_compra=None, nombre_proveedor=None):
+    def get_purchase_orders_by_criteria(self, state, cantidad_inicial=0, cantidad_final=100, id_orden_compra=None, quien_realizo_compra=None, fecha_creacion_orden_compra=None, fecha_compra=None, nombre_proveedor=None):
         try:
             # 1. Definir la base y los JOINs
             query = (self.session.query(Compras)
@@ -123,6 +123,8 @@ class OrdenesDeCompraModel:
                 query = query.filter(Compras.empleado.has(Empleados.nombre.ilike(f"%{quien_realizo_compra}%")))
             if fecha_creacion_orden_compra:
                 query = query.filter(Compras.fecha_creacion == fecha_creacion_orden_compra)
+            if fecha_compra:
+                query = query.filter(Compras.fecha_compra == fecha_compra)
             if nombre_proveedor:
                 query = query.filter(Compras.proveedor.has(Proveedores.nombre == nombre_proveedor))
 

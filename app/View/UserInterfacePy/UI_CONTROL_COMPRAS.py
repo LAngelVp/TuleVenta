@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QDateEdit, QFrame,
-    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QLayout, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QTabWidget, QTableView, QToolButton,
-    QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QDateEdit,
+    QFrame, QGridLayout, QHBoxLayout, QHeaderView,
+    QLabel, QLayout, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QTabWidget, QTableView,
+    QToolButton, QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconosSVG_rc
 from ...Source import iconsdvg_rc
@@ -432,53 +432,43 @@ class Ui_control_compras(object):
         self.gridLayout_4.setHorizontalSpacing(10)
         self.gridLayout_4.setVerticalSpacing(5)
         self.gridLayout_4.setContentsMargins(5, 10, 5, 0)
-        self.txt_quienRealizoCompraRealizada = QLineEdit(self.contenedor_contenido)
-        self.txt_quienRealizoCompraRealizada.setObjectName(u"txt_quienRealizoCompraRealizada")
-
-        self.gridLayout_4.addWidget(self.txt_quienRealizoCompraRealizada, 3, 3, 1, 1)
-
-        self.etiqueta_fechalevantamientocompra = QLabel(self.contenedor_contenido)
-        self.etiqueta_fechalevantamientocompra.setObjectName(u"etiqueta_fechalevantamientocompra")
-
-        self.gridLayout_4.addWidget(self.etiqueta_fechalevantamientocompra, 4, 2, 1, 1)
-
-        self.horizontalSpacer_2 = QSpacerItem(282, 25, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_4.addItem(self.horizontalSpacer_2, 3, 9, 1, 1)
-
-        self.etiquetaTitulo_buscar = QLabel(self.contenedor_contenido)
-        self.etiquetaTitulo_buscar.setObjectName(u"etiquetaTitulo_buscar")
-
-        self.gridLayout_4.addWidget(self.etiquetaTitulo_buscar, 0, 0, 1, 2)
-
-        self.etiqueta_proveedor_2 = QLabel(self.contenedor_contenido)
-        self.etiqueta_proveedor_2.setObjectName(u"etiqueta_proveedor_2")
-
-        self.gridLayout_4.addWidget(self.etiqueta_proveedor_2, 4, 3, 1, 1)
-
         self.txt_idCompraRealizada = QLineEdit(self.contenedor_contenido)
         self.txt_idCompraRealizada.setObjectName(u"txt_idCompraRealizada")
 
         self.gridLayout_4.addWidget(self.txt_idCompraRealizada, 3, 0, 1, 3)
-
-        self.fecha_fechaCompraRealizada = QDateEdit(self.contenedor_contenido)
-        self.fecha_fechaCompraRealizada.setObjectName(u"fecha_fechaCompraRealizada")
-        self.fecha_fechaCompraRealizada.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.fecha_fechaCompraRealizada.setCalendarPopup(True)
-
-        self.gridLayout_4.addWidget(self.fecha_fechaCompraRealizada, 6, 0, 1, 2)
 
         self.fecha_fechaCreacionOCRealizada = QDateEdit(self.contenedor_contenido)
         self.fecha_fechaCreacionOCRealizada.setObjectName(u"fecha_fechaCreacionOCRealizada")
         self.fecha_fechaCreacionOCRealizada.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.fecha_fechaCreacionOCRealizada.setCalendarPopup(True)
 
-        self.gridLayout_4.addWidget(self.fecha_fechaCreacionOCRealizada, 6, 2, 1, 1)
+        self.gridLayout_4.addWidget(self.fecha_fechaCreacionOCRealizada, 8, 2, 1, 1)
 
-        self.etiqueta_fechacompra = QLabel(self.contenedor_contenido)
-        self.etiqueta_fechacompra.setObjectName(u"etiqueta_fechacompra")
+        self.txt_quienRealizoCompraRealizada = QLineEdit(self.contenedor_contenido)
+        self.txt_quienRealizoCompraRealizada.setObjectName(u"txt_quienRealizoCompraRealizada")
 
-        self.gridLayout_4.addWidget(self.etiqueta_fechacompra, 4, 0, 1, 2)
+        self.gridLayout_4.addWidget(self.txt_quienRealizoCompraRealizada, 3, 3, 1, 1)
+
+        self.fecha_fechaCompraRealizada = QDateEdit(self.contenedor_contenido)
+        self.fecha_fechaCompraRealizada.setObjectName(u"fecha_fechaCompraRealizada")
+        self.fecha_fechaCompraRealizada.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fecha_fechaCompraRealizada.setCalendarPopup(True)
+
+        self.gridLayout_4.addWidget(self.fecha_fechaCompraRealizada, 8, 0, 1, 2)
+
+        self.txt_nombreProveedorOCompraRealizada = QLineEdit(self.contenedor_contenido)
+        self.txt_nombreProveedorOCompraRealizada.setObjectName(u"txt_nombreProveedorOCompraRealizada")
+
+        self.gridLayout_4.addWidget(self.txt_nombreProveedorOCompraRealizada, 8, 3, 1, 1)
+
+        self.etiquetaTitulo_buscar = QLabel(self.contenedor_contenido)
+        self.etiquetaTitulo_buscar.setObjectName(u"etiquetaTitulo_buscar")
+
+        self.gridLayout_4.addWidget(self.etiquetaTitulo_buscar, 0, 0, 1, 2)
+
+        self.horizontalSpacer_2 = QSpacerItem(282, 25, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_4.addItem(self.horizontalSpacer_2, 3, 9, 1, 1)
 
         self.btn_btn_buscar_OCrealizadas = QToolButton(self.contenedor_contenido)
         self.btn_btn_buscar_OCrealizadas.setObjectName(u"btn_btn_buscar_OCrealizadas")
@@ -491,10 +481,30 @@ class Ui_control_compras(object):
 
         self.gridLayout_4.addWidget(self.btn_btn_buscar_OCrealizadas, 3, 10, 1, 1)
 
-        self.txt_nombreProveedorOCompraRealizada = QLineEdit(self.contenedor_contenido)
-        self.txt_nombreProveedorOCompraRealizada.setObjectName(u"txt_nombreProveedorOCompraRealizada")
+        self.etiqueta_proveedor_2 = QLabel(self.contenedor_contenido)
+        self.etiqueta_proveedor_2.setObjectName(u"etiqueta_proveedor_2")
 
-        self.gridLayout_4.addWidget(self.txt_nombreProveedorOCompraRealizada, 6, 3, 1, 1)
+        self.gridLayout_4.addWidget(self.etiqueta_proveedor_2, 7, 3, 1, 1)
+
+        self.etiqueta_fechacompra = QLabel(self.contenedor_contenido)
+        self.etiqueta_fechacompra.setObjectName(u"etiqueta_fechacompra")
+
+        self.gridLayout_4.addWidget(self.etiqueta_fechacompra, 7, 0, 1, 1)
+
+        self.check_filtrarPorFechaCompraRealizada = QCheckBox(self.contenedor_contenido)
+        self.check_filtrarPorFechaCompraRealizada.setObjectName(u"check_filtrarPorFechaCompraRealizada")
+
+        self.gridLayout_4.addWidget(self.check_filtrarPorFechaCompraRealizada, 6, 0, 1, 1)
+
+        self.etiqueta_fechalevantamientocompra = QLabel(self.contenedor_contenido)
+        self.etiqueta_fechalevantamientocompra.setObjectName(u"etiqueta_fechalevantamientocompra")
+
+        self.gridLayout_4.addWidget(self.etiqueta_fechalevantamientocompra, 7, 2, 1, 1)
+
+        self.check_filtrarPorFechaDocumentoRealizada = QCheckBox(self.contenedor_contenido)
+        self.check_filtrarPorFechaDocumentoRealizada.setObjectName(u"check_filtrarPorFechaDocumentoRealizada")
+
+        self.gridLayout_4.addWidget(self.check_filtrarPorFechaDocumentoRealizada, 6, 2, 1, 1)
 
 
         self.gridLayout_2.addWidget(self.contenedor_contenido, 0, 0, 1, 1)
@@ -540,50 +550,10 @@ class Ui_control_compras(object):
         self.gridLayout_8.setHorizontalSpacing(10)
         self.gridLayout_8.setVerticalSpacing(5)
         self.gridLayout_8.setContentsMargins(5, 10, 5, 0)
-        self.txt_idCompraPendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
-        self.txt_idCompraPendiente.setObjectName(u"txt_idCompraPendiente")
-
-        self.gridLayout_8.addWidget(self.txt_idCompraPendiente, 3, 0, 1, 2)
-
-        self.txt_quienRealizoOCpendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
-        self.txt_quienRealizoOCpendiente.setObjectName(u"txt_quienRealizoOCpendiente")
-
-        self.gridLayout_8.addWidget(self.txt_quienRealizoOCpendiente, 3, 2, 1, 1)
-
-        self.fecha_fechaCreacionOCPendiente = QDateEdit(self.contenedor_contenidocompras_pendientes)
-        self.fecha_fechaCreacionOCPendiente.setObjectName(u"fecha_fechaCreacionOCPendiente")
-        self.fecha_fechaCreacionOCPendiente.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.fecha_fechaCreacionOCPendiente.setCalendarPopup(True)
-
-        self.gridLayout_8.addWidget(self.fecha_fechaCreacionOCPendiente, 5, 0, 1, 1)
-
-        self.etiquetaTitulo_buscar_2 = QLabel(self.contenedor_contenidocompras_pendientes)
-        self.etiquetaTitulo_buscar_2.setObjectName(u"etiquetaTitulo_buscar_2")
-
-        self.gridLayout_8.addWidget(self.etiquetaTitulo_buscar_2, 0, 0, 1, 1)
-
-        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_8.addItem(self.horizontalSpacer_3, 3, 8, 1, 1)
-
-        self.btn_btn_buscar_OCpendientes = QToolButton(self.contenedor_contenidocompras_pendientes)
-        self.btn_btn_buscar_OCpendientes.setObjectName(u"btn_btn_buscar_OCpendientes")
-        self.btn_btn_buscar_OCpendientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.btn_btn_buscar_OCpendientes.setIcon(icon)
-        self.btn_btn_buscar_OCpendientes.setIconSize(QSize(24, 24))
-        self.btn_btn_buscar_OCpendientes.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-
-        self.gridLayout_8.addWidget(self.btn_btn_buscar_OCpendientes, 3, 9, 1, 1, Qt.AlignmentFlag.AlignRight)
-
         self.etiqueta_levantamientocompra = QLabel(self.contenedor_contenidocompras_pendientes)
         self.etiqueta_levantamientocompra.setObjectName(u"etiqueta_levantamientocompra")
 
-        self.gridLayout_8.addWidget(self.etiqueta_levantamientocompra, 4, 0, 1, 1)
-
-        self.etiqueta_proveedor = QLabel(self.contenedor_contenidocompras_pendientes)
-        self.etiqueta_proveedor.setObjectName(u"etiqueta_proveedor")
-
-        self.gridLayout_8.addWidget(self.etiqueta_proveedor, 4, 2, 1, 1)
+        self.gridLayout_8.addWidget(self.etiqueta_levantamientocompra, 5, 0, 1, 2)
 
         self.btn_btn_generarOrdenCompra = QPushButton(self.contenedor_contenidocompras_pendientes)
         self.btn_btn_generarOrdenCompra.setObjectName(u"btn_btn_generarOrdenCompra")
@@ -592,12 +562,57 @@ class Ui_control_compras(object):
         icon2.addFile(u":/Icons/Bootstrap/file-earmark-pdf-fill.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.btn_btn_generarOrdenCompra.setIcon(icon2)
 
-        self.gridLayout_8.addWidget(self.btn_btn_generarOrdenCompra, 5, 9, 1, 1)
+        self.gridLayout_8.addWidget(self.btn_btn_generarOrdenCompra, 7, 10, 1, 1)
+
+        self.fecha_fechaCreacionOCPendiente = QDateEdit(self.contenedor_contenidocompras_pendientes)
+        self.fecha_fechaCreacionOCPendiente.setObjectName(u"fecha_fechaCreacionOCPendiente")
+        self.fecha_fechaCreacionOCPendiente.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.fecha_fechaCreacionOCPendiente.setCalendarPopup(True)
+
+        self.gridLayout_8.addWidget(self.fecha_fechaCreacionOCPendiente, 7, 0, 1, 2)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_8.addItem(self.horizontalSpacer_3, 3, 9, 1, 1)
+
+        self.etiquetaTitulo_buscar_2 = QLabel(self.contenedor_contenidocompras_pendientes)
+        self.etiquetaTitulo_buscar_2.setObjectName(u"etiquetaTitulo_buscar_2")
+
+        self.gridLayout_8.addWidget(self.etiquetaTitulo_buscar_2, 0, 0, 1, 2)
+
+        self.txt_quienRealizoOCpendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
+        self.txt_quienRealizoOCpendiente.setObjectName(u"txt_quienRealizoOCpendiente")
+
+        self.gridLayout_8.addWidget(self.txt_quienRealizoOCpendiente, 3, 3, 1, 1)
+
+        self.txt_idCompraPendiente = QLineEdit(self.contenedor_contenidocompras_pendientes)
+        self.txt_idCompraPendiente.setObjectName(u"txt_idCompraPendiente")
+
+        self.gridLayout_8.addWidget(self.txt_idCompraPendiente, 3, 0, 1, 3)
 
         self.txt_nombreProveedorOComprasPendientes = QLineEdit(self.contenedor_contenidocompras_pendientes)
         self.txt_nombreProveedorOComprasPendientes.setObjectName(u"txt_nombreProveedorOComprasPendientes")
 
-        self.gridLayout_8.addWidget(self.txt_nombreProveedorOComprasPendientes, 5, 1, 1, 2)
+        self.gridLayout_8.addWidget(self.txt_nombreProveedorOComprasPendientes, 7, 2, 1, 2)
+
+        self.etiqueta_proveedor = QLabel(self.contenedor_contenidocompras_pendientes)
+        self.etiqueta_proveedor.setObjectName(u"etiqueta_proveedor")
+
+        self.gridLayout_8.addWidget(self.etiqueta_proveedor, 5, 3, 1, 1)
+
+        self.btn_btn_buscar_OCpendientes = QToolButton(self.contenedor_contenidocompras_pendientes)
+        self.btn_btn_buscar_OCpendientes.setObjectName(u"btn_btn_buscar_OCpendientes")
+        self.btn_btn_buscar_OCpendientes.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_buscar_OCpendientes.setIcon(icon)
+        self.btn_btn_buscar_OCpendientes.setIconSize(QSize(24, 24))
+        self.btn_btn_buscar_OCpendientes.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+
+        self.gridLayout_8.addWidget(self.btn_btn_buscar_OCpendientes, 3, 10, 1, 1, Qt.AlignmentFlag.AlignRight)
+
+        self.check_filtrarPorFechaDocumentoPendiente = QCheckBox(self.contenedor_contenidocompras_pendientes)
+        self.check_filtrarPorFechaDocumentoPendiente.setObjectName(u"check_filtrarPorFechaDocumentoPendiente")
+
+        self.gridLayout_8.addWidget(self.check_filtrarPorFechaDocumentoPendiente, 4, 0, 1, 2)
 
 
         self.gridLayout_7.addWidget(self.contenedor_contenidocompras_pendientes, 0, 0, 1, 1)
@@ -721,27 +736,30 @@ class Ui_control_compras(object):
     def retranslateUi(self, control_compras):
         control_compras.setWindowTitle(QCoreApplication.translate("control_compras", u"Form", None))
         self.label_wc_titulo_compras.setText(QCoreApplication.translate("control_compras", u"administraci\u00f3n de compras", None))
-        self.txt_quienRealizoCompraRealizada.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
-        self.etiqueta_fechalevantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
-        self.etiquetaTitulo_buscar.setText(QCoreApplication.translate("control_compras", u"Buscar por:", None))
-        self.etiqueta_proveedor_2.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
         self.txt_idCompraRealizada.setPlaceholderText(QCoreApplication.translate("control_compras", u"Id de la orden de compra", None))
-        self.etiqueta_fechacompra.setText(QCoreApplication.translate("control_compras", u"Fecha de compra", None))
+        self.txt_quienRealizoCompraRealizada.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
+        self.etiquetaTitulo_buscar.setText(QCoreApplication.translate("control_compras", u"Buscar por:", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_buscar_OCrealizadas.setToolTip(QCoreApplication.translate("control_compras", u"Buscar ordenes realizadas", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_buscar_OCrealizadas.setText("")
+        self.etiqueta_proveedor_2.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
+        self.etiqueta_fechacompra.setText(QCoreApplication.translate("control_compras", u"Fecha de compra", None))
+        self.check_filtrarPorFechaCompraRealizada.setText(QCoreApplication.translate("control_compras", u"Por fecha compra", None))
+        self.etiqueta_fechalevantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
+        self.check_filtrarPorFechaDocumentoRealizada.setText(QCoreApplication.translate("control_compras", u"Por fecha documento", None))
         self.contenedortabglobal.setTabText(self.contenedortabglobal.indexOf(self.contenedortab_comprasrealizadas), QCoreApplication.translate("control_compras", u"Realizadas", None))
-        self.txt_idCompraPendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Id de la orden de compra", None))
-        self.txt_quienRealizoOCpendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
+        self.etiqueta_levantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
+        self.btn_btn_generarOrdenCompra.setText(QCoreApplication.translate("control_compras", u"Generar", None))
         self.etiquetaTitulo_buscar_2.setText(QCoreApplication.translate("control_compras", u"Buscar por:", None))
+        self.txt_quienRealizoOCpendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Quien realizo la compra", None))
+        self.txt_idCompraPendiente.setPlaceholderText(QCoreApplication.translate("control_compras", u"Id de la orden de compra", None))
+        self.etiqueta_proveedor.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_buscar_OCpendientes.setToolTip(QCoreApplication.translate("control_compras", u"Buscar ordenes pendientes", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_buscar_OCpendientes.setText("")
-        self.etiqueta_levantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
-        self.etiqueta_proveedor.setText(QCoreApplication.translate("control_compras", u"Proveedor", None))
-        self.btn_btn_generarOrdenCompra.setText(QCoreApplication.translate("control_compras", u"Generar", None))
+        self.check_filtrarPorFechaDocumentoPendiente.setText(QCoreApplication.translate("control_compras", u"Por fecha documento", None))
         self.contenedortabglobal.setTabText(self.contenedortabglobal.indexOf(self.contenedortab_compraspendientes), QCoreApplication.translate("control_compras", u"Pendientes", None))
         self.btn_btn_agregar.setText(QCoreApplication.translate("control_compras", u"Agregar", None))
         self.btn_btn_eliminar.setText(QCoreApplication.translate("control_compras", u"Eliminar", None))
