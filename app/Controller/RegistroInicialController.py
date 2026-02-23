@@ -984,7 +984,7 @@ class Registro_personal_inicial(QDialog):
     def mostrar_estado_usuario(self, objetoMensaje):
         if objetoMensaje["exito"]:
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-            self.cerrar()
+            self.close()
             self.registro_agregado_signal.emit()
             if self.empleado is None:
                 self.abrir_inicio()
@@ -1076,13 +1076,13 @@ class Registro_personal_inicial(QDialog):
     def mostrar_estado_usuario_actualizado(self, objetoMensaje):
         if objetoMensaje["exito"]:
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-            self.cerrar()
+            self.close()
             self.registro_agregado_signal.emit()
 
     def mostrar_estado_usuario_eliminado(self, objetoMensaje):
         if objetoMensaje["exito"]:
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-            self.cerrar()
+            self.close()
             self.registro_agregado_signal.emit()
 
     def actualizar_empleado(self):

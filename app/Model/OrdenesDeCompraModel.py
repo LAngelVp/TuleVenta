@@ -1,4 +1,4 @@
-from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, Unidad_medida_productos, Presentacion_productos
+from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, Unidad_medida_productos, Presentacion_productos, Proveedores
 from sqlalchemy.orm import joinedload
 
 class OrdenesDeCompraModel:
@@ -126,7 +126,7 @@ class OrdenesDeCompraModel:
             if fecha_compra:
                 query = query.filter(Compras.fecha_compra == fecha_compra)
             if nombre_proveedor:
-                query = query.filter(Compras.proveedor.has(Proveedores.nombre == nombre_proveedor))
+                query = query.filter(Compras.proveedor.has(Proveedores.nombre.ilike(f"%{nombre_proveedor}%")))
 
             # 3. Ordenar y finalmente aplicar paginación
             query = query.order_by(Compras.fecha_creacion.desc())

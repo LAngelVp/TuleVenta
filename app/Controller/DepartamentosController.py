@@ -7,6 +7,7 @@ from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from ..Source.ibootstrap_rc import  *
 from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import Conexion_base_datos
+from .Validaciones import Validaciones
 from ..View.UserInterfacePy.UI_CONTROL_DEPARTAMENTOS import Ui_Control_departamentos
 from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
@@ -63,7 +64,6 @@ class DepartamentosController(QDialog):
     def insertarValidaciones(self):
         self.WindowRegistroDepartamentos.txt_nombredepartamento.setMaxLength(70)
         self.WindowRegistroDepartamentos.txt_nombredepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txt_nombredepartamento))
-        self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento))
         self.WindowRegistroDepartamentos.txt_buscardepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txt_buscardepartamento))
 
 

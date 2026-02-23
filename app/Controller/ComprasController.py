@@ -21,6 +21,7 @@ from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Sele
 from .CantidadProductosComprasController import CantidadProductosComprasController
 
 class Compras(QWidget):
+    ENVIAR_ORDEN_COMPRA = Signal(object)
     def __init__(self, parent = None, usuario = None):
         super().__init__(parent)
         self.controlOrdenesDeCompra = Ui_control_compras()
@@ -50,9 +51,10 @@ class Compras(QWidget):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
         # ================ FUNCIONALIDADES DE ACCION =====================
-        self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.nueva_orden_compra)
+        self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.orden_compra_window)
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
+        # self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.clicked.connect(self.editOrder)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
         self.controlOrdenesDeCompra.btn_btn_buscar_OCpendientes.clicked.connect(self.buscarOrdenCompraPendiente)
         self.controlOrdenesDeCompra.btn_btn_buscar_OCrealizadas.clicked.connect(self.buscarOrdenCompraRealizada)
@@ -86,20 +88,32 @@ class Compras(QWidget):
         self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setEnabled(estado)
 
     def cambiar_pestaña(self, indice):
+        self.orderSelected = None
         if indice == 0:
             self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(False)
             self.controlOrdenesDeCompra.btn_btn_eliminar.setVisible(False)
         elif indice == 1:
-            self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(True)
+            # self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(True)
             self.controlOrdenesDeCompra.btn_btn_eliminar.setVisible(True)
 
     def paginarOrdenesDeCompra(self):
         indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
         if indicePestañaActual == 0:
+            print(self.cantidad_final_consulta_compras_realizadas)
             self.paginarOrdenesDeCompraRealizadas()
         elif indicePestañaActual == 1:
+            print(self.cantidad_inicial_consulta_compras_pendientes)
             self.paginarOrdenesDeCompraPendientes()
 
+    def editOrder(self):
+        if not self.orderSelected:
+            Mensaje().mensaje_informativo("No se ha seleccionado ningun registro")
+            return
+        self.windowEditarOrdenCompra(self.orderSelected)
+        
+    def windowEditarOrdenCompra(self, ordenCompra = None):
+        pass
+        
     # ==================== FUNCIONALIDADES PARA ORDENES DE COMPRA PENDIENTES =====================
     def buscarOrdenCompraPendiente(self):
         id_orden_compra = self.controlOrdenesDeCompra.txt_idCompraPendiente.text().strip()
@@ -297,15 +311,21 @@ class Compras(QWidget):
     # COMPROBAMOS LA PESTAÑA ACTIVA Y PASAMOS SI ES UNA COMPRA REALIZADA O UNA COMPRA PENDIENTE
     def refrescar_tabla_orden_compra(self):
         try:
-            self.cantidad_inicial_consulta_compras_pendientes = 0
-            self.no_hay_mas_registros_compras_pendientes = False
-            self.busqueda_realizada_compras_pendientes = None
-            if hasattr(self, 'ultima_carga_cantidad_compras_pendientes'):
-                del self.ultima_carga_cantidad_compras_pendientes
+            
             indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
             if indicePestañaActual == 0:
+                self.cantidad_inicial_consulta_compras_realizadas = 0
+                self.no_hay_mas_registros_compras_realizadas = False
+                self.busqueda_realizada_compras_realizadas = None
+                if hasattr(self, 'ultima_carga_cantidad_compras_realizadas'):
+                    del self.ultima_carga_cantidad_compras_realizadas
                 self.obtener_compras_realizadas_hilo(reset_paginacion_compras_realizadas = True)
             elif indicePestañaActual == 1:
+                self.cantidad_inicial_consulta_compras_pendientes = 0
+                self.no_hay_mas_registros_compras_pendientes = False
+                self.busqueda_realizada_compras_pendientes = None
+                if hasattr(self, 'ultima_carga_cantidad_compras_pendientes'):
+                    del self.ultima_carga_cantidad_compras_pendientes
                 self.obtener_compras_pendientes_hilo(reset_paginacion_compras_pendientes = True)
         except Exception as e:
             Mensaje().mensaje_alerta("Error al consultar productos del proveedor.")
@@ -530,14 +550,19 @@ class Compras(QWidget):
             if orden_compra:
                 self.orderSelected = orden_compra
 
-    def nueva_orden_compra(self):
+    def orden_compra_window(self, orderSelected = None):
         if self.orden_compra is None or not self.orden_compra.isVisible():
             self.orden_compra = Orden_compra(parent = self, usuario = self.usuario)
+
             self.orden_compra.VENTANA_CERRADA_NUEVA_COMPRA.connect(
                 self.ventana_cerrada_nueva_compra,
                 Qt.UniqueConnection
             )
+            if orderSelected:
+                self.ENVIAR_ORDEN_COMPRA.connect(self.orden_compra.recibirOrdenCompra)
+                self.ENVIAR_ORDEN_COMPRA.emit()
             self.orden_compra.setWindowModality(Qt.ApplicationModal)
+            
             self.orden_compra.exec_()
         else:
             self.orden_compra.raise_()
@@ -593,6 +618,9 @@ class Compras(QWidget):
     
     def ventana_cerrada_nueva_compra(self):
         self.orden_compra = None
+
+class WindowEditarOrdenCompra(QDialog):
+    pass
 
 class Orden_compra(QDialog):
     VENTANA_CERRADA_NUEVA_COMPRA = Signal()

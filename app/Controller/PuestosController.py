@@ -7,6 +7,7 @@ from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from app.Model.AbstractTableModel import ComprobarModelosTablas
 from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import Conexion_base_datos
+from .Validaciones import Validaciones
 from ..View.UserInterfacePy.UI_ADMINISTRAR_PUESTOS import Ui_Formulario_puestos
 from .RolesPermisosController import ControlRolesController
 from ..Model.PuestoModel import PuestoModel

@@ -200,6 +200,18 @@ background: rgb(179, 179, 179);
 #btn_btn_generarOrdenCompra:pressed{
 background: #b6ccd8 ;
 }
+#btn_btn_generarOrdenCompraCompletada{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+color: #1d1c1c;
+}
+#btn_btn_generarOrdenCompraCompletada:hover{
+background: rgb(179, 179, 179);
+}
+#btn_btn_generarOrdenCompraCompletada:pressed{
+background: #b6ccd8 ;
+}
 
 /*-----------TABLA--------------*/
 
@@ -566,7 +578,7 @@ QCalendarWidget QAbstractItemView::item:hover {
                   </property>
                  </spacer>
                 </item>
-                <item row="3" column="10">
+                <item row="3" column="10" alignment="Qt::AlignmentFlag::AlignRight">
                  <widget class="QToolButton" name="btn_btn_buscar_OCrealizadas">
                   <property name="cursor">
                    <cursorShape>PointingHandCursor</cursorShape>
@@ -624,6 +636,17 @@ QCalendarWidget QAbstractItemView::item:hover {
                  <widget class="QCheckBox" name="check_filtrarPorFechaDocumentoRealizada">
                   <property name="text">
                    <string>Por fecha documento</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="10">
+                 <widget class="QPushButton" name="btn_btn_generarOrdenCompraCompletada">
+                  <property name="text">
+                   <string>REPORTE</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../../Source/ibootstrap.qrc">
+                    <normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</normaloff>:/Icons/Bootstrap/file-earmark-pdf-fill.svg</iconset>
                   </property>
                  </widget>
                 </item>

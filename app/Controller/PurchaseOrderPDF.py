@@ -158,24 +158,24 @@ class PurchaseOrderPDF:
         self.content.append(Spacer(1, 15))
         
         # Información de empresa y orden
-        self.nombreEmpresa = self.data.empleado.sucursal.nombre_sucursal
-        self.razonSocialEmpresa = self.data.empleado.sucursal.razon_social
-        self.sucursalRFC = self.data.empleado.sucursal.rfc
-        self.direccionEmpresa = f"{self.data.empleado.sucursal.direccion}, CP {self.data.empleado.sucursal.codigo_postal}, {self.data.empleado.sucursal.ciudad}, {self.data.empleado.sucursal.estado}, {self.data.empleado.sucursal.pais}"
-        self.telefonoEmpresa = self.data.empleado.sucursal.num_telefono
-        self.correoEmpresa = self.data.empleado.correo_electronico
-        self.departamentoRealizo = f"{self.data.empleado.departamento.nombre}"
-        self.usuarioRealizo = f"{self.data.empleado.nombre} {self.data.empleado.apellido_paterno} {self.data.empleado.apellido_materno}"
+        self.nombreEmpresa = self.data.empleado.sucursal.nombre_sucursal if self.data.empleado.sucursal.nombre_sucursal else ""
+        self.razonSocialEmpresa = self.data.empleado.sucursal.razon_social if self.data.empleado.sucursal.razon_social else ""
+        self.sucursalRFC = self.data.empleado.sucursal.rfc if self.data.empleado.sucursal.rfc else ""
+        self.direccionEmpresa = f"{self.data.empleado.sucursal.direccion}, CP {self.data.empleado.sucursal.codigo_postal}, {self.data.empleado.sucursal.ciudad}, {self.data.empleado.sucursal.estado}, {self.data.empleado.sucursal.pais}" if self.data.empleado.sucursal.direccion else ""
+        self.telefonoEmpresa = self.data.empleado.sucursal.num_telefono if self.data.empleado.sucursal.num_telefono else ""
+        self.correoEmpresa = self.data.empleado.correo_electronico if self.data.empleado.correo_electronico else ""
+        self.departamentoRealizo = f"{self.data.empleado.departamento.nombre}" if self.data.empleado.departamento.nombre else ""
+        self.usuarioRealizo = f"{self.data.empleado.nombre} {self.data.empleado.apellido_paterno} {self.data.empleado.apellido_materno}" if self.data.empleado.nombre else ""
         
-        self.fechaOrden = f"{self.data.fecha_creacion.date()}"
-        self.proveedor = self.data.proveedor.nombre
-        self.plazoPago = self.data.plazo_pago
-        self.metodoPago = self.data.metodos_de_pago.nombre
-        self.fechaVencimientoCompra = f"{self.data.fecha_vencimiento.date()}"
-        self.direccionProveedor = f"{self.data.proveedor.calles}, {self.data.proveedor.avenidas}, colonia {self.data.proveedor.colonia}, CP {self.data.proveedor.codigo_postal}, {self.data.proveedor.ciudad}, {self.data.proveedor.estado}, {self.data.proveedor.pais}"
-        self.telefonoProveedor = self.data.proveedor.telefono
-        self.correoProveedor = self.data.proveedor.correo
-        self.puestoSolicitante = f"{self.data.empleado.puesto.nombre}"
+        self.fechaOrden = f"{self.data.fecha_creacion.date()}" if self.data.fecha_creacion else ""
+        self.proveedor = self.data.proveedor.nombre if self.data.proveedor.nombre else ""
+        self.plazoPago = self.data.plazo_pago if self.data.plazo_pago else ""
+        self.metodoPago = self.data.metodos_de_pago.nombre if self.data.metodos_de_pago.nombre else ""
+        self.fechaVencimientoCompra = f"{self.data.fecha_vencimiento.date()}" if self.data.fecha_vencimiento else ""
+        self.direccionProveedor = f"{self.data.proveedor.calles}, {self.data.proveedor.avenidas}, colonia {self.data.proveedor.colonia}, CP {self.data.proveedor.codigo_postal}, {self.data.proveedor.ciudad}, {self.data.proveedor.estado}, {self.data.proveedor.pais}" if self.data.proveedor.calles else ""
+        self.telefonoProveedor = self.data.proveedor.telefono if self.data.proveedor.telefono else ""
+        self.correoProveedor = self.data.proveedor.correo if self.data.proveedor.correo else ""
+        self.puestoSolicitante = f"{self.data.empleado.puesto.nombre}" if self.data.empleado.puesto.nombre else ""
         
         datos_tabla_dos_columnas = [
             [Paragraph("<b>INFORMACIÓN DE EMPRESA</b>", estilo_compacto),

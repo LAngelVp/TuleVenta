@@ -219,6 +219,18 @@ class Ui_control_compras(object):
 "#btn_btn_generarOrdenCompra:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
+"#btn_btn_generarOrdenCompraCompletada{\n"
+"border-radius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"color: #1d1c1c;\n"
+"}\n"
+"#btn_btn_generarOrdenCompraCompletada:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_btn_generarOrdenCompraCompletada:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
 "\n"
 "/*-----------TABLA--------------*/\n"
 "\n"
@@ -239,7 +251,8 @@ class Ui_control_compras(object):
 "\n"
 "/* Encabezados */\n"
 "[objectName*=\"tabla_\"] QHeaderView::section {\n"
-"background-color: #023375;\n"
+"background-co"
+                        "lor: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
 "padding: 5px;\n"
@@ -252,8 +265,7 @@ class Ui_control_compras(object):
 "color: white;\n"
 "}\n"
 "\n"
-"/* \u00cdtems seleccionados *"
-                        "/\n"
+"/* \u00cdtems seleccionados */\n"
 "[objectName*=\"tabla_\"] QTableView::item:selected {\n"
 "background-color: #cce4ff;\n"
 "color: black;\n"
@@ -281,7 +293,8 @@ class Ui_control_compras(object):
 "}\n"
 "*[objectName*=\"fecha_\"]::down-arrow{\n"
 "image: url(:/Icons/Bootstrap/calendar2-date.svg);\n"
-"width: 17%;\n"
+"width: "
+                        "17%;\n"
 "height: 17%;\n"
 "padding-left:5px;\n"
 "padding-right:5px;\n"
@@ -293,8 +306,7 @@ class Ui_control_compras(object):
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
 "    color: white;\n"
-"    border-to"
-                        "p-left-radius: 5px;\n"
+"    border-top-left-radius: 5px;\n"
 "    border-top-right-radius: 5px;\n"
 "}\n"
 "\n"
@@ -322,7 +334,8 @@ class Ui_control_compras(object):
 "QCalendarWidget QAbstractItemView:enabled {\n"
 "    background-color: #FFFFFF;\n"
 "    color: #1d1c1c;\n"
-"    selection-background-color: #00668c;  /* Color al seleccionar fecha */\n"
+"    selection-backg"
+                        "round-color: #00668c;  /* Color al seleccionar fecha */\n"
 "    selection-color: white;\n"
 "}\n"
 "\n"
@@ -333,8 +346,7 @@ class Ui_control_compras(object):
 "\n"
 "/* EFECTO HOVER SOBRE D\u00cdAS */\n"
 "QCalendarWidget QAbstractItemView::item:hover {\n"
-""
-                        "    background-color: #e1f0f7;\n"
+"    background-color: #e1f0f7;\n"
 "    color: #1d1c1c;\n"
 "}\n"
 "/*----------CAJA OPCIONES---------------*/\n"
@@ -359,7 +371,8 @@ class Ui_control_compras(object):
 "\n"
 "/* ESTILO DE LOS \u00cdTEMS */\n"
 "[objectName*=\"cajaOpciones\"] QListView::item {\n"
-"    padding: 6px 10px ;\n"
+"    paddi"
+                        "ng: 6px 10px ;\n"
 "    margin: 2px ;\n"
 "}\n"
 "/* BOT\u00d3N DESPLEGABLE */\n"
@@ -369,8 +382,7 @@ class Ui_control_compras(object):
 "    padding-right: 5px ;\n"
 "    width: 20% ;\n"
 "    border-left-width: 1px ;\n"
-"    border-radius: 3px ;"
-                        "\n"
+"    border-radius: 3px ;\n"
 "    background-color: #F5F5F5 ;\n"
 "}\n"
 "/* FLECHA DESPLEGABLE */\n"
@@ -479,7 +491,7 @@ class Ui_control_compras(object):
         self.btn_btn_buscar_OCrealizadas.setIconSize(QSize(25, 25))
         self.btn_btn_buscar_OCrealizadas.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
-        self.gridLayout_4.addWidget(self.btn_btn_buscar_OCrealizadas, 3, 10, 1, 1)
+        self.gridLayout_4.addWidget(self.btn_btn_buscar_OCrealizadas, 3, 10, 1, 1, Qt.AlignmentFlag.AlignRight)
 
         self.etiqueta_proveedor_2 = QLabel(self.contenedor_contenido)
         self.etiqueta_proveedor_2.setObjectName(u"etiqueta_proveedor_2")
@@ -506,6 +518,14 @@ class Ui_control_compras(object):
 
         self.gridLayout_4.addWidget(self.check_filtrarPorFechaDocumentoRealizada, 6, 2, 1, 1)
 
+        self.btn_btn_generarOrdenCompraCompletada = QPushButton(self.contenedor_contenido)
+        self.btn_btn_generarOrdenCompraCompletada.setObjectName(u"btn_btn_generarOrdenCompraCompletada")
+        icon1 = QIcon()
+        icon1.addFile(u":/Icons/Bootstrap/file-earmark-pdf-fill.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_generarOrdenCompraCompletada.setIcon(icon1)
+
+        self.gridLayout_4.addWidget(self.btn_btn_generarOrdenCompraCompletada, 8, 10, 1, 1)
+
 
         self.gridLayout_2.addWidget(self.contenedor_contenido, 0, 0, 1, 1)
 
@@ -525,9 +545,9 @@ class Ui_control_compras(object):
 
         self.gridLayout_5.addWidget(self.contenedor_widget, 0, 0, 1, 1)
 
-        icon1 = QIcon()
-        icon1.addFile(u":/Icons/Bootstrap/check-square.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.contenedortabglobal.addTab(self.contenedortab_comprasrealizadas, icon1, "")
+        icon2 = QIcon()
+        icon2.addFile(u":/Icons/Bootstrap/check-square.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.contenedortabglobal.addTab(self.contenedortab_comprasrealizadas, icon2, "")
         self.contenedortab_compraspendientes = QWidget()
         self.contenedortab_compraspendientes.setObjectName(u"contenedortab_compraspendientes")
         self.gridLayout_9 = QGridLayout(self.contenedortab_compraspendientes)
@@ -558,9 +578,7 @@ class Ui_control_compras(object):
         self.btn_btn_generarOrdenCompra = QPushButton(self.contenedor_contenidocompras_pendientes)
         self.btn_btn_generarOrdenCompra.setObjectName(u"btn_btn_generarOrdenCompra")
         self.btn_btn_generarOrdenCompra.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon2 = QIcon()
-        icon2.addFile(u":/Icons/Bootstrap/file-earmark-pdf-fill.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_generarOrdenCompra.setIcon(icon2)
+        self.btn_btn_generarOrdenCompra.setIcon(icon1)
 
         self.gridLayout_8.addWidget(self.btn_btn_generarOrdenCompra, 7, 10, 1, 1)
 
@@ -748,6 +766,7 @@ class Ui_control_compras(object):
         self.check_filtrarPorFechaCompraRealizada.setText(QCoreApplication.translate("control_compras", u"Por fecha compra", None))
         self.etiqueta_fechalevantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
         self.check_filtrarPorFechaDocumentoRealizada.setText(QCoreApplication.translate("control_compras", u"Por fecha documento", None))
+        self.btn_btn_generarOrdenCompraCompletada.setText(QCoreApplication.translate("control_compras", u"REPORTE", None))
         self.contenedortabglobal.setTabText(self.contenedortabglobal.indexOf(self.contenedortab_comprasrealizadas), QCoreApplication.translate("control_compras", u"Realizadas", None))
         self.etiqueta_levantamientocompra.setText(QCoreApplication.translate("control_compras", u"Fecha documento", None))
         self.btn_btn_generarOrdenCompra.setText(QCoreApplication.translate("control_compras", u"Generar", None))

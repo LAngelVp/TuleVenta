@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import QWidget, QDialog, QMessageBox
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QIcon
@@ -38,7 +38,8 @@ class SistemaPrincipal(QWidget):
         self.datos_usuario = datos_usuario
         
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.showFullScreen()
+        # self.showFullScreen()
+        QTimer.singleShot(0, self.showFullScreen)
         self.setWindowTitle("TuleVenta POS")
         
         self.ui.btn_laterales_btn_burger.clicked.connect(self.mostrar_menu)
