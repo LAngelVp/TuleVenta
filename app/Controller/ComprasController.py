@@ -56,6 +56,7 @@ class Compras(QWidget):
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
         # self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.clicked.connect(self.editOrder)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
+        self.controlOrdenesDeCompra.btn_btn_generarOrdenCompraCompletada.clicked.connect(self.generar_orden_compra_pdf)
         self.controlOrdenesDeCompra.btn_btn_buscar_OCpendientes.clicked.connect(self.buscarOrdenCompraPendiente)
         self.controlOrdenesDeCompra.btn_btn_buscar_OCrealizadas.clicked.connect(self.buscarOrdenCompraRealizada)
         self.controlOrdenesDeCompra.btn_paginarTabla.clicked.connect(self.paginarOrdenesDeCompra)

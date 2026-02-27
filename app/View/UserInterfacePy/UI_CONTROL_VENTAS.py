@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_VENTAS.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -87,6 +87,18 @@ class Ui_Control_Ventas(object):
 "background: #b6ccd8 ;\n"
 "}\n"
 "\n"
+"#btn_PaginarTabla{\n"
+"border-radius: 2px;\n"
+"background: #e0e0e0;\n"
+"padding: 5px;\n"
+"}\n"
+"#btn_PaginarTabla:hover{\n"
+"background: rgb(179, 179, 179);\n"
+"}\n"
+"#btn_PaginarTabla:pressed{\n"
+"background: #b6ccd8 ;\n"
+"}\n"
+"\n"
 "#etiqueta_buscar{\n"
 "image: url(:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg);\n"
 "min-width:25px;\n"
@@ -111,7 +123,8 @@ class Ui_Control_Ventas(object):
 "font-family: Arial;\n"
 "font-size: 14px;\n"
 "background: #E3E3E3;\n"
-"border: 1px solid #4791F5;\n"
+"border: 1px solid #4791F5;"
+                        "\n"
 "}\n"
 "\n"
 "[objectName*=\"tabla_\"] QTableView {\n"
@@ -122,8 +135,7 @@ class Ui_Control_Ventas(object):
 "}\n"
 "\n"
 "/* Encabezados */\n"
-"[ob"
-                        "jectName*=\"tabla_\"] QHeaderView::section {\n"
+"[objectName*=\"tabla_\"] QHeaderView::section {\n"
 "background-color: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
@@ -246,12 +258,20 @@ class Ui_Control_Ventas(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
+        self.btn_PaginarTabla = QPushButton(self.contenedor_tabla)
+        self.btn_PaginarTabla.setObjectName(u"btn_PaginarTabla")
+        icon3 = QIcon()
+        icon3.addFile(u":/Icons/Bootstrap/arrow-bar-down.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_PaginarTabla.setIcon(icon3)
+
+        self.horizontalLayout_2.addWidget(self.btn_PaginarTabla)
+
         self.btn_RefrescarTabla = QPushButton(self.contenedor_tabla)
         self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
         self.btn_RefrescarTabla.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosBlancos/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/iconosBlancos/Icons/IconosSVG/base_datos_refresh.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_RefrescarTabla.setIcon(icon4)
 
         self.horizontalLayout_2.addWidget(self.btn_RefrescarTabla)
 
@@ -289,6 +309,7 @@ class Ui_Control_Ventas(object):
         self.btn_btn_modificar.setText(QCoreApplication.translate("Control_Ventas", u"MODIFICAR", None))
         self.etiqueta_buscar.setText("")
         self.btn_btn_buscar.setText(QCoreApplication.translate("Control_Ventas", u"Buscar", None))
+        self.btn_PaginarTabla.setText("")
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Ventas", u"Refrescar tabla", None))
 #endif // QT_CONFIG(tooltip)

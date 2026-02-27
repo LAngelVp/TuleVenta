@@ -80,7 +80,7 @@ class Inicio_sistema(QObject):
         return {
             "exito": True,
             "mensaje": f"Iniciando el sistema",
-            "resultado": resultado
+            "resultado": resultado  
         }
         
     def mostrar_resultado_hilo(self, objetoMensaje):

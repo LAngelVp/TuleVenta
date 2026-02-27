@@ -73,6 +73,18 @@ background: rgb(179, 179, 179);
 background: #b6ccd8 ;
 }
 
+#btn_PaginarTabla{
+border-radius: 2px;
+background: #e0e0e0;
+padding: 5px;
+}
+#btn_PaginarTabla:hover{
+background: rgb(179, 179, 179);
+}
+#btn_PaginarTabla:pressed{
+background: #b6ccd8 ;
+}
+
 #etiqueta_buscar{
 image: url(:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg);
 min-width:25px;
@@ -341,6 +353,17 @@ color: black;
                  </size>
                 </property>
                </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btn_PaginarTabla">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../../Source/ibootstrap.qrc">
+                  <normaloff>:/Icons/Bootstrap/arrow-bar-down.svg</normaloff>:/Icons/Bootstrap/arrow-bar-down.svg</iconset>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QPushButton" name="btn_RefrescarTabla">
