@@ -143,10 +143,13 @@ class Perfil(QWidget):
                 for dia, checkbox in cajas_verificacion.items():
                     checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in data["data"].empleado.puesto.dias_laborales)
                                         
-            if data["data"].empleado.foto is not None and data["data"].empleado.foto != "":
-                self.ui.foto_empleadoperfil.setPixmap(QPixmap(data["data"].empleado.foto).scaled(self.ui.foto_empleadoperfil.size()))
+            if data["data"].empleado.foto_empleado is not None and data["data"].empleado.foto_empleado != "":
+                try:
+                    self.ui.foto_empleadoperfil.setPixmap(QPixmap(data["data"].empleado.foto_empleado).scaled(self.ui.foto_empleadoperfil.size()))
+                except Exception as e:
+                    self.ui.foto_empleadoperfil.clear()
             else:
-                self.ui.foto_empleadoperfil.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
+                self.ui.foto_empleadoperfil.clear()
             self.ui.foto_empleadoperfil.setEnabled(True)
 
     def limpiarCampos(self):

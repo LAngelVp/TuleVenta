@@ -55,7 +55,7 @@ class UsuarioModel:
 
     def obtenerDatosGeneralesUsuario(self, idUsuario):
         data = self.session.query(Usuarios).options(
-            joinedload(Usuarios.empleado),
+            joinedload(Usuarios.empleado).joinedload(Empleados.puesto),
             joinedload(Usuarios.rol)
         ).where(Usuarios.id == idUsuario).first()
         if data:
