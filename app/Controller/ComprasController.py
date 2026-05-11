@@ -990,6 +990,9 @@ class Orden_compra(QDialog):
         return len(productos_nuevos)
         
     def mostrar_productos_proveedores(self):
+        if self.proveedor is None:
+            Mensaje().mensaje_alerta("Debe seleccionar un proveedor")
+            return
         if self.ventana_productos_proveedor is None or not self.ventana_productos_proveedor.isVisible():
             self.ventana_productos_proveedor = SeleccionProductosProveedor(parent=self, proveedor=self.proveedor)
             self.ventana_productos_proveedor.enviarProductosSignal.connect(
