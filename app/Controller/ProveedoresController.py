@@ -11,8 +11,9 @@ from app.DataBase.conexionBD import Conexion_base_datos
 from app.Controller.Validaciones import Validaciones
 from app.Model.CategoriasModel import CategoriasModel
 from app.Model.RepresentanteProveedorModel import RepresentanteProveedorModel
-from app.Model.BaseDatosModel import Proveedores
+from app.Model.BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores
 from app.Controller.MensajesAlertasController import *
+from .OperacionMasivaCsvController import OperacionMasivaCsvController
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .Validaciones import Validaciones
 from .FuncionesAuxiliares import *
@@ -43,10 +44,17 @@ class Control_proveedores(QWidget):
         self.categoriasBase = None
         self.ventana_productos_precios = None
         self.lista_hilos_proveedores = []
+        self.cantidad_inicial_consulta = 0
+        self.cantidad_final_consulta = 100
+        self.busqueda_realizada = False
+        self.texto_busqueda_proveedor = ""
+        self.no_hay_mas_registros = False
+        self._append_mode = False
+        self._cargando_mas_proveedores = False
         self.manejadorModal = ModalManager()
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_categoria_proveedor = AjustarcajaOpciones()
-# CONFIGURACION DE LA VENTANA        
+# CONFIGURACION DE LA VENTANA
         self.WindowSupplier.btnradio_representantefalse.setChecked(True)
         self.WindowSupplier.contenedor_datosrepresentante.setVisible(False)
 # CONEXIONES DE LOS BOTONES
@@ -57,18 +65,21 @@ class Control_proveedores(QWidget):
         self.WindowSupplier.btn_btn_eliminar.clicked.connect(self.eliminar_proveedor)
         self.WindowSupplier.btn_btn_listadeproductoyprecios.clicked.connect(self.mostrar_productos_y_precios)
         self.WindowSupplier.txtlargo_descripcioncategoria.setReadOnly(True)
-        self.WindowSupplier.btn_RefrescarTabla.clicked.connect(self.obtener_proveedores_tabla_hilo)
+        self.WindowSupplier.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla)
         self.WindowSupplier.btn_btn_buscarproveedor.clicked.connect(self.buscar_proveedor_hilo)
         self.WindowSupplier.btn_btn_actualizar.clicked.connect(self.control_actualizar_proveedor)
+        self.WindowSupplier.btn_btn_importarProveedores.clicked.connect(self.importar_proveedores_csv)
 # CONEXIONES DE SEÑALES
         self.WindowSupplier.cajaOpciones_categorias.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
         self.PROVEEDOR_SELECCIONADO_SIGNAL.connect(self.cargar_datos_proveedor)
+        self.WindowSupplier.txt_buscarproveedor.returnPressed.connect(self.buscar_proveedor_hilo)
 
 # EJECUCION DE FUNCIONES
         self.validaciones()
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.ajustador_categoria_proveedor.elemento_eliminado_signal.connect(self.mostrar_categorias_proveedor)
         self.__configuracion_tabla_proveedores()
+        self.WindowSupplier.tabla_proveedores.verticalScrollBar().valueChanged.connect(self._manejar_scroll_tabla)
 # ------------------------------------------------------------------------------
 # FUNCIONALIDADES
     def hideEvent(self, event):
@@ -99,7 +110,7 @@ class Control_proveedores(QWidget):
         self.WindowSupplier.txt_telefono.setValidator(Validaciones().get_phone_validator(self.WindowSupplier.txt_telefono))
         self.WindowSupplier.txt_codigopostal.setValidator(Validaciones().get_int_validator(self.WindowSupplier.txt_codigopostal))
         self.WindowSupplier.txt_telefonorepresentante.setValidator(Validaciones().get_phone_validator(self.WindowSupplier.txt_telefonorepresentante))
-        
+
     def ventana_cerrada_productos_proveedor(self):
         self.ventana_productos_precios = None
         self.proveedor_seleccionado = None
@@ -109,20 +120,24 @@ class Control_proveedores(QWidget):
             Mensaje().mensaje_informativo("No haz seleccionado un proveedor para poder visualizar la lista de productos y precios.")
             return
         if self.proveedor_seleccionado:
-            if self.ventana_productos_precios is None or self.ventana_productos_precios.isVisible():
+            if self.ventana_productos_precios is None or not self.ventana_productos_precios.isVisible():
                 self.ventana_productos_precios = Productos_de_proveedorController(parent=self, proveedor=self.proveedor_seleccionado)
                 self.ventana_productos_precios.VENTANA_CERRADA_PRODUCTOS_DEL_PROVEEDOR.connect(self.ventana_cerrada_productos_proveedor)
-                self.LIMPIAR_CAMPOS_INTERNOS.connect(self.limpiar_campos)
+                try:
+                    self.LIMPIAR_CAMPOS_INTERNOS.connect(self.limpiar_campos, Qt.UniqueConnection)
+                except TypeError:
+                    pass
                 self.LIMPIAR_CAMPOS_INTERNOS.emit()
                 self.ventana_productos_precios.show()
             else:
                 self.ventana_productos_precios.raise_()
-    
+                self.ventana_productos_precios.activateWindow()
+
     def nueva_categoria(self):
         self.WindowSupplierCategory = CategoriasController(tipo_categoria="proveedores")
         self.WindowSupplierCategory.categoria_agregada_signal.connect(self.mostrar_categorias_proveedor)
         self.WindowSupplierCategory.show()
-    
+
     def mostrar_categorias_proveedor(self):
         try:
             WorkerDB.cleanup_owner_workers("listar_categorias_proveedor_thread")
@@ -143,7 +158,7 @@ class Control_proveedores(QWidget):
             if hasattr(self, 'id_hilo_categorias_proveedores'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_categorias_proveedores)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-        
+
     def obtener_categorias_proveedor_query(self, session):
         try:
             categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="proveedores")
@@ -167,7 +182,7 @@ class Control_proveedores(QWidget):
             "mensaje" : f"Datos listados",
             "data": categorias
         }
-    
+
     def listar_categorias_proveedores(self, resultado):
         if isinstance(resultado, dict):
             categorias = resultado["data"]
@@ -180,7 +195,7 @@ class Control_proveedores(QWidget):
             for categoria in resultado:
                 self.WindowSupplier.cajaOpciones_categorias.addItem(categoria.nombre, userData=categoria)
             self.ajustador_categoria_proveedor.ajustar_cajadeopciones(self.WindowSupplier.cajaOpciones_categorias)
-            
+
     def mostrar_descripcion_categoria(self):
         categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
         if not categoria:
@@ -222,7 +237,7 @@ class Control_proveedores(QWidget):
             self.WindowSupplier.contenedor_datosrepresentante.setVisible(True)
         else:
             self.WindowSupplier.contenedor_datosrepresentante.setVisible(False)
-    
+
     def obtener_datos_proveedor(self):
         datos = {
             'nombre': self.WindowSupplier.txt_nombre.text().strip(),
@@ -246,7 +261,7 @@ class Control_proveedores(QWidget):
         if campos_vacios:
             return None, campos_vacios
         return datos, None
-    
+
     def obtener_datos_representante(self):
         datos = {
             'nombre': self.WindowSupplier.txt_nombrerepresentante.text().strip(),
@@ -266,11 +281,11 @@ class Control_proveedores(QWidget):
         datos_proveedor, campos_vacios = self.obtener_datos_proveedor()
         datos_representante = self.obtener_datos_representante()
         categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
-        
+
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
-        
+
         if datos_proveedor is None:
             campos_faltantes = ', '.join(campos_vacios)
             Mensaje().mensaje_alerta(f"Completa los siguientes campos: {campos_faltantes}.")
@@ -285,7 +300,7 @@ class Control_proveedores(QWidget):
             self.lista_hilos_proveedores.append(self.id_hilo_agregar_proveedor)
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_agregar_proveedor,
-                resultado_callback=self.mostrar_estado_hilo,
+                resultado_callback=self.mostrar_estado_hilo_y_refrescar,
                 error_callback= self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
@@ -307,7 +322,7 @@ class Control_proveedores(QWidget):
             if hasattr(self, 'id_hilo_agregar_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_proveedor)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-        
+
     def agregar_proveedor_query(self, session, categoria, datos_representante = None, datos_proveedor = None):
         try:
             if datos_representante:
@@ -359,8 +374,13 @@ class Control_proveedores(QWidget):
             "mensaje": f'Se realizo el registro con exito'
         }
 
-    def obtener_proveedores_tabla_hilo(self):
+    def obtener_proveedores_tabla_hilo(self, reset_paginacion=False, append=False):
         try:
+            self._append_mode = append
+            self._cargando_mas_proveedores = append
+            if reset_paginacion:
+                self.cantidad_inicial_consulta = 0
+                self.no_hay_mas_registros = False
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_proveedores_thread")
             self.id_hilo_obtener_proveedores = WorkerDB.create_managed_worker(owner_id="obtener_proveedores_thread")
@@ -381,10 +401,13 @@ class Control_proveedores(QWidget):
             if hasattr(self, 'id_hilo_obtener_proveedores'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_proveedores)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-            
+
     def obtener_proveedores_query(self, session):
         try:
-            proveedores, estado = ProveedoresModel(session).obtener_proveedores()
+            proveedores, estado = ProveedoresModel(session).obtener_proveedores(
+                offset=self.cantidad_inicial_consulta,
+                limit=self.cantidad_final_consulta
+            )
             if not estado:
                 session.rollback()
                 return {
@@ -399,13 +422,15 @@ class Control_proveedores(QWidget):
                 "mensaje": f"Ocurrio un error en el proceso. {e}",
                 "data": []
             }
-        
+
+        self.cantidad_inicial_consulta += len(proveedores)
+
         return {
                 "exito": estado,
                 "mensaje": f"Registros listados",
                 "data": proveedores
                 }
-    
+
     def __configuracion_tabla_proveedores(self):
         cabeceras = [
                     "Nombre",
@@ -443,16 +468,31 @@ class Control_proveedores(QWidget):
             signalSeleccion=self.obtener_proveedor_seleccionado_tabla,
         )
         return self.modelo_tabla_proveedores
-    
+
     def llenar_tabla_proveedores(self, resultado):
         try:
+            self._cargando_mas_proveedores = False
             if not resultado["exito"]:
+                if self._append_mode:
+                    self.no_hay_mas_registros = True
+                    return
+                self.modelo_tabla_proveedores.clear()
+                self.no_hay_mas_registros = True
                 Mensaje().mensaje_informativo(f"No hay proveedores")
                 return
-            self.modelo_tabla_proveedores.update_data(resultado["data"], reset=True)
+            datos = resultado.get("data", [])
+            if not datos:
+                if self._append_mode:
+                    self.no_hay_mas_registros = True
+                else:
+                    self.modelo_tabla_proveedores.clear()
+                return
+            self.no_hay_mas_registros = len(datos) < self.cantidad_final_consulta
+            self.modelo_tabla_proveedores.update_data(datos, reset=not self._append_mode)
         except Exception as e:
+            self._cargando_mas_proveedores = False
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar proveedores: {e}")
-        
+
     def obtener_proveedor_seleccionado_tabla(self, current, previus = None):
         self.limpiar_campos()
         if current.isValid():
@@ -469,12 +509,12 @@ class Control_proveedores(QWidget):
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
-        
+
         if datos_proveedor is None:
             campos_faltantes = ', '.join(campos_vacios)
             Mensaje().mensaje_alerta(f"Completa los siguientes campos: {campos_faltantes}.")
             return
-        
+
         if not hasattr(self, 'proveedor_seleccionado') or not self.proveedor_seleccionado:
             Mensaje().mensaje_alerta(cuerpo="No hay un proveedor seleccionado para actualizar.")
             return
@@ -485,17 +525,17 @@ class Control_proveedores(QWidget):
                 WorkerDB.cleanup_owner_workers("actualizar_proveedor_thread")
                 self.id_hilo_actualizar_proveedor = WorkerDB.create_managed_worker(owner_id="actualizar_proveedor_thread")
                 self.consultor_actualizar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_actualizar_proveedor)
-                
+
                 if not self.consultor_actualizar_proveedor:
                     raise Exception("No se pudo obtener el worker gestionado")
                 self.lista_hilos_proveedores.append(self.id_hilo_actualizar_proveedor)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_actualizar_proveedor,
-                    resultado_callback=self.mostrar_estado_hilo,
+                    resultado_callback=self.mostrar_estado_hilo_y_refrescar,
                     error_callback=self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
-                
+
                 datos_actualizacion = {
                     'proveedor_id': self.proveedor_seleccionado.id,
                     'categoria': categoria,
@@ -503,17 +543,17 @@ class Control_proveedores(QWidget):
                     'tiene_representante': self.WindowSupplier.btnradio_representantetrue.isChecked(),
                     'datos_representante': datos_representante if self.WindowSupplier.btnradio_representantetrue.isChecked() else None
                 }
-                
+
                 self.consultor_actualizar_proveedor.ejecutar(
                     funcion=self.actualizar_proveedor_query,
                     **datos_actualizacion
                 )
-                
+
             except Exception as e:
                 if hasattr(self, 'id_hilo_actualizar_proveedor'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_proveedor)
                 Mensaje().mensaje_alerta(f"Ocurrió un error en la operación.\n{e}")
-            
+
     def actualizar_proveedor_query(self, session, proveedor_id, categoria, datos_proveedor, tiene_representante, datos_representante=None):
         try:
             proveedor_existente, estado_proveedor = ProveedoresModel(session).obtener_proveedor_id(proveedor_id)
@@ -599,11 +639,11 @@ class Control_proveedores(QWidget):
         self.WindowSupplier.txt_web.setText(proveedor.pagina_web)
         self.WindowSupplier.txt_correo.setText(proveedor.correo)
         self.WindowSupplier.txt_telefono.setText(proveedor.telefono)
-        
+
         if proveedor.categoria:
             objeto = proveedor.categoria
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowSupplier.cajaOpciones_categorias, objeto, "nombre")
-        
+
         if proveedor.clave_moneda:
             nombre = f'{proveedor.clave_moneda}: {proveedor.tipo_moneda}'
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowSupplier.cajaOpciones_tipomoneda, nombre)
@@ -621,11 +661,19 @@ class Control_proveedores(QWidget):
             self.WindowSupplier.btnradio_representantefalse.setChecked(True)
             self.WindowSupplier.contenedor_datosrepresentante.hide()
 
-    def buscar_proveedor_hilo(self):
+    def buscar_proveedor_hilo(self, append=False):
         texto_busqueda = self.WindowSupplier.txt_buscarproveedor.text().strip()
         if texto_busqueda == "":
             Mensaje().mensaje_informativo("No has ingresado datos para filtrar")
             return
+        busqueda_nueva = texto_busqueda != self.texto_busqueda_proveedor
+        self.texto_busqueda_proveedor = texto_busqueda
+        self.busqueda_realizada = True
+        self._append_mode = append
+        self._cargando_mas_proveedores = append
+        if busqueda_nueva or not append:
+            self.cantidad_inicial_consulta = 0
+            self.no_hay_mas_registros = False
         try:
             self.manejadorModal.mostrar_modal()
             WorkerDB.cleanup_owner_workers("buscar_proveedor_thread")
@@ -648,11 +696,15 @@ class Control_proveedores(QWidget):
             if hasattr(self, 'id_hilo_buscar_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_proveedor)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
-        
+
     def buscar_proveedor_query(self, session, texto):
         try:
-            proveedores, estado = ProveedoresModel(session).obtener_nombre_proveedor(texto=texto)
-            
+            proveedores, estado = ProveedoresModel(session).obtener_nombre_proveedor(
+                texto=texto,
+                offset=self.cantidad_inicial_consulta,
+                limit=self.cantidad_final_consulta
+            )
+
             if not estado:
                 session.rollback()
                 return {
@@ -660,13 +712,15 @@ class Control_proveedores(QWidget):
                     "mensaje": "No se pudo realizar la búsqueda",
                     "data": []
                 }
-                
+
+            self.cantidad_inicial_consulta += len(proveedores)
+
             return {
                 "exito": True,
                 "mensaje": f"Búsqueda completada - {len(proveedores)} resultados",
                 "data": proveedores
             }
-            
+
         except Exception as e:
             session.rollback()
             return {
@@ -674,6 +728,143 @@ class Control_proveedores(QWidget):
                 "mensaje": f"Error en la búsqueda: {str(e)}",
                 "data": []
             }
+
+    def importar_proveedores_csv(self):
+        documento, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona un documento para importar", "",
+            "Archivos de Importación (*.csv *.xlsx *.xls);;Archivos CSV (*.csv);;Archivos Excel (*.xlsx *.xls)"
+        )
+
+        if not documento:
+            return
+
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("importar_proveedores_vprincipal")
+            self.id_hilo_importar_proveedores = WorkerDB.create_managed_worker(owner_id="importar_proveedores_vprincipal")
+            self.consultor_importar_proveedores = WorkerDB.get_managed_worker(self.id_hilo_importar_proveedores)
+            if not self.consultor_importar_proveedores:
+                raise Exception("No se pudo obtener el worker de importación.")
+            self.lista_hilos_proveedores.append(self.id_hilo_importar_proveedores)
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_importar_proveedores,
+                resultado_callback=self.resultado_importacion_proveedores,
+                error_callback=self.error_importacion_proveedores,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_importar_proveedores.ejecutar(
+                self.importar_proveedores_query,
+                documento=documento
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_importar_proveedores'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
+            Mensaje().mensaje_alerta(f"Error al iniciar el proceso de importación: {e}")
+
+    def importar_proveedores_query(self, session, documento):
+        columnas_validas = {
+            "id", "nombre", "pais", "estado", "ciudad", "codigo_postal", "calles", "avenidas",
+            "colonia", "direccion_adicional", "rfc", "pagina_web", "correo", "telefono",
+            "clave_moneda", "tipo_moneda", "representante_id", "categoria_id"
+        }
+        columnas_requeridas = ["nombre"]
+
+        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+            documento=documento,
+            columnas_requeridas=columnas_requeridas,
+            columnas_validas=columnas_validas
+        )
+
+        categorias_existentes = {c[0] for c in session.query(Categorias_proveedores.id).all()}
+        representantes_existentes = {r[0] for r in session.query(Representantes_proveedores.id).all()}
+
+        nombres_existentes = {
+            str(proveedor[0]).strip().lower()
+            for proveedor in session.query(Proveedores.nombre).all()
+            if proveedor[0]
+        }
+        rfcs_existentes = {
+            str(proveedor[0]).strip().upper()
+            for proveedor in session.query(Proveedores.rfc).all()
+            if proveedor[0]
+        }
+
+        proveedores_nuevos = []
+        duplicados = []
+
+        for row in registros:
+            nombre = str(row.get("nombre", "")).strip()
+            if not nombre:
+                continue
+
+            nombre_normalizado = nombre.lower()
+            rfc = str(row.get("rfc", "")).strip().upper()
+
+            if nombre_normalizado in nombres_existentes or (rfc and rfc in rfcs_existentes):
+                duplicados.append(nombre)
+                continue
+
+            representante_id = OperacionMasivaCsvController.parse_int(row.get("representante_id")) if "representante_id" in row else None
+            if representante_id not in representantes_existentes:
+                representante_id = None
+
+            categoria_id = OperacionMasivaCsvController.parse_int(row.get("categoria_id")) if "categoria_id" in row else None
+            if categoria_id not in categorias_existentes:
+                categoria_id = None
+
+            proveedor_obj = Proveedores(
+                nombre=nombre,
+                pais=str(row.get("pais", "")).strip(),
+                estado=str(row.get("estado", "")).strip(),
+                ciudad=str(row.get("ciudad", "")).strip(),
+                codigo_postal=str(row.get("codigo_postal", "")).strip(),
+                calles=str(row.get("calles", "")).strip(),
+                avenidas=str(row.get("avenidas", "")).strip(),
+                colonia=str(row.get("colonia", "")).strip(),
+                direccion_adicional=str(row.get("direccion_adicional", "")).strip(),
+                rfc=rfc,
+                pagina_web=str(row.get("pagina_web", "")).strip(),
+                correo=str(row.get("correo", "")).strip(),
+                telefono=str(row.get("telefono", "")).strip(),
+                clave_moneda=str(row.get("clave_moneda", "")).strip(),
+                tipo_moneda=str(row.get("tipo_moneda", "")).strip(),
+                representante_id=representante_id,
+                categoria_id=categoria_id
+            )
+            session.add(proveedor_obj)
+            proveedores_nuevos.append(nombre)
+            nombres_existentes.add(nombre_normalizado)
+            if rfc:
+                rfcs_existentes.add(rfc)
+
+        if proveedores_nuevos:
+            session.commit()
+
+        return {
+            "exito": True,
+            "agregados": len(proveedores_nuevos),
+            "duplicados": len(duplicados),
+            "proveedores_duplicados": duplicados
+        }
+
+    def resultado_importacion_proveedores(self, resultado):
+        if hasattr(self, 'id_hilo_importar_proveedores'):
+            WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
+
+        if resultado.get("exito"):
+            Mensaje().mensaje_informativo(
+                f"Importación completada con éxito.\n"
+                f"Proveedores agregados: {resultado['agregados']}\n"
+                f"Proveedores duplicados omitidos: {resultado['duplicados']}"
+            )
+            self.refrescar_tabla()
+        else:
+            Mensaje().mensaje_alerta("Ocurrió un problema durante la importación de proveedores.")
+
+    def error_importacion_proveedores(self, error_msg):
+        if hasattr(self, 'id_hilo_importar_proveedores'):
+            WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
+        Mensaje().mensaje_alerta(f"Error al importar archivo: {error_msg}")
 
     def eliminar_proveedor(self):
         datos_proveedor = self.obtener_datos_proveedor()
@@ -692,7 +883,7 @@ class Control_proveedores(QWidget):
                 self.lista_hilos_proveedores.append(self.id_hilo_eliminar_proveedor_vproveedor)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_proveedor_vproveedor,
-                    resultado_callback=self.mostrar_estado_hilo,
+                    resultado_callback=self.mostrar_estado_hilo_y_refrescar,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
@@ -704,7 +895,7 @@ class Control_proveedores(QWidget):
                 if hasattr(self, 'id_hilo_eliminar_proveedor_vproveedor'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_proveedor_vproveedor)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-    
+
     def eliminar_proveedor_query(self, session, proveedor):
         try:
             estado = ProveedoresModel(session).eliminar_proveedor(proveedor.id)
@@ -728,6 +919,36 @@ class Control_proveedores(QWidget):
 
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un error en el proceso : {error}')
-    
+
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f'{objetoMensaje["mensaje"]}')
+
+    def mostrar_estado_hilo_y_refrescar(self, objetoMensaje):
+        self.mostrar_estado_hilo(objetoMensaje)
+        if objetoMensaje.get("exito"):
+            self.refrescar_tabla()
+
+    def refrescar_tabla(self):
+        self.texto_busqueda_proveedor = ""
+        self.busqueda_realizada = False
+        self.no_hay_mas_registros = False
+        self._append_mode = False
+        self._cargando_mas_proveedores = False
+        self.cantidad_inicial_consulta = 0
+        self.WindowSupplier.txt_buscarproveedor.clear()
+        self.obtener_proveedores_tabla_hilo(reset_paginacion=True, append=False)
+
+    def cargar_mas_proveedores(self):
+        if self._cargando_mas_proveedores or self.no_hay_mas_registros:
+            return
+        if self.busqueda_realizada and self.texto_busqueda_proveedor:
+            self.buscar_proveedor_hilo(append=True)
+        else:
+            self.obtener_proveedores_tabla_hilo(reset_paginacion=False, append=True)
+
+    def _manejar_scroll_tabla(self, value):
+        scrollbar = self.WindowSupplier.tabla_proveedores.verticalScrollBar()
+        if scrollbar.maximum() <= 0:
+            return
+        if value >= scrollbar.maximum() - 2:
+            self.cargar_mas_proveedores()

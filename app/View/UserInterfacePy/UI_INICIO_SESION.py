@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_INICIO_SESION.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.2
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,8 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QSizePolicy, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
+    QLabel, QLineEdit, QPushButton, QSizePolicy,
+    QWidget)
 from ...Source import iconos_rc
 from ...Source import ibootstrap_rc
 from ...Source import logos_rc
@@ -33,7 +34,7 @@ class Ui_Inicio_Sesion(object):
         Inicio_Sesion.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "\n"
 "#principal{\n"
-"	background-color: rgb(255, 254, 251);\n"
+"	background-color: #F8FAFC;\n"
 "}\n"
 "#contenedor_global{\n"
 "border-top-left-radius: 25px;\n"
@@ -48,8 +49,8 @@ class Ui_Inicio_Sesion(object):
 "border-top-right-radius: 25px;\n"
 "}\n"
 "#imgFormulario{\n"
-"	border-image: url(:/logos/Icons/logos/logotipoSinFondo.png);\n"
-"	background-color: rgb(242, 239, 233);\n"
+"	border-image: url(:/logos/Icons/logos/tuleVenta.png);\n"
+"	background-color: #F8FAFC;\n"
 "}\n"
 "#etiqueta_nombreSistema{\n"
 "	font-size:24px;\n"
@@ -70,16 +71,16 @@ class Ui_Inicio_Sesion(object):
 "	border-bottom: 1px solid rgb(58, 137, 198);\n"
 "	font-size: 14px;\n"
 "	font-weight: Arial;\n"
-"	background-c"
-                        "olor:#F5F5F5;\n"
-"	border-radius: 4px;\n"
+"	background-color:#F5F5F5;\n"
+"	border-rad"
+                        "ius: 4px;\n"
 "}\n"
 "[objectName^=\"txt\"]:focus{\n"
 "	border: none;\n"
 "	border-bottom: 1px solid rgb(0, 74, 173);\n"
 "}\n"
 "QPushButton{\n"
-"background-color: #5A7A56;\n"
+"background-color: #15803D;\n"
 "font-size:14px;\n"
 "color:#fffefb;\n"
 "font-weight:bold;\n"
@@ -102,7 +103,7 @@ class Ui_Inicio_Sesion(object):
 "\n"
 "}\n"
 "#img_User{\n"
-"	background-color: #5A7A56;\n"
+"	background-color: #15803D;\n"
 "	image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);\n"
 "	border-radius: 12px;\n"
 "	min-width: 20px;\n"
@@ -110,7 +111,7 @@ class Ui_Inicio_Sesion(object):
 "	padding: 2px;\n"
 "}\n"
 "#img_Password{\n"
-"	background-color: #5A7A56;\n"
+"	background-color: #15803D;\n"
 "	image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);\n"
 "	border-radius: 12px;\n"
 "	min-width: 20px;\n"
@@ -133,15 +134,6 @@ class Ui_Inicio_Sesion(object):
         self.btnAceptar.setGeometry(QRect(20, 270, 231, 31))
         self.btnAceptar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btnAceptar.setStyleSheet(u"")
-        self.labelNombreEmpresa = QLabel(self.principal)
-        self.labelNombreEmpresa.setObjectName(u"labelNombreEmpresa")
-        self.labelNombreEmpresa.setGeometry(QRect(60, 370, 141, 21))
-        font1 = QFont()
-        font1.setFamilies([u"Lucida Sans"])
-        font1.setPointSize(10)
-        font1.setBold(True)
-        self.labelNombreEmpresa.setFont(font1)
-        self.labelNombreEmpresa.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.widget = QWidget(self.principal)
         self.widget.setObjectName(u"widget")
         self.widget.setGeometry(QRect(204, 8, 61, 31))
@@ -231,9 +223,9 @@ class Ui_Inicio_Sesion(object):
 
         self.txt_Password = QLineEdit(self.layoutWidget)
         self.txt_Password.setObjectName(u"txt_Password")
-        font2 = QFont()
-        font2.setFamilies([u"Lucida Sans"])
-        self.txt_Password.setFont(font2)
+        font1 = QFont()
+        font1.setFamilies([u"Lucida Sans"])
+        self.txt_Password.setFont(font1)
         self.txt_Password.setStyleSheet(u"")
         self.txt_Password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_Password.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -258,22 +250,29 @@ class Ui_Inicio_Sesion(object):
 
         self.txt_User = QLineEdit(self.layoutWidget1)
         self.txt_User.setObjectName(u"txt_User")
-        self.txt_User.setFont(font2)
+        self.txt_User.setFont(font1)
         self.txt_User.setStyleSheet(u"")
         self.txt_User.setEchoMode(QLineEdit.EchoMode.Normal)
         self.txt_User.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.gridLayout_3.addWidget(self.txt_User, 0, 1, 1, 1, Qt.AlignmentFlag.AlignVCenter)
 
-        self.imgFormulario = QLabel(Inicio_Sesion)
+        self.Conteneror_imgLogin = QFrame(Inicio_Sesion)
+        self.Conteneror_imgLogin.setObjectName(u"Conteneror_imgLogin")
+        self.Conteneror_imgLogin.setGeometry(QRect(83, 20, 361, 501))
+        self.Conteneror_imgLogin.setFrameShape(QFrame.Shape.StyledPanel)
+        self.Conteneror_imgLogin.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout = QGridLayout(self.Conteneror_imgLogin)
+        self.gridLayout.setSpacing(0)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.imgFormulario = QLabel(self.Conteneror_imgLogin)
         self.imgFormulario.setObjectName(u"imgFormulario")
-        self.imgFormulario.setGeometry(QRect(80, 30, 361, 481))
         self.imgFormulario.setStyleSheet(u"")
         self.imgFormulario.setScaledContents(False)
-        self.etiqueta_nombreSistema = QLabel(Inicio_Sesion)
-        self.etiqueta_nombreSistema.setObjectName(u"etiqueta_nombreSistema")
-        self.etiqueta_nombreSistema.setGeometry(QRect(180, 430, 161, 31))
-        self.etiqueta_nombreSistema.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gridLayout.addWidget(self.imgFormulario, 0, 0, 1, 1)
+
         QWidget.setTabOrder(self.txt_User, self.txt_Password)
         QWidget.setTabOrder(self.txt_Password, self.btnAceptar)
         QWidget.setTabOrder(self.btnAceptar, self.btnMinimizar)
@@ -288,7 +287,6 @@ class Ui_Inicio_Sesion(object):
         Inicio_Sesion.setWindowTitle(QCoreApplication.translate("Inicio_Sesion", u"Form", None))
         self.img_Login.setText("")
         self.btnAceptar.setText(QCoreApplication.translate("Inicio_Sesion", u"Ingresar", None))
-        self.labelNombreEmpresa.setText(QCoreApplication.translate("Inicio_Sesion", u"RouSynergy", None))
         self.btnMinimizar.setText("")
         self.btnCerrar.setText("")
         self.imgFacebook.setText("")
@@ -299,6 +297,5 @@ class Ui_Inicio_Sesion(object):
         self.img_User.setText("")
         self.txt_User.setPlaceholderText(QCoreApplication.translate("Inicio_Sesion", u"Nombre de Usuario", None))
         self.imgFormulario.setText("")
-        self.etiqueta_nombreSistema.setText(QCoreApplication.translate("Inicio_Sesion", u"TULE VENTA", None))
     # retranslateUi
 

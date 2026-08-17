@@ -29,7 +29,7 @@
    <string notr="true">*{color: #1d1c1c;}
 
 #principal{
-	background-color: rgb(255, 254, 251);
+	background-color: #F8FAFC;
 }
 #contenedor_global{
 border-top-left-radius: 25px;
@@ -44,8 +44,8 @@ border-bottom-right-radius: 25px;
 border-top-right-radius: 25px;
 }
 #imgFormulario{
-	border-image: url(:/logos/Icons/logos/logotipoSinFondo.png);
-	background-color: rgb(242, 239, 233);
+	border-image: url(:/logos/Icons/logos/tuleVenta.png);
+	background-color: #F8FAFC;
 }
 #etiqueta_nombreSistema{
 	font-size:24px;
@@ -74,7 +74,7 @@ border-top-right-radius: 25px;
 	border-bottom: 1px solid rgb(0, 74, 173);
 }
 QPushButton{
-background-color: #5A7A56;
+background-color: #15803D;
 font-size:14px;
 color:#fffefb;
 font-weight:bold;
@@ -97,7 +97,7 @@ QPushButton:pressed{
 
 }
 #img_User{
-	background-color: #5A7A56;
+	background-color: #15803D;
 	image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);
 	border-radius: 12px;
 	min-width: 20px;
@@ -105,7 +105,7 @@ QPushButton:pressed{
 	padding: 2px;
 }
 #img_Password{
-	background-color: #5A7A56;
+	background-color: #15803D;
 	image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);
 	border-radius: 12px;
 	min-width: 20px;
@@ -163,29 +163,6 @@ QPushButton:pressed{
     </property>
     <property name="text">
      <string>Ingresar</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="labelNombreEmpresa">
-    <property name="geometry">
-     <rect>
-      <x>60</x>
-      <y>370</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Lucida Sans</family>
-      <pointsize>10</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>RouSynergy</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
    <widget class="QWidget" name="widget" native="true">
@@ -512,40 +489,51 @@ background-color: none;</string>
     </layout>
    </widget>
   </widget>
-  <widget class="QLabel" name="imgFormulario">
+  <widget class="QFrame" name="Conteneror_imgLogin">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>30</y>
+     <x>83</x>
+     <y>20</y>
      <width>361</width>
-     <height>481</height>
+     <height>501</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true"/>
+   <property name="frameShape">
+    <enum>QFrame::Shape::StyledPanel</enum>
    </property>
-   <property name="text">
-    <string/>
+   <property name="frameShadow">
+    <enum>QFrame::Shadow::Raised</enum>
    </property>
-   <property name="scaledContents">
-    <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="etiqueta_nombreSistema">
-   <property name="geometry">
-    <rect>
-     <x>180</x>
-     <y>430</y>
-     <width>161</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>TULE VENTA</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignCenter</set>
-   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QLabel" name="imgFormulario">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <tabstops>

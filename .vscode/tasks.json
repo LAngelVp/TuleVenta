@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Convertir UI a PY",
+            "type": "shell",
+            "command": "python -m PySide6.scripts.uic \"${file}\" -o \"${fileDirname}/ui_${fileBasenameNoExtension}.py\"",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

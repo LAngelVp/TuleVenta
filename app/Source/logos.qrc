@@ -1,7 +1,6 @@
 <RCC>
-    <qresource prefix="logos">
-        <file>Icons/logos/cuadrado_sin_fondo.png</file>
-        <file>Icons/logos/cuadrado_fondo.png</file>
-        <file>Icons/logos/logotipoSinFondo.png</file>
-    </qresource>
+  <qresource prefix="logos">
+    <file>Icons/logos/cuadrado_sin_fondo.png</file>
+    <file>Icons/logos/tuleVenta.png</file>
+  </qresource>
 </RCC>

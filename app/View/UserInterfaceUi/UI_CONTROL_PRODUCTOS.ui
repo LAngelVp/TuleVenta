@@ -32,6 +32,7 @@ font-family: &quot;Arial&quot;;
 padding-top: 5px;
 }
 [objectName*=&quot;btn_btn_adminProductos&quot;]{
+icon-size: 24px;
 height: 25px;
 border:none;
 border-radius:5px;
@@ -213,6 +214,19 @@ color: black;
             <enum>QFrame::Shadow::Raised</enum>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="2">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="0" column="0">
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
@@ -286,25 +300,42 @@ color: black;
               </item>
               <item>
                <widget class="QPushButton" name="btn_btn_adminProductos_ExistenciaProducto">
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
                 <property name="text">
-                 <string>Existencia</string>
+                 <string>EXISTENCIA</string>
                 </property>
                </widget>
               </item>
              </layout>
             </item>
             <item row="0" column="1">
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
+             <widget class="QPushButton" name="btn_btn_adminProductos_importarProductos">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
+              <property name="toolTip">
+               <string>Importar productos</string>
               </property>
-             </spacer>
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconosSVG.qrc">
+                <normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QPushButton" name="btn_btn_obtenerMasProductos">
+              <property name="text">
+               <string>Obtener mas resultados</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -394,29 +425,6 @@ color: black;
                   </size>
                  </property>
                 </spacer>
-               </item>
-               <item>
-                <widget class="QPushButton" name="btn_RefrescarTabla_paginar">
-                 <property name="cursor">
-                  <cursorShape>PointingHandCursor</cursorShape>
-                 </property>
-                 <property name="toolTip">
-                  <string>Mostrar más productos</string>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="../../Source/iconosSVG.qrc">
-                   <normaloff>:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg</normaloff>:/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg</iconset>
-                 </property>
-                 <property name="iconSize">
-                  <size>
-                   <width>18</width>
-                   <height>18</height>
-                  </size>
-                 </property>
-                </widget>
                </item>
                <item alignment="Qt::AlignmentFlag::AlignVCenter">
                 <widget class="QPushButton" name="btn_RefrescarTabla">

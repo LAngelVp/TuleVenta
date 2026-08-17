@@ -3,13 +3,13 @@ from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from app.Controller.MensajesAlertasController import *
-# from Model.ModelsDataBase import Base
+from ..Model.BaseDatosModel import Base
 Base = declarative_base()
 class Conexion_base_datos:
     def __init__(self):
-        self.link_conexion = 'postgresql+psycopg2://dev_rous:dev_rous73@localhost:5432/devrousdb'
+        self.link_conexion = 'postgresql+psycopg2://postgres:holamundo@127.0.0.1:5432/TuleVenta'
         self.conectar()
-            
+
     def conectar(self):
         try:
             self.engine = create_engine(self.link_conexion)
@@ -28,12 +28,12 @@ class Conexion_base_datos:
         if self.session is None:
             self.session = self.Session()
         return self.session
-    
+
 
     def cerrar_sesion(self):
         if self.session is not None:
             self.session.close()
-            self.session = None  
+            self.session = None
 
     def __enter__(self):
         self.abrir_sesion()

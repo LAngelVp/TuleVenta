@@ -1,4 +1,6 @@
-from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, Unidad_medida_productos, Presentacion_productos, Proveedores
+from datetime import datetime
+
+from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, Unidad_medida_productos, Presentacion_productos, Proveedores, Movimientos_Inventario
 from sqlalchemy.orm import joinedload
 
 class OrdenesDeCompraModel:
@@ -7,7 +9,7 @@ class OrdenesDeCompraModel:
 
     def create_purchase_order(self, orderDatails, orden_items):
         # Attribute Content:
-        # orderDatails: 
+        # orderDatails:
         try:
             order = Compras(
                 proveedor_id=orderDatails['proveedor'].id,
@@ -72,7 +74,7 @@ class OrdenesDeCompraModel:
             return self.session.query(Compras).filter(Compras.id == orderId).first()
         except Exception as e:
             raise e
-    
+
     def delete_purchase_order(self, order_id):
         try:
             purchaseOrder = self.session.query(Compras).get(order_id)
@@ -95,6 +97,59 @@ class OrdenesDeCompraModel:
             return False
         except Exception as e:
             raise e
+
+    def receive_purchase_order(self, order_id, usuario_id, fecha_compra=None, notas=None):
+        try:
+            order = (
+                self.session.query(Compras)
+                .options(
+                    joinedload(Compras.detalles).joinedload(Detalles_compras.producto),
+                    joinedload(Compras.proveedor),
+                )
+                .filter(Compras.id == order_id)
+                .first()
+            )
+
+            if not order:
+                return None, False, "No se encontró la orden de compra."
+
+            if order.estado != "PENDIENTE":
+                return None, False, "La orden de compra seleccionada ya fue recibida o no está pendiente."
+
+            if not order.detalles:
+                return None, False, "La orden de compra no contiene productos para ingresar al inventario."
+
+            fecha_movimiento = fecha_compra or datetime.now()
+            notas_movimiento = notas or f"Recepción de orden de compra #{order.id}"
+
+            for detalle in order.detalles:
+                producto = detalle.producto
+                cantidad = float(detalle.cantidad or 0)
+
+                if not producto:
+                    return None, False, f"Uno de los productos de la orden #{order.id} ya no existe en el sistema."
+
+                if cantidad <= 0:
+                    return None, False, f"La orden #{order.id} contiene cantidades inválidas para el producto {detalle.producto_id}."
+
+                producto.existencia = float(producto.existencia or 0) + cantidad
+
+                movimiento = Movimientos_Inventario(
+                    producto_id=producto.id,
+                    cantidad_cambio=cantidad,
+                    tipo_movimiento="entrada",
+                    fecha_movimiento=fecha_movimiento,
+                    notas=notas_movimiento,
+                    usuario_id=usuario_id,
+                )
+                self.session.add(movimiento)
+
+            order.estado = "COMPLETADA"
+            order.fecha_compra = fecha_movimiento
+            self.session.flush()
+            return order, True, f"La orden de compra #{order.id} fue recibida exitosamente."
+        except Exception as e:
+            return None, False, f"Ocurrió un error al recibir la orden de compra: {e}"
 
     def get_purchase_orders_by_criteria(self, state, cantidad_inicial=0, cantidad_final=100, id_orden_compra=None, quien_realizo_compra=None, fecha_creacion_orden_compra=None, fecha_compra=None, nombre_proveedor=None):
         try:

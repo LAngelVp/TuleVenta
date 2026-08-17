@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1012</width>
+    <width>1049</width>
     <height>621</height>
    </rect>
   </property>
@@ -62,6 +62,7 @@ border: 1px solid;
 max-height: 100px;
 }
 [objectName*=&quot;btn_btn&quot;]{
+icon-size: 24px;
 background: #023375;
 font-size: 12px;
 font-family: Arial;
@@ -268,9 +269,9 @@ color: black;
         <widget class="QWidget" name="contenedor_scroll_area_contenido">
          <property name="geometry">
           <rect>
-           <x>0</x>
+           <x>-44</x>
            <y>0</y>
-           <width>1041</width>
+           <width>1093</width>
            <height>577</height>
           </rect>
          </property>
@@ -912,6 +913,23 @@ color: black;
                   </property>
                   <property name="toolButtonStyle">
                    <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btn_btn_importarProveedores">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="toolTip">
+                   <string>Importar proveedores</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../../Source/iconosSVG.qrc">
+                    <normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</iconset>
                   </property>
                  </widget>
                 </item>

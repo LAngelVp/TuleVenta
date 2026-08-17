@@ -7,8 +7,8 @@ from ..Controller.MensajesAlertasController import Mensaje
 class ClientesFisicosAndMorales:
     def __init__(self, session):
         self.session = session
-        
-    
+
+
     def insertar_areas_negocio_basicas(self):
         query = select(Areas_negocios).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -30,10 +30,10 @@ class ClientesFisicosAndMorales:
                 {"nombre": 'Servicios de Consultoría', "descripcion": "Firmas que ofrecen asesoramiento en áreas como finanzas, recursos humanos, tecnología, estrategia empresarial, y más. Ayudan a empresas a mejorar sus procesos y tomar decisiones informadas"},
                 {"nombre": 'Seguros y Protección', "descripcion": "Compañías que ofrecen productos de seguros para la protección de bienes, salud, vida y otros riesgos. Ayudan a individuos y empresas a mitigar riesgos financieros y pérdidas inesperadas"}
             ]
-            
+
             self.session.execute(Areas_negocios.__table__.insert(), areas_basicas)
             return True
-       
+
     def insertar_categorias_negocio_basicas(self):
         query = select(Categorias_de_clientes).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -93,51 +93,59 @@ class ClientesFisicosAndMorales:
                 {"nombre": 'Minería y Extracción', "descripcion": "Empresas dedicadas a la extracción de recursos minerales y naturales para su procesamiento y comercialización."},
                 {"nombre": 'Reciclaje y Gestión de Residuos', "descripcion": "Servicios dedicados al reciclaje y gestión adecuada de residuos industriales y urbanos."}
             ]
-            
+
             self.session.execute(Categorias_de_clientes.__table__.insert(), categorias_basicas)
             # self.session.commit()
             return True
 
     def agregar_cliente_fisico(self, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
         try:
-            cliente_existente = (self.session.query(Clientes_fisicos).filter(Clientes.nombre == nombre).filter(Clientes_fisicos.apellido_paterno == apellido_paterno and Clientes_fisicos.curp == curp).first())
+            cliente_existente = (
+                self.session.query(Clientes_fisicos)
+                .filter(
+                    Clientes.nombre == nombre,
+                    Clientes_fisicos.apellido_paterno == apellido_paterno,
+                    Clientes_fisicos.curp == curp
+                )
+                .first()
+            )
             if cliente_existente:
-                return cliente_existente, None 
+                return cliente_existente, None
             else:
                 cliente = Clientes_fisicos(
-                    nombre = nombre, 
-                    correo = correo, 
-                    rfc = rfc, 
-                    telefono = telefono, 
-                    pais = pais, 
-                    estado = estado, 
-                    ciudad = ciudad, 
-                    avenidas = avenidas, 
-                    calles = calles, 
-                    codigo_postal = codigo_postal, 
-                    direccion_adicional = direccion_adicional, 
-                    entidad_legalizada = entidad_legalizada, 
-                    categoria_cliente_id = categoria_cliente_id, 
-                    credito = credito, 
-                    estado_credito = estado_credito, 
-                    limite_credito = limite_credito, 
-                    porcentaje_interes = porcentaje_interes, 
-                    fecha_ultimo_reporte = fecha_ultimo_reporte, 
-                    credito_disponible = credito_disponible, 
-                    credito_utilizado = credito_utilizado, 
-                    tipo_cliente = tipo_cliente, 
-                    aplica_descuento = aplica_descuento, 
-                    porcentaje_descuento = porcentaje_descuento, 
-                    comentarios = comentarios, 
-                    areas_de_negocios_id = areas_de_negocios_id, 
-                    apellido_paterno = apellido_paterno, 
-                    apellido_materno = apellido_materno, 
-                    curp = curp, 
-                    fecha_nacimiento = fecha_nacimiento, 
-                    num_identificacion = num_identificacion, 
-                    ocupacion = ocupacion, 
-                    ingresos = ingresos, 
-                    estado_civil = estado_civil, 
+                    nombre = nombre,
+                    correo = correo,
+                    rfc = rfc,
+                    telefono = telefono,
+                    pais = pais,
+                    estado = estado,
+                    ciudad = ciudad,
+                    avenidas = avenidas,
+                    calles = calles,
+                    codigo_postal = codigo_postal,
+                    direccion_adicional = direccion_adicional,
+                    entidad_legalizada = entidad_legalizada,
+                    categoria_cliente_id = categoria_cliente_id,
+                    credito = credito,
+                    estado_credito = estado_credito,
+                    limite_credito = limite_credito,
+                    porcentaje_interes = porcentaje_interes,
+                    fecha_ultimo_reporte = fecha_ultimo_reporte,
+                    credito_disponible = credito_disponible,
+                    credito_utilizado = credito_utilizado,
+                    tipo_cliente = tipo_cliente,
+                    aplica_descuento = aplica_descuento,
+                    porcentaje_descuento = porcentaje_descuento,
+                    comentarios = comentarios,
+                    areas_de_negocios_id = areas_de_negocios_id,
+                    apellido_paterno = apellido_paterno,
+                    apellido_materno = apellido_materno,
+                    curp = curp,
+                    fecha_nacimiento = fecha_nacimiento,
+                    num_identificacion = num_identificacion,
+                    ocupacion = ocupacion,
+                    ingresos = ingresos,
+                    estado_civil = estado_civil,
                     foto = foto
                     )
                 self.session.add(cliente)
@@ -161,9 +169,9 @@ class ClientesFisicosAndMorales:
                 return cliente, True
         except Exception as e:
             return None, False
-        
+
     def agregar_representante_cliente_moral(self, nombre, telefono, correo, puesto):
-    
+
         try:
             representante_existente = (self.session.query(Representantes_clientes_morales).filter(Representantes_clientes_morales.nombre == nombre, Representantes_clientes_morales.telefono == telefono).first())
             if representante_existente:
@@ -186,7 +194,7 @@ class ClientesFisicosAndMorales:
                 .limit(cantidad_final)
                 .all()
             )
-            
+
             if clientes:
                 return clientes, True
             else:
@@ -204,7 +212,7 @@ class ClientesFisicosAndMorales:
                 .limit(cantidad_final)
                 .all()
             )
-            
+
             if clientes:
                 return clientes, True
             else:
@@ -265,9 +273,9 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             print(f"💥 Error en filtrar_clientes_fisicos_por_nombre: {e}")
             return [], False
-        
+
         return clientes, bool(clientes)
-    
+
     def filtrar_clientes_morales_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
         try:
             clientes = (
@@ -293,11 +301,11 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             print(f"💥 Error en filtrar_clientes_morales_por_nombre: {e}")
             return [], False
-        
+
         return clientes, bool(clientes)
 
     def actualizar_cliente_fisico(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
-        try: 
+        try:
             clientes_fisicos_alias = aliased(Clientes_fisicos)
             if id:
                 # Consultar el cliente base y cliente físico
@@ -305,7 +313,7 @@ class ClientesFisicosAndMorales:
                                                 .join(clientes_fisicos_alias, Clientes.id == clientes_fisicos_alias.id)
                                                 .filter(Clientes.id == id)
                                                 .first())
-                
+
                 if cliente_base and cliente_fisico:
                     # Actualizar los campos del cliente base
                     cliente_base.nombre = nombre
@@ -356,7 +364,7 @@ class ClientesFisicosAndMorales:
                             cliente_base.areas_de_negocios = area
                         else:
                             Mensaje().mensaje_alerta(f'No se encontró área de negocio con ID: {areas_de_negocios_id}')
-                    
+
                     # Confirmar cambios
                     self.session.commit()
                     return True
@@ -367,7 +375,7 @@ class ClientesFisicosAndMorales:
             return False
 
     def actualizar_cliente_moral(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, razon_social, fecha_constitucion, web, sector, nif, nombre_representante, telefono_representante, correo_representante, puesto_representante):
-        try: 
+        try:
             clientes_morales_alias = aliased(Clientes_morales)
             if id:
                 # Consultar el cliente base y cliente físico
@@ -375,7 +383,7 @@ class ClientesFisicosAndMorales:
                                                 .join(clientes_morales_alias, Clientes.id == clientes_morales_alias.id)
                                                 .filter(Clientes.id == id)
                                                 .first())
-                
+
                 if cliente_base and cliente_moral:
                     # Actualizar los campos del cliente base
                     cliente_base.nombre = nombre
@@ -450,7 +458,7 @@ class ClientesFisicosAndMorales:
         except Exception as e:
             self.session.rollback()
             return False
-        
+
     def eliminar_cliente(self, id, modelo):
         try:
             cliente = self.session.query(modelo).filter(modelo.id == id).one_or_none()

@@ -10,6 +10,7 @@ from ..View.UserInterfacePy.UI_INICIO_SESION import *
 from ..View.UserInterfacePy.UI_VENTANA_SALUDO_INGRESO import Ui_Saludo_bienvenida
 from .Hilo_consultas import *
 from ..Source.iconos_rc import *
+from ..Source.logos_rc import *
 from ..Source.ibootstrap_rc import *
 from .CreadencialesUsuarioController import *
 from .Validaciones import Validaciones
@@ -29,27 +30,26 @@ class Login(QWidget):
         self.ui.imgLinkedin.mousePressEvent = self.linkedin()
         self.ui.imgWhatsapp.mousePressEvent = self.whatsapp()
 
-        self.ui.labelNombreEmpresa.mouseDoubleClickEvent = self.empresa()
-        self.setWindowIcon(QIcon(":Icons/logos/logotipoSinFondo.png"))
+        self.setWindowIcon(QIcon(":Icons/logos/tuleVenta.png"))
         self.setWindowTitle("TuleVenta POS - Inicio de sesión")
 
         self.sombra = QGraphicsDropShadowEffect()
-        self.sombra.setBlurRadius(25) 
+        self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor("#3D403A")) 
+        self.sombra.setColor(QColor("#3D403A"))
 
         self.ui.principal.setGraphicsEffect(self.sombra)
-        
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        
+
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        
+
         self.ui.txt_User.setValidator(Validaciones().get_text_validator(self.ui.txt_User))
         self.ui.txt_Password.setValidator(Validaciones().get_password_validator(self.ui.txt_Password))
-        
+
         self.ui.txt_User.setFocus()
 
         self.ui.btnCerrar.clicked.connect(self.close)
@@ -63,7 +63,7 @@ class Login(QWidget):
             self.ventana_saludo.show()
         else:
             self.ventana_saludo.raise_()
-    
+
     def ingresar(self):
         usuario = self.ui.txt_User.text().strip()
         password = self.ui.txt_Password.text().strip()
@@ -73,21 +73,21 @@ class Login(QWidget):
                 "id_usuario": usuario_existente.id,
                 "nombre_usuario" : usuario_existente.usuario,
                 "id_empleado": usuario_existente.empleado.id,
-                "nombre_empleado": f'{usuario_existente.empleado.nombre} {usuario_existente.empleado.apellido_paterno} {usuario_existente.empleado.apellido_materno}' 
+                "nombre_empleado": f'{usuario_existente.empleado.nombre} {usuario_existente.empleado.apellido_paterno} {usuario_existente.empleado.apellido_materno}'
                 }
             self.close()
             self.mostrar_saludos()
         else:
             Mensaje().mensaje_alerta("Las credenciales que estas ingresando son incorrectas, !vuelvelo a intentar¡")
-            
-    
+
+
 
     def facebook(self):
         pass
-    
+
     def linkedin(self):
         pass
-    
+
     def whatsapp(self):
         pass
 
@@ -110,24 +110,24 @@ class SaludoIngreso(QWidget):
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.sombra = QGraphicsDropShadowEffect()
-        self.sombra.setBlurRadius(25) 
+        self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra.setColor(QColor(0, 102, 204))
 
         self.ui.contenedor.setGraphicsEffect(self.sombra)
         self.ui.btn_entrar.clicked.connect(self.entrar_al_sistema)
-        
+
         self.saludar()
-    
+
     def entrar_al_sistema(self):
         from .SistemaPrincipalController import SistemaPrincipal
         self.ventana =  SistemaPrincipal(parent=None, datos_usuario = self.usuario)
         self.close()
         self.ventana.show()
-        
+
     def saludar(self):
         if self.usuario is None:
             Mensaje().mensaje_informativo("No hay informacion del usuario")
@@ -135,7 +135,7 @@ class SaludoIngreso(QWidget):
         self.ui.etiquetaNombreUsuario.setText(self.usuario["nombre_empleado"].upper())
         tiempo = self.diferenciar_tiempo_dia()
         self.ui.etiquetaBuendia.setText(f"Excelente {tiempo}")
-        
+
     def diferenciar_tiempo_dia(self):
         hora_actual = datetime.now().hour
         saludo = None

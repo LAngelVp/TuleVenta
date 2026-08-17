@@ -55,12 +55,12 @@ class EmpleadosModel:
             departamento_id=departamento_id,
             sucursal_id=sucursal_id
         )
-        
+
         self.session.add(nuevo_empleado)
         self.session.flush()
         return nuevo_empleado, True
-        
-    def obtener_empleados_detallados(self):
+
+    def obtener_empleados_detallados(self, offset=0, limit=100):
         try:
             empleados = (
                 self.session.query(Empleados).options(
@@ -73,6 +73,8 @@ class EmpleadosModel:
                         .joinedload(Usuarios.rol)
                 )
                 .order_by(Empleados.nombre.asc())
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             if empleados:
@@ -88,8 +90,8 @@ class EmpleadosModel:
             self.session.delete(empleado)
             return True
         return False
-    
-    def filtrar_empleados(self, id=None, nombre=None, tipo_filtro_nombre=None):
+
+    def filtrar_empleados(self, id=None, nombre=None, tipo_filtro_nombre=None, offset=0, limit=100):
         # Base de la consulta
         consulta = self.session.query(Empleados).options(
             joinedload(Empleados.puesto),
@@ -103,10 +105,11 @@ class EmpleadosModel:
 
         if id is not None:
             filtros.append(Empleados.id == id)
-        
+
         if nombre:
+            nombre = nombre.strip()
             if tipo_filtro_nombre == 0:  # Búsqueda exacta
-                filtros.append(Empleados.nombre == nombre)
+                filtros.append(Empleados.nombre.ilike(nombre))
             else:  # Búsqueda parcial (LIKE)
                 filtros.append(Empleados.nombre.ilike(f"%{nombre}%"))
 
@@ -114,13 +117,18 @@ class EmpleadosModel:
         if filtros:
             consulta = consulta.filter(*filtros)
 
-        empleados = consulta.all()
+        empleados = (
+            consulta
+            .order_by(Empleados.nombre.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
         if empleados:
-            print(f"empleado : {empleados}")
             return empleados, True
-        return None, False
-    
+        return [], False
+
     def obtener_empleado_por_id(self, id):
         if id:
             empleado = self.session.query(Empleados).filter(Empleados.id == id).first()
@@ -128,7 +136,7 @@ class EmpleadosModel:
                 return empleado, True
             else:
                 return None, False
-    
+
     def baja_empleado(self, id_empleado, fecha_baja):
         try:
             if not id_empleado:
@@ -139,12 +147,12 @@ class EmpleadosModel:
                 empleado.fecha_despido = fecha_baja
                 return empleado, True
             return None, False
-            
+
         except Exception as e:
             self.session.rollback()
             print(f"Error en baja_empleado: {e}")
             return None, False
-        
+
     def alta_empleado(self, id_empleado, fecha_alta):
         if id_empleado is None:
             return None, False
@@ -154,7 +162,7 @@ class EmpleadosModel:
             empleado.fecha_contratacion = fecha_alta
             empleado.fecha_despido = None
             return empleado, True
-    
+
     def actualizar_empleado(self,id_empleado, nombre, apellido_paterno, apellido_materno, fecha_nacimiento,
                         estado_civil, genero, curp, rfc, nivel_academico, carrera, correo_electronico,
                         numero_seguro_social, fecha_contratacion, fecha_despido, ciudad,
@@ -200,12 +208,12 @@ class EmpleadosModel:
             empleado.puesto_id = puesto_id
             empleado.departamento_id = departamento_id
             empleado.sucursal_id = sucursal_id
-            
+
             return empleado, True
         except Exception as e:
             self.session.rollback()
             return None, False
-        
+
     def eliminar_credenciales(self, empleado):
         if not empleado or not empleado.usuario:
             return False
@@ -214,7 +222,7 @@ class EmpleadosModel:
             return True
         except:
             return False
-        
+
     def obtener_empleado_detallado_porId(self, id_empleado):
         try:
             empleado = (
@@ -237,5 +245,4 @@ class EmpleadosModel:
         except Exception as e:
             self.session.rollback()
             return None, False
-        
-    
+

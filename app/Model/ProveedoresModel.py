@@ -6,8 +6,8 @@ import logging
 class ProveedoresModel:
     def __init__(self, session):
         self.session = session
-        
-    
+
+
     def insertar_categoria_proveedor_basicas(self):
         query = select(Categorias_proveedores).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -29,17 +29,17 @@ class ProveedoresModel:
                 {"nombre": 'Productos para Mascotas', "descripcion": "Proveedores de alimentos, juguetes, accesorios, camas, y artículos de cuidado para mascotas como perros, gatos, aves, entre otros. Estos productos están disponibles en tiendas especializadas y grandes cadenas, atendiendo las necesidades de los dueños de mascotas"},
                 {"nombre": 'Artículos de Oficina', "descripcion": "Proveedores que distribuyen productos para oficina como papelería, mobiliario, equipos de computo y accesorios. Estos artículos son necesarios tanto para oficinas corporativas como para el hogar, ayudando a optimizar el trabajo diario con calidad y funcionalidad"},
             ]
-            
+
             self.session.execute(Categorias_proveedores.__table__.insert(), categorias_proveedor)
             # self.session.commit()
             return True
 
-    def agregar_proveedor(self, 
+    def agregar_proveedor(self,
                         categoria_id,
                         representante_id,
                         nombre,
                         pais,
-                        estado, 
+                        estado,
                         ciudad,
                         codigo_postal,
                         calles,
@@ -96,7 +96,7 @@ class ProveedoresModel:
             # Asegúrate de devolver siempre una tupla, incluso cuando hay un error
             logging.error(f"Error al agregar proveedor: {e}")
             return None, False  # Devolver None y False si hay un error
-        
+
     def obtener_proveedor_id(self, id):
         try:
             proveedor = self.session.query(Proveedores).get(id)
@@ -107,7 +107,7 @@ class ProveedoresModel:
         except Exception as e:
             return None
 
-    def obtener_proveedores(self):
+    def obtener_proveedores(self, offset=0, limit=100):
         proveedores = (self.session.query(Proveedores).options(
             joinedload(Proveedores.categoria),  # Carga anticipada de las categorías
             joinedload(Proveedores.producto_proveedor_asociaciones),   # Carga anticipada de los productos
@@ -115,6 +115,8 @@ class ProveedoresModel:
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
         )
         .order_by(Proveedores.nombre.asc())
+        .offset(offset)
+        .limit(limit)
         .all()
         )
         if len(proveedores) > 0:
@@ -122,7 +124,7 @@ class ProveedoresModel:
         else:
             return  None, False
 
-    def obtener_nombre_proveedor(self, texto):
+    def obtener_nombre_proveedor(self, texto, offset=0, limit=100):
         texto_busqueda = f"%{texto}%"
         # Realizar la consulta utilizando ilike() para búsqueda insensible a mayúsculas
         proveedores = self.session.query(Proveedores).options(
@@ -130,18 +132,18 @@ class ProveedoresModel:
             joinedload(Proveedores.producto_proveedor_asociaciones),   # Carga anticipada de los productos
             joinedload(Proveedores.representante),  # Carga anticipada del representante
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
-        ).filter(Proveedores.nombre.ilike(texto_busqueda)).all()
+        ).filter(Proveedores.nombre.ilike(texto_busqueda)).order_by(Proveedores.nombre.asc()).offset(offset).limit(limit).all()
         if len(proveedores) > 0:
             return proveedores, True
         return [], False
-    
-    def actualizar_proveedor(self, 
-                            proveedor_id, 
+
+    def actualizar_proveedor(self,
+                            proveedor_id,
                             categoria_id,
                             representante_id,
                             nombre,
                             pais,
-                            estado, 
+                            estado,
                             ciudad,
                             codigo_postal,
                             calles,
@@ -157,7 +159,7 @@ class ProveedoresModel:
                             ):
         try:
             # Buscar el proveedor por ID
-            
+
             proveedor = self.session.query(Proveedores).get(proveedor_id)
             if not proveedor:
                 return None, False
@@ -182,7 +184,7 @@ class ProveedoresModel:
             # Actualizar la categoría si se proporciona
             if categoria_id is None:
                 return None, False
-            
+
             try:
                 categoria = self.session.query(Categorias_proveedores).get(categoria_id)
                 if categoria:
@@ -203,7 +205,7 @@ class ProveedoresModel:
             except Exception as e:
                 self.session.rollback()
                 return None, False
-                
+
             return proveedor, True  # Retorna el ID del proveedor actualizado
         except Exception as e:
             self.session.rollback()  # Hacer rollback en caso de error
@@ -257,7 +259,7 @@ class ProveedoresModel:
         except Exception as e:
             print(f"Error al filtrar productos exactos: {e}")
             return [], False
-        
+
     def filtrar_productos_del_proveedor_contenga_nombre(self, proveedor_id, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
@@ -282,7 +284,7 @@ class ProveedoresModel:
         except Exception as e:
             print(f"Error al filtrar productos que contengan nombre: {e}")
             return [], False
-    
+
     def actualizar_productos_al_proveedor(self, proveedor_id, lista_productos):
         if not lista_productos or not proveedor_id:
             return [], False

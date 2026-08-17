@@ -64,6 +64,7 @@ background-color: #fffefb;
 min-width:300px;
 }
 [objectName^=&quot;btn_btn_&quot;]{
+icon-size: 20px;
 background-color: #023375;
 border-radius: 3px;
 color: #fffefb;
@@ -82,6 +83,7 @@ background-color: #2196F3;
 	background: #EE1D52;
 }
 [objectName*=&quot;RefrescarTabla&quot;]{
+icon-size:20px;
 border-radius: 2px;
 background: #e0e0e0;
 padding: 5px;
@@ -393,7 +395,7 @@ QCalendarWidget QAbstractItemView::item:hover {
               <x>0</x>
               <y>0</y>
               <width>1582</width>
-              <height>1621</height>
+              <height>1641</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_11">
@@ -2225,6 +2227,17 @@ QCalendarWidget QAbstractItemView::item:hover {
                           </property>
                          </widget>
                         </item>
+                        <item>
+                         <widget class="QPushButton" name="btn_btn_ImportarClientesFisicos">
+                          <property name="text">
+                           <string/>
+                          </property>
+                          <property name="icon">
+                           <iconset resource="../../Source/iconosSVG.qrc">
+                            <normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</iconset>
+                          </property>
+                         </widget>
+                        </item>
                        </layout>
                       </item>
                       <item>
@@ -2345,6 +2358,17 @@ QCalendarWidget QAbstractItemView::item:hover {
                           <property name="icon">
                            <iconset resource="../../Source/iconsdvg.qrc">
                             <normaloff>:/Icons/IconosSVG/base_datos_refresh.png</normaloff>:/Icons/IconosSVG/base_datos_refresh.png</iconset>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QPushButton" name="btn_btn_importarClientesMorales">
+                          <property name="text">
+                           <string/>
+                          </property>
+                          <property name="icon">
+                           <iconset resource="../../Source/iconosSVG.qrc">
+                            <normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</normaloff>:/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg</iconset>
                           </property>
                          </widget>
                         </item>

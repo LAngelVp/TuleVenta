@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_PRODUCTOS.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -45,6 +45,7 @@ class Ui_Control_Productos(object):
 "padding-top: 5px;\n"
 "}\n"
 "[objectName*=\"btn_btn_adminProductos\"]{\n"
+"icon-size: 24px;\n"
 "height: 25px;\n"
 "border:none;\n"
 "border-radius:5px;\n"
@@ -71,10 +72,10 @@ class Ui_Control_Productos(object):
 "padding: 5px;\n"
 "}\n"
 "[objectName*=\"btn_RefrescarTabla\"]:hover{\n"
-"background: rgb(179, 179, 179);\n"
+"background: rgb(179,"
+                        " 179, 179);\n"
 "}\n"
-""
-                        "[objectName*=\"btn_RefrescarTabla\"]:pressed{\n"
+"[objectName*=\"btn_RefrescarTabla\"]:pressed{\n"
 "background: #b6ccd8 ;\n"
 "}\n"
 "#etiqueta_buscar{\n"
@@ -115,9 +116,9 @@ class Ui_Control_Productos(object):
 "background-color: #023375;\n"
 "color: white;\n"
 "font-size: 16px;\n"
-"padding: 5px;\n"
-"border:"
-                        " 1px solid gray;\n"
+"pad"
+                        "ding: 5px;\n"
+"border: 1px solid gray;\n"
 "}\n"
 "\n"
 "[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
@@ -168,6 +169,10 @@ class Ui_Control_Productos(object):
         self.contenedor_controles.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_3 = QGridLayout(self.contenedor_controles)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_3.addItem(self.horizontalSpacer_2, 0, 2, 1, 1)
+
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.btn_btn_adminProductos_agregar = QPushButton(self.contenedor_controles)
@@ -202,15 +207,27 @@ class Ui_Control_Productos(object):
 
         self.btn_btn_adminProductos_ExistenciaProducto = QPushButton(self.contenedor_controles)
         self.btn_btn_adminProductos_ExistenciaProducto.setObjectName(u"btn_btn_adminProductos_ExistenciaProducto")
+        self.btn_btn_adminProductos_ExistenciaProducto.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.horizontalLayout.addWidget(self.btn_btn_adminProductos_ExistenciaProducto)
 
 
         self.gridLayout_3.addLayout(self.horizontalLayout, 0, 0, 1, 1)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.btn_btn_adminProductos_importarProductos = QPushButton(self.contenedor_controles)
+        self.btn_btn_adminProductos_importarProductos.setObjectName(u"btn_btn_adminProductos_importarProductos")
+        self.btn_btn_adminProductos_importarProductos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_btn_adminProductos_importarProductos.setStyleSheet(u"")
+        icon3 = QIcon()
+        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_adminProductos_importarProductos.setIcon(icon3)
 
-        self.gridLayout_3.addItem(self.horizontalSpacer_2, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.btn_btn_adminProductos_importarProductos, 0, 1, 1, 1)
+
+        self.btn_btn_obtenerMasProductos = QPushButton(self.contenedor_controles)
+        self.btn_btn_obtenerMasProductos.setObjectName(u"btn_btn_obtenerMasProductos")
+
+        self.gridLayout_3.addWidget(self.btn_btn_obtenerMasProductos, 0, 3, 1, 1)
 
 
         self.gridLayout_5.addWidget(self.contenedor_controles, 0, 0, 1, 1)
@@ -255,16 +272,6 @@ class Ui_Control_Productos(object):
         self.horizontalSpacer = QSpacerItem(290, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
-
-        self.btn_RefrescarTabla_paginar = QPushButton(self.contenedor_frame)
-        self.btn_RefrescarTabla_paginar.setObjectName(u"btn_RefrescarTabla_paginar")
-        self.btn_RefrescarTabla_paginar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/iconosAzules/Icons/iconos/Azul/buscar_filas_azul.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_RefrescarTabla_paginar.setIcon(icon3)
-        self.btn_RefrescarTabla_paginar.setIconSize(QSize(18, 18))
-
-        self.horizontalLayout_2.addWidget(self.btn_RefrescarTabla_paginar)
 
         self.btn_RefrescarTabla = QPushButton(self.contenedor_frame)
         self.btn_RefrescarTabla.setObjectName(u"btn_RefrescarTabla")
@@ -320,7 +327,12 @@ class Ui_Control_Productos(object):
         self.btn_btn_adminProductos_modificar.setToolTip(QCoreApplication.translate("Control_Productos", u"Editar producto", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_adminProductos_modificar.setText(QCoreApplication.translate("Control_Productos", u"EDITAR", None))
-        self.btn_btn_adminProductos_ExistenciaProducto.setText(QCoreApplication.translate("Control_Productos", u"Existencia", None))
+        self.btn_btn_adminProductos_ExistenciaProducto.setText(QCoreApplication.translate("Control_Productos", u"EXISTENCIA", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_adminProductos_importarProductos.setToolTip(QCoreApplication.translate("Control_Productos", u"Importar productos", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_adminProductos_importarProductos.setText("")
+        self.btn_btn_obtenerMasProductos.setText(QCoreApplication.translate("Control_Productos", u"Obtener mas resultados", None))
         self.etiqueta_buscar.setText("")
         self.txt_buscar_productoUPC.setPlaceholderText(QCoreApplication.translate("Control_Productos", u"Codigo del producto", None))
         self.txt_buscar.setPlaceholderText(QCoreApplication.translate("Control_Productos", u"Nombre del producto", None))
@@ -328,10 +340,6 @@ class Ui_Control_Productos(object):
         self.btn_btn_adminProductos_buscar.setToolTip(QCoreApplication.translate("Control_Productos", u"Buscar producto", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_adminProductos_buscar.setText(QCoreApplication.translate("Control_Productos", u"Buscar", None))
-#if QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla_paginar.setToolTip(QCoreApplication.translate("Control_Productos", u"Mostrar m\u00e1s productos", None))
-#endif // QT_CONFIG(tooltip)
-        self.btn_RefrescarTabla_paginar.setText("")
 #if QT_CONFIG(tooltip)
         self.btn_RefrescarTabla.setToolTip(QCoreApplication.translate("Control_Productos", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)

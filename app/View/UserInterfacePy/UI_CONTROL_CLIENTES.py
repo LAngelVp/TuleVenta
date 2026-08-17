@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_CLIENTES.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -76,13 +76,14 @@ class Ui_Control_Clientes(object):
 "min-width:300px;\n"
 "}\n"
 "[objectName^=\"btn_btn_\"]{\n"
+"icon-size: 20px;\n"
 "background-color: #023375;\n"
 "border-radius: 3px;\n"
 "color: #fffefb;\n"
 "font-weight: bold;\n"
-"font-family: Arial;\n"
-"font-"
-                        "size: 16px;\n"
+"font-fam"
+                        "ily: Arial;\n"
+"font-size: 16px;\n"
 "padding: 2px 4px; \n"
 "}\n"
 "[objectName*=\"btn_btn_\"]:hover{\n"
@@ -95,6 +96,7 @@ class Ui_Control_Clientes(object):
 "	background: #EE1D52;\n"
 "}\n"
 "[objectName*=\"RefrescarTabla\"]{\n"
+"icon-size:20px;\n"
 "border-radius: 2px;\n"
 "background: #e0e0e0;\n"
 "padding: 5px;\n"
@@ -123,11 +125,11 @@ class Ui_Control_Clientes(object):
 "border-bottom: 1px solid rgb(0, 0, 0);\n"
 "background: #F5F5F5;\n"
 "border-radius: 2px;\n"
-"color: #1d1c1c;\n"
+"color: #1d1c1c;"
+                        "\n"
 "min-width: 200px;\n"
 "}\n"
-"[objectN"
-                        "ame*=\"txt_\"]::focus{\n"
+"[objectName*=\"txt_\"]::focus{\n"
 "border-bottom: 2px solid #00668c;\n"
 "}\n"
 "[objectName*=\"txtlargo_\"]{\n"
@@ -166,10 +168,10 @@ class Ui_Control_Clientes(object):
 "    background-color: #F5F5F5 ;\n"
 "    font-size: 14px ;\n"
 "    min-width: 200px ;\n"
-"    font-family: \"Arial\" ;\n"
+"    font-family: \""
+                        "Arial\" ;\n"
 "    color: #1d1c1c ;\n"
-"	s"
-                        "election-background-color: #4791F5; \n"
+"	selection-background-color: #4791F5; \n"
 "}\n"
 "\n"
 "/* ESTILO DEL DROPDOWN (LISTA) */\n"
@@ -205,10 +207,10 @@ class Ui_Control_Clientes(object):
 "/*TABLA*/\n"
 "\n"
 "[objectName*=\"tabla_\"] {\n"
-"font-family: Arial;\n"
+"font-fami"
+                        "ly: Arial;\n"
 "font-size: 14px;\n"
-"backg"
-                        "round: #E3E3E3;\n"
+"background: #E3E3E3;\n"
 "border: 1px solid #4791F5;\n"
 "min-height: 400px;\n"
 "}\n"
@@ -249,11 +251,11 @@ class Ui_Control_Clientes(object):
 "font-weight: bold;\n"
 "}\n"
 "#wpc_clientes_contenedordatos{\n"
-"max-width:800px;\n"
+"max-width"
+                        ":800px;\n"
 "background: #fffefb;\n"
 "}\n"
-""
-                        "#label_wpc_fotocliente{\n"
+"#label_wpc_fotocliente{\n"
 "min-height:200px;\n"
 "min-width:200px;\n"
 "background: #F5F5F5;\n"
@@ -295,9 +297,9 @@ class Ui_Control_Clientes(object):
 "padding-right:5px;\n"
 "background: #F5F5F5;\n"
 "}\n"
-"*[objectName*=\"fecha_\"]::focus{\n"
-"border-bottom: 2px solid "
-                        "#00668c;\n"
+"*[objectName*=\"fech"
+                        "a_\"]::focus{\n"
+"border-bottom: 2px solid #00668c;\n"
 "}\n"
 "QCalendarWidget QWidget#qt_calendar_navigationbar {\n"
 "    background-color: #00668c;\n"
@@ -334,9 +336,9 @@ class Ui_Control_Clientes(object):
 "    selection-color: white;\n"
 "}\n"
 "\n"
-"/* D\u00cdAS DE OTROS MESES */\n"
-"QCalendarWidget QAbstractIt"
-                        "emView:disabled {\n"
+"/* D\u00cdAS DE OTR"
+                        "OS MESES */\n"
+"QCalendarWidget QAbstractItemView:disabled {\n"
 "    color: #AAAAAA;\n"
 "}\n"
 "\n"
@@ -368,7 +370,7 @@ class Ui_Control_Clientes(object):
         self.wpc_contenedor_scroll.setWidgetResizable(True)
         self.wpc_scrooll_area = QWidget()
         self.wpc_scrooll_area.setObjectName(u"wpc_scrooll_area")
-        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1582, 1621))
+        self.wpc_scrooll_area.setGeometry(QRect(0, 0, 1582, 1641))
         self.gridLayout_11 = QGridLayout(self.wpc_scrooll_area)
         self.gridLayout_11.setSpacing(0)
         self.gridLayout_11.setObjectName(u"gridLayout_11")
@@ -1418,6 +1420,14 @@ class Ui_Control_Clientes(object):
 
         self.horizontalLayout_3.addWidget(self.btn_RefrescarTablaClientesFisicos)
 
+        self.btn_btn_ImportarClientesFisicos = QPushButton(self.contenedor_clientesFisicos)
+        self.btn_btn_ImportarClientesFisicos.setObjectName(u"btn_btn_ImportarClientesFisicos")
+        icon3 = QIcon()
+        icon3.addFile(u":/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_ImportarClientesFisicos.setIcon(icon3)
+
+        self.horizontalLayout_3.addWidget(self.btn_btn_ImportarClientesFisicos)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
 
@@ -1480,6 +1490,12 @@ class Ui_Control_Clientes(object):
 
         self.horizontalLayout_4.addWidget(self.btn_RefrescarTablaClientesMorales)
 
+        self.btn_btn_importarClientesMorales = QPushButton(self.contenedor_clientesMorales)
+        self.btn_btn_importarClientesMorales.setObjectName(u"btn_btn_importarClientesMorales")
+        self.btn_btn_importarClientesMorales.setIcon(icon3)
+
+        self.horizontalLayout_4.addWidget(self.btn_btn_importarClientesMorales)
+
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_4)
 
@@ -1541,9 +1557,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_limpiarcampos = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_limpiarcampos.setObjectName(u"btn_btn_limpiarcampos")
         self.btn_btn_limpiarcampos.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon3 = QIcon()
-        icon3.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_limpiarcampos.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u":/Icons/IconosSVG/borrador.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_limpiarcampos.setIcon(icon4)
         self.btn_btn_limpiarcampos.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_limpiarcampos, 0, 4, 1, 1)
@@ -1551,9 +1567,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_eliminar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_eliminar.setObjectName(u"btn_btn_cliente_eliminar")
         self.btn_btn_cliente_eliminar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon4 = QIcon()
-        icon4.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_eliminar.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/eliminar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_eliminar.setIcon(icon5)
         self.btn_btn_cliente_eliminar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_eliminar, 0, 1, 1, 1)
@@ -1561,9 +1577,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_agregar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_agregar.setObjectName(u"btn_btn_cliente_agregar")
         self.btn_btn_cliente_agregar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon5 = QIcon()
-        icon5.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_agregar.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/guardar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_agregar.setIcon(icon6)
         self.btn_btn_cliente_agregar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_agregar, 0, 0, 1, 1)
@@ -1571,9 +1587,9 @@ class Ui_Control_Clientes(object):
         self.btn_btn_cliente_modificar = QPushButton(self.wpc_contenedor_botones)
         self.btn_btn_cliente_modificar.setObjectName(u"btn_btn_cliente_modificar")
         self.btn_btn_cliente_modificar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        icon6 = QIcon()
-        icon6.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.btn_btn_cliente_modificar.setIcon(icon6)
+        icon7 = QIcon()
+        icon7.addFile(u":/iconosBlancos/Icons/iconos/Blanco/actualizar_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_cliente_modificar.setIcon(icon7)
         self.btn_btn_cliente_modificar.setIconSize(QSize(20, 20))
 
         self.gridLayout_10.addWidget(self.btn_btn_cliente_modificar, 0, 3, 1, 1)
@@ -1821,6 +1837,7 @@ class Ui_Control_Clientes(object):
         self.btn_RefrescarTablaClientesFisicos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_RefrescarTablaClientesFisicos.setText("")
+        self.btn_btn_ImportarClientesFisicos.setText("")
         self.etiqueta_iconobuscarClienteMorales.setText("")
         self.txt_buscarclienteMorales.setPlaceholderText(QCoreApplication.translate("Control_Clientes", u"Nombre del cliente", None))
         self.btn_btn_filtrarClienteMoral.setText(QCoreApplication.translate("Control_Clientes", u"Buscar", None))
@@ -1832,6 +1849,7 @@ class Ui_Control_Clientes(object):
         self.btn_RefrescarTablaClientesMorales.setToolTip(QCoreApplication.translate("Control_Clientes", u"Actualizar tabla", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_RefrescarTablaClientesMorales.setText("")
+        self.btn_btn_importarClientesMorales.setText("")
         self.etiquetaTitulo_wp_titulo_clientes.setText(QCoreApplication.translate("Control_Clientes", u"ADMINISTRACI\u00d3N DE CLIENTES", None))
 #if QT_CONFIG(tooltip)
         self.btn_btn_limpiarcampos.setToolTip(QCoreApplication.translate("Control_Clientes", u"Limpiar campos", None))

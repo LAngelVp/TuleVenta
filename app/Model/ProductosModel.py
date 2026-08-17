@@ -33,10 +33,10 @@ class ProductosModel:
                 {"nombre": 'Cilindro-(cil)'},
                 {"nombre": 'Saco-(sac)'},
             ]
-            
+
             self.session.execute(Unidad_medida_productos.__table__.insert(), unidades_productos)
             return True
-    
+
     def insertar_categorias_basicas(self):
         query = select(Categorias_productos).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -59,10 +59,10 @@ class ProductosModel:
                 {"nombre": "Lácteos y Derivados", "descripcion": "Papas fritas, galletas, nueces, palomitas, y otros"},
                 {"nombre": "Productos de Higiene Personal", "descripcion": "Jabón, shampoo, pasta dental, desodorante, toallas sanitarias y otros productos de cuidado personal"},
             ]
-            
+
             self.session.execute(Categorias_productos.__table__.insert(), categorias_productos)
             return True
-    
+
     def insertar_presentaciones_basicas(self):
         query = select(Presentacion_productos).limit(1)
         resultado_consulta = self.session.execute(query).fetchone()
@@ -95,28 +95,28 @@ class ProductosModel:
                 {"nombre": "Blíster"},
                 {"nombre": "Estuche"}
             ]
-            
+
             self.session.execute(Presentacion_productos.__table__.insert(), presentaciones)
             return True
-    
+
     def agregar_presentacion(self, nombre):
         presentacion = self.session.query(Presentacion_productos).filter(Presentacion_productos.nombre == nombre).first()
         if presentacion is not None:
             return presentacion, False
-        
+
         presentacion = Presentacion_productos(nombre = nombre)
         print(f"esta es la presentacion: {presentacion.nombre}")
         self.session.add(presentacion)
         self.session.flush()
         return presentacion, True
-    
+
     def obtener_presentaciones(self):
         presentaciones = self.session.query(Presentacion_productos).all()
         if presentaciones:
             return presentaciones, True
         else:
             return [], False
-        
+
     def eliminar_presentacion_producto(self, presentacion_obj):
         try:
             if presentacion_obj:
@@ -126,7 +126,7 @@ class ProductosModel:
             return False
         except Exception as e:
             return False
-    
+
     def agregar_unidad_medida(self, nombre):
         unidad = self.session.query(Unidad_medida_productos).filter(Unidad_medida_productos.nombre == nombre).first()
         if unidad:
@@ -135,14 +135,14 @@ class ProductosModel:
         self.session.add(unidad)
         self.session.flush()
         return unidad, True
-    
+
     def obtener_unidades_medida(self):
         unidades_medida = self.session.query(Unidad_medida_productos).all()
         if unidades_medida:
             return unidades_medida, True
         else:
             return [], False
-    
+
     def eliminar_unidad_medida(self, unidad_obj):
         try:
             if unidad_obj:
@@ -152,7 +152,7 @@ class ProductosModel:
             return False
         except Exception as e:
             return False
-        
+
     def agregar_producto(
         self,
         codigo_upc,
@@ -187,7 +187,7 @@ class ProductosModel:
             producto = self.session.query(Productos).filter(Productos.codigo_upc == codigo_upc).first()
             if producto:
                 return producto, False
-            
+
             producto = Productos(
                 codigo_upc=codigo_upc,
                 nombre_producto=nombre_producto,
@@ -224,7 +224,7 @@ class ProductosModel:
             return producto, True
         except Exception as e:
             return None, False
-        
+
     def actualizar_producto(self,
                             id_producto,
                             codigo_upc,
@@ -259,7 +259,7 @@ class ProductosModel:
         print(producto_actual)
         if not producto_actual:
             return None, False
-        
+
         producto_actual.nombre_producto = nombre_producto
         producto_actual.descripcion_producto = descripcion_producto
         producto_actual.costo_inicial = costo_inicial
@@ -296,10 +296,10 @@ class ProductosModel:
             proveedor_fusionado = self.session.merge(proveedor_obj)
             proveedores_fusionados.append(proveedor_fusionado)
 
-        producto_actual.proveedores = proveedores_fusionados 
+        producto_actual.proveedores = proveedores_fusionados
 
         return producto_actual, True
-        
+
     def obtener_productos(self, offset=0, limit=100):
         try:
             productos = (
@@ -316,15 +316,15 @@ class ProductosModel:
                 .limit(limit)
                 .all()
             )
-            
+
             if not productos and offset > 0:
                 return [], False
-            
+
             return productos, bool(productos)
-            
+
         except Exception as e:
             return [], False
-        
+
     def eliminar_producto(self, codigo_producto):
         producto = self.session.query(Productos).filter(Productos.codigo_upc == codigo_producto).first()
         if producto:
@@ -333,7 +333,7 @@ class ProductosModel:
             return None, True
         else:
             return None, False
-    
+
     def consultar_por_nombre_exacto(self, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
@@ -345,20 +345,20 @@ class ProductosModel:
                     joinedload(Productos.presentacion_productos),
                     joinedload(Productos.proveedores)
                 )
-                .filter(func.lower(Productos.nombre_producto) == func.lower(nombre)) 
+                .filter(func.lower(Productos.nombre_producto) == func.lower(nombre))
                 .offset(cantidad_inicial)
                 .limit(cantidad_final)
                 .all()
             )
-            
+
             if not productos:
                 return [], False
-                
+
             return productos, bool(productos)
-            
+
         except Exception as e:
             return [], False
-    
+
     def consultar_por_nombre(self, nombre, cantidad_inicial=0, cantidad_final=100):
         try:
             productos = (
@@ -376,15 +376,15 @@ class ProductosModel:
                 .limit(cantidad_final)
                 .all()
             )
-            
+
             if not productos and cantidad_inicial > 0:
                 return [], False
-                
+
             return productos, bool(productos)
-            
+
         except Exception as e:
             return [], False
-        
+
     def consultar_producto_por_codigoUPC(self, codigo_upc):
         produto = self.session.query(Productos)\
             .options(
@@ -398,11 +398,13 @@ class ProductosModel:
             return produto, True
         else:
             return None, False
-        
+
     def ejecutar_movimiento(self, producto_id, cantidad_cambio, tipo_movimiento, fecha_movimiento, notas, usuarioid):
-        if not producto_id and not usuarioid:
-            return None,False
+        if not producto_id or not usuarioid:
+            return None, False
         producto = self.session.get(Productos, producto_id)
+        if not producto:
+            return None, False
         movimiento = Movimientos_Inventario(
             producto_id = producto.id,
             cantidad_cambio = cantidad_cambio,
@@ -411,13 +413,13 @@ class ProductosModel:
             notas = notas,
             usuario_id = usuarioid
             )
-        
-        
+
+
         if tipo_movimiento.lower() == "entrada":
             producto.existencia += cantidad_cambio
         elif tipo_movimiento.lower() == "salida":
             producto.existencia -= cantidad_cambio
-            
+
         self.session.add(movimiento)
         self.session.flush()
         return movimiento, True

@@ -14,6 +14,7 @@ from ..Model.CategoriasModel import CategoriasModel
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
+from .OperacionMasivaCsvController import OperacionMasivaCsvController
 from ..Model.ClientesFisicosAndMoralesModel import *
 from .MensajesAlertasController import Mensaje
 
@@ -56,6 +57,10 @@ class Clientes(QWidget):
         self.cantidad_final_clientes_fisicos = 100
         self.busqueda_clientes_fisicos = False
         self.busqueda_clientes_morales = False
+        self.no_hay_mas_registros_clientes_fisicos = False
+        self.no_hay_mas_registros_clientes_morales = False
+        self._append_mode_clientes_fisicos = False
+        self._append_mode_clientes_morales = False
         self.clienteSeleccionadoVariable = None
         self.nombre_cliente_fisico = None
         self.nombre_cliente_moral = None
@@ -82,7 +87,7 @@ class Clientes(QWidget):
         self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.toggled.connect(self.activar_creditomoral)
         self.WindowClient.casillaverificacion_aplicadescuento_fisico.toggled.connect(self.activar_descuentofisico)
         self.WindowClient.casillaverificacion_aplicadescuento_moral.toggled.connect(self.activar_descuentomoral)
-        #------------------------------
+
 # ================= SEÑALES DE BOTONES =================
         self.WindowClient.btn_btn_nuevacategoriaFisico.clicked.connect(self.nueva_categoria)
         self.WindowClient.btn_btn_nuevacategoriaMoral.clicked.connect(self.nueva_categoria)
@@ -96,8 +101,10 @@ class Clientes(QWidget):
         self.WindowClient.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
         self.WindowClient.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes_fisicos)
         self.WindowClient.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
+        self.WindowClient.btn_btn_ImportarClientesFisicos.clicked.connect(self.importar_clientes_fisicos)
         self.WindowClient.btn_RefrescarTablaClientesMorales.clicked.connect(self.tabla_listar_clientes_morales)
         self.WindowClient.btn_btn_paginarClientesMorales.clicked.connect(self.cargar_mas_clientes_morales)
+        self.WindowClient.btn_btn_importarClientesMorales.clicked.connect(self.importar_clientes_morales)
 
 # ================= SEÑALES PERSONALIZADAS =================
         self.WindowClient.label_wpc_fotocliente.mousePressEvent = self.obtener_foto
@@ -108,238 +115,123 @@ class Clientes(QWidget):
         self.WindowClient.cajaOpciones_categoriaFisico.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
         self.WindowClient.cajaOpciones_areasnegocio_moral.currentIndexChanged.connect(self.mostrar_descripcion_area)
         self.WindowClient.cajaOpciones_categoriaMoral.currentIndexChanged.connect(self.mostrar_descripcion_categoria)
+        self.WindowClient.txt_buscarclienteFisico.returnPressed.connect(self.buscar_cliente_fisico)
+        self.WindowClient.txt_buscarclienteMorales.returnPressed.connect(self.buscar_cliente_moral)
 
 # EJECUTAR FUNCIONALIDADES INICIALES
         self.__configuracion_tabla_clientes_fisicos()
         self.__configuracion_tabla_clientes_morales()
         self.cargar_estados_civiles()
-# ================= FUNCIONES PRINCIPALES =================
+        self.listar_areas()
+        self.listar_categorias()
+
     def hideEvent(self, event):
         for hilo in self.lista_hilos_clientes:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_clientes.clear()
         super().hideEvent(event)
 
-    def agregar_cliente(self):
-        fecha_actual = datetime.now().date()
-        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
-            datos = self.obtener_datos_cliente_fisico()
-            if not self.validacion_campos_cliente_fisico(datos):
-                return
-            limite_credito = datos["limite del credito"]
-            fecha_ultimo_reporte = fecha_actual.strftime("%Y/%m/%d")
-            credito_disponible = limite_credito
-            tipo_de_cliente = "FISICO"
-            foto = self.foto_cliente
-            
-            try:
-                self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("agregar_cliente_fisico_thread")
-                self.id_hilo_agregar_clienteFisico = WorkerDB.create_managed_worker(owner_id="agregar_cliente_fisico_thread")
-                self.consultor_agregar_clienteFisico = WorkerDB.get_managed_worker(self.id_hilo_agregar_clienteFisico)
-                
-                if not self.consultor_agregar_clienteFisico:
-                    raise Exception("No se pudo obtener el worker gestionado")
-                self.lista_hilos_clientes.append(self.id_hilo_agregar_clienteFisico)
-                WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_agregar_clienteFisico,
-                    resultado_callback=self.mostrar_estado_hilo,
-                    error_callback=self.mostrar_error_hilo,
-                    terminado_callback=self.manejadorModal.cerrar_modal
-                )
-                
-                datos_cliente_fisico = {
-                    'nombre': datos['nombre'],
-                    'correo': datos['correo electronico'],
-                    'rfc': datos['rfc'],
-                    'telefono': datos['numero telefono'],
-                    'pais': datos['pais'],
-                    'estado': datos['estado'],
-                    'ciudad': datos['ciudad'],
-                    'avenidas': datos["avenidas"],
-                    'calles': datos["calles"],
-                    'codigo_postal': datos['codigo postal'],
-                    'direccion_adicional': datos['direccion adicional'],
-                    'entidad_legalizada': datos["entidad legalizada"],
-                    'categoria_cliente_id': datos['clasificacion cliente'].id,
-                    'credito': datos["credito autorizado"],
-                    'estado_credito': datos["estado del credito"],
-                    'limite_credito': limite_credito,
-                    'porcentaje_interes': datos["porcentaje del interes"],
-                    'fecha_ultimo_reporte': fecha_ultimo_reporte,
-                    'credito_disponible': credito_disponible,
-                    'credito_utilizado': datos["credito utilizado"],
-                    'tipo_cliente': tipo_de_cliente,
-                    'aplica_descuento': datos["aplica descuento"],
-                    'porcentaje_descuento': datos["porcentaje del descuento"],
-                    'comentarios': datos["comentarios"],
-                    'areas_de_negocios_id': datos["area de negocio"].id,
-                    'apellido_paterno': datos['apellido paterno'],
-                    'apellido_materno': datos['apellido materno'],
-                    'curp': datos['curp'],
-                    'fecha_nacimiento': datos['fecha de nacimiento'],
-                    'num_identificacion': datos['numero identificacion'],
-                    'ocupacion': datos['ocupacion'],
-                    'ingresos': datos["ingresos"],
-                    'estado_civil': datos["estado civil"],
-                    'foto': foto
-                }
-                
-                self.consultor_agregar_clienteFisico.ejecutar(
-                    funcion=self.agregar_cliente_fisico_query,
-                    datos_cliente=datos_cliente_fisico
-                )
-                
-            except Exception as e:
-                if hasattr(self, 'id_hilo_agregar_clienteFisico'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_clienteFisico)
-                Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {str(e)}")
+    def _reset_busqueda_clientes_fisicos(self, clear_input=False):
+        self.cantidad_inicial_clientes_fisicos = 0
+        self.busqueda_clientes_fisicos = False
+        self.no_hay_mas_registros_clientes_fisicos = False
+        self._append_mode_clientes_fisicos = False
+        self.nombre_cliente_fisico = None
+        if clear_input:
+            self.WindowClient.txt_buscarclienteFisico.clear()
 
-        elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
-            datos = self.obtener_datos_cliente_moral()
-            tipo_de_cliente = 'MORAL'
-            
-            if not self.validacion_campos_cliente_moral(datos):
-                return
-                
-            credito_disponible = datos["limite del credito"]
-            fecha_ultimo_reporte = fecha_actual.strftime("%Y/%m/%d")
+    def _reset_busqueda_clientes_morales(self, clear_input=False):
+        self.cantidad_inicial_clientes_morales = 0
+        self.busqueda_clientes_morales = False
+        self.no_hay_mas_registros_clientes_morales = False
+        self._append_mode_clientes_morales = False
+        self.nombre_cliente_moral = None
+        if clear_input:
+            self.WindowClient.txt_buscarclienteMorales.clear()
 
-            try:
-                self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("agregar_cliente_moral_thread")
-                self.id_hilo_agregar_clienteMoral = WorkerDB.create_managed_worker(owner_id="agregar_cliente_moral_thread")
-                self.consultor_agregar_clienteMoral = WorkerDB.get_managed_worker(self.id_hilo_agregar_clienteMoral)
-                
-                if not self.consultor_agregar_clienteMoral:
-                    raise Exception("No se pudo obtener el worker gestionado")
-                self.lista_hilos_clientes.append(self.id_hilo_agregar_clienteMoral)
-                WorkerDB.connect_managed_signals(
-                    worker_id=self.id_hilo_agregar_clienteMoral,
-                    resultado_callback=self.mostrar_estado_hilo,
-                    error_callback=self.mostrar_error_hilo,
-                    terminado_callback=self.manejadorModal.cerrar_modal
-                )
-                
-                datos_cliente_moral = {
-                    'nombre': datos['nombre'],
-                    'correo': datos['correo electronico empresa'],
-                    'rfc': datos['rfc'],
-                    'telefono': datos['numero telefono'],
-                    'pais': datos['pais'],
-                    'estado': datos['estado'],
-                    'ciudad': datos['ciudad'],
-                    'avenidas': datos["avenidas"],
-                    'calles': datos["calles"],
-                    'codigo_postal': datos['codigo postal'],
-                    'direccion_adicional': datos['direccion adicional'],
-                    'entidad_legalizada': datos["entidad legalizada"],
-                    'categoria_cliente_id': datos['clasificacion de cliente'].id,
-                    'credito': datos["credito autorizado"],
-                    'estado_credito': datos["estado del credito"],
-                    'limite_credito': datos["limite del credito"],
-                    'porcentaje_interes': datos["porcentaje del interes"],
-                    'fecha_ultimo_reporte': fecha_ultimo_reporte,
-                    'credito_disponible': credito_disponible,
-                    'credito_utilizado': datos["credito utilizado"],
-                    'tipo_cliente': tipo_de_cliente,
-                    'aplica_descuento': datos["descuento autorizado"],
-                    'porcentaje_descuento': datos["porcentaje del descuento"],
-                    'comentarios': datos["comentarios"],
-                    'areas_de_negocios_id': datos["area de negocio"].id,
-                    'razon_social': datos["razon social"],
-                    'fecha_constitucion': datos["fecha de constitucion"],
-                    'web': datos["web"],
-                    'sector': datos["sector"],
-                    'nif': datos["numero de identificacion fiscal"],
-                    'datos_representante': {
-                        'nombre': datos['representante moral'],
-                        'telefono': datos['telefono representante'],
-                        'correo': datos['correo electronico representante'],
-                        'puesto': datos['puesto del representante']
-                    }
-                }
-                
-                self.consultor_agregar_clienteMoral.ejecutar(
-                    funcion=self.agregar_cliente_moral_query,
-                    datos_cliente=datos_cliente_moral
-                )
-                
-            except Exception as e:
-                if hasattr(self, 'id_hilo_agregar_clienteMoral'):
-                    WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_clienteMoral)
-                Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {str(e)}")
+    @staticmethod
+    def _parse_bool_importacion(valor, default=False):
+        valor_normalizado = str(valor).strip().lower()
+        if valor_normalizado in {"1", "true", "t", "si", "sí", "yes", "y", "x", "verdadero"}:
+            return True
+        if valor_normalizado in {"0", "false", "f", "no", "n", "falso", ""}:
+            return False
+        return default
 
-    def agregar_cliente_moral_query(self, session, datos_cliente):
-        try:
-            datos_representante = datos_cliente.pop('datos_representante', None)
-            
-            nuevo_cliente, estado_cliente = ClientesFisicosAndMorales(session).agregar_cliente_moral(**datos_cliente)
-            
-            if estado_cliente is None:
-                session.rollback()
-                return {
-                    "exito": False,
-                    "mensaje": "El cliente ya existe en la base de datos",
-                    "tipo_cliente": "MORAL"
-                }
-            elif estado_cliente is True and datos_representante:
-                representante = ClientesFisicosAndMorales(session).agregar_representante_cliente_moral(**datos_representante)
-                
-                nuevo_cliente.representante = representante
-                session.commit()
-                
-                return {
-                    "exito": True,
-                    "mensaje": "Cliente moral y representante agregados con éxito",
-                    "tipo_cliente": "MORAL"
-                }
-            elif estado_cliente is True:
-                session.commit()
-                return {
-                    "exito": True,
-                    "mensaje": "Cliente moral agregado con éxito",
-                    "tipo_cliente": "MORAL"
-                }
-            else:
-                session.rollback()
-                return {
-                    "exito": False,
-                    "mensaje": "Ocurrió un error al agregar el cliente moral",
-                    "tipo_cliente": "MORAL"
-                }
-                
-        except Exception as e:
-            session.rollback()
-            return {
-                "exito": False,
-                "mensaje": f"Error al agregar cliente moral: {str(e)}",
-                "tipo_cliente": "MORAL"
-            }
+    @staticmethod
+    def _obtener_valor_importacion(row, *columnas, default=""):
+        for columna in columnas:
+            if columna in row and str(row.get(columna, "")).strip() != "":
+                return row.get(columna, default)
+        return default
+
+    @staticmethod
+    def _normalizar_texto_importacion(valor, upper=False):
+        texto = str(valor).strip()
+        return texto.upper() if upper else texto
+
+    def _resolver_categoria_cliente_importacion(self, row, categorias_por_id, categorias_por_nombre):
+        categoria_id = OperacionMasivaCsvController.parse_int(
+            self._obtener_valor_importacion(row, "categoria_cliente_id", "categoria_id"),
+            default=0
+        )
+        if categoria_id and categoria_id in categorias_por_id:
+            return categoria_id
+        categoria_nombre = self._normalizar_texto_importacion(
+            self._obtener_valor_importacion(row, "categoria_cliente", "clasificacion_cliente", "clasificacion cliente", "clasificacion de cliente"),
+            upper=True
+        )
+        if categoria_nombre:
+            return categorias_por_nombre.get(categoria_nombre)
+        return None
+
+    def _resolver_area_negocio_importacion(self, row, areas_por_id, areas_por_nombre):
+        area_id = OperacionMasivaCsvController.parse_int(
+            self._obtener_valor_importacion(row, "areas_de_negocios_id", "area_de_negocio_id", "area_id"),
+            default=0
+        )
+        if area_id and area_id in areas_por_id:
+            return area_id
+        area_nombre = self._normalizar_texto_importacion(
+            self._obtener_valor_importacion(row, "area_de_negocio", "area de negocio", "areas_de_negocios"),
+            upper=True
+        )
+        if area_nombre:
+            return areas_por_nombre.get(area_nombre)
+        return None
 
     def actualizar_clientes(self):
+        if not self.clienteSeleccionadoVariable:
+            Mensaje().mensaje_informativo("No haz seleccionado ningun registro para actualizar")
+            return
+
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             datos = self.obtener_datos_cliente_fisico()
-            area_cliente = self.WindowClient.cajaOpciones_areasnegocio_fisico.currentData()
-            categoria_cliente = self.WindowClient.cajaOpciones_categoriaFisico.currentData()
-            cliente_fisico = True
             if not self.validacion_campos_cliente_fisico(datos):
                 return
+            area_cliente = datos["area de negocio"]
+            categoria_cliente = datos["clasificacion cliente"]
+            cliente_fisico = True
         else:
             datos = self.obtener_datos_cliente_moral()
-            area_cliente = self.WindowClient.cajaOpciones_areasnegocio_moral.currentData()
-            categoria_cliente = self.WindowClient.cajaOpciones_categoriaMoral.currentData()
-            cliente_fisico = False
             if not self.validacion_campos_cliente_moral(datos):
                 return
-        respuesta = Mensaje().mensaje_pregunta("¿Quieres actualizar el registro")
+            area_cliente = datos["area de negocio"]
+            categoria_cliente = datos["clasificacion de cliente"]
+            cliente_fisico = False
+
+        if not area_cliente or not categoria_cliente:
+            Mensaje().mensaje_informativo("El área de negocio y la categoría del cliente son obligatorias")
+            return
+
+        respuesta = Mensaje().mensaje_pregunta("Quieres actualizar el registro")
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
                 WorkerDB.cleanup_owner_workers("actualizar_cliente_thread")
                 self.id_hilo_actualizar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id="actualizar_cliente_thread")
                 self.consultor_actualizar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_actualizar_cliente_vclientes)
-                
+
                 if not self.consultor_actualizar_clientes_vclientes:
                     raise Exception("No se pudo obtener el worker gestionado")
                 self.lista_hilos_clientes.append(self.id_hilo_actualizar_cliente_vclientes)
@@ -441,7 +333,7 @@ class Clientes(QWidget):
                             telefono_representante=datos['telefono representante'],
                             correo_representante=datos['correo electronico representante'],
                             puesto_representante=datos['puesto del representante']
-                            ) 
+                            )
             if not estado:
                 session.rollback()
                 return {
@@ -459,7 +351,7 @@ class Clientes(QWidget):
             "exito": estado,
             "mensaje" : f'Se realizo la actualización de {cliente.nombre}'
         }
-        
+
     def eliminar_clientes(self):
         if not self.clienteSeleccionadoVariable:
             Mensaje().mensaje_informativo("No haz seleccionado ningun registro a eliminar")
@@ -493,7 +385,7 @@ class Clientes(QWidget):
                 if hasattr(self, 'id_hilo_eliminar_cliente_vclientes'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_cliente_vclientes)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-                
+
     def eliminar_cliente_query(self, session, cliente, modelo):
         try:
             estado = ClientesFisicosAndMorales(session).eliminar_cliente(cliente.id, modelo)
@@ -532,7 +424,7 @@ class Clientes(QWidget):
             if not area:
                 return
             self.WindowClient.txtlargo_descripcionAreaClienteMoral.setPlainText(area.descripcion)
-            
+
     def mostrar_descripcion_categoria(self):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             categoria = self.WindowClient.cajaOpciones_categoriaFisico.currentData()
@@ -567,7 +459,7 @@ class Clientes(QWidget):
             )
         except Exception as e:
             Mensaje().mensaje_critico(f'No se logro listar las areas por lo siguiente: {e}')
-    
+
     def obtener_areas_negocio_query(self, session):
         try:
             areas, estado = AreaNegocioClientesModel(session).obtener_areas()
@@ -590,7 +482,7 @@ class Clientes(QWidget):
             "mensaje": f'Areas de negocio en lista',
             "data": areas
         }
-        
+
     def listar_areas_negocio(self, data):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             for area in data["data"]:
@@ -629,7 +521,7 @@ class Clientes(QWidget):
             )
         except Exception as e:
             Mensaje().mensaje_critico(f"No se logro listar las areas por lo siguiente: {e}")
-                
+
     def obtener_categorias_clientes(self, session, tipo_categoria = "clientes"):
         try:
             categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria = tipo_categoria)
@@ -652,7 +544,7 @@ class Clientes(QWidget):
             "mensaje": f'Categorias de negocio en lista',
             "data": categorias
         }
-        
+
     def listar_categorias_clientes(self, data):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             for categoria in data["data"]:
@@ -673,11 +565,141 @@ class Clientes(QWidget):
             self.WindowClient.label_wpc_fotocliente.setScaledContents(True)
             self.WindowClient.label_wpc_fotocliente.adjustSize()
 
+    def agregar_cliente(self):
+        if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            datos = self.obtener_datos_cliente_fisico()
+            if not self.validacion_campos_cliente_fisico(datos):
+                return
+            area_cliente = datos["area de negocio"]
+            categoria_cliente = datos["clasificacion cliente"]
+            if not area_cliente or not categoria_cliente:
+                Mensaje().mensaje_informativo("El area de negocio y la clasificacion del cliente son obligatorias")
+                return
+            datos_cliente = {
+                "nombre": datos["nombre"],
+                "correo": datos["correo electronico"],
+                "rfc": datos["rfc"],
+                "telefono": datos["numero telefono"],
+                "pais": datos["pais"],
+                "estado": datos["estado"],
+                "ciudad": datos["ciudad"],
+                "avenidas": datos["avenidas"],
+                "calles": datos["calles"],
+                "codigo_postal": datos["codigo postal"],
+                "direccion_adicional": datos["direccion adicional"],
+                "entidad_legalizada": datos["entidad legalizada"],
+                "categoria_cliente_id": categoria_cliente.id,
+                "credito": datos["credito autorizado"],
+                "estado_credito": datos["estado del credito"],
+                "limite_credito": datos["limite del credito"],
+                "porcentaje_interes": datos["porcentaje del interes"],
+                "fecha_ultimo_reporte": datos["fecha del ultimo reporte"],
+                "credito_disponible": datos["credito disponible"],
+                "credito_utilizado": datos["credito utilizado"],
+                "tipo_cliente": "FISICO",
+                "aplica_descuento": datos["aplica descuento"],
+                "porcentaje_descuento": datos["porcentaje del descuento"],
+                "comentarios": datos["comentarios"],
+                "areas_de_negocios_id": area_cliente.id,
+                "apellido_paterno": datos["apellido paterno"],
+                "apellido_materno": datos["apellido materno"],
+                "curp": datos["curp"],
+                "fecha_nacimiento": datos["fecha de nacimiento"],
+                "num_identificacion": datos["numero identificacion"],
+                "ocupacion": datos["ocupacion"],
+                "ingresos": datos["ingresos"],
+                "estado_civil": datos["estado civil"],
+                "foto": self.foto_cliente,
+            }
+            funcion_query = self.agregar_cliente_fisico_query
+        else:
+            datos = self.obtener_datos_cliente_moral()
+            if not self.validacion_campos_cliente_moral(datos):
+                return
+            area_cliente = datos["area de negocio"]
+            categoria_cliente = datos["clasificacion de cliente"]
+            if not area_cliente or not categoria_cliente:
+                Mensaje().mensaje_informativo("El area de negocio y la clasificacion del cliente son obligatorias")
+                return
+            datos_cliente = {
+                "nombre": datos["nombre"],
+                "correo": datos["correo electronico empresa"],
+                "rfc": datos["rfc"],
+                "telefono": datos["numero telefono"],
+                "pais": datos["pais"],
+                "estado": datos["estado"],
+                "ciudad": datos["ciudad"],
+                "avenidas": datos["avenidas"],
+                "calles": datos["calles"],
+                "codigo_postal": datos["codigo postal"],
+                "direccion_adicional": datos["direccion adicional"],
+                "entidad_legalizada": datos["entidad legalizada"],
+                "categoria_cliente_id": categoria_cliente.id,
+                "credito": datos["credito autorizado"],
+                "estado_credito": datos["estado del credito"],
+                "limite_credito": datos["limite del credito"],
+                "porcentaje_interes": datos["porcentaje del interes"],
+                "fecha_ultimo_reporte": datos["fecha del ultimo reporte"],
+                "credito_disponible": datos["credito disponible"],
+                "credito_utilizado": datos["credito utilizado"],
+                "tipo_cliente": "MORAL",
+                "aplica_descuento": datos["descuento autorizado"],
+                "porcentaje_descuento": datos["porcentaje del descuento"],
+                "comentarios": datos["comentarios"],
+                "areas_de_negocios_id": area_cliente.id,
+                "razon_social": datos["razon social"],
+                "fecha_constitucion": datos["fecha de constitucion"],
+                "web": datos["web"],
+                "sector": datos["sector"],
+                "nif": datos["numero de identificacion fiscal"],
+                "datos_representante": {
+                    "nombre": datos["representante moral"],
+                    "telefono": datos["telefono representante"],
+                    "correo": datos["correo electronico representante"],
+                    "puesto": datos["puesto del representante"],
+                },
+            }
+            funcion_query = self.agregar_cliente_moral_query
+
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("agregar_cliente_thread")
+            self.id_hilo_agregar_cliente = WorkerDB.create_managed_worker(owner_id="agregar_cliente_thread")
+            self.consultor_agregar_cliente = WorkerDB.get_managed_worker(self.id_hilo_agregar_cliente)
+            if not self.consultor_agregar_cliente:
+                raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_clientes.append(self.id_hilo_agregar_cliente)
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_agregar_cliente,
+                resultado_callback=self.resultado_agregar_cliente,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_agregar_cliente.ejecutar(
+                funcion=funcion_query,
+                datos_cliente=datos_cliente
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_agregar_cliente'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_cliente)
+            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+
+    def resultado_agregar_cliente(self, resultado):
+        if resultado.get("exito"):
+            Mensaje().mensaje_informativo(resultado.get("mensaje", "Cliente agregado con exito"))
+            self.limpiar_campos()
+            if resultado.get("tipo_cliente") == "MORAL":
+                self.tabla_listar_clientes_morales()
+            else:
+                self.tabla_listar_clientes_fisicos()
+            return
+        Mensaje().mensaje_alerta(resultado.get("mensaje", "No se pudo agregar el cliente"))
+
 # ======================= CLIENTES FISICOS ============================
     def agregar_cliente_fisico_query(self, session, datos_cliente):
         try:
             nuevo_cliente, estado_cliente = ClientesFisicosAndMorales(session).agregar_cliente_fisico(**datos_cliente)
-            
+
             if estado_cliente is None:
                 session.rollback()
                 return {
@@ -699,7 +721,7 @@ class Clientes(QWidget):
                     "mensaje": "Ocurrió un error al agregar el cliente físico",
                     "tipo_cliente": "FISICO"
                 }
-                
+
         except Exception as e:
             session.rollback()
             return {
@@ -707,6 +729,376 @@ class Clientes(QWidget):
                 "mensaje": f"Error al agregar cliente físico: {str(e)}",
                 "tipo_cliente": "FISICO"
             }
+
+    def agregar_cliente_moral_query(self, session, datos_cliente):
+        try:
+            datos_representante = datos_cliente.pop('datos_representante', None)
+
+            nuevo_cliente, estado_cliente = ClientesFisicosAndMorales(session).agregar_cliente_moral(**datos_cliente)
+
+            if estado_cliente is None:
+                session.rollback()
+                return {
+                    "exito": False,
+                    "mensaje": "El cliente ya existe en la base de datos",
+                    "tipo_cliente": "MORAL"
+                }
+            if estado_cliente is True and datos_representante:
+                representante = ClientesFisicosAndMorales(session).agregar_representante_cliente_moral(**datos_representante)
+                if not representante:
+                    session.rollback()
+                    return {
+                        "exito": False,
+                        "mensaje": "No se pudo agregar el representante del cliente moral",
+                        "tipo_cliente": "MORAL"
+                    }
+                nuevo_cliente.representante = representante
+                session.commit()
+                return {
+                    "exito": True,
+                    "mensaje": "Cliente moral y representante agregados con éxito",
+                    "tipo_cliente": "MORAL"
+                }
+            if estado_cliente is True:
+                session.commit()
+                return {
+                    "exito": True,
+                    "mensaje": "Cliente moral agregado con éxito",
+                    "tipo_cliente": "MORAL"
+                }
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": "Ocurrió un error al agregar el cliente moral",
+                "tipo_cliente": "MORAL"
+            }
+        except Exception as e:
+            session.rollback()
+            return {
+                "exito": False,
+                "mensaje": f"Error al agregar cliente moral: {str(e)}",
+                "tipo_cliente": "MORAL"
+            }
+
+    def importar_clientes_fisicos(self):
+        documento, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona un documento para importar clientes físicos", "",
+            "Archivos de Importación (*.csv *.xlsx *.xls);;Archivos CSV (*.csv);;Archivos Excel (*.xlsx *.xls)"
+        )
+        if not documento:
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("importar_clientes_fisicos_thread")
+            self.id_hilo_importar_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="importar_clientes_fisicos_thread")
+            self.consultor_importar_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_importar_clientes_fisicos)
+            if not self.consultor_importar_clientes_fisicos:
+                raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_clientes.append(self.id_hilo_importar_clientes_fisicos)
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_importar_clientes_fisicos,
+                resultado_callback=self.resultado_importacion_clientes_fisicos,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_importar_clientes_fisicos.ejecutar(
+                funcion=self.importar_clientes_fisicos_query,
+                documento=documento
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_importar_clientes_fisicos'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_importar_clientes_fisicos)
+            Mensaje().mensaje_alerta(f"Error al iniciar la importación: {e}")
+
+    def importar_clientes_fisicos_query(self, session, documento):
+        columnas_validas = {
+            "id", "nombre", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas", "calles",
+            "codigo_postal", "direccion_adicional", "entidad_legalizada", "categoria_cliente_id", "categoria_cliente",
+            "categoria_id", "credito", "estado_credito", "limite_credito", "porcentaje_interes", "fecha_ultimo_reporte",
+            "credito_disponible", "credito_utilizado", "aplica_descuento", "porcentaje_descuento", "comentarios",
+            "areas_de_negocios_id", "area_de_negocio_id", "area_de_negocio", "areas_de_negocios", "apellido_paterno",
+            "apellido_materno", "curp", "fecha_nacimiento", "num_identificacion", "ocupacion", "ingresos",
+            "estado_civil", "foto", "clasificacion cliente", "clasificacion_cliente", "area de negocio", "area_id"
+        }
+        columnas_requeridas = [
+            "nombre", "apellido_paterno", "apellido_materno", "curp", "rfc", "correo", "telefono", "pais", "estado",
+            "ciudad", "avenidas", "calles", "codigo_postal", "direccion_adicional", "fecha_nacimiento",
+            "num_identificacion", "ocupacion", "ingresos", "estado_civil"
+        ]
+
+        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+            documento=documento,
+            columnas_requeridas=columnas_requeridas,
+            columnas_validas=columnas_validas
+        )
+
+        categorias = session.query(Categorias_de_clientes).all()
+        areas = session.query(Areas_negocios).all()
+        categorias_por_id = {categoria.id: categoria for categoria in categorias}
+        categorias_por_nombre = {str(categoria.nombre).strip().upper(): categoria.id for categoria in categorias}
+        areas_por_id = {area.id: area for area in areas}
+        areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
+
+        clientes_existentes = session.query(Clientes_fisicos.curp, Clientes.rfc).join(Clientes, Clientes.id == Clientes_fisicos.id).all()
+        curps_existentes = {str(curp).strip().upper() for curp, _ in clientes_existentes if curp}
+        rfcs_existentes = {str(rfc).strip().upper() for _, rfc in clientes_existentes if rfc}
+
+        agregados = 0
+        duplicados = 0
+        omitidos = 0
+
+        for row in registros:
+            nombre = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nombre"), upper=True)
+            apellido_paterno = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "apellido_paterno"), upper=True)
+            apellido_materno = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "apellido_materno"), upper=True)
+            curp = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "curp"), upper=True)
+            rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
+
+            categoria_id = self._resolver_categoria_cliente_importacion(row, categorias_por_id, categorias_por_nombre)
+            area_id = self._resolver_area_negocio_importacion(row, areas_por_id, areas_por_nombre)
+            fecha_nacimiento = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_nacimiento"))
+            fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
+
+            if not all([nombre, apellido_paterno, apellido_materno, curp, rfc, categoria_id, area_id, fecha_nacimiento]):
+                omitidos += 1
+                continue
+            if curp in curps_existentes or rfc in rfcs_existentes:
+                duplicados += 1
+                continue
+
+            limite_credito = OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "limite_credito"), default=0.0)
+            credito = self._parse_bool_importacion(self._obtener_valor_importacion(row, "credito"), default=False)
+            cliente, estado = ClientesFisicosAndMorales(session).agregar_cliente_fisico(
+                nombre=nombre,
+                correo=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "correo")),
+                rfc=rfc,
+                telefono=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "telefono"), upper=True),
+                pais=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "pais"), upper=True),
+                estado=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado"), upper=True),
+                ciudad=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
+                avenidas=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
+                calles=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
+                codigo_postal=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "codigo_postal"), upper=True),
+                direccion_adicional=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
+                entidad_legalizada=self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
+                categoria_cliente_id=categoria_id,
+                credito=credito,
+                estado_credito=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_credito"), upper=True) or ("AUTORIZADO" if credito else "SIN AUTORIZAR"),
+                limite_credito=limite_credito,
+                porcentaje_interes=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_interes"), default=0.0),
+                fecha_ultimo_reporte=datetime.combine(fecha_ultimo_reporte, datetime.min.time()),
+                credito_disponible=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_disponible"), default=limite_credito),
+                credito_utilizado=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_utilizado"), default=0.0),
+                tipo_cliente="FISICO",
+                aplica_descuento=self._parse_bool_importacion(self._obtener_valor_importacion(row, "aplica_descuento"), default=False),
+                porcentaje_descuento=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_descuento"), default=0.0),
+                comentarios=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "comentarios"), upper=True),
+                areas_de_negocios_id=area_id,
+                apellido_paterno=apellido_paterno,
+                apellido_materno=apellido_materno,
+                curp=curp,
+                fecha_nacimiento=fecha_nacimiento,
+                num_identificacion=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "num_identificacion"), upper=True),
+                ocupacion=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ocupacion"), upper=True),
+                ingresos=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "ingresos"), default=0.0),
+                estado_civil=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_civil"), upper=True),
+                foto=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "foto"))
+            )
+            if estado:
+                agregados += 1
+                curps_existentes.add(curp)
+                rfcs_existentes.add(rfc)
+            elif estado is None:
+                duplicados += 1
+            else:
+                omitidos += 1
+
+        if agregados:
+            session.commit()
+        else:
+            session.rollback()
+
+        return {
+            "exito": True,
+            "tipo_cliente": "FISICO",
+            "agregados": agregados,
+            "duplicados": duplicados,
+            "omitidos": omitidos
+        }
+
+    def resultado_importacion_clientes_fisicos(self, resultado):
+        if resultado.get("exito"):
+            Mensaje().mensaje_informativo(
+                f"Importación de clientes físicos completada.\n"
+                f"Agregados: {resultado.get('agregados', 0)}\n"
+                f"Duplicados omitidos: {resultado.get('duplicados', 0)}\n"
+                f"Omitidos por datos inválidos: {resultado.get('omitidos', 0)}"
+            )
+            self.tabla_listar_clientes_fisicos()
+        else:
+            Mensaje().mensaje_alerta(resultado.get("mensaje", "No se pudo importar clientes físicos"))
+
+    def importar_clientes_morales(self):
+        documento, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona un documento para importar clientes morales", "",
+            "Archivos de Importación (*.csv *.xlsx *.xls);;Archivos CSV (*.csv);;Archivos Excel (*.xlsx *.xls)"
+        )
+        if not documento:
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            WorkerDB.cleanup_owner_workers("importar_clientes_morales_thread")
+            self.id_hilo_importar_clientes_morales = WorkerDB.create_managed_worker(owner_id="importar_clientes_morales_thread")
+            self.consultor_importar_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_importar_clientes_morales)
+            if not self.consultor_importar_clientes_morales:
+                raise Exception("No se pudo obtener el worker gestionado")
+            self.lista_hilos_clientes.append(self.id_hilo_importar_clientes_morales)
+            WorkerDB.connect_managed_signals(
+                worker_id=self.id_hilo_importar_clientes_morales,
+                resultado_callback=self.resultado_importacion_clientes_morales,
+                error_callback=self.mostrar_error_hilo,
+                terminado_callback=self.manejadorModal.cerrar_modal
+            )
+            self.consultor_importar_clientes_morales.ejecutar(
+                funcion=self.importar_clientes_morales_query,
+                documento=documento
+            )
+        except Exception as e:
+            if hasattr(self, 'id_hilo_importar_clientes_morales'):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_importar_clientes_morales)
+            Mensaje().mensaje_alerta(f"Error al iniciar la importación: {e}")
+
+    def importar_clientes_morales_query(self, session, documento):
+        columnas_validas = {
+            "id", "nombre", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas", "calles",
+            "codigo_postal", "direccion_adicional", "entidad_legalizada", "categoria_cliente_id", "categoria_cliente",
+            "categoria_id", "credito", "estado_credito", "limite_credito", "porcentaje_interes", "fecha_ultimo_reporte",
+            "credito_disponible", "credito_utilizado", "aplica_descuento", "porcentaje_descuento", "comentarios",
+            "areas_de_negocios_id", "area_de_negocio_id", "area_de_negocio", "areas_de_negocios", "razon_social",
+            "fecha_constitucion", "web", "sector", "nif", "NIF", "representante_nombre", "representante_telefono",
+            "representante_correo", "representante_puesto", "clasificacion de cliente", "clasificacion_cliente",
+            "area de negocio", "area_id"
+        }
+        columnas_requeridas = [
+            "nombre", "razon_social", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas",
+            "calles", "codigo_postal", "direccion_adicional", "fecha_constitucion", "web", "sector", "nif",
+            "representante_nombre", "representante_telefono", "representante_correo", "representante_puesto"
+        ]
+
+        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+            documento=documento,
+            columnas_requeridas=columnas_requeridas,
+            columnas_validas=columnas_validas
+        )
+
+        categorias = session.query(Categorias_de_clientes).all()
+        areas = session.query(Areas_negocios).all()
+        categorias_por_id = {categoria.id: categoria for categoria in categorias}
+        categorias_por_nombre = {str(categoria.nombre).strip().upper(): categoria.id for categoria in categorias}
+        areas_por_id = {area.id: area for area in areas}
+        areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
+
+        clientes_existentes = session.query(Clientes_morales.razon_social, Clientes.rfc, Clientes_morales.NIF).join(Clientes, Clientes.id == Clientes_morales.id).all()
+        razones_existentes = {str(razon).strip().upper() for razon, _, _ in clientes_existentes if razon}
+        rfcs_existentes = {str(rfc).strip().upper() for _, rfc, _ in clientes_existentes if rfc}
+        nifs_existentes = {str(nif).strip().upper() for _, _, nif in clientes_existentes if nif}
+
+        agregados = 0
+        duplicados = 0
+        omitidos = 0
+
+        for row in registros:
+            nombre = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nombre"), upper=True)
+            razon_social = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "razon_social"), upper=True)
+            rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
+            nif = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nif", "NIF"), upper=True)
+            categoria_id = self._resolver_categoria_cliente_importacion(row, categorias_por_id, categorias_por_nombre)
+            area_id = self._resolver_area_negocio_importacion(row, areas_por_id, areas_por_nombre)
+            fecha_constitucion = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_constitucion"))
+            fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
+
+            if not all([nombre, razon_social, rfc, nif, categoria_id, area_id, fecha_constitucion]):
+                omitidos += 1
+                continue
+            if razon_social in razones_existentes or rfc in rfcs_existentes or nif in nifs_existentes:
+                duplicados += 1
+                continue
+
+            limite_credito = OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "limite_credito"), default=0.0)
+            credito = self._parse_bool_importacion(self._obtener_valor_importacion(row, "credito"), default=False)
+            datos_cliente = {
+                'nombre': nombre,
+                'correo': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "correo")),
+                'rfc': rfc,
+                'telefono': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "telefono"), upper=True),
+                'pais': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "pais"), upper=True),
+                'estado': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado"), upper=True),
+                'ciudad': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
+                'avenidas': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
+                'calles': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
+                'codigo_postal': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "codigo_postal"), upper=True),
+                'direccion_adicional': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
+                'entidad_legalizada': self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
+                'categoria_cliente_id': categoria_id,
+                'credito': credito,
+                'estado_credito': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_credito"), upper=True) or ("AUTORIZADO" if credito else "SIN AUTORIZAR"),
+                'limite_credito': limite_credito,
+                'porcentaje_interes': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_interes"), default=0.0),
+                'fecha_ultimo_reporte': datetime.combine(fecha_ultimo_reporte, datetime.min.time()),
+                'credito_disponible': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_disponible"), default=limite_credito),
+                'credito_utilizado': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_utilizado"), default=0.0),
+                'tipo_cliente': 'MORAL',
+                'aplica_descuento': self._parse_bool_importacion(self._obtener_valor_importacion(row, "aplica_descuento", "descuento_autorizado"), default=False),
+                'porcentaje_descuento': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_descuento"), default=0.0),
+                'comentarios': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "comentarios"), upper=True),
+                'areas_de_negocios_id': area_id,
+                'razon_social': razon_social,
+                'fecha_constitucion': fecha_constitucion,
+                'web': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "web")),
+                'sector': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "sector"), upper=True),
+                'nif': nif,
+                'datos_representante': {
+                    'nombre': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_nombre"), upper=True),
+                    'telefono': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_telefono"), upper=True),
+                    'correo': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_correo")),
+                    'puesto': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_puesto"), upper=True)
+                }
+            }
+            resultado = self.agregar_cliente_moral_query(session, datos_cliente.copy())
+            if resultado.get('exito'):
+                agregados += 1
+                razones_existentes.add(razon_social)
+                rfcs_existentes.add(rfc)
+                nifs_existentes.add(nif)
+            elif 'ya existe' in resultado.get('mensaje', '').lower():
+                duplicados += 1
+            else:
+                omitidos += 1
+
+        if agregados:
+            session.commit()
+        else:
+            session.rollback()
+
+        return {
+            "exito": True,
+            "tipo_cliente": "MORAL",
+            "agregados": agregados,
+            "duplicados": duplicados,
+            "omitidos": omitidos
+        }
+
+    def resultado_importacion_clientes_morales(self, resultado):
+        if resultado.get("exito"):
+            Mensaje().mensaje_informativo(
+                f"Importación de clientes morales completada.\n"
+                f"Agregados: {resultado.get('agregados', 0)}\n"
+                f"Duplicados omitidos: {resultado.get('duplicados', 0)}\n"
+                f"Omitidos por datos inválidos: {resultado.get('omitidos', 0)}"
+            )
+            self.tabla_listar_clientes_morales()
+        else:
+            Mensaje().mensaje_alerta(resultado.get("mensaje", "No se pudo importar clientes morales"))
 
     def validacion_campos_cliente_fisico(self, datos):
         campos_requeridos = [
@@ -785,6 +1177,7 @@ class Clientes(QWidget):
 
     def mostrar_contenedor_cliente_fisico(self):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
+            self._reset_busqueda_clientes_fisicos(clear_input=True)
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
@@ -842,7 +1235,7 @@ class Clientes(QWidget):
             signalSeleccion=self.obtener_id_elemento_tabla_fisicos,
         )
         return self.modelo_tabla_clientes_fisicos
-    
+
     def obtener_id_elemento_tabla_fisicos(self, current, previus = None):
         if current.isValid():
             fila = current.row()
@@ -850,7 +1243,7 @@ class Clientes(QWidget):
             if cliente:
                 self.clienteSeleccionadoVariable = cliente
                 self.CustomerSignalSelected_Customers.emit(self.clienteSeleccionadoVariable)
-    
+
     def limpiar_tabla_clientes_fisicos(self):
         try:
             if hasattr(self, 'modelo_tabla_clientes_fisicos'):
@@ -896,39 +1289,19 @@ class Clientes(QWidget):
         }
 
     def cargar_mas_clientes_fisicos(self):
-        self._is_refreshing_clientes_fisicos = False
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
-            if hasattr(self, "no_hay_mas_registros_clientes_fisicos") and self.no_hay_mas_registros_clientes_fisicos:
+            if self.no_hay_mas_registros_clientes_fisicos:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
-            if not hasattr(self, 'busqueda_clientes_fisicos') or not self.busqueda_clientes_fisicos:
-                try:
-                    self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
-                    self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_fisicos_thread")
-                    self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
-                    if not self.consultor_clientes_fisicos:
-                        raise Exception("No se pudo obtener el worker gestionado")
-                    self.lista_hilos_clientes.append(self.id_hilo_clientes_fisicos)
-                    WorkerDB.connect_managed_signals(
-                        worker_id=self.id_hilo_clientes_fisicos,
-                        resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
-                        error_callback=self.mostrar_error_hilo,
-                        terminado_callback=self.manejadorModal.cerrar_modal
-                    )
-                    self.consultor_clientes_fisicos.ejecutar(
-                        funcion=self.clientes_fisicos_query
-                    )
-                except Exception as e:
-                    if hasattr(self, 'id_hilo_clientes_fisicos'):
-                        WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
-                    Mensaje().mensaje_alerta(f"Error al obtener clientes físicos: {str(e)}")
+            if not self.busqueda_clientes_fisicos:
+                self.obtener_clientes_fisicos_hilo(reset_paginacion=False, append=True)
             else:
                 self.paginar_clientes_fisicos_filtrados()
-    
+
     def paginar_clientes_fisicos_filtrados(self):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
             try:
+                self._append_mode_clientes_fisicos = True
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_fisicos_thread")
                 self.id_hilo_obtener_clientes_paginados_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_paginados_fisicos_thread")
@@ -938,7 +1311,7 @@ class Clientes(QWidget):
                 self.lista_hilos_clientes.append(self.id_hilo_obtener_clientes_paginados_fisicos)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_clientes_paginados_fisicos,
-                    resultado_callback=self.agregar_clientes_paginados_tabla_fisicos,
+                    resultado_callback=self.mostrar_clientes_resultado_fisicos,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
@@ -951,7 +1324,7 @@ class Clientes(QWidget):
                 if hasattr(self, 'id_hilo_obtener_clientes_paginados_fisicos'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-                
+
     def paginar_busqueda_por_filtros_clientes_fisicos_query(self, session, texto, es_fisico = None):
         datos = []
         estado = False
@@ -982,27 +1355,23 @@ class Clientes(QWidget):
                     "exito": False,
                     "mensaje": f'Ocurrio un problema en el proceso: {e}'
                 }
-                
+
     def agregar_clientes_paginados_tabla_fisicos(self, resultado):
-        if not resultado["exito"] or not resultado["data"]:
-            Mensaje().mensaje_informativo("No hay más productos por mostrar")
-            self.no_hay_mas_registros_clientes_fisicos = True
-            return
-        self.modelo_tabla_clientes_fisicos.update_data(resultado["data"], reset=False)
-        self.ultima_carga_cantidad_clientes_fisicos = len(resultado["data"])
+        self.mostrar_clientes_resultado_fisicos(resultado)
 
     def tabla_listar_clientes_fisicos(self):
-        self.cantidad_inicial_clientes_fisicos = 0
-        self.no_hay_mas_registros_clientes_fisicos = False
+        self._reset_busqueda_clientes_fisicos(clear_input=True)
         if hasattr(self, 'ultima_carga_cantidad_clientes_fisicos'):
             del self.ultima_carga_cantidad_clientes_fisicos
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
-            self.obtener_clientes_fisicos_hilo(reset_paginacion = True)
-            
-    def obtener_clientes_fisicos_hilo(self, reset_paginacion=False):
+            self.obtener_clientes_fisicos_hilo(reset_paginacion = True, append=False)
+
+    def obtener_clientes_fisicos_hilo(self, reset_paginacion=False, append=False):
         try:
+            self._append_mode_clientes_fisicos = append
             if reset_paginacion:
                 self.cantidad_inicial_clientes_fisicos = 0
+                self.no_hay_mas_registros_clientes_fisicos = False
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
@@ -1020,7 +1389,7 @@ class Clientes(QWidget):
                 self.consultor_clientes_fisicos.ejecutar(
                     funcion=self.clientes_fisicos_query
                 )
-            
+
             except Exception as e:
                 if hasattr(self, 'id_hilo_clientes_fisicos'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_fisicos)
@@ -1035,9 +1404,9 @@ class Clientes(QWidget):
                 cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
                 cantidad_final=self.cantidad_final_clientes_fisicos
             )
-            
-            if (not hasattr(self, '_is_refreshing_clientes_fisicos') or not self._is_refreshing_clientes_fisicos) and clientes:
-                self.cantidad_inicial_clientes_fisicos += self.cantidad_final_clientes_fisicos
+
+            if estado and clientes:
+                self.cantidad_inicial_clientes_fisicos += len(clientes)
             if not estado:
                 session.rollback()
                 return {
@@ -1046,14 +1415,14 @@ class Clientes(QWidget):
                     "data": [],
                     "tipo_cliente": "FISICO"
                 }
-                
+
             return {
                 "exito": True,
                 "mensaje": f"Se obtuvieron {len(clientes)} clientes físicos",
                 "data": clientes,
                 "tipo_cliente": "FISICO"
             }
-            
+
         except Exception as e:
             session.rollback()
             return {
@@ -1065,42 +1434,48 @@ class Clientes(QWidget):
 
     def mostrar_clientes_resultado_fisicos(self, resultado):
         tipo_cliente = resultado.get("tipo_cliente", "")
-        
+
         if resultado.get("exito"):
             self.llenar_tabla_clientes_fisicos(resultado)
+        elif self._append_mode_clientes_fisicos and not resultado.get("data"):
+            self.no_hay_mas_registros_clientes_fisicos = True
+            Mensaje().mensaje_informativo("No hay más clientes físicos por mostrar")
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_fisicos()
 
     def llenar_tabla_clientes_fisicos(self, resultado):
         clientes = resultado["data"]
-        estado = resultado["exito"]
         try:
             if not hasattr(self, "modelo_listar_clientes_fisicos"):
                 self.__configuracion_tabla_clientes_fisicos()
-            self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=True)
+            if not clientes:
+                if self._append_mode_clientes_fisicos:
+                    self.no_hay_mas_registros_clientes_fisicos = True
+                    return
+                self.modelo_tabla_clientes_fisicos.clear()
+                return
+            self.no_hay_mas_registros_clientes_fisicos = len(clientes) < self.cantidad_final_clientes_fisicos
+            self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=not self._append_mode_clientes_fisicos)
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes fisicos en la tabla, esta no existe en la metadata: {str(e)}")
             return
 
     def buscar_cliente_fisico(self):
-        self.cantidad_inicial_clientes_fisicos = 0
         nombre = self.WindowClient.txt_buscarclienteFisico.text().strip()
+        if not nombre:
+            self.tabla_listar_clientes_fisicos()
+            return
         busqueda_nuevo_cliente_fisico = (nombre != self.nombre_cliente_fisico)
         self.nombre_cliente_fisico = nombre
-        if not self.nombre_cliente_fisico:
-            Mensaje().mensaje_alerta("Debe ingresar un nombre para buscar")
-            return
-        if not hasattr(self, "cantidad_inicial_clientes_fisicos"):
-            self.cantidad_inicial_clientes_fisicos = 0
-        else:
-            self.cantidad_inicial_clientes_fisicos = 0
+        self.cantidad_inicial_clientes_fisicos = 0
 
         if busqueda_nuevo_cliente_fisico:
             self.cantidad_inicial_clientes_fisicos = 0
             self.no_hay_mas_registros_clientes_fisicos = False
             self.busqueda_clientes_fisicos = True
-        
+
+        self._append_mode_clientes_fisicos = False
         if busqueda_nuevo_cliente_fisico and hasattr(self,'modelo_tabla_clientes_fisicos'):
             self.modelo_tabla_clientes_fisicos.clear()
         try:
@@ -1125,7 +1500,7 @@ class Clientes(QWidget):
             if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
-    
+
     def buscar_clientes_fisicos_query(self, session, texto):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
@@ -1147,7 +1522,7 @@ class Clientes(QWidget):
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
         self.busqueda_clientes_fisicos = True
-        self.cantidad_inicial_clientes_fisicos = self.cantidad_inicial_clientes_fisicos + self.cantidad_final_clientes_fisicos
+        self.cantidad_inicial_clientes_fisicos += len(clientes)
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1157,23 +1532,20 @@ class Clientes(QWidget):
 
 # ======================== CLIENTES MORALES =============================
     def buscar_cliente_moral(self):
-        self.cantidad_inicial_clientes_morales = 0
         nombre = self.WindowClient.txt_buscarclienteMorales.text().strip()
+        if not nombre:
+            self.tabla_listar_clientes_morales()
+            return
         busqueda_nuevo_cliente_moral = (nombre != self.nombre_cliente_moral)
         self.nombre_cliente_moral = nombre
-        if not self.nombre_cliente_moral:
-            Mensaje().mensaje_alerta("Debe ingresar un nombre para buscar")
-            return
-        if not hasattr(self, "cantidad_inicial_clientes_morales"):
-            self.cantidad_inicial_clientes_morales = 0
-        else:
-            self.cantidad_inicial_clientes_morales = 0
+        self.cantidad_inicial_clientes_morales = 0
 
         if busqueda_nuevo_cliente_moral:
             self.cantidad_inicial_clientes_morales = 0
             self.no_hay_mas_registros_clientes_morales = False
             self.busqueda_clientes_morales = True
-        
+
+        self._append_mode_clientes_morales = False
         if busqueda_nuevo_cliente_moral and hasattr(self,'modelo_tabla_clientes_morales'):
             self.modelo_tabla_clientes_morales.clear()
         try:
@@ -1198,7 +1570,7 @@ class Clientes(QWidget):
             if hasattr(self, 'id_hilo_buscar_clientes_morales_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
-     
+
     def buscar_clientes_morales_query(self, session, texto):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
@@ -1220,7 +1592,7 @@ class Clientes(QWidget):
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
         self.busqueda_clientes_morales = True
-        self.cantidad_inicial_clientes_morales = self.cantidad_inicial_clientes_morales + self.cantidad_final_clientes_morales
+        self.cantidad_inicial_clientes_morales += len(clientes)
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1251,7 +1623,7 @@ class Clientes(QWidget):
                 self.WindowClient.label_wpc_fotocliente.setText(_translate("Control_Clientes", "<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>"))
                 self.WindowClient.txt_buscarclienteFisico.clear()
                 self.cargar_estados_civiles()
-            
+
             elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
                 fisicos = self.campos_cliente_moral()
                 for campo in fisicos.values():
@@ -1354,7 +1726,7 @@ class Clientes(QWidget):
                     else:
                         self.WindowClient.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))
                         self.foto_cliente = None
-                        
+
                     if campo.categoria:
                         categoria = campo.categoria.nombre
                         caja_categoria = datos["categoria del cliente"]
@@ -1377,7 +1749,7 @@ class Clientes(QWidget):
                     if campo.estado_civil:
                         nombre = campo.estado_civil
                         FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowClient.cajaOpciones_estadocivil_fisico, nombre)
-                    
+
             elif self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
                 if  cliente:
                     campo = cliente
@@ -1396,7 +1768,7 @@ class Clientes(QWidget):
                     datos["direccion adicional"].setPlainText(campo.direccion_adicional)
                     datos["entidad legalizada"].setChecked(campo.entidad_legalizada)
 
-                    
+
                     datos["tiene credito"].setChecked(campo.credito)
                     datos["estado del credito"].setText(campo.estado_credito)
                     datos["limite de credito"].setValue(campo.limite_credito)
@@ -1407,7 +1779,7 @@ class Clientes(QWidget):
                     datos["credito utilizado"].setValue(campo.credito_utilizado)
                     datos["aplica descuento"].setChecked(campo.aplica_descuento)
 
-                    
+
 
                     datos["comentarios"].setPlainText(campo.comentarios)
                     datos["porcentaje de descuento"].setValue(campo.porcentaje_descuento)
@@ -1457,17 +1829,18 @@ class Clientes(QWidget):
             Mensaje().mensaje_critico("Error al obtener proveedor por lo siguiente: " + str(e))
 
     def tabla_listar_clientes_morales(self):
-        self.cantidad_inicial_clientes_morales = 0
-        self.no_hay_mas_registros_clientes_morales = False
+        self._reset_busqueda_clientes_morales(clear_input=True)
         if hasattr(self, "ultima_carga_cantidad_clientes_morales"):
             del self.ultima_carga_cantidad_clientes_morales
         if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
-            self.obtener_clientes_morales_hilo(reset_paginacion = True)
+            self.obtener_clientes_morales_hilo(reset_paginacion = True, append=False)
 
-    def obtener_clientes_morales_hilo(self, reset_paginacion = False):
+    def obtener_clientes_morales_hilo(self, reset_paginacion = False, append=False):
         try:
+            self._append_mode_clientes_morales = append
             if reset_paginacion:
                 self.cantidad_inicial_clientes_morales = 0
+                self.no_hay_mas_registros_clientes_morales = False
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
@@ -1499,9 +1872,9 @@ class Clientes(QWidget):
                 cantidad_inicial=self.cantidad_inicial_clientes_morales,
                 cantidad_final=self.cantidad_final_clientes_morales
             )
-            
-            if (not hasattr(self, '_is_refreshing_clientes_morales') or not self._is_refreshing_clientes_morales) and clientes:
-                self.cantidad_inicial_clientes_morales += self.cantidad_final_clientes_morales
+
+            if estado and clientes:
+                self.cantidad_inicial_clientes_morales += len(clientes)
             if not estado:
                 session.rollback()
                 return {
@@ -1516,7 +1889,7 @@ class Clientes(QWidget):
                 "data": clientes,
                 "tipo_cliente": "MORAL"
             }
-            
+
         except Exception as e:
             session.rollback()
             return {
@@ -1528,9 +1901,12 @@ class Clientes(QWidget):
 
     def mostrar_clientes_resultado_morales(self, resultado):
         tipo_cliente = resultado.get("tipo_cliente", "")
-        
+
         if resultado.get("exito"):
             self.llenar_tabla_clientes_morales(resultado)
+        elif self._append_mode_clientes_morales and not resultado.get("data"):
+            self.no_hay_mas_registros_clientes_morales = True
+            Mensaje().mensaje_informativo("No hay más clientes morales por mostrar")
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_morales()
@@ -1540,45 +1916,32 @@ class Clientes(QWidget):
         try:
             if not hasattr(self, "modelo_tabla_clientes_morales"):
                 self.__configuracion_tabla_clientes_morales()
-            self.modelo_tabla_clientes_morales.update_data(clientes, reset=True)
+            if not clientes:
+                if self._append_mode_clientes_morales:
+                    self.no_hay_mas_registros_clientes_morales = True
+                    return
+                self.modelo_tabla_clientes_morales.clear()
+                return
+            self.no_hay_mas_registros_clientes_morales = len(clientes) < self.cantidad_final_clientes_morales
+            self.modelo_tabla_clientes_morales.update_data(clientes, reset=not self._append_mode_clientes_morales)
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes morales en la tabla, esta no existe en la metadata: {str(e)}")
             return
 
     def cargar_mas_clientes_morales(self):
-        self._is_refreshing_clientes_morales = False
         if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
-            if hasattr(self, "no_hay_mas_registros_clientes_morales") and self.no_hay_mas_registros_clientes_morales:
+            if self.no_hay_mas_registros_clientes_morales:
                 Mensaje().mensaje_alerta(f"No hay mas registros para mostrar")
                 return
-            if not hasattr(self, 'busqueda_clientes_morales') or not self.busqueda_clientes_morales:
-                try:
-                    self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
-                    self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
-                    self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
-                    if not self.consultor_clientes_morales:
-                        raise Exception("No se pudo obtener el worker gestionado")
-                    self.lista_hilos_clientes.append(self.id_hilo_clientes_morales)
-                    WorkerDB.connect_managed_signals(
-                        worker_id=self.id_hilo_clientes_morales,
-                        resultado_callback=self.agregar_clientes_paginados_tabla_morales,
-                        error_callback=self.mostrar_error_hilo,
-                        terminado_callback=self.manejadorModal.cerrar_modal
-                    )
-                    self.consultor_clientes_morales.ejecutar(
-                        funcion=self.clientes_morales_query
-                    )
-                except Exception as e:
-                    if hasattr(self, 'id_hilo_clientes_morales'):
-                        WorkerDB.cleanup_managed_worker(self.id_hilo_clientes_morales)
-                    Mensaje().mensaje_alerta(f"Error al obtener clientes morales: {str(e)}")
+            if not self.busqueda_clientes_morales:
+                self.obtener_clientes_morales_hilo(reset_paginacion=False, append=True)
             else:
                 self.paginar_clientes_morales_filtrados()
 
     def paginar_clientes_morales_filtrados(self):
         if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
             try:
+                self._append_mode_clientes_morales = True
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_morales_thread")
                 self.id_hilo_obtener_clientes_paginados_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_paginados_morales_thread")
@@ -1588,7 +1951,7 @@ class Clientes(QWidget):
                 self.lista_hilos_clientes.append(self.id_hilo_obtener_clientes_paginados_morales)
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_obtener_clientes_paginados_morales,
-                    resultado_callback=self.agregar_clientes_paginados_tabla_morales,
+                    resultado_callback=self.mostrar_clientes_resultado_morales,
                     error_callback= self.mostrar_error_hilo,
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
@@ -1634,12 +1997,7 @@ class Clientes(QWidget):
                 }
 
     def agregar_clientes_paginados_tabla_morales(self, resultado):
-        if not resultado["exito"] or not resultado["data"]:
-            Mensaje().mensaje_informativo("No hay más productos por mostrar")
-            self.no_hay_mas_registros_clientes_morales = True
-            return
-        self.modelo_tabla_clientes_morales.update_data(resultado["data"], reset=False)
-        self.ultima_carga_cantidad_clientes_morales = len(resultado["data"])
+        self.mostrar_clientes_resultado_morales(resultado)
 
     def __configuracion_tabla_clientes_morales(self):
         cabeceras = ["Id", "Nombre", "RFC", "Razon_social", "nif", "Sector", "Telefono", "Credito","Estado_credito", "Limite_credito", "Credito_disponible", "Credito_utilizado", "Representante"]
@@ -1685,7 +2043,7 @@ class Clientes(QWidget):
                 self.modelo_tabla_clientes_morales.clear()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al limpiar tabla de clientes: {e}")
-    
+
     def autorizar_credito_moral(self):
         if self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.isChecked():
             self.WindowClient.txt_estadocredito_moral.setText("AUTORIZADO")
@@ -1747,6 +2105,7 @@ class Clientes(QWidget):
 
     def mostrar_contenedor_cliente_moral(self):
         if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
+            self._reset_busqueda_clientes_morales(clear_input=True)
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
@@ -1770,6 +2129,6 @@ class Clientes(QWidget):
 # ==================== MENSAJES DE HILO ========================
     def mostrar_error_hilo(self, objetoMensaje):
         Mensaje().mensaje_alerta(f"{objetoMensaje}")
-        
+
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje}")

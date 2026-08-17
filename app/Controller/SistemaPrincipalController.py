@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation
 from PySide6.QtWidgets import QWidget, QDialog, QMessageBox
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QIcon
@@ -36,15 +36,35 @@ class SistemaPrincipal(QWidget):
         self.ui.setupUi(self)
         self.ui.w_cuerpo_menu.hide()
         self.datos_usuario = datos_usuario
-        
+        self.menu_colapsado_ancho = 40
+        self.menu_expandido_ancho = 220
+        self.menu_expandido = False
+        self.animacion_menu = None
+        self.botones_laterales = [
+            self.ui.btn_laterales_proceso_venta,
+            self.ui.btn_laterales_ventas,
+            self.ui.btn_laterales_compras,
+            self.ui.btn_laterales_empleados,
+            self.ui.btn_laterales_proveedores,
+            self.ui.btn_laterales_clientes,
+            self.ui.btn_laterales_productos,
+            self.ui.btn_laterales_btn_sucursales,
+            self.ui.btn_laterales_btn_opciones,
+        ]
+        self.textos_botones_laterales = {
+            boton.objectName(): boton.text()
+            for boton in self.botones_laterales
+        }
+
+
         self.setWindowFlags(Qt.FramelessWindowHint)
         # self.showFullScreen()
         QTimer.singleShot(0, self.showFullScreen)
         self.setWindowTitle("TuleVenta POS")
-        
+
         self.ui.btn_laterales_btn_burger.clicked.connect(self.mostrar_menu)
         self.ui.btn_laterales_btn_sucursales.clicked.connect(self.mostrar_sucursales)
-        
+
         self.ui.label_fotousuario.setCursor(Qt.PointingHandCursor)
         self.ui.label_fotousuario.mousePressEvent = self.mostrar_perfil
 
@@ -58,7 +78,7 @@ class SistemaPrincipal(QWidget):
 
         self.ui.btc_cerrar_2.clicked.connect(self.cerrar_sistema)
         self.ui.btc_minimizar_2.clicked.connect(lambda: self.showMinimized())
-        
+
         self.ventana_sucursales = None
         self.perfil= Perfil(parent = self, usuario = self.datos_usuario)
         self.venta= Venta()
@@ -76,6 +96,7 @@ class SistemaPrincipal(QWidget):
         self.ui.w_cuerpo_contenido.addWidget(self.proveedores)
         self.ui.w_cuerpo_contenido.addWidget(self.clientes)
         self.ui.w_cuerpo_contenido.addWidget(self.productos)
+        self.ui.w_cuerpo_contenido.setCurrentWidget(self.ui.p_inicial)
 
         self.ui.btn_laterales_btn_opciones.clicked.connect(self.mostrar_opciones)
 
@@ -91,6 +112,30 @@ class SistemaPrincipal(QWidget):
             self.clientes.listar_categorias,
             Qt.UniqueConnection
             )
+
+    def resizeEvent(self, event):
+        # 1. Obtener las dimensiones actuales de la ventana
+        ancho_ventana = self.width()
+
+        # 2. Calcular el 75% del ancho
+        ancho_label = int(ancho_ventana * 0.75)
+
+        # 3. Mantener la altura actual del label (o la que definiste en Qt Designer)
+        alto_label = self.ui.label.height()
+
+        # 4. Calcular la coordenada X para que quede perfectamente centrado
+        posicion_x = int((ancho_ventana - ancho_label) / 2)
+
+        # 5. Mantener su coordenada Y actual (su posición vertical)
+        posicion_y = self.ui.label.y()
+
+        # 6. Aplicar la nueva geometría (x, y, ancho, alto)
+        self.ui.label.setGeometry(
+            posicion_x, posicion_y, ancho_label, alto_label
+        )
+
+        # Asegurar que la implementación base del evento se ejecute
+        super().resizeEvent(event)
 
     def mostrar_opciones(self):
         self.opciones = OpcionesSistemaController()
@@ -126,11 +171,11 @@ class SistemaPrincipal(QWidget):
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.clientes)
             self.LISTAR_AREAS_VCLIENTES.emit()
             self.LISTAR_CATEGORIAS_VCLIENTES.emit()
-    
+
     def mostrar_productos(self):
         if self.ui.w_cuerpo_contenido.currentWidget() != self.productos:
             self.ui.w_cuerpo_contenido.setCurrentWidget(self.productos)
-            
+
     def mostrar_sucursales(self):
         if self.ventana_sucursales is None or not self.ventana_sucursales.isVisible:
             self.ventana_sucursales = ControlSucursalesController(parent=self)
@@ -142,7 +187,7 @@ class SistemaPrincipal(QWidget):
 
     def ventana_cerrada_sucudepapues(self):
         self.ventana_sucursales = None
-        
+
     def keyPressEvent(self, event):
         """Sobrescribir el evento de teclado para ignorar Escape y Enter"""
         if event.key() == Qt.Key_Escape:
@@ -150,16 +195,16 @@ class SistemaPrincipal(QWidget):
             event.ignore()
             print("⚠️ Escape presionado - Diálogo no se cerrará")
             return
-            
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             # Ignorar Enter/Return
             event.ignore()
             print("⚠️ Enter presionado - Diálogo no se cerrará")
             return
-            
+
         # Permitir otras teclas
         super().keyPressEvent(event)
-        
+
     def cerrar_sistema(self):
         try:
             respuesta = Mensaje().mensaje_pregunta("¿Quieres cerrar el sistema?")
@@ -168,12 +213,53 @@ class SistemaPrincipal(QWidget):
                 sys.exit()
         except Exception as e:
             return
-    
+
     def mostrar_menu(self):
-        if self.ui.w_cuerpo_menu.isVisible():
-            self.ui.w_cuerpo_menu.hide()
+        if self.animacion_menu and self.animacion_menu.state() == QAbstractAnimation.Running:
+            return
+
+        if self.menu_expandido:
+            self._contraer_menu()
         else:
-            self.ui.w_cuerpo_menu.show()
+            self._expandir_menu()
+
+    def _expandir_menu(self):
+        self.menu_expandido = True
+        self.ui.w_cuerpo_menu.show()
+        self.ui.w_cuerpo_menu.setMinimumWidth(self.menu_colapsado_ancho)
+        self.ui.w_cuerpo_menu.setMaximumWidth(self.menu_colapsado_ancho)
+        self._actualizar_estilo_botones_laterales(True)
+        self._animar_menu(self.menu_colapsado_ancho, self.menu_expandido_ancho)
+
+    def _contraer_menu(self):
+        self.menu_expandido = False
+        self._animar_menu(self.ui.w_cuerpo_menu.width(), self.menu_colapsado_ancho, ocultar_al_final=True)
+
+    def _animar_menu(self, ancho_inicial, ancho_final, ocultar_al_final=False):
+        grupo = QParallelAnimationGroup(self)
+        for propiedad in (b"minimumWidth", b"maximumWidth"):
+            animacion = QPropertyAnimation(self.ui.w_cuerpo_menu, propiedad, self)
+            animacion.setDuration(220)
+            animacion.setStartValue(ancho_inicial)
+            animacion.setEndValue(ancho_final)
+            animacion.setEasingCurve(QEasingCurve.InOutCubic)
+            grupo.addAnimation(animacion)
+
+        if ocultar_al_final:
+            grupo.finished.connect(self._finalizar_contraer_menu)
+
+        self.animacion_menu = grupo
+        self.animacion_menu.start()
+
+    def _finalizar_contraer_menu(self):
+        self._actualizar_estilo_botones_laterales(False)
+        self.ui.w_cuerpo_menu.hide()
+
+    def _actualizar_estilo_botones_laterales(self, expandido):
+        for boton in self.botones_laterales:
+            texto_original = self.textos_botones_laterales.get(boton.objectName(), boton.text().strip())
+            boton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon if expandido else Qt.ToolButtonIconOnly)
+            boton.setText(f"   {texto_original}" if expandido else texto_original)
 
 
 class OpcionesSistemaController(QDialog):

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_PROVEEDORES.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -28,7 +28,7 @@ class Ui_Control_Proveedores(object):
     def setupUi(self, Control_Proveedores):
         if not Control_Proveedores.objectName():
             Control_Proveedores.setObjectName(u"Control_Proveedores")
-        Control_Proveedores.resize(1012, 621)
+        Control_Proveedores.resize(1049, 621)
         Control_Proveedores.setStyleSheet(u"*{color: #1d1c1c;}\n"
 "#Control_Proveedores{\n"
 "background: #fffefb;\n"
@@ -78,6 +78,7 @@ class Ui_Control_Proveedores(object):
 "}\n"
 "[obj"
                         "ectName*=\"btn_btn\"]{\n"
+"icon-size: 24px;\n"
 "background: #023375;\n"
 "font-size: 12px;\n"
 "font-family: Arial;\n"
@@ -124,9 +125,9 @@ class Ui_Control_Proveedores(object):
 "}\n"
 "#btn_RefrescarTabla{\n"
 "border-radius: 2px;\n"
-"background: #e0e0e0;\n"
-"paddi"
-                        "ng: 5px;\n"
+"backgroun"
+                        "d: #e0e0e0;\n"
+"padding: 5px;\n"
 "}\n"
 "#btn_RefrescarTabla:hover{\n"
 "background: rgb(179, 179, 179);\n"
@@ -164,9 +165,9 @@ class Ui_Control_Proveedores(object):
 "[objectName*=\"cajaOpciones\"]::drop-down {\n"
 "    subcontrol-origin: padding ;\n"
 "    subcontrol-position: top right ;\n"
-"    padding-right: 5px ;\n"
-"    "
-                        "width: 20% ;\n"
+"    padding-"
+                        "right: 5px ;\n"
+"    width: 20% ;\n"
 "    border-left-width: 1px ;\n"
 "    border-radius: 3px ;\n"
 "    background-color: #F5F5F5 ;\n"
@@ -206,9 +207,9 @@ class Ui_Control_Proveedores(object):
 "}\n"
 "\n"
 "[objectName*=\"tabla_\"] QHeaderView::horizontal,\n"
-"[objectName*=\"tabla_\"] QHeaderView::vertical {\n"
-""
-                        "background-color: #023375;\n"
+"[objectName*=\"tabla_\"] QHe"
+                        "aderView::vertical {\n"
+"background-color: #023375;\n"
 "color: white;\n"
 "}\n"
 "\n"
@@ -243,7 +244,7 @@ class Ui_Control_Proveedores(object):
         self.contenedor_scrollArea.setWidgetResizable(True)
         self.contenedor_scroll_area_contenido = QWidget()
         self.contenedor_scroll_area_contenido.setObjectName(u"contenedor_scroll_area_contenido")
-        self.contenedor_scroll_area_contenido.setGeometry(QRect(0, 0, 1041, 577))
+        self.contenedor_scroll_area_contenido.setGeometry(QRect(-44, 0, 1093, 577))
         self.gridLayout_7 = QGridLayout(self.contenedor_scroll_area_contenido)
         self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.contenedor_todoproveedor = QFrame(self.contenedor_scroll_area_contenido)
@@ -651,6 +652,15 @@ class Ui_Control_Proveedores(object):
 
         self.horizontalLayout_2.addWidget(self.btn_btn_eliminar)
 
+        self.btn_btn_importarProveedores = QPushButton(self.contenedor_frame)
+        self.btn_btn_importarProveedores.setObjectName(u"btn_btn_importarProveedores")
+        self.btn_btn_importarProveedores.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        icon7 = QIcon()
+        icon7.addFile(u":/iconosBlancos/Icons/iconos/Blanco/upload_blanco.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.btn_btn_importarProveedores.setIcon(icon7)
+
+        self.horizontalLayout_2.addWidget(self.btn_btn_importarProveedores)
+
 
         self.gridLayout_4.addWidget(self.contenedor_frame, 2, 0, 1, 1)
 
@@ -786,6 +796,10 @@ class Ui_Control_Proveedores(object):
         self.btn_btn_eliminar.setToolTip(QCoreApplication.translate("Control_Proveedores", u"Eliminar", None))
 #endif // QT_CONFIG(tooltip)
         self.btn_btn_eliminar.setText(QCoreApplication.translate("Control_Proveedores", u"ELIMINAR", None))
+#if QT_CONFIG(tooltip)
+        self.btn_btn_importarProveedores.setToolTip(QCoreApplication.translate("Control_Proveedores", u"Importar proveedores", None))
+#endif // QT_CONFIG(tooltip)
+        self.btn_btn_importarProveedores.setText("")
 #if QT_CONFIG(tooltip)
         self.btn_btn_listadeproductoyprecios.setToolTip(QCoreApplication.translate("Control_Proveedores", u"Lista de Precios y Produtos Relacionados", None))
 #endif // QT_CONFIG(tooltip)
