@@ -18,6 +18,7 @@ from .Validaciones import Validaciones
 from .ComprobarValoresTablasController import Comprobacion
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
+from .UiTheme import apply_module_theme
 
 class EmpleadosController(QWidget):
 # ======== SEÑALES =======
@@ -27,6 +28,7 @@ class EmpleadosController(QWidget):
         super().__init__(parent)
         self.WindowEmployee = Ui_Control_empleados()
         self.WindowEmployee.setupUi(self)
+        apply_module_theme(self)
 
 # ============= VARIABLES GLOBALES ===============
         self.ventana_registro = None

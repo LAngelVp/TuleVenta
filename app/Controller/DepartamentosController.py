@@ -12,23 +12,31 @@ from ..View.UserInterfacePy.UI_CONTROL_DEPARTAMENTOS import Ui_Control_departame
 from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from .UiTheme import apply_module_theme
 class DepartamentosController(QDialog):
     signal_departamento_agregado = Signal()
     VENTANA_DEPARTAMENTOS_CERRADA = Signal()
-    def __init__(self, parent = None, cabecera = True):
+    def __init__(self, parent = None, cabecera = True, permisos_usuario=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaDepartamentos = False
+        self.permisos_usuario = {
+            str(permiso).strip().upper()
+            for permiso in (permisos_usuario or [])
+            if str(permiso).strip()
+        }
+        self.es_administrador = "ADMINISTRADOR" in self.permisos_usuario
         self.WindowRegistroDepartamentos = Ui_Control_departamentos()
         self.WindowRegistroDepartamentos.setupUi(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        apply_module_theme(self)
         #// LIMITE CARACTERES
-        
+
 
         #botones:
         self.WindowRegistroDepartamentos.btn_btn_guardar.clicked.connect(self.guardar)
@@ -42,7 +50,7 @@ class DepartamentosController(QDialog):
         # señales:
         self.WindowRegistroDepartamentos.lista_departamentosexistentes.itemClicked.connect(self.obtenerId)
         self.WindowRegistroDepartamentos.btn_btn_buscar_departamento.clicked.connect(self.buscar)
-        
+
 
         #// variables globales:
         self.sucursales = []
@@ -53,14 +61,54 @@ class DepartamentosController(QDialog):
         self.listaHilosDepartamentos = []
         self.iconSucursal = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         self.iconDepartamento = QIcon(':/Icons/Bootstrap/diagram-2-fill.svg')
-        
+
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self._ajustar_botones_vinculacion()
         self.insertarValidaciones()
+        self._aplicar_permisos_ui()
 
         if cabecera is False:
             self.WindowRegistroDepartamentos.contenedor_encabezado.hide()
-        
+
+    def _tiene_algun_permiso(self, permisos_requeridos):
+        if not permisos_requeridos:
+            return True
+        if self.es_administrador:
+            return True
+        return bool(self.permisos_usuario.intersection({permiso.upper() for permiso in permisos_requeridos}))
+
+    def _restringir_widget(self, widget):
+        if widget is None:
+            return
+        widget.setEnabled(False)
+        widget.hide()
+
+    def _ajustar_botones_vinculacion(self):
+        botones = (
+            (self.WindowRegistroDepartamentos.btn_btn_vincular, "primary"),
+            (self.WindowRegistroDepartamentos.btn_btn_desvincular, "danger"),
+        )
+        for boton, variant in botones:
+            boton.setProperty("variant", variant)
+            estilo = boton.style()
+            if estilo is not None:
+                estilo.unpolish(boton)
+                estilo.polish(boton)
+            boton.update()
+
+    def _aplicar_permisos_ui(self):
+        reglas = [
+            (self.WindowRegistroDepartamentos.btn_btn_guardar, {"CREARDEPARTAMENTO"}),
+            (self.WindowRegistroDepartamentos.btn_btn_actualizar, {"MODIFICARDEPARTAMENTO"}),
+            (self.WindowRegistroDepartamentos.btn_btn_vincular, {"MODIFICARDEPARTAMENTO"}),
+            (self.WindowRegistroDepartamentos.btn_btn_desvincular, {"MODIFICARDEPARTAMENTO"}),
+            (self.WindowRegistroDepartamentos.btn_btn_eliminar, {"ELIMINARDEPARTAMENTO"}),
+        ]
+        for widget, permisos in reglas:
+            if not self._tiene_algun_permiso(permisos):
+                self._restringir_widget(widget)
+
     def insertarValidaciones(self):
         self.WindowRegistroDepartamentos.txt_nombredepartamento.setMaxLength(70)
         self.WindowRegistroDepartamentos.txt_nombredepartamento.setValidator(Validaciones().get_text_validator(self.WindowRegistroDepartamentos.txt_nombredepartamento))
@@ -72,14 +120,14 @@ class DepartamentosController(QDialog):
         if not self._ventanaCentradaDepartamentos:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaDepartamentos = True
-    
+
     def closeEvent(self, event):
         for hilos in self.listaHilosDepartamentos:
             WorkerDB.cleanup_managed_worker(hilos)
         self.listaHilosDepartamentos.clear()
-        self.VENTANA_DEPARTAMENTOS_CERRADA.emit() 
+        self.VENTANA_DEPARTAMENTOS_CERRADA.emit()
         event.accept()
-    
+
     #funciones:
     def buscar(self):
         nombre = self.WindowRegistroDepartamentos.txt_buscardepartamento.text().strip()
@@ -108,7 +156,7 @@ class DepartamentosController(QDialog):
             if hasattr(self, 'id_hilo_buscar_departamento'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_departamento)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-                    
+
     def buscar_departamento_query(self, session, nombre):
         try:
             departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre)
@@ -129,7 +177,7 @@ class DepartamentosController(QDialog):
                 'mensaje' : f'Error al buscar el departamento {nombre}',
                 'data': None
             }
-        
+
     def limpiar(self):
         datos = self.campos()
         for campo in datos.values():
@@ -151,21 +199,21 @@ class DepartamentosController(QDialog):
             'nombre': self.WindowRegistroDepartamentos.txt_nombredepartamento,
             'descripcion': self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento
         }
-    
+
     def obtener_contenido_campos(self):
         return {
-            nombre : widget.text().strip().upper() 
-            if isinstance(widget, QLineEdit) 
-                else widget.toPlainText().strip().upper() 
+            nombre : widget.text().strip().upper()
+            if isinstance(widget, QLineEdit)
+                else widget.toPlainText().strip().upper()
                 for nombre, widget in self.campos().items()
         }
-    
+
     def validar(self, campos):
         campos_vacios = [nombre for nombre, valor in campos.items() if not valor]
         if campos_vacios:
             return False
         return True
-    
+
     def guardar(self):
         datos = self.obtener_contenido_campos()
         if not self.validar(datos):
@@ -193,7 +241,7 @@ class DepartamentosController(QDialog):
             if hasattr(self, 'id_hilo_agregar_departamento'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_departamento)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-        
+
     def agregar_departamento_query(self, session, datos):
         try:
             departamento, estado = DepartamentosModel(session).agregar_departamento(**datos)
@@ -219,7 +267,7 @@ class DepartamentosController(QDialog):
                 'exito': estado,
                 'mensaje': f"Error al realizar la operacion {str(e)}"
                 }
-    
+
     def eliminar(self):
         if self.objetoDepartamento is not None:
             try:
@@ -248,7 +296,7 @@ class DepartamentosController(QDialog):
                 if hasattr(self, 'id_hilo_eliminar_departamento'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_departamento)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
-            
+
     def eliminar_departamento_query(self, session, departamento):
         estado = DepartamentosModel(session).eliminar_departamento(departamento.id)
         if estado:
@@ -261,7 +309,7 @@ class DepartamentosController(QDialog):
             'exito' : estado,
             'mensaje': f'No se logro la operaciòn'
         }
-    
+
     def mensaje_estado_eliminado(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         self.objetoDepartamento = None
@@ -302,7 +350,7 @@ class DepartamentosController(QDialog):
                     if hasattr(self, 'id_hilo_actualizar_departamento'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_departamento)
                     Mensaje().mensaje_critico(f'Error al actualizar el departamento por lo siguiente: {e}')
-    
+
     def actualizar_departamento_query(self, session, departamento, sucursales_seleccionadas, nuevos_datos):
         try:
             departamentoActualizado, estado = DepartamentosModel(session).actualizar_departamento(departamento.id, **nuevos_datos)
@@ -429,7 +477,7 @@ class DepartamentosController(QDialog):
             if hasattr(self, 'id_hilo_listar_sucursales_del_sistema'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_sucursales_del_sistema)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
-            
+
     def listar_sucursales_del_sistema_query(self, session):
         try:
             sucursales, estado = SucursalesModel(session).obtener_todo()
@@ -443,14 +491,14 @@ class DepartamentosController(QDialog):
                 "exito":estado,
                 "mensaje":f"Se encontraron {len(sucursales)}",
                 "data":sucursales
-            }  
-        except Exception as e: 
+            }
+        except Exception as e:
             return {
                 "exito":False,
                 "mensaje":f"Ocurrio un problema {e}",
                 "data": []
             }
-    
+
     def lista_sucursales_del_sistema(self, resultado):
         self.sucursales_seleccionadas_existentes.clear()
         sucursales_vinculadas = {}
@@ -462,7 +510,7 @@ class DepartamentosController(QDialog):
                     item.setIcon(self.iconSucursal)
                     item.setData(Qt.UserRole, sucursal)
                     self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item)
-        
+
     def obtener_departamentos(self):
         self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
         try:
@@ -486,7 +534,7 @@ class DepartamentosController(QDialog):
             if hasattr(self, 'id_hilo_listar_departamentos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
-            
+
     def obtener_departamentos_query(self, session):
         try:
             departamentos, estado = DepartamentosModel(session).obtener_todos()
@@ -508,7 +556,7 @@ class DepartamentosController(QDialog):
                 'mensaje': f'Ocurrio un error en la operación: {e}',
                 'data': []
             }
-        
+
     def listar_puestos_asignados(self, puestos):
         if puestos is not None:
             self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
@@ -519,7 +567,7 @@ class DepartamentosController(QDialog):
                 self.WindowRegistroDepartamentos.lista_puestosasignados.addItem(item)
         else:
             self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
-    
+
     def listar_departamentos(self, resultado):
         if resultado['exito']:
             Mensaje().mensaje_informativo(resultado['mensaje'])
@@ -559,56 +607,56 @@ class DepartamentosController(QDialog):
             for sucursal in sucursales_vinculadas:
                 if not hasattr(sucursal, 'id'):
                     continue
-                    
+
                 if sucursal.id not in self.sucursales_seleccionadas:
                     self.sucursales_seleccionadas[sucursal.id] = sucursal
-            
+
             self._mostrar_sucursales_vinculadas_en_lista()
-            
+
         except Exception as e:
             raise e
 
     def _mostrar_sucursales_vinculadas_en_lista(self):
         try:
             self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.clear()
-            
+
             for sucursal_id, sucursal in self.sucursales_seleccionadas.items():
                 item = QListWidgetItem(sucursal.nombre_sucursal)
                 item.setIcon(self.iconSucursal)
                 item.setData(Qt.UserRole, sucursal)
                 self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.addItem(item)
-                
-            
+
+
         except Exception as e:
             raise e
-        
+
     def _cargar_sucursales_existentes(self):
         try:
             todas_las_sucursales = self.sucursales_seleccionadas_existentes.copy()
             self.sucursales_seleccionadas_existentes.clear()
-            
+
             for sucursal_id, sucursal in todas_las_sucursales.items():
                 if sucursal_id not in self.sucursales_seleccionadas:
                     self.sucursales_seleccionadas_existentes[sucursal_id] = sucursal
-            
+
             self._mostrar_sucursales_existentes_en_lista()
-            
+
         except Exception as e:
             raise e
-    
+
     def _mostrar_sucursales_existentes_en_lista(self):
         try:
             self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
-            
+
             for sucursal_id, sucursal in self.sucursales_seleccionadas_existentes.items():
                 item = QListWidgetItem(sucursal.nombre_sucursal)
                 item.setIcon(self.iconSucursal)
                 item.setData(Qt.UserRole, sucursal)
                 self.WindowRegistroDepartamentos.lista_sucursalesexistentes.addItem(item)
-                
+
         except Exception as e:
             raise e
-    
+
     def mostrar_resultado_hilo(self, mensaje, estado):
         Mensaje().mensaje_informativo(f'{mensaje["mensaje"]}')
         self.objetoDepartamento = None
@@ -616,17 +664,16 @@ class DepartamentosController(QDialog):
 
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             event.ignore()
             return
-            
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             event.ignore()
             return
-            
+
         super().keyPressEvent(event)
 
 
-    

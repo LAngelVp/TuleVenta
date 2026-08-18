@@ -18,7 +18,7 @@
 background-color: rgb(255, 255, 255);
 }
 [objectName*=&quot;w_&quot;]{
-background: #fffefb;
+background: #F1F5F9;
 }
 #label_logoempresa{
 image: url(:/Icons/IconosSVG/logo_dev_rous_blanco.png);
@@ -39,7 +39,7 @@ background-color: rgb(255, 255, 255);
 	background-color: rgb(214, 214, 214);
 }
 #w_encabezado{
-background-color:#8494A4;
+background-color:#F1F5F9;
 height:35px;
 min-height: 35px;
 max-height: 35px;
@@ -53,7 +53,7 @@ background-color: rgb(255, 255, 255);
 #w_cuerpo_menu{
 min-width:40px;
 max-width:220px;
-background-color: #8494A4;
+background-color: #F1F5F9;
 }
 #label_fotousuario{
 image: url(:/Icons/IconosSVG/perfil.png);
@@ -68,7 +68,7 @@ border: none;
 min.width: 215px;
 qproperty-iconSize: 35px 35px;
 font-size: 14px;
-color: #F8FAFC;
+color: #0F172A;
 font-weight: bold;
 }
 [objectName^=&quot;btn_laterales&quot;]:hover {
@@ -394,22 +394,195 @@ image: url(:/logos/Icons/logos/tuleVenta.png);
             <property name="verticalSpacing">
              <number>15</number>
             </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_fotousuario">
+            <item row="11" column="0">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>45</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="4" column="0">
+             <widget class="QToolButton" name="btn_laterales_empleados">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
               <property name="cursor">
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Perfil&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Empleados&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string/>
+               <string>Control de empleados</string>
               </property>
-              <property name="scaledContents">
-               <bool>false</bool>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/empleados.png</normaloff>:/Icons/IconosSVG/empleados.png</iconset>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
+              <property name="popupMode">
+               <enum>QToolButton::ToolButtonPopupMode::DelayedPopup</enum>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+              <property name="autoRaise">
+               <bool>true</bool>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::ArrowType::NoArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="0">
+             <widget class="QToolButton" name="btn_laterales_btn_opciones">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>Mas opciones</string>
+              </property>
+              <property name="text">
+               <string>Control de herramientas</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/ibootstrap.qrc">
+                <normaloff>:/Icons/Bootstrap/ui-checks-grid.svg</normaloff>:/Icons/Bootstrap/ui-checks-grid.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>35</width>
+                <height>35</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QToolButton" name="btn_laterales_productos">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Productos&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Control de inventario</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/productos.png</normaloff>:/Icons/IconosSVG/productos.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>35</width>
+                <height>35</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QToolButton" name="btn_laterales_compras">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Compras&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Control de compras</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/compras.png</normaloff>:/Icons/IconosSVG/compras.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QToolButton" name="btn_laterales_clientes">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Clientes&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Control de clientes</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/clientes.png</normaloff>:/Icons/IconosSVG/clientes.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="0">
+             <widget class="QToolButton" name="btn_laterales_btn_sucursales">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Administrador de Sucursales&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Control de sucursal</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/sucursales.png</normaloff>:/Icons/IconosSVG/sucursales.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QToolButton" name="btn_laterales_proveedores">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Proveedores&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Control de proveedores</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/vendedores.png</normaloff>:/Icons/IconosSVG/vendedores.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
               </property>
              </widget>
             </item>
@@ -471,197 +644,41 @@ image: url(:/logos/Icons/logos/tuleVenta.png);
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QToolButton" name="btn_laterales_compras">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_fotousuario">
               <property name="cursor">
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Compras&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Perfil&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Control de compras</string>
+               <string/>
               </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/compras.png</normaloff>:/Icons/IconosSVG/compras.png</iconset>
+              <property name="scaledContents">
+               <bool>false</bool>
               </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0">
-             <widget class="QToolButton" name="btn_laterales_empleados">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Empleados&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Control de empleados</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/empleados.png</normaloff>:/Icons/IconosSVG/empleados.png</iconset>
-              </property>
-              <property name="popupMode">
-               <enum>QToolButton::ToolButtonPopupMode::DelayedPopup</enum>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-              </property>
-              <property name="autoRaise">
-               <bool>true</bool>
-              </property>
-              <property name="arrowType">
-               <enum>Qt::ArrowType::NoArrow</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="0">
-             <widget class="QToolButton" name="btn_laterales_proveedores">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Proveedores&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Control de proveedores</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/vendedores.png</normaloff>:/Icons/IconosSVG/vendedores.png</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QToolButton" name="btn_laterales_clientes">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Clientes&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Control de clientes</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/clientes.png</normaloff>:/Icons/IconosSVG/clientes.png</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0">
-             <widget class="QToolButton" name="btn_laterales_productos">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Productos&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Control de inventario</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/productos.png</normaloff>:/Icons/IconosSVG/productos.png</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>35</width>
-                <height>35</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="0">
-             <widget class="QToolButton" name="btn_laterales_btn_sucursales">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Administrador de Sucursales&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Control de sucursal</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../../Source/iconsdvg.qrc">
-                <normaloff>:/Icons/IconosSVG/sucursales.png</normaloff>:/Icons/IconosSVG/sucursales.png</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
             <item row="9" column="0">
-             <widget class="QToolButton" name="btn_laterales_btn_opciones">
+             <widget class="QToolButton" name="btn_laterales_btn_dashboard">
               <property name="cursor">
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="toolTip">
-               <string>Mas opciones</string>
+               <string>Panel dashboard</string>
               </property>
               <property name="text">
-               <string>Control de herramientas</string>
+               <string>Panel Dashboard</string>
               </property>
               <property name="icon">
-               <iconset resource="../../Source/ibootstrap.qrc">
-                <normaloff>:/Icons/Bootstrap/ui-checks-grid.svg</normaloff>:/Icons/Bootstrap/ui-checks-grid.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>35</width>
-                <height>35</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+               <iconset resource="../../Source/iconsdvg.qrc">
+                <normaloff>:/Icons/IconosSVG/iconDashboard.png</normaloff>:/Icons/IconosSVG/iconDashboard.png</iconset>
               </property>
              </widget>
-            </item>
-            <item row="10" column="0">
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Orientation::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>45</height>
-               </size>
-              </property>
-             </spacer>
             </item>
            </layout>
           </widget>

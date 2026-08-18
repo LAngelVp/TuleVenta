@@ -15,6 +15,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from datetime import datetime, timedelta
 from .PurchaseOrderPDF import PurchaseOrderPDF
+from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal, stabilize_item_view
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
@@ -26,6 +27,7 @@ class Compras(QWidget):
         super().__init__(parent)
         self.controlOrdenesDeCompra = Ui_control_compras()
         self.controlOrdenesDeCompra.setupUi(self)
+        apply_module_theme(self)
         self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setDateTime(QDateTime.currentDateTime())
         self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setEnabled(False)
         self.controlOrdenesDeCompra.fecha_fechaCompraRealizada.setDateTime(QDateTime.currentDateTime())
@@ -763,6 +765,7 @@ class Orden_compra(QDialog):
         self.ordenCompraUI.btn_btn_agregar.hide()
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        apply_module_theme(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
@@ -1071,7 +1074,7 @@ class Orden_compra(QDialog):
             self.fila = current.row()
         cantidadProductosComprasController = CantidadProductosComprasController(self)
         cantidadProductosComprasController.cantidadEnviadaSignal.connect(self.actualizarCantidadProducto)
-        cantidadProductosComprasController.show()
+        bring_window_to_front(cantidadProductosComprasController)
 
     def actualizarCantidadProducto(self, cantidad):
         self.modeloTablaProductosOrden.actualizarCelda(self.fila, 6, cantidad)
@@ -1223,6 +1226,8 @@ class SeleccionProductosProveedor(QDialog):
         self.lista_hilos_seleccion_productos_proveedor = []
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        configure_child_modal(self, drag_widget=self.ui.contenedor_encabezado)
+        apply_module_theme(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
@@ -1236,10 +1241,17 @@ class SeleccionProductosProveedor(QDialog):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.__configuracionTablaProductosProveedor()
         self.__configuracionTablaProductosSeleccionados()
+        self._ajustar_vistas_productos_proveedor()
         self.ui.tabla_productosProveedor.verticalScrollBar().valueChanged.connect(self._manejar_scroll_productos_proveedor)
 
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+
+    def _ajustar_vistas_productos_proveedor(self):
+        stabilize_item_view(self.ui.tabla_productosProveedor, min_height=240)
+        stabilize_item_view(self.ui.tabla_productosParaOrden, min_height=240)
+        self.ui.gridLayout_3.setRowStretch(1, 1)
+        self.ui.gridLayout_3.setRowStretch(5, 1)
 
     def __configuracionTablaProductosProveedor(self):
         cabeceras = [

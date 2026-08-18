@@ -1,7 +1,6 @@
-from sqlite3 import IntegrityError
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, outerjoin
-from .BaseDatosModel import Permisos, Roles, rol_permiso
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
+from .BaseDatosModel import Permisos, Roles, Usuarios, rol_permiso
 
 class PermisosModel:
     def __init__(self,session):
@@ -41,7 +40,7 @@ class PermisosModel:
             if permiso:
                 return permiso, True
         return None, False
-            
+
 class RolesModel:
     def __init__(self, session):
         self.session = session
@@ -68,36 +67,48 @@ class RolesModel:
             return False
 
     def crear_Rol(self, nombre, descripcion = None, permisos=None):
-        rol_existente = self.session.query(Roles).filter_by(nombre=nombre).first()
-        if rol_existente:
-            return rol_existente.id, True  # Devolver también el estado de éxito
-
-        # Crear el nuevo rol
-        nuevo_rol = Roles(
-            nombre=nombre,
-            descripcion=descripcion,
-        )
-        self.session.add(nuevo_rol)
-
-        # Agregar los permisos si se proporcionan
-        if permisos:
-            # Asegúrate de que los permisos sean nombres válidos en la base de datos
-            conjunto_permisos = self.session.query(Permisos).filter(Permisos.nombre.in_(permisos)).all()
-            print(f"Permisos encontrados en la base de datos: {[permiso.nombre for permiso in conjunto_permisos]}")
-            if conjunto_permisos:
-                nuevo_rol.permisos.extend(conjunto_permisos)
-
-        # Confirmar los cambios en la base de datos
         try:
-            self.session.commit()  # Asegura que los cambios sean confirmados
-            return nuevo_rol, True  # Devuelve el rol creado y el estado de éxito
+            nombre_normalizado = (nombre or "").strip().upper()
+            descripcion_normalizada = (descripcion or "").strip().upper()
+            permisos_normalizados = sorted(
+                {
+                    (permiso or "").strip().upper()
+                    for permiso in (permisos or [])
+                    if (permiso or "").strip()
+                }
+            )
+
+            if not nombre_normalizado:
+                return None, False, "Debes ingresar un nombre para el rol."
+
+            rol_existente = self.session.query(Roles).filter_by(nombre=nombre_normalizado).first()
+            if rol_existente:
+                return rol_existente, False, f"Ya existe un rol registrado con el nombre {nombre_normalizado}."
+
+            if not permisos_normalizados:
+                return None, False, "Debes seleccionar al menos un permiso para crear el rol."
+
+            PermisosModel(self.session).crear_permisos_principal
+            conjunto_permisos = self.session.query(Permisos).filter(Permisos.nombre.in_(permisos_normalizados)).all()
+            permisos_encontrados = {permiso.nombre for permiso in conjunto_permisos}
+            permisos_faltantes = [permiso for permiso in permisos_normalizados if permiso not in permisos_encontrados]
+            if permisos_faltantes:
+                return None, False, f"No se encontraron permisos válidos para: {', '.join(permisos_faltantes)}"
+
+            nuevo_rol = Roles(
+                nombre=nombre_normalizado,
+                descripcion=descripcion_normalizada,
+            )
+            nuevo_rol.permisos.extend(conjunto_permisos)
+            self.session.add(nuevo_rol)
+            self.session.flush()
+            return nuevo_rol, True, f"Rol {nuevo_rol.nombre} creado correctamente."
         except IntegrityError as e:
             self.session.rollback()  # Revierte la transacción si ocurre un error
-            return None, False  # Devolver None si hubo un error
+            return None, False, f"No se pudo crear el rol por un conflicto de integridad: {e}"
         except Exception as e:
             self.session.rollback()  # Revierte la transacción en caso de otros errores
-            print(f"Error al crear rol: {e}")  # Puedes loggear el error para diagnóstico
-            return None, False
+            return None, False, f"Ocurrió un error al crear el rol: {e}"
 
     def obtener_todos(self):
         try:
@@ -108,17 +119,123 @@ class RolesModel:
                 return [], False
         except Exception as e:
             return [], False
-    
+
     def todos_roles_con_permisos(self):
-        roles = self.session.query(Roles, Permisos).outerjoin(rol_permiso, rol_permiso.c.rol_id == Roles.id).outerjoin(Permisos, Permisos.id == rol_permiso.c.permiso_id).all()
+        roles = (
+            self.session.query(Roles)
+            .options(joinedload(Roles.permisos))
+            .order_by(Roles.nombre.asc())
+            .all()
+        )
         if not roles:
             return [], False
         return roles, True
-    
+
+    def buscar_roles_por_nombre(self, nombre):
+        termino = (nombre or "").strip().upper()
+        consulta = (
+            self.session.query(Roles)
+            .options(joinedload(Roles.permisos))
+            .order_by(Roles.nombre.asc())
+        )
+        if termino:
+            consulta = consulta.filter(Roles.nombre.ilike(f"%{termino}%"))
+
+        roles = consulta.all()
+        if not roles:
+            return [], False
+        return roles, True
+
+    def obtener_rol_por_id(self, id_rol):
+        rol = (
+            self.session.query(Roles)
+            .options(joinedload(Roles.permisos))
+            .filter(Roles.id == id_rol)
+            .first()
+        )
+        if rol is None:
+            return None, False
+        return rol, True
+
+    def actualizar_rol(self, id_rol, nombre, descripcion=None, permisos=None):
+        try:
+            rol = (
+                self.session.query(Roles)
+                .options(joinedload(Roles.permisos))
+                .filter(Roles.id == id_rol)
+                .first()
+            )
+            if rol is None:
+                return None, False, "No se encontró el rol seleccionado para actualizar."
+
+            nombre_normalizado = (nombre or "").strip().upper()
+            descripcion_normalizada = (descripcion or "").strip().upper()
+            permisos_normalizados = sorted(
+                {
+                    (permiso or "").strip().upper()
+                    for permiso in (permisos or [])
+                    if (permiso or "").strip()
+                }
+            )
+
+            if not nombre_normalizado:
+                return None, False, "Debes ingresar un nombre para el rol."
+
+            rol_duplicado = (
+                self.session.query(Roles)
+                .filter(Roles.nombre == nombre_normalizado, Roles.id != id_rol)
+                .first()
+            )
+            if rol_duplicado:
+                return None, False, f"Ya existe un rol registrado con el nombre {nombre_normalizado}."
+
+            if not permisos_normalizados:
+                return None, False, "Debes seleccionar al menos un permiso para actualizar el rol."
+
+            PermisosModel(self.session).crear_permisos_principal
+            conjunto_permisos = self.session.query(Permisos).filter(Permisos.nombre.in_(permisos_normalizados)).all()
+            permisos_encontrados = {permiso.nombre for permiso in conjunto_permisos}
+            permisos_faltantes = [permiso for permiso in permisos_normalizados if permiso not in permisos_encontrados]
+            if permisos_faltantes:
+                return None, False, f"No se encontraron permisos válidos para: {', '.join(permisos_faltantes)}"
+
+            rol.nombre = nombre_normalizado
+            rol.descripcion = descripcion_normalizada
+            rol.permisos = list(conjunto_permisos)
+            self.session.flush()
+            return rol, True, f"Rol {rol.nombre} actualizado correctamente."
+        except IntegrityError as e:
+            self.session.rollback()
+            return None, False, f"No se pudo actualizar el rol por un conflicto de integridad: {e}"
+        except Exception as e:
+            self.session.rollback()
+            return None, False, f"Ocurrió un error al actualizar el rol: {e}"
+
+    def obtener_contexto_usuario(self, usuario_id):
+        usuario = (
+            self.session.query(Usuarios)
+            .options(joinedload(Usuarios.rol).joinedload(Roles.permisos))
+            .filter(Usuarios.id == usuario_id)
+            .first()
+        )
+        if usuario is None:
+            return {
+                "rol_id": None,
+                "rol_nombre": None,
+                "permisos": [],
+            }, False
+
+        rol = usuario.rol
+        permisos = sorted({permiso.nombre for permiso in getattr(rol, "permisos", [])}) if rol else []
+        return {
+            "rol_id": rol.id if rol else None,
+            "rol_nombre": rol.nombre if rol else None,
+            "permisos": permisos,
+        }, True
+
     def eliminar_rol_con_permisos(self, id):
         rol = self.session.query(Roles).filter(Roles.id == id).first()
         if rol is None:
             return False
         self.session.delete(rol)
         return True
-        

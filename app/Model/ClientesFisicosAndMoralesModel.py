@@ -155,14 +155,14 @@ class ClientesFisicosAndMorales:
             print(f"mostrando el error: {e}")
             return None, False
 
-    def agregar_cliente_moral(self,nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, razon_social, fecha_constitucion, web, sector, nif):
+    def agregar_cliente_moral(self,nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, razon_social, fecha_constitucion, web, sector, nif, representante_id=None):
         try:
             cliente_existente = (self.session.query(Clientes_morales).filter(Clientes.nombre == nombre).filter(Clientes_morales.razon_social == razon_social).first())
             if cliente_existente:
                 return cliente_existente, None
             else:
                 cliente = Clientes_morales(
-                    nombre=nombre, correo = correo , rfc = rfc, telefono = telefono, pais = pais, estado = estado, ciudad = ciudad, avenidas = avenidas, calles = calles, codigo_postal = codigo_postal, direccion_adicional = direccion_adicional, entidad_legalizada = entidad_legalizada, categoria_cliente_id = categoria_cliente_id, credito = credito, estado_credito = estado_credito, limite_credito = limite_credito, porcentaje_interes = porcentaje_interes, fecha_ultimo_reporte = fecha_ultimo_reporte, credito_disponible = credito_disponible, credito_utilizado = credito_utilizado, tipo_cliente = tipo_cliente, aplica_descuento = aplica_descuento,porcentaje_descuento = porcentaje_descuento, comentarios = comentarios, areas_de_negocios_id = areas_de_negocios_id, razon_social = razon_social, fecha_constitucion = fecha_constitucion,  web = web, sector = sector, NIF = nif
+                    nombre=nombre, correo = correo , rfc = rfc, telefono = telefono, pais = pais, estado = estado, ciudad = ciudad, avenidas = avenidas, calles = calles, codigo_postal = codigo_postal, direccion_adicional = direccion_adicional, entidad_legalizada = entidad_legalizada, categoria_cliente_id = categoria_cliente_id, credito = credito, estado_credito = estado_credito, limite_credito = limite_credito, porcentaje_interes = porcentaje_interes, fecha_ultimo_reporte = fecha_ultimo_reporte, credito_disponible = credito_disponible, credito_utilizado = credito_utilizado, tipo_cliente = tipo_cliente, aplica_descuento = aplica_descuento,porcentaje_descuento = porcentaje_descuento, comentarios = comentarios, areas_de_negocios_id = areas_de_negocios_id, razon_social = razon_social, fecha_constitucion = fecha_constitucion,  web = web, sector = sector, NIF = nif, representante_id=representante_id
                 )
                 self.session.add(cliente)
                 self.session.flush()
@@ -195,10 +195,7 @@ class ClientesFisicosAndMorales:
                 .all()
             )
 
-            if clientes:
-                return clientes, True
-            else:
-                return [], False
+            return clientes, True
         except Exception as e:
             return [], False
 
@@ -213,10 +210,7 @@ class ClientesFisicosAndMorales:
                 .all()
             )
 
-            if clientes:
-                return clientes, True
-            else:
-                return [], False
+            return clientes, True
         except Exception as e:
             print(f"Error: {e}")
             return [], False
@@ -274,7 +268,7 @@ class ClientesFisicosAndMorales:
             print(f"💥 Error en filtrar_clientes_fisicos_por_nombre: {e}")
             return [], False
 
-        return clientes, bool(clientes)
+        return clientes, True
 
     def filtrar_clientes_morales_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
         try:
@@ -302,7 +296,7 @@ class ClientesFisicosAndMorales:
             print(f"💥 Error en filtrar_clientes_morales_por_nombre: {e}")
             return [], False
 
-        return clientes, bool(clientes)
+        return clientes, True
 
     def actualizar_cliente_fisico(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
         try:

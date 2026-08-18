@@ -13,6 +13,7 @@ from .Ventana_espera import Modal_de_espera, ModalManager
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .MensajesAlertasController import Mensaje
+from .UiTheme import apply_module_theme
 from ..Source.logos_rc import *
 from ..Source.ibootstrap_rc import *
 from ..View.UserInterfacePy.UI_CONTROL_PERFIL import Ui_Formulario_Datos_Empleado
@@ -22,6 +23,9 @@ class Perfil(QWidget):
         super().__init__()
         self.ui = Ui_Formulario_Datos_Empleado()
         self.ui.setupUi(self)
+        apply_module_theme(self)
+        self._ruta_foto_perfil = None
+        self._configurar_foto_perfil()
         self.usuario = usuario
         self.estadoBotonVista = False
         self.ui.btn_btn_verdatos.setIcon(QIcon(":Icons/Bootstrap/eye-slash.svg"))
@@ -29,6 +33,36 @@ class Perfil(QWidget):
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
         self.ui.btn_btn_verdatos.clicked.connect(self.comprobarIntegridad)
+
+    def _configurar_foto_perfil(self):
+        self.ui.foto_empleadoperfil.setMinimumSize(QSize(220, 180))
+        self.ui.foto_empleadoperfil.setMaximumSize(QSize(220, 180))
+        self.ui.foto_empleadoperfil.setScaledContents(False)
+        self.ui.foto_empleadoperfil.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def _actualizar_foto_perfil(self, ruta_foto=None):
+        self._ruta_foto_perfil = ruta_foto or None
+        if not self._ruta_foto_perfil:
+            self.ui.foto_empleadoperfil.clear()
+            return
+
+        pixmap = QPixmap(self._ruta_foto_perfil)
+        if pixmap.isNull():
+            self._ruta_foto_perfil = None
+            self.ui.foto_empleadoperfil.clear()
+            return
+
+        pixmap_escalado = pixmap.scaled(
+            self.ui.foto_empleadoperfil.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.ui.foto_empleadoperfil.setPixmap(pixmap_escalado)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self._ruta_foto_perfil:
+            self._actualizar_foto_perfil(self._ruta_foto_perfil)
 
     def comprobarIntegridad(self):
         if self.estadoBotonVista:
@@ -66,7 +100,7 @@ class Perfil(QWidget):
             funcion=self.buscarEmpleadoQuery,
             idUsuario = self.usuario["id_usuario"],
         )
-    
+
     def buscarEmpleadoQuery(self, session, idUsuario):
         try:
             datosGenerales, estado = UsuarioModel(session).obtenerDatosGeneralesUsuario(idUsuario=idUsuario)
@@ -86,7 +120,7 @@ class Perfil(QWidget):
 
     def mostrar_error(self, mensaje):
         Mensaje().mensaje_alerta(mensaje)
-    
+
     def llenarCampos(self, data):
         if data["exito"]:
             self.ui.btn_btn_verdatos.setIcon(QIcon(":Icons/Bootstrap/eye-fill.svg"))
@@ -132,24 +166,24 @@ class Perfil(QWidget):
             self.ui.txt_fechaContratacion.setText((data["data"].empleado.fecha_contratacion).isoformat())
             self.ui.tiempo_horaentrada.setTime(QTime(data["data"].empleado.puesto.hora_entrada))
             self.ui.tiempo_horasalida.setTime(QTime(data["data"].empleado.puesto.hora_salida))
-            
+
             if data["data"].empleado.activo:
                 self.ui.contenedor_baja.show()
                 self.ui.contenedor_baja.setStyleSheet("background: #68a67d;font-size: 20px; color: #fffefb;")
                 self.ui.etiqueta_baja.setText("ESTAS ACTIVO")
                 self.ui.fecha_baja.hide()
-                
+
             if data["data"].empleado.puesto.dias_laborales is not None:
                 for dia, checkbox in cajas_verificacion.items():
                     checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in data["data"].empleado.puesto.dias_laborales)
-                                        
+
             if data["data"].empleado.foto_empleado is not None and data["data"].empleado.foto_empleado != "":
                 try:
-                    self.ui.foto_empleadoperfil.setPixmap(QPixmap(data["data"].empleado.foto_empleado).scaled(self.ui.foto_empleadoperfil.size()))
+                    self._actualizar_foto_perfil(data["data"].empleado.foto_empleado)
                 except Exception as e:
-                    self.ui.foto_empleadoperfil.clear()
+                    self._actualizar_foto_perfil(None)
             else:
-                self.ui.foto_empleadoperfil.clear()
+                self._actualizar_foto_perfil(None)
             self.ui.foto_empleadoperfil.setEnabled(True)
 
     def limpiarCampos(self):
@@ -192,13 +226,13 @@ class Perfil(QWidget):
         self.ui.txt_fechaContratacion.clear()
         self.ui.tiempo_horaentrada.setTime(QTime())
         self.ui.tiempo_horasalida.setTime(QTime())
-        
+
         self.ui.contenedor_baja.hide()
         self.ui.fecha_baja.show()
-            
+
         for dia, checkbox in cajas_verificacion.items():
             checkbox.setChecked(False)
-        self.ui.foto_empleadoperfil.clear()
+        self._actualizar_foto_perfil(None)
         self.ui.foto_empleadoperfil.setEnabled(True)
         self.ui.opcion_lunes.setChecked(False)
         self.ui.opcion_martes.setChecked(False)
@@ -207,7 +241,7 @@ class Perfil(QWidget):
         self.ui.opcion_viernes.setChecked(False)
         self.ui.opcion_sabado.setChecked(False)
         self.ui.opcion_domingo.setChecked(False)
-        
+
     def cajas_dias_laborales(self):
         return {
             'Lunes': self.ui.opcion_lunes,
@@ -227,26 +261,26 @@ class PasswordDialog(QDialog):
         self.setWindowTitle("Ingresar contraseña")
         self.setWindowIcon(QIcon(":/Icons/Bootstrap/lock-fill.svg"))
         self.setModal(True)
-        self.setFixedSize(300, 100)
-        
+        self.setFixedSize(300, 150)
+
         # Configurar el layout
         layout = QVBoxLayout()
-        
+
         # Etiqueta
         label = QLabel("Ingrese su contraseña:")
         layout.addWidget(label)
-        
+
         # Campo de contraseña
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.Password)  # Ocultar texto
         self.password_input.setPlaceholderText("Contraseña")
         layout.addWidget(self.password_input)
-        
+
         # Botones
         self.accept_button = QPushButton("Aceptar")
-        
+
         self.accept_button.clicked.connect(self.accept)
-        
+
         layout.addWidget(self.accept_button)
-        
+
         self.setLayout(layout)

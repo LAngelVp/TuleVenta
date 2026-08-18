@@ -15,7 +15,9 @@ from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
 from .OperacionMasivaCsvController import OperacionMasivaCsvController
+from .UiTheme import apply_module_theme, bring_window_to_front, stabilize_item_view
 from ..Model.ClientesFisicosAndMoralesModel import *
+from ..Model.BaseDatosModel import Areas_negocios, Categorias_de_clientes, Clientes_fisicos as ClienteFisicoModel, Clientes_morales as ClienteMoralModel
 from .MensajesAlertasController import Mensaje
 
 class Clientes(QWidget):
@@ -25,6 +27,8 @@ class Clientes(QWidget):
         super().__init__(parent)
         self.WindowClient = Ui_Control_Clientes()
         self.WindowClient.setupUi(self)
+        apply_module_theme(self)
+        self._ajustar_vistas_clientes()
         self.clienteFisico = True
         self.WindowClient.btnRadio_wpc_clienteFisico.setChecked(self.clienteFisico)
         self.WindowClient.wpc_contenedor_pila.setCurrentIndex(0)
@@ -99,10 +103,10 @@ class Clientes(QWidget):
         self.WindowClient.btn_btn_filtrarClienteMoral.clicked.connect(self.buscar_cliente_moral)
         self.WindowClient.btn_btn_cliente_modificar.clicked.connect(self.actualizar_clientes)
         self.WindowClient.btn_btn_cliente_eliminar.clicked.connect(self.eliminar_clientes)
-        self.WindowClient.btn_RefrescarTablaClientesFisicos.clicked.connect(self.tabla_listar_clientes_fisicos)
+        self.WindowClient.btn_RefrescarTablaClientesFisicos.clicked.connect(self.refrescar_tabla_clientes_fisicos)
         self.WindowClient.btn_btn_paginarClientesFisicos.clicked.connect(self.cargar_mas_clientes_fisicos)
         self.WindowClient.btn_btn_ImportarClientesFisicos.clicked.connect(self.importar_clientes_fisicos)
-        self.WindowClient.btn_RefrescarTablaClientesMorales.clicked.connect(self.tabla_listar_clientes_morales)
+        self.WindowClient.btn_RefrescarTablaClientesMorales.clicked.connect(self.refrescar_tabla_clientes_morales)
         self.WindowClient.btn_btn_paginarClientesMorales.clicked.connect(self.cargar_mas_clientes_morales)
         self.WindowClient.btn_btn_importarClientesMorales.clicked.connect(self.importar_clientes_morales)
 
@@ -125,6 +129,12 @@ class Clientes(QWidget):
         self.listar_areas()
         self.listar_categorias()
 
+    def _ajustar_vistas_clientes(self):
+        stabilize_item_view(self.WindowClient.tabla_clientesFisicos, min_height=260)
+        stabilize_item_view(self.WindowClient.tabla_clientesMorales, min_height=260)
+        self.WindowClient.verticalLayout.setStretch(1, 1)
+        self.WindowClient.verticalLayout_2.setStretch(1, 1)
+
     def hideEvent(self, event):
         for hilo in self.lista_hilos_clientes:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -139,6 +149,7 @@ class Clientes(QWidget):
         self.nombre_cliente_fisico = None
         if clear_input:
             self.WindowClient.txt_buscarclienteFisico.clear()
+        self._actualizar_estado_paginacion_clientes_fisicos()
 
     def _reset_busqueda_clientes_morales(self, clear_input=False):
         self.cantidad_inicial_clientes_morales = 0
@@ -148,6 +159,31 @@ class Clientes(QWidget):
         self.nombre_cliente_moral = None
         if clear_input:
             self.WindowClient.txt_buscarclienteMorales.clear()
+        self._actualizar_estado_paginacion_clientes_morales()
+
+    def _actualizar_estado_paginacion_clientes_fisicos(self):
+        self.WindowClient.btn_btn_paginarClientesFisicos.setEnabled(not self.no_hay_mas_registros_clientes_fisicos)
+
+    def _actualizar_estado_paginacion_clientes_morales(self):
+        self.WindowClient.btn_btn_paginarClientesMorales.setEnabled(not self.no_hay_mas_registros_clientes_morales)
+
+    def _tabla_clientes_fisicos_tiene_datos(self):
+        return hasattr(self, 'modelo_tabla_clientes_fisicos') and self.modelo_tabla_clientes_fisicos.rowCount() > 0
+
+    def _tabla_clientes_morales_tiene_datos(self):
+        return hasattr(self, 'modelo_tabla_clientes_morales') and self.modelo_tabla_clientes_morales.rowCount() > 0
+
+    def refrescar_tabla_clientes_fisicos(self):
+        if self.WindowClient.txt_buscarclienteFisico.text().strip():
+            self.buscar_cliente_fisico(forzar_reinicio=True)
+            return
+        self.tabla_listar_clientes_fisicos()
+
+    def refrescar_tabla_clientes_morales(self):
+        if self.WindowClient.txt_buscarclienteMorales.text().strip():
+            self.buscar_cliente_moral(forzar_reinicio=True)
+            return
+        self.tabla_listar_clientes_morales()
 
     @staticmethod
     def _parse_bool_importacion(valor, default=False):
@@ -170,7 +206,18 @@ class Clientes(QWidget):
         texto = str(valor).strip()
         return texto.upper() if upper else texto
 
-    def _resolver_categoria_cliente_importacion(self, row, categorias_por_id, categorias_por_nombre):
+    @staticmethod
+    def _normalizar_codigo_postal_importacion(valor):
+        codigo_postal = str(valor).strip()
+        if not codigo_postal:
+            return ""
+        if codigo_postal.endswith(".0"):
+            codigo_postal = codigo_postal[:-2]
+        if codigo_postal.isdigit() and len(codigo_postal) < 5:
+            return codigo_postal.zfill(5)
+        return codigo_postal
+
+    def _resolver_categoria_cliente_importacion(self, session, row, categorias_por_id, categorias_por_nombre):
         categoria_id = OperacionMasivaCsvController.parse_int(
             self._obtener_valor_importacion(row, "categoria_cliente_id", "categoria_id"),
             default=0
@@ -182,10 +229,21 @@ class Clientes(QWidget):
             upper=True
         )
         if categoria_nombre:
-            return categorias_por_nombre.get(categoria_nombre)
+            categoria_existente_id = categorias_por_nombre.get(categoria_nombre)
+            if categoria_existente_id:
+                return categoria_existente_id
+            categoria_nueva = Categorias_de_clientes(
+                nombre=categoria_nombre,
+                descripcion=f"Categoría creada automáticamente durante importación de clientes: {categoria_nombre}"
+            )
+            session.add(categoria_nueva)
+            session.flush()
+            categorias_por_id[categoria_nueva.id] = categoria_nueva
+            categorias_por_nombre[categoria_nombre] = categoria_nueva.id
+            return categoria_nueva.id
         return None
 
-    def _resolver_area_negocio_importacion(self, row, areas_por_id, areas_por_nombre):
+    def _resolver_area_negocio_importacion(self, session, row, areas_por_id, areas_por_nombre):
         area_id = OperacionMasivaCsvController.parse_int(
             self._obtener_valor_importacion(row, "areas_de_negocios_id", "area_de_negocio_id", "area_id"),
             default=0
@@ -197,7 +255,18 @@ class Clientes(QWidget):
             upper=True
         )
         if area_nombre:
-            return areas_por_nombre.get(area_nombre)
+            area_existente_id = areas_por_nombre.get(area_nombre)
+            if area_existente_id:
+                return area_existente_id
+            area_nueva = Areas_negocios(
+                nombre=area_nombre,
+                descripcion=f"Área de negocio creada automáticamente durante importación de clientes: {area_nombre}"
+            )
+            session.add(area_nueva)
+            session.flush()
+            areas_por_id[area_nueva.id] = area_nueva
+            areas_por_nombre[area_nombre] = area_nueva.id
+            return area_nueva.id
         return None
 
     def actualizar_clientes(self):
@@ -262,40 +331,40 @@ class Clientes(QWidget):
         try:
             if cliente_fisico:
                 estado = ClientesFisicosAndMorales(session).actualizar_cliente_fisico(
-                            id = cliente.id,
-                            nombre = datos['nombre'],
-                            correo=datos["correo electronico"],
-                            rfc=datos["rfc"],
-                            telefono=datos["numero telefono"],
-                            pais=datos["pais"],
-                            estado=datos["estado"],
-                            ciudad=datos["ciudad"],
-                            avenidas=datos["avenidas"],
-                            calles=datos["calles"],
-                            codigo_postal=datos["codigo postal"],
-                            direccion_adicional=datos["direccion adicional"],
-                            entidad_legalizada=datos["entidad legalizada"],
-                            categoria_cliente_id=categoria.id,
-                            credito=datos["credito autorizado"],
-                            estado_credito=datos["estado del credito"],
-                            limite_credito=datos["limite del credito"],
-                            porcentaje_interes=datos["porcentaje del interes"],
-                            fecha_ultimo_reporte=datos["fecha del ultimo reporte"],
-                            credito_disponible=datos["credito disponible"],
-                            credito_utilizado=datos["credito utilizado"],
-                            aplica_descuento=datos["aplica descuento"],
-                            porcentaje_descuento=datos["porcentaje del descuento"],
-                            comentarios=datos["comentarios"],
-                            areas_de_negocios_id=area.id,
-                            apellido_paterno=datos["apellido paterno"],
-                            apellido_materno=datos["apellido materno"],
-                            curp=datos["curp"],
-                            fecha_nacimiento=datos["fecha de nacimiento"],
-                            num_identificacion=datos["numero identificacion"],
-                            ocupacion=datos["ocupacion"],
-                            ingresos=datos["ingresos"],
-                            estado_civil=datos["estado civil"],
-                            foto=foto
+                        id=cliente.id,
+                        nombre=datos['nombre'],
+                        correo=datos["correo electronico"],
+                        rfc=datos["rfc"],
+                        telefono=datos["numero telefono"],
+                        pais=datos["pais"],
+                        estado=datos["estado"],
+                        ciudad=datos["ciudad"],
+                        avenidas=datos["avenidas"],
+                        calles=datos["calles"],
+                        codigo_postal=datos["codigo postal"],
+                        direccion_adicional=datos["direccion adicional"],
+                        entidad_legalizada=datos["entidad legalizada"],
+                        categoria_cliente_id=categoria.id,
+                        credito=datos["credito autorizado"],
+                        estado_credito=datos["estado del credito"],
+                        limite_credito=datos["limite del credito"],
+                        porcentaje_interes=datos["porcentaje del interes"],
+                        fecha_ultimo_reporte=datos["fecha del ultimo reporte"],
+                        credito_disponible=datos["credito disponible"],
+                        credito_utilizado=datos["credito utilizado"],
+                        aplica_descuento=datos["aplica descuento"],
+                        porcentaje_descuento=datos["porcentaje del descuento"],
+                        comentarios=datos["comentarios"],
+                        areas_de_negocios_id=area.id,
+                        apellido_paterno=datos["apellido paterno"],
+                        apellido_materno=datos["apellido materno"],
+                        curp=datos["curp"],
+                        fecha_nacimiento=datos["fecha de nacimiento"],
+                        num_identificacion=datos["numero identificacion"],
+                        ocupacion=datos["ocupacion"],
+                        ingresos=datos["ingresos"],
+                        estado_civil=datos["estado civil"],
+                        foto=foto
                         )
             else:
                 estado = ClientesFisicosAndMorales(session).actualizar_cliente_moral(
@@ -494,8 +563,8 @@ class Clientes(QWidget):
             self.ajustador.ajustar_cajadeopciones(self.WindowClient.cajaOpciones_areasnegocio_moral)
 # ================ DIALOG ======================
     def nueva_categoria(self):
-        self.ui_categoria = CategoriasController(tipo_categoria="clientes")
-        self.ui_categoria.show()
+        self.ui_categoria = CategoriasController(tipo_categoria="clientes", parent=self)
+        bring_window_to_front(self.ui_categoria)
         self.ui_categoria.categoria_agregada_signal.connect(self.listar_categorias)
 
     def listar_categorias(self):
@@ -734,6 +803,17 @@ class Clientes(QWidget):
         try:
             datos_representante = datos_cliente.pop('datos_representante', None)
 
+            if datos_representante:
+                representante = ClientesFisicosAndMorales(session).agregar_representante_cliente_moral(**datos_representante)
+                if not representante:
+                    session.rollback()
+                    return {
+                        "exito": False,
+                        "mensaje": "No se pudo agregar el representante del cliente moral",
+                        "tipo_cliente": "MORAL"
+                    }
+                datos_cliente['representante_id'] = representante.id
+
             nuevo_cliente, estado_cliente = ClientesFisicosAndMorales(session).agregar_cliente_moral(**datos_cliente)
 
             if estado_cliente is None:
@@ -744,15 +824,6 @@ class Clientes(QWidget):
                     "tipo_cliente": "MORAL"
                 }
             if estado_cliente is True and datos_representante:
-                representante = ClientesFisicosAndMorales(session).agregar_representante_cliente_moral(**datos_representante)
-                if not representante:
-                    session.rollback()
-                    return {
-                        "exito": False,
-                        "mensaje": "No se pudo agregar el representante del cliente moral",
-                        "tipo_cliente": "MORAL"
-                    }
-                nuevo_cliente.representante = representante
                 session.commit()
                 return {
                     "exito": True,
@@ -839,7 +910,10 @@ class Clientes(QWidget):
         areas_por_id = {area.id: area for area in areas}
         areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
 
-        clientes_existentes = session.query(Clientes_fisicos.curp, Clientes.rfc).join(Clientes, Clientes.id == Clientes_fisicos.id).all()
+        clientes_existentes = (
+            session.query(ClienteFisicoModel.curp, ClienteFisicoModel.rfc)
+            .all()
+        )
         curps_existentes = {str(curp).strip().upper() for curp, _ in clientes_existentes if curp}
         rfcs_existentes = {str(rfc).strip().upper() for _, rfc in clientes_existentes if rfc}
 
@@ -854,10 +928,11 @@ class Clientes(QWidget):
             curp = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "curp"), upper=True)
             rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
 
-            categoria_id = self._resolver_categoria_cliente_importacion(row, categorias_por_id, categorias_por_nombre)
-            area_id = self._resolver_area_negocio_importacion(row, areas_por_id, areas_por_nombre)
+            categoria_id = self._resolver_categoria_cliente_importacion(session, row, categorias_por_id, categorias_por_nombre)
+            area_id = self._resolver_area_negocio_importacion(session, row, areas_por_id, areas_por_nombre)
             fecha_nacimiento = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_nacimiento"))
             fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
+            codigo_postal = self._normalizar_codigo_postal_importacion(self._obtener_valor_importacion(row, "codigo_postal"))
 
             if not all([nombre, apellido_paterno, apellido_materno, curp, rfc, categoria_id, area_id, fecha_nacimiento]):
                 omitidos += 1
@@ -878,7 +953,7 @@ class Clientes(QWidget):
                 ciudad=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
                 avenidas=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
                 calles=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
-                codigo_postal=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "codigo_postal"), upper=True),
+                codigo_postal=codigo_postal,
                 direccion_adicional=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
                 entidad_legalizada=self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
                 categoria_cliente_id=categoria_id,
@@ -973,7 +1048,7 @@ class Clientes(QWidget):
             "id", "nombre", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas", "calles",
             "codigo_postal", "direccion_adicional", "entidad_legalizada", "categoria_cliente_id", "categoria_cliente",
             "categoria_id", "credito", "estado_credito", "limite_credito", "porcentaje_interes", "fecha_ultimo_reporte",
-            "credito_disponible", "credito_utilizado", "aplica_descuento", "porcentaje_descuento", "comentarios",
+            "credito_disponible", "credito_utilizado", "aplica_descuento", "descuento_autorizado", "porcentaje_descuento", "comentarios",
             "areas_de_negocios_id", "area_de_negocio_id", "area_de_negocio", "areas_de_negocios", "razon_social",
             "fecha_constitucion", "web", "sector", "nif", "NIF", "representante_nombre", "representante_telefono",
             "representante_correo", "representante_puesto", "clasificacion de cliente", "clasificacion_cliente",
@@ -998,7 +1073,10 @@ class Clientes(QWidget):
         areas_por_id = {area.id: area for area in areas}
         areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
 
-        clientes_existentes = session.query(Clientes_morales.razon_social, Clientes.rfc, Clientes_morales.NIF).join(Clientes, Clientes.id == Clientes_morales.id).all()
+        clientes_existentes = (
+            session.query(ClienteMoralModel.razon_social, ClienteMoralModel.rfc, ClienteMoralModel.NIF)
+            .all()
+        )
         razones_existentes = {str(razon).strip().upper() for razon, _, _ in clientes_existentes if razon}
         rfcs_existentes = {str(rfc).strip().upper() for _, rfc, _ in clientes_existentes if rfc}
         nifs_existentes = {str(nif).strip().upper() for _, _, nif in clientes_existentes if nif}
@@ -1012,10 +1090,11 @@ class Clientes(QWidget):
             razon_social = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "razon_social"), upper=True)
             rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
             nif = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nif", "NIF"), upper=True)
-            categoria_id = self._resolver_categoria_cliente_importacion(row, categorias_por_id, categorias_por_nombre)
-            area_id = self._resolver_area_negocio_importacion(row, areas_por_id, areas_por_nombre)
+            categoria_id = self._resolver_categoria_cliente_importacion(session, row, categorias_por_id, categorias_por_nombre)
+            area_id = self._resolver_area_negocio_importacion(session, row, areas_por_id, areas_por_nombre)
             fecha_constitucion = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_constitucion"))
             fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
+            codigo_postal = self._normalizar_codigo_postal_importacion(self._obtener_valor_importacion(row, "codigo_postal"))
 
             if not all([nombre, razon_social, rfc, nif, categoria_id, area_id, fecha_constitucion]):
                 omitidos += 1
@@ -1036,7 +1115,7 @@ class Clientes(QWidget):
                 'ciudad': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
                 'avenidas': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
                 'calles': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
-                'codigo_postal': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "codigo_postal"), upper=True),
+                'codigo_postal': codigo_postal,
                 'direccion_adicional': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
                 'entidad_legalizada': self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
                 'categoria_cliente_id': categoria_id,
@@ -1177,7 +1256,6 @@ class Clientes(QWidget):
 
     def mostrar_contenedor_cliente_fisico(self):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
-            self._reset_busqueda_clientes_fisicos(clear_input=True)
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
@@ -1185,6 +1263,8 @@ class Clientes(QWidget):
             self.WindowClient.etiqueta_titulo_tabla.setText("Listado de clientes fisicos")
             self.WindowClient.contenedor_clientesMorales.hide()
             self.WindowClient.contenedor_clientesFisicos.show()
+            if not self._tabla_clientes_fisicos_tiene_datos() and self.cantidad_inicial_clientes_fisicos == 0:
+                self.obtener_clientes_fisicos_hilo(reset_paginacion=True, append=False)
 
     def activar_creditofisico(self):
         if self.WindowClient.casillaverificacion_wpc_credito_autorizado.isChecked():
@@ -1199,8 +1279,8 @@ class Clientes(QWidget):
             self.WindowClient.cajaDecimal_porcentajedescuento_fisico.setEnabled(False)
 # =================== DIALOG =======================
     def nueva_area_cliente_fisico(self):
-        self.ui_area_cliente_fisico =  AreaNegocioClientesController("Fisico")
-        self.ui_area_cliente_fisico.show()
+        self.ui_area_cliente_fisico =  AreaNegocioClientesController("Fisico", parent=self)
+        bring_window_to_front(self.ui_area_cliente_fisico)
         self.ui_area_cliente_fisico.signal_area.connect(self.listar_areas)
 
     def __configuracion_tabla_clientes_fisicos(self):
@@ -1248,6 +1328,8 @@ class Clientes(QWidget):
         try:
             if hasattr(self, 'modelo_tabla_clientes_fisicos'):
                 self.modelo_tabla_clientes_fisicos.clear()
+            self.no_hay_mas_registros_clientes_fisicos = True
+            self._actualizar_estado_paginacion_clientes_fisicos()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al limpiar tabla de clientes: {e}")
 
@@ -1343,7 +1425,6 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                self.cantidad_inicial_clientes_fisicos += len(clientes)
                 return {
                     "exito": estado,
                     "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1372,6 +1453,7 @@ class Clientes(QWidget):
             if reset_paginacion:
                 self.cantidad_inicial_clientes_fisicos = 0
                 self.no_hay_mas_registros_clientes_fisicos = False
+                self._actualizar_estado_paginacion_clientes_fisicos()
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
@@ -1405,8 +1487,6 @@ class Clientes(QWidget):
                 cantidad_final=self.cantidad_final_clientes_fisicos
             )
 
-            if estado and clientes:
-                self.cantidad_inicial_clientes_fisicos += len(clientes)
             if not estado:
                 session.rollback()
                 return {
@@ -1436,10 +1516,12 @@ class Clientes(QWidget):
         tipo_cliente = resultado.get("tipo_cliente", "")
 
         if resultado.get("exito"):
+            if self._append_mode_clientes_fisicos and not resultado.get("data"):
+                self.no_hay_mas_registros_clientes_fisicos = True
+                self._actualizar_estado_paginacion_clientes_fisicos()
+                Mensaje().mensaje_informativo("No hay más clientes físicos por mostrar")
+                return
             self.llenar_tabla_clientes_fisicos(resultado)
-        elif self._append_mode_clientes_fisicos and not resultado.get("data"):
-            self.no_hay_mas_registros_clientes_fisicos = True
-            Mensaje().mensaje_informativo("No hay más clientes físicos por mostrar")
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_fisicos()
@@ -1447,34 +1529,43 @@ class Clientes(QWidget):
     def llenar_tabla_clientes_fisicos(self, resultado):
         clientes = resultado["data"]
         try:
-            if not hasattr(self, "modelo_listar_clientes_fisicos"):
+            if not hasattr(self, "modelo_tabla_clientes_fisicos"):
                 self.__configuracion_tabla_clientes_fisicos()
             if not clientes:
                 if self._append_mode_clientes_fisicos:
                     self.no_hay_mas_registros_clientes_fisicos = True
+                    self._actualizar_estado_paginacion_clientes_fisicos()
                     return
                 self.modelo_tabla_clientes_fisicos.clear()
+                self.cantidad_inicial_clientes_fisicos = 0
+                self.no_hay_mas_registros_clientes_fisicos = True
+                self._actualizar_estado_paginacion_clientes_fisicos()
                 return
+            if self._append_mode_clientes_fisicos:
+                self.cantidad_inicial_clientes_fisicos += len(clientes)
+            else:
+                self.cantidad_inicial_clientes_fisicos = len(clientes)
             self.no_hay_mas_registros_clientes_fisicos = len(clientes) < self.cantidad_final_clientes_fisicos
             self.modelo_tabla_clientes_fisicos.update_data(clientes, reset=not self._append_mode_clientes_fisicos)
+            self._actualizar_estado_paginacion_clientes_fisicos()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes fisicos en la tabla, esta no existe en la metadata: {str(e)}")
             return
 
-    def buscar_cliente_fisico(self):
+    def buscar_cliente_fisico(self, forzar_reinicio=False):
         nombre = self.WindowClient.txt_buscarclienteFisico.text().strip()
         if not nombre:
             self.tabla_listar_clientes_fisicos()
             return
-        busqueda_nuevo_cliente_fisico = (nombre != self.nombre_cliente_fisico)
+        busqueda_nuevo_cliente_fisico = forzar_reinicio or (nombre != self.nombre_cliente_fisico) or (not self.busqueda_clientes_fisicos)
         self.nombre_cliente_fisico = nombre
-        self.cantidad_inicial_clientes_fisicos = 0
 
         if busqueda_nuevo_cliente_fisico:
             self.cantidad_inicial_clientes_fisicos = 0
             self.no_hay_mas_registros_clientes_fisicos = False
-            self.busqueda_clientes_fisicos = True
+            self._actualizar_estado_paginacion_clientes_fisicos()
 
+        self.busqueda_clientes_fisicos = True
         self._append_mode_clientes_fisicos = False
         if busqueda_nuevo_cliente_fisico and hasattr(self,'modelo_tabla_clientes_fisicos'):
             self.modelo_tabla_clientes_fisicos.clear()
@@ -1522,7 +1613,6 @@ class Clientes(QWidget):
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
         self.busqueda_clientes_fisicos = True
-        self.cantidad_inicial_clientes_fisicos += len(clientes)
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1531,20 +1621,20 @@ class Clientes(QWidget):
 # ------------------------------------------ FINAL - CLIENTES FISICOS
 
 # ======================== CLIENTES MORALES =============================
-    def buscar_cliente_moral(self):
+    def buscar_cliente_moral(self, forzar_reinicio=False):
         nombre = self.WindowClient.txt_buscarclienteMorales.text().strip()
         if not nombre:
             self.tabla_listar_clientes_morales()
             return
-        busqueda_nuevo_cliente_moral = (nombre != self.nombre_cliente_moral)
+        busqueda_nuevo_cliente_moral = forzar_reinicio or (nombre != self.nombre_cliente_moral) or (not self.busqueda_clientes_morales)
         self.nombre_cliente_moral = nombre
-        self.cantidad_inicial_clientes_morales = 0
 
         if busqueda_nuevo_cliente_moral:
             self.cantidad_inicial_clientes_morales = 0
             self.no_hay_mas_registros_clientes_morales = False
-            self.busqueda_clientes_morales = True
+            self._actualizar_estado_paginacion_clientes_morales()
 
+        self.busqueda_clientes_morales = True
         self._append_mode_clientes_morales = False
         if busqueda_nuevo_cliente_moral and hasattr(self,'modelo_tabla_clientes_morales'):
             self.modelo_tabla_clientes_morales.clear()
@@ -1592,7 +1682,6 @@ class Clientes(QWidget):
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
         self.busqueda_clientes_morales = True
-        self.cantidad_inicial_clientes_morales += len(clientes)
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1841,6 +1930,7 @@ class Clientes(QWidget):
             if reset_paginacion:
                 self.cantidad_inicial_clientes_morales = 0
                 self.no_hay_mas_registros_clientes_morales = False
+                self._actualizar_estado_paginacion_clientes_morales()
             try:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
@@ -1873,8 +1963,6 @@ class Clientes(QWidget):
                 cantidad_final=self.cantidad_final_clientes_morales
             )
 
-            if estado and clientes:
-                self.cantidad_inicial_clientes_morales += len(clientes)
             if not estado:
                 session.rollback()
                 return {
@@ -1903,10 +1991,12 @@ class Clientes(QWidget):
         tipo_cliente = resultado.get("tipo_cliente", "")
 
         if resultado.get("exito"):
+            if self._append_mode_clientes_morales and not resultado.get("data"):
+                self.no_hay_mas_registros_clientes_morales = True
+                self._actualizar_estado_paginacion_clientes_morales()
+                Mensaje().mensaje_informativo("No hay más clientes morales por mostrar")
+                return
             self.llenar_tabla_clientes_morales(resultado)
-        elif self._append_mode_clientes_morales and not resultado.get("data"):
-            self.no_hay_mas_registros_clientes_morales = True
-            Mensaje().mensaje_informativo("No hay más clientes morales por mostrar")
         else:
             Mensaje().mensaje_alerta(resultado.get('mensaje', f"Error al obtener clientes {tipo_cliente.lower()}"))
             self.limpiar_tabla_clientes_morales()
@@ -1919,11 +2009,20 @@ class Clientes(QWidget):
             if not clientes:
                 if self._append_mode_clientes_morales:
                     self.no_hay_mas_registros_clientes_morales = True
+                    self._actualizar_estado_paginacion_clientes_morales()
                     return
                 self.modelo_tabla_clientes_morales.clear()
+                self.cantidad_inicial_clientes_morales = 0
+                self.no_hay_mas_registros_clientes_morales = True
+                self._actualizar_estado_paginacion_clientes_morales()
                 return
+            if self._append_mode_clientes_morales:
+                self.cantidad_inicial_clientes_morales += len(clientes)
+            else:
+                self.cantidad_inicial_clientes_morales = len(clientes)
             self.no_hay_mas_registros_clientes_morales = len(clientes) < self.cantidad_final_clientes_morales
             self.modelo_tabla_clientes_morales.update_data(clientes, reset=not self._append_mode_clientes_morales)
+            self._actualizar_estado_paginacion_clientes_morales()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Ocurrio un problema al mostrar los clientes morales en la tabla, esta no existe en la metadata: {str(e)}")
             return
@@ -1983,7 +2082,6 @@ class Clientes(QWidget):
                             "mensaje": f'No se logro hacer la operación',
                             "data": clientes
                         }
-                self.cantidad_inicial_clientes_morales += len(clientes)
                 return {
                     "exito": estado,
                     "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -2041,6 +2139,8 @@ class Clientes(QWidget):
         try:
             if hasattr(self, 'modelo_tabla_clientes_morales'):
                 self.modelo_tabla_clientes_morales.clear()
+            self.no_hay_mas_registros_clientes_morales = True
+            self._actualizar_estado_paginacion_clientes_morales()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al limpiar tabla de clientes: {e}")
 
@@ -2099,13 +2199,12 @@ class Clientes(QWidget):
         return True
 # ===================== DIALOG ==================
     def nueva_area_cliente_moral(self):
-        self.ui_area_cliente_fisico =  AreaNegocioClientesController("Moral")
-        self.ui_area_cliente_fisico.show()
+        self.ui_area_cliente_fisico =  AreaNegocioClientesController("Moral", parent=self)
+        bring_window_to_front(self.ui_area_cliente_fisico)
         self.ui_area_cliente_fisico.signal_area.connect(self.listar_areas)
 
     def mostrar_contenedor_cliente_moral(self):
         if self.WindowClient.btnRadio_wpc_clienteMoral.isChecked():
-            self._reset_busqueda_clientes_morales(clear_input=True)
             self.clienteSeleccionadoVariable = None
             self.listar_areas()
             self.listar_categorias()
@@ -2113,6 +2212,8 @@ class Clientes(QWidget):
             self.WindowClient.etiqueta_titulo_tabla.setText("Listado de clientes morales")
             self.WindowClient.contenedor_clientesFisicos.hide()
             self.WindowClient.contenedor_clientesMorales.show()
+            if not self._tabla_clientes_morales_tiene_datos() and self.cantidad_inicial_clientes_morales == 0:
+                self.obtener_clientes_morales_hilo(reset_paginacion=True, append=False)
 
     def activar_creditomoral(self):
         if self.WindowClient.casillaverificacion_wpc_credito_autorizado_moral.isChecked():

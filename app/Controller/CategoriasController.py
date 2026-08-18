@@ -10,20 +10,23 @@ from ..Model.CategoriasModel import CategoriasModel
 from .MensajesAlertasController import Mensaje
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
+from .UiTheme import apply_module_theme, configure_child_modal
 
 
 class CategoriasController(QWidget):
     categoria_agregada_signal =  Signal()
     eliminacion_completada = Signal(dict)
-    def __init__(self, tipo_categoria = None):
-        super().__init__()
+    def __init__(self, tipo_categoria = None, parent = None):
+        super().__init__(parent)
         self.tipo_categoria = tipo_categoria
         self.ui = Ui_Nueva_categoria()
         self.ui.setupUi(self)
+        configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
+        apply_module_theme(self)
         self.setWindowTitle("Categoría")
         self.ui.txt_nombre.setMaxLength(150)
         self.ui.btn_btn_guardar.clicked.connect(self.guardar)
-        
+
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
@@ -54,7 +57,7 @@ class CategoriasController(QWidget):
                     )
         except Exception as e:
             pass
-            
+
     def agregar_categoria_query(self, session, tipo_categoria, nombre, descripcion):
         try:
             categoria, estado = CategoriasModel(session).agregar(
@@ -78,7 +81,7 @@ class CategoriasController(QWidget):
             "exito": estado,
             "mensaje": f"Registro {nombre} agregado"
         }
-    
+
     def eliminar(self, objeto):
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -101,7 +104,7 @@ class CategoriasController(QWidget):
             if hasattr(self, 'id_hilo_eliminar_categoria'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_categoria)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-    
+
     def eliminar_categoria_query(self, session, objeto):
         try:
             estado = CategoriasModel(session).eliminar(objeto)
@@ -122,15 +125,14 @@ class CategoriasController(QWidget):
             "exito": estado,
             "mensaje": f'La categoria {objeto.nombre} fue eliminada'
         }
-    
+
     def resultado_categoria_eliminada(self, objetoMensaje):
         self.eliminacion_completada.emit(objetoMensaje)
-        
+
     def resultado_del_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.categoria_agregada_signal.emit()
         self.close()
-    
+
     def mostrar_error_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
-        

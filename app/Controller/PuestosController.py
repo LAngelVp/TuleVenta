@@ -13,27 +13,38 @@ from .RolesPermisosController import ControlRolesController
 from ..Model.PuestoModel import PuestoModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
+from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal
 
 
 class PuestosController(QDialog):
     signal_puesto_agregado =  Signal()
     elemento_seleccionado = Signal(object)
     VENTANA_PUESTOS_CERRADA = Signal()
-    def __init__(self, parent = None, cabecera = True):
+    def __init__(self, parent = None, cabecera = True, permisos_usuario=None, modal=True):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaPuestos = False
+        self.modal = modal
+        self.permisos_usuario = {
+            str(permiso).strip().upper()
+            for permiso in (permisos_usuario or [])
+            if str(permiso).strip()
+        }
+        self.es_administrador = "ADMINISTRADOR" in self.permisos_usuario
         self.ui = Ui_Formulario_puestos()
         self.ui.setupUi(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        configure_child_modal(self, drag_widget=self.ui.contenedor_encabezado, modal=self.modal)
+        if not self.modal:
+            self.setWindowModality(Qt.WindowModality.NonModal)
+        apply_module_theme(self)
         #//LIMITE CARACTERES
         self.ui.txt_nombrepuesto.setMaxLength(100)
-        
+
         #//: EDICION
         self.ui.decimal_salario.setButtonSymbols(QSpinBox.NoButtons)
         self.ui.decimal_horaslaborales.setButtonSymbols(QSpinBox.NoButtons)
@@ -57,7 +68,7 @@ class PuestosController(QDialog):
         self.ui.cajaopcion_viernes.stateChanged.connect(self.comprobar_caja_verificacion)
         self.ui.cajaopcion_sabado.stateChanged.connect(self.comprobar_caja_verificacion)
         self.ui.cajaopcion_domingo.stateChanged.connect(self.comprobar_caja_verificacion)
-        
+
         # SEÑALES DE ENTER
         self.ui.btn_btn_buscar_puesto.clicked.connect(self.buscar_puesto)
 
@@ -71,16 +82,75 @@ class PuestosController(QDialog):
         self.id_departamento = None
         self.puesto_actual = None
         self.puestos = None
+        self.ventana_roles = None
         self.lista_hilos_puestos = []
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self._habilitar_scroll_formulario()
+        self._ajustar_bloque_dias_laborales()
         self.__configurar_tabla_puestos()
 
         self.insertarValidaciones()
+        self._aplicar_permisos_ui()
 
         if cabecera is False:
             self.ui.contenedor_encabezado.hide()
+
+    def _habilitar_scroll_formulario(self):
+        if hasattr(self, "scroll_formulario_puestos"):
+            return
+
+        self.scroll_formulario_puestos = QScrollArea(self.ui.contenedor)
+        self.scroll_formulario_puestos.setObjectName("scroll_formulario_puestos")
+        self.scroll_formulario_puestos.setWidgetResizable(True)
+        self.scroll_formulario_puestos.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_formulario_puestos.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_formulario_puestos.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+
+        self.ui.gridLayout_6.removeWidget(self.ui.contenedor_formulario)
+        self.ui.contenedor_formulario.setParent(None)
+        self.scroll_formulario_puestos.setWidget(self.ui.contenedor_formulario)
+        self.ui.gridLayout_6.addWidget(self.scroll_formulario_puestos, 1, 0, 1, 1)
+        self.ui.gridLayout_6.setRowStretch(1, 1)
+
+        ancho_objetivo = self.ui.contenedor_formulario.sizeHint().width() + self.scroll_formulario_puestos.verticalScrollBar().sizeHint().width() + 8
+        self.scroll_formulario_puestos.setMinimumWidth(ancho_objetivo)
+
+    def _ajustar_bloque_dias_laborales(self):
+        self.ui.contenedor_diaslaborales.setMinimumHeight(156)
+        self.ui.contenedor_diaslaborales.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.ui.gridLayout_4.setVerticalSpacing(max(self.ui.gridLayout_4.verticalSpacing(), 10))
+        self.ui.gridLayout_4.removeWidget(self.ui.btn_btn_roles)
+        self.ui.gridLayout_4.addWidget(self.ui.btn_btn_roles, 11, 0, 1, 2)
+        self.ui.btn_btn_roles.setMinimumHeight(42)
+        self.ui.btn_btn_roles.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        for checkbox in self.cajas_dias_laborales().values():
+            checkbox.setMinimumHeight(30)
+
+    def _tiene_algun_permiso(self, permisos_requeridos):
+        if not permisos_requeridos:
+            return True
+        if self.es_administrador:
+            return True
+        return bool(self.permisos_usuario.intersection({permiso.upper() for permiso in permisos_requeridos}))
+
+    def _restringir_widget(self, widget):
+        if widget is None:
+            return
+        widget.setEnabled(False)
+        widget.hide()
+
+    def _aplicar_permisos_ui(self):
+        reglas = [
+            (self.ui.btn_btn_agregar, {"CREARPUESTOS"}),
+            (self.ui.btn_btn_actualizar, {"MODIFICARPUESTO"}),
+            (self.ui.btn_btn_eliminar, {"ELIMINARPUESTO"}),
+            (self.ui.btn_btn_roles, {"CREARGRUPOPERMISOS", "MODIFICARGRUPOPERMISOS", "ELIMINARGRUPOPERMISOS"}),
+        ]
+        for widget, permisos in reglas:
+            if not self._tiene_algun_permiso(permisos):
+                self._restringir_widget(widget)
 
     # ================ FUNCIONES ===================
     def insertarValidaciones(self):
@@ -93,14 +163,14 @@ class PuestosController(QDialog):
         if not self._ventanaCentradaPuestos:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaPuestos = True
-    
+
     def closeEvent(self, event):
         for hilo in self.lista_hilos_puestos:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_puestos.clear()
-        self.VENTANA_PUESTOS_CERRADA.emit() 
+        self.VENTANA_PUESTOS_CERRADA.emit()
         event.accept()
-        
+
     def buscar_puesto(self):
         nombre_puesto = self.ui.txt_buscarpuesto.text().strip()
         if not nombre_puesto:
@@ -130,11 +200,11 @@ class PuestosController(QDialog):
             if hasattr(self, 'id_hilo_filtrar_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_filtrar_puestos)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
-            
+
     def filtrar_puestos_query(self, session, dato):
         try:
             puestos, estado = PuestoModel(session).filtrar_por_nombre(dato)
-            if not estado: 
+            if not estado:
                 return {
                     'exito': estado,
                     'mensaje': f'Ocurrio un error en la operación: {puestos}',
@@ -151,12 +221,21 @@ class PuestosController(QDialog):
                 'mensaje': f'Ocurrio un error en la operación: {e}',
                 'data': None
             }
-        
+
     def roles(self):
-        print("en roles")
-        self.ventana_roles = ControlRolesController()
-        self.ventana_roles.show()
-    
+        if not self._tiene_algun_permiso({"CREARGRUPOPERMISOS", "MODIFICARGRUPOPERMISOS", "ELIMINARGRUPOPERMISOS"}):
+            Mensaje().mensaje_informativo("No cuentas con permisos para administrar roles.")
+            return
+        if self.ventana_roles is None:
+            self.ventana_roles = ControlRolesController(parent=self, permisos_usuario=self.permisos_usuario)
+
+        if self.ventana_roles.isVisible():
+            self.ventana_roles.raise_()
+            self.ventana_roles.activateWindow()
+            return
+
+        bring_window_to_front(self.ventana_roles)
+
     def comprobar_caja_verificacion(self, state):
         print(state, Qt.Checked.value)
         status_checked = self.sender()
@@ -179,7 +258,7 @@ class PuestosController(QDialog):
 
         for cajaTexto in self.findChildren(QLineEdit):
             cajaTexto.clear()
-        
+
         for cajaTexto in self.findChildren(QPlainTextEdit):
             cajaTexto.clear()
 
@@ -202,7 +281,7 @@ class PuestosController(QDialog):
 
         if departamento_seleccionado:
             self.id_departamento = departamento_seleccionado.id
-            
+
         campos_vacios, estado_campos_vacios = self.validar(datos)
         if not estado_campos_vacios or not self.diasLaborales:
             lista_vacios = []
@@ -235,7 +314,7 @@ class PuestosController(QDialog):
             if hasattr(self, 'id_hilo_agregar_puesto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_puesto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-        
+
     def agregar_puestos_query(self, session, diasLaborales, datos):
         try:
             puesto, estado = PuestoModel(session).crear_puesto(
@@ -265,7 +344,7 @@ class PuestosController(QDialog):
             'exito': estado,
             'mensaje': f'Registro exitoso, {puesto.nombre} agregado'
         }
-    
+
     def eliminar(self):
         if not self.puesto_actual:
             Mensaje().mensaje_informativo("No se a seleccionado ningun registro para eliminar")
@@ -295,7 +374,7 @@ class PuestosController(QDialog):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_puesto)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
         self.signal_puesto_agregado.emit()
-    
+
     def eliminar_puesto_query(self, session, puesto_seleccionado):
         try:
             respuesta = PuestoModel(session).eliminar_puesto(puesto_seleccionado.id)
@@ -326,7 +405,7 @@ class PuestosController(QDialog):
 
         if departamento_seleccionado:
             id_departamento = departamento_seleccionado.id
-                
+
         campos_vacios, estado_campos_vacios = self.validar(datos)
         if not estado_campos_vacios or not self.diasLaborales:
             lista_vacios = []
@@ -368,7 +447,7 @@ class PuestosController(QDialog):
         else:
             Mensaje().mensaje_informativo("No haz seleccionado un elemento para actualizar.")
             return
-                    
+
     def actualizar_puesto_query(self, session, puesto, diasLaborales, id_departamento, datos):
         try:
             puesto, estado = PuestoModel(session).actualizar(
@@ -400,9 +479,10 @@ class PuestosController(QDialog):
             "mensaje": f"Operacion exitosa, registro {puesto.nombre} actualizado"
         }
 
-    def listar_departamentos(self):
+    def listar_departamentos(self, mostrar_modal=True):
         try:
-            self.manejadorModal.mostrar_modal(self)
+            if mostrar_modal:
+                self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
             self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
             self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
@@ -413,7 +493,7 @@ class PuestosController(QDialog):
                 worker_id=self.id_hilo_listar_departamentos,
                 resultado_callback=self.ingresar_departamentos_opciones,
                 error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
+                terminado_callback=self.manejadorModal.cerrar_modal if mostrar_modal else None
             )
             self.consultor_listar_departamentos.ejecutar(
                 funcion=self.obtener_departamentos_query
@@ -422,7 +502,7 @@ class PuestosController(QDialog):
             if hasattr(self, 'id_hilo_listar_departamentos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-            
+
     def obtener_departamentos_query(self, session):
         try:
             departamentos, estado = DepartamentosModel(session).obtener_todos()
@@ -444,34 +524,35 @@ class PuestosController(QDialog):
                 'mensaje': f'Ocurrio un error en la operacion: {e}',
                 'data': None
             }
-    
+
     def ingresar_departamentos_opciones(self, objetoDepartamentos):
         if objetoDepartamentos['exito']:
             self.lista_departamentos = list(objetoDepartamentos['data'])
             self.ui.cajaOpciones_departamentos.clear()
-            
+
             # Almacenar el objeto completo para tener acceso a todos los atributos
             for departamento in objetoDepartamentos['data']:
                 self.ui.cajaOpciones_departamentos.addItem(
-                    departamento.nombre, 
+                    departamento.nombre,
                     userData=departamento  # Objeto completo
                 )
         else:
             Mensaje().mensaje_alerta(objetoDepartamentos['mensaje'])
-    
+
     def reestablecer_orden_original(self):
         """Restablece el orden original de los departamentos"""
         if hasattr(self, 'lista_departamentos'):
             self.ui.cajaOpciones_departamentos.clear()
             for departamento in self.lista_departamentos:
                 self.ui.cajaOpciones_departamentos.addItem(
-                    departamento.nombre, 
+                    departamento.nombre,
                     userData=departamento
                 )
-    
-    def listar_puestos(self):
+
+    def listar_puestos(self, mostrar_modal=True):
         try:
-            self.manejadorModal.mostrar_modal(self)
+            if mostrar_modal:
+                self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("listar_puestos_thread")
             self.id_hilo_listar_puestos = WorkerDB.create_managed_worker(owner_id="listar_puestos_thread")
             self.consultor_listar_puestos = WorkerDB.get_managed_worker(self.id_hilo_listar_puestos)
@@ -482,7 +563,7 @@ class PuestosController(QDialog):
                 worker_id=self.id_hilo_listar_puestos,
                 resultado_callback=self.llenar_tabla,
                 error_callback= self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
+                terminado_callback=self.manejadorModal.cerrar_modal if mostrar_modal else None
             )
             self.consultor_listar_puestos.ejecutar(
                 funcion=self.obtener_puestos_query
@@ -491,7 +572,7 @@ class PuestosController(QDialog):
             if hasattr(self, 'id_hilo_listar_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_puestos)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
-            
+
     def obtener_puestos_query(self, session):
         try:
             puestos, estado = PuestoModel(session).obtener_todos()
@@ -546,13 +627,13 @@ class PuestosController(QDialog):
 
     def llenar_tabla(self, resultado):
         if self.ui.tabla_listapuestos is None:
-            Mensaje().mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
+            Mensaje(self).mensaje_alerta("El widget tabla de lista de puestos no está disponible.")
             return
         if not resultado['exito'] or not resultado['data']:
-            Mensaje().mensaje_informativo("No hay puestos para mostrar")
+            Mensaje(self).mensaje_informativo("No hay puestos para mostrar")
             self.modelo_tabla_puestos.clear()
             return
-        Mensaje().mensaje_informativo(resultado['mensaje'])
+        Mensaje(self).mensaje_informativo(resultado['mensaje'])
         self.modelo_tabla_puestos.update_data(resultado['data'], reset=True)
 
     def obtener_id_elemento_tabla_puestos(self, current):
@@ -578,7 +659,7 @@ class PuestosController(QDialog):
                 if puesto_seleccionado.departamento:
                     departamento = puesto_seleccionado.departamento
                     caja_departamento = self.ui.cajaOpciones_departamentos
-                    
+
                     # Búsqueda manual por ID
                     indice_encontrado = -1
                     for i in range(caja_departamento.count()):
@@ -586,14 +667,14 @@ class PuestosController(QDialog):
                         if item_data and item_data.id == departamento.id:
                             indice_encontrado = i
                             break
-                    
+
                     if indice_encontrado != -1:
                         caja_departamento.removeItem(indice_encontrado)
-                    
+
                     # Insertar el nuevo departamento
                     caja_departamento.insertItem(0, departamento.nombre, userData=departamento)
                     caja_departamento.setCurrentIndex(0)
-                    
+
                 if puesto_seleccionado.dias_laborales is not None:
                     for dia, checkbox in cajas_verificacion.items():
                         checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in puesto_seleccionado.dias_laborales)
@@ -610,7 +691,7 @@ class PuestosController(QDialog):
             'hora_entrada':self.ui.tiempo_horaentrada,
             'hora_salida':self.ui.tiempo_horasalida,
         }
-    
+
     def cajas_dias_laborales(self):
         return {
             'Lunes': self.ui.cajaopcion_lunes,
@@ -644,19 +725,19 @@ class PuestosController(QDialog):
         if campos_vacios:
             return campos_vacios, False
         return None, True
-    
+
     def mostrar_resultado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.puesto_actual = None
         self.signal_puesto_agregado.emit()
-        
+
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
-    
+
     def mensaje_estado_eliminado(self, objectoMensaje):
         Mensaje().mensaje_informativo(f"{objectoMensaje['mensaje']}")
         self.puesto_actual = None
-    
+
     def keyPressEvent(self, event):
         """Sobrescribir el evento de teclado para ignorar Escape y Enter"""
         if event.key() == Qt.Key_Escape:
@@ -664,12 +745,12 @@ class PuestosController(QDialog):
             event.ignore()
             print("⚠️ Escape presionado - Diálogo no se cerrará")
             return
-            
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             # Ignorar Enter/Return
             event.ignore()
             print("⚠️ Enter presionado - Diálogo no se cerrará")
             return
-            
+
         # Permitir otras teclas
         super().keyPressEvent(event)

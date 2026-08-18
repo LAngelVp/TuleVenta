@@ -7,14 +7,17 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.AreaNegocioClientesModel import  *
 from .MensajesAlertasController import Mensaje
 from ..Model.AreaNegocioClientesModel import  AreaNegocioClientesModel
+from .UiTheme import apply_module_theme, configure_child_modal
 
 
 class AreaNegocioClientesController(QWidget):
     signal_area = Signal()
-    def __init__(self, tipo_cliente = None):
-        super().__init__()
+    def __init__(self, tipo_cliente = None, parent = None):
+        super().__init__(parent)
         self.ui = Ui_Nueva_area_negocio()
         self.ui.setupUi(self)
+        configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
+        apply_module_theme(self)
         self.tipo_de_cliente = tipo_cliente
         self.ui.btn_btn_guardar.clicked.connect(self.agregar_area)
 
@@ -35,4 +38,3 @@ class AreaNegocioClientesController(QWidget):
         except Exception as e:
             print(f"Error al agregar el area de negocio. {e}")
         self.close()
-                        

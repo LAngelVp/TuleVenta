@@ -21,6 +21,7 @@ from .PresentacionProductosController import PresentacionProductos
 from .UnidadMedidaProductosController import UnidadMedidaProductos
 from .OperacionMasivaCsvController import OperacionMasivaCsvController
 from .Validaciones import Validaciones
+from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal, stabilize_item_view
 from .Hilo_consultas import *
 from .Ventana_espera import *
 from ..Model.BaseDatosModel import Productos as ProductoDB, Presentacion_productos, Unidad_medida_productos, Categorias_productos
@@ -36,6 +37,7 @@ class ExistenciasClase(QWidget):
         super().__init__(parent)
         self.WindowExistenciasProducto = Ui_UI_EXISTENCIA_PRODUCTO()
         self.WindowExistenciasProducto.setupUi(self)
+        apply_module_theme(self)
         self.WindowExistenciasProducto.fecha_FechaMovimiento.setDate(QDate.currentDate())
         # ==================== VARIABLES GLOBALES =================
         self._ventanaCentrada = False
@@ -159,9 +161,11 @@ class Admin_productosController(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.WindowsAddProduct_Dialog = Ui_contenedorModal_agregar_productos()
         self.WindowsAddProduct_Dialog.setupUi(self)
+        configure_child_modal(self, drag_widget=self.WindowsAddProduct_Dialog.contenedor_encabezado, frameless=True)
+        apply_module_theme(self)
         icon = QIcon(':Icons/IconosSVG/productos.png')
         self.setWindowIcon(icon)
         self.setWindowTitle("Administración de productos")
@@ -259,23 +263,31 @@ class Admin_productosController(QWidget):
         self.ajustador_categoria_producto = AjustarcajaOpciones()
         self.ajustador_categoria_producto.elemento_eliminado_signal.connect(self.listar_categorias)
         self.__configurar_tabla_productos()
+        self._ajustar_vistas_modal_producto()
 
 
     # ========================= FUNCIONES-VENTANAS EMERGENTES ======================
     def agregar_presentacion(self):
-        self.ui_presentacion = PresentacionProductos()
+        self.ui_presentacion = PresentacionProductos(parent=self)
         self.ui_presentacion.presentacion_producto_agregada_signal.connect(self.listar_presentaciones_productos)
-        self.ui_presentacion.show()
+        bring_window_to_front(self.ui_presentacion)
 
     def agregar_unidad_medida(self):
-        self.ui_unidad_medida = UnidadMedidaProductos()
+        self.ui_unidad_medida = UnidadMedidaProductos(parent=self)
         self.ui_unidad_medida.unidad_medida_agregada_signal.connect(self.listar_unidades_medida)
-        self.ui_unidad_medida.show()
+        bring_window_to_front(self.ui_unidad_medida)
 
     def __agregar_categoria(self):
-        self.categoria = CategoriasController(tipo_categoria="productos")
+        self.categoria = CategoriasController(tipo_categoria="productos", parent=self)
         self.categoria.categoria_agregada_signal.connect(self.listar_categorias)
-        self.categoria.show()
+        bring_window_to_front(self.categoria)
+
+    def _ajustar_vistas_modal_producto(self):
+        stabilize_item_view(self.WindowsAddProduct_Dialog.tabla_productos, min_height=240)
+        stabilize_item_view(self.WindowsAddProduct_Dialog.lista_proveedores_vinculados, min_height=190)
+        stabilize_item_view(self.WindowsAddProduct_Dialog.lista_proveedores_a_vincular, min_height=190)
+        stabilize_item_view(self.WindowsAddProduct_Dialog.lista_todos_los_proveedores, min_height=190)
+        self.WindowsAddProduct_Dialog.gridLayout_2.setRowStretch(7, 1)
 
     def __verificar_todo_cargado(self):
         if (self.presentacionesCargadas and
@@ -1526,6 +1538,7 @@ class Productos(QWidget):
 
         self.WindowProducts = Ui_Control_Productos()
         self.WindowProducts.setupUi(self)
+        apply_module_theme(self)
 
         self.WindowProducts.txt_buscar.setValidator(Validaciones().get_text_validator(self.WindowProducts.txt_buscar))
         self.WindowProducts.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator(self.WindowProducts.txt_buscar_productoUPC))
@@ -1646,10 +1659,9 @@ class Productos(QWidget):
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-            self.AdminProductos.show()
+            bring_window_to_front(self.AdminProductos)
         else:
-            self.AdminProductos.raise_()
-            self.AdminProductos.activateWindow()
+            bring_window_to_front(self.AdminProductos)
 
     def ventana_productos_cerrada(self):
         self.AdminProductos = None
@@ -1739,11 +1751,10 @@ class Productos(QWidget):
             self.LISTAR_UNIDADES_MEDIDA_PRODUCTOS.emit()
             self.LISTAR_CATEGORIAS_PRODUCTOS.emit()
             self.LISTAR_PRESENTACIONES_PRODUCTOS.emit()
-            self.WindowEditProduct.show()
+            bring_window_to_front(self.WindowEditProduct)
             QTimer.singleShot(100, lambda: self.__enviar_producto_seguro(producto))
         else:
-            self.WindowEditProduct.raise_()
-            self.WindowEditProduct.activateWindow()
+            bring_window_to_front(self.WindowEditProduct)
             self.WindowEditProduct.RECIBIR_PRODUCTO_ACTUALIZAR_ID.emit(producto)
 
     def __enviar_producto_seguro(self, producto):

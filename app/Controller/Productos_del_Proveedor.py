@@ -13,6 +13,7 @@ from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from app.Model.AbstractTableModel import ComprobarModelosTablas
 from .Ventana_espera import *
 from .Hilo_consultas import *
+from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal, stabilize_item_view
 class Productos_de_proveedorController(QWidget):
     PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL=Signal(object)
     LISTAR_PRODUCTO_VINCULADOS_AL_PROVEEDOR = Signal()
@@ -22,9 +23,12 @@ class Productos_de_proveedorController(QWidget):
     def __init__(self, parent = None, proveedor = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.ui = Ui_contenedorModal_productos_proveedores()
         self.ui.setupUi(self)
-        # VARIABLES        
+        configure_child_modal(self, drag_widget=self.ui.contenedorModal_encabezado, frameless=True)
+        apply_module_theme(self)
+        # VARIABLES
         self.proveedor = proveedor
         self.cargando =  None
         self.seleccion_conectada_productos = False
@@ -47,7 +51,7 @@ class Productos_de_proveedorController(QWidget):
         self.codigo_upc = None
         self.lista_hilo_productos_proveedor = []
 
-        # CONEXIONES DE LOS BOTONES   
+        # CONEXIONES DE LOS BOTONES
         self.ui.btn_filtrarProductosSistema.clicked.connect(self.filtrar_productos_sistema)
         self.ui.btn_filtrarProductosProveedor.clicked.connect(self.filtrar_productos_de_proveedor)
         self.ui.btn_producto_del_proveedor_para_agregar.clicked.connect(self.vincular_producto_al_proveedor_funcion)
@@ -59,7 +63,7 @@ class Productos_de_proveedorController(QWidget):
         self.ui.btn_paginarProductosDelProveedor.clicked.connect(self.paginar_productos_del_proveedor)
         self.ui.btn_paginarProductosSistema.clicked.connect(self.paginar_productos_del_sistema)
         self.ui.contenedorModal_tabs.currentChanged.connect(self.cambiar_vista)
-        
+
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema)
         self.manejadorModal = ModalManager()
@@ -69,14 +73,20 @@ class Productos_de_proveedorController(QWidget):
         self.__configurar_tabla_productos_proveedor()
         self.__configurar_tabla_productos_del_sistema()
         self.__congigurar_tabla_productos_a_vincular()
-        
+        self._ajustar_vistas_modal_proveedor()
+
         if not self.proveedor:
             return
-        
+
         self.ui.etiqueta_nombre_del_proveedor.setText(f'Nombre del Proveedor: {self.proveedor.nombre.upper()}')
-        
+
         self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.connect(self.vincular_producto_al_proveedor_signal)
         self.PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL.connect(self.quitar_de_tabla_vinculacion_producto_al_proveedor_signal)
+
+    def _ajustar_vistas_modal_proveedor(self):
+        stabilize_item_view(self.ui.tabla_productos_del_proveedor, min_height=220)
+        stabilize_item_view(self.ui.tabla_productos_del_sistema, min_height=220)
+        stabilize_item_view(self.ui.tabla_Productos_A_VincularProveedor, min_height=200)
 
     def cambiar_vista(self):
         if self.ui.contenedorModal_tabs.currentIndex() != 1:
@@ -105,12 +115,12 @@ class Productos_de_proveedorController(QWidget):
             signalSeleccion=self.obtener_elemento_seleccionado_productosdelproveedor
         )
         return self.modelo_productos_del_proveedor_vproveedor
-    
+
     def obtener_elemento_seleccionado_productosdelproveedor(self, current, previus=None):
         if current.isValid():
             fila = current.row()
             relacion = self.modelo_productos_del_proveedor_vproveedor.get_item(current)
-            
+
             if relacion:
                 datos_desvinculacion = {
                     'proveedor_id': relacion.proveedor_id,
@@ -119,7 +129,7 @@ class Productos_de_proveedorController(QWidget):
                 }
                 self.relacion_producto_proveedor_seleccionado = datos_desvinculacion
                 self.objetoCompletoProveedorProductos = relacion
-    
+
     def __configurar_tabla_productos_del_sistema(self):
         cabeceras = ["Codigo_upc", "Nombre","Descripcion","Unidad de medida","Presentacion"]
         mapeo_cabecera = {
@@ -141,7 +151,7 @@ class Productos_de_proveedorController(QWidget):
             signalSeleccion=self.obtener_elemento_seleccionado_productos_vproveedoresSistema
         )
         return self.modelo_tabla_productos_del_sistemaproductos
-    
+
     def obtener_elemento_seleccionado_productos_vproveedoresSistema(self, current, previus = None):
         if current.isValid():
             fila = current.row()
@@ -154,32 +164,31 @@ class Productos_de_proveedorController(QWidget):
         proveedor = self.objetoCompletoProveedorProductos.proveedor
         producto = self.objetoCompletoProveedorProductos.producto
         if self.objetoCompletoProveedorProductos is not None:
-            if self.ventana_precio_producto is None or self.ventana_precio_producto.isVisible():
+            if self.ventana_precio_producto is None or not self.ventana_precio_producto.isVisible():
                 self.ventana_precio_producto = CambioPreciosProductosProveedores(parent = self, producto = producto, proveedor = proveedor)
                 self.ventana_precio_producto.VENTANA_CERRADA_PRECIO_PRODUCTO.connect(self.cerrar_precio_productos)
-                self.ventana_precio_producto.show()
+                bring_window_to_front(self.ventana_precio_producto)
             else:
-                self.ventana_precio_producto.raise_()
-                self.ventana_precio_producto.activateWindow()
+                bring_window_to_front(self.ventana_precio_producto)
         else:
             Mensaje().mensaje_informativo("Selecciona un producto de la tabla.")
-            
+
     def cerrar_precio_productos(self):
         self.ventana_precio_producto = None
-        
+
     def showEvent(self, event):
         super().showEvent(event)
         if not self._ventanaCentradaProductosProveedores:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaProductosProveedores = True
-    
+
     def closeEvent(self, event):
         for hilo in self.lista_hilo_productos_proveedor:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilo_productos_proveedor.clear()
         self.VENTANA_CERRADA_PRODUCTOS_DEL_PROVEEDOR.emit()
         event.accept()
-    
+
     def desvincular_producto(self):
         if self.relacion_producto_proveedor_seleccionado is None:
             Mensaje().mensaje_informativo("No se realizo la selección de un producto para poder eliminarlo del proveedor.")
@@ -206,7 +215,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_desvincular_producto_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_desvincular_producto_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-            
+
     def productos_del_proveedor_query(self, session, relacion):
         try:
             proveedor_id = relacion['proveedor_id']
@@ -233,7 +242,7 @@ class Productos_de_proveedorController(QWidget):
             "mensaje": f'Operacion exitosa',
             "data": None
         }
-            
+
     def productos_del_proveedor(self):
         try:
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
@@ -244,7 +253,7 @@ class Productos_de_proveedorController(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"error: {e}")
             self.ui.btn_RefrescarTabla.setEnabled(True)
-    
+
     def obtener_productos_del_proveedor_funcion(self):
         try:
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
@@ -258,11 +267,11 @@ class Productos_de_proveedorController(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f"error: {e}")
             self.ui.btn_RefrescarTabla.setEnabled(True)
-            
+
     def obtener_productos_proveedor_hilo(self, reset_paginacion_productos_proveedor=False):
         try:
             if reset_paginacion_productos_proveedor:
-                self.cantidad_inicial_consulta_productos_del_proveedor = 0                
+                self.cantidad_inicial_consulta_productos_del_proveedor = 0
             self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_productos_del_proveedor_thread")
             self.id_obtener_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="obtener_productos_del_proveedor_thread")
@@ -283,7 +292,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_obtener_productos_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-            
+
     def obtener_productos_proveedor_query(self, session):
         try:
             productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor(
@@ -310,13 +319,13 @@ class Productos_de_proveedorController(QWidget):
             "mensaje": f'Se encontraron {len(productos) if productos else 0} registros',
             "data": productos
         }
-    
+
     def productos_proveedores_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo(F"No hay productos vinculados al proveedor: {resultado['mensaje']}")
             return
         self.modelo_productos_del_proveedor_vproveedor.update_data(resultado['data'], reset=True)
-        
+
     def paginar_productos_del_proveedor(self):
         self._is_refreshing_productos_proveedor = False
         if hasattr(self, 'no_hay_mas_registros_productos_proveedor') and self.no_hay_mas_registros_productos_proveedor:
@@ -327,7 +336,7 @@ class Productos_de_proveedorController(QWidget):
         else:
             if self.proveedor:
                 self.consulta_paginacion_productos_del_proveedor()
-            
+
     def obtener_productos_proveedor_hilo_paginacion(self):
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -350,16 +359,16 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_obtener_productos_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-            
+
     def agregar_productos_proveedor_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo(f"No hay productos vinculados al proveedor: {resultado['mensaje']}")
             self.no_hay_mas_registros_productos_proveedor = True
             return
-        
+
         self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=False)
         self.ultima_carga_cantidad_productos_del_proveedor = len(resultado["data"] if resultado["data"] else 0)
-    
+
     def consulta_paginacion_productos_del_proveedor(self):
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -392,11 +401,11 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_hilo_obtener_productos_del_proveedor_paginados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_del_proveedor_paginados)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-            
+
     def paginar_busqueda_por_filtros_productos_del_proveedor_query(self, session, proveedor, nombre, busqueda_exacta = False):
         datos = []
         estado = False
-        
+
         if self.nombre_producto_proveedor:
             datos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
                 id_proveedor=proveedor.id,
@@ -405,16 +414,16 @@ class Productos_de_proveedorController(QWidget):
                 cantidad_inicial=self.cantidad_inicial_consulta_productos_del_proveedor,
                 cantidad_final=self.cantidad_final_consulta_productos_del_proveedor
             )
-            
+
             if datos:
                 self.cantidad_inicial_consulta_productos_del_proveedor += len(datos)
-        
+
         return {
             "exito": estado,
             "mensaje": f'Se obtuvieron resultados',
             "data": datos
         }
-            
+
     def agregar_productos_del_proveedor_en_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
@@ -422,21 +431,21 @@ class Productos_de_proveedorController(QWidget):
             return
         self.modelo_productos_del_proveedor_vproveedor.update_data(resultado["data"], reset=False)
         self.ultima_carga_productos_del_proveedor_cantidad = len(resultado["data"])
-        
+
     def filtrar_productos_de_proveedor(self):
         nuevo_nombre = self.ui.txt_nombre_producto.text().strip()
         busqueda_nueva = (nuevo_nombre != self.nombre_producto_proveedor)
         self.nombre_producto_proveedor = nuevo_nombre
-        
+
         if not self.nombre_producto_proveedor:
             Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
             return
-        
+
         if not hasattr(self, 'cantidad_inicial_consulta_productos_del_proveedor'):
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
         else:
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
-        
+
         if busqueda_nueva:
             self.cantidad_inicial_consulta_productos_del_proveedor = 0
             self.no_hay_mas_registros_productos_proveedor = False
@@ -474,7 +483,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_filtrar_productos_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-        
+
     def filtrar_productos_del_proveedor_exacto_query(self, session, proveedor, nombre, busqueda_exacta=False):
         try:
             productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
@@ -497,7 +506,7 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
-    
+
     def filtrar_productos_del_proveedor_query(self, session, proveedor, nombre, busqueda_exacta=False):
         try:
             productos, estado = Proveedores_productoModel(session).consultar_productos_del_proveedor_por_nombre(
@@ -520,21 +529,21 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
-    
+
     def filtrar_productos_sistema(self):
         nuevo_nombre = self.ui.txt_nombre_productodelsistema.text().strip()
         busqueda_nueva = (nuevo_nombre != self.nombre_producto_sistema)
         self.nombre_producto_sistema = nuevo_nombre
-        
+
         if not self.nombre_producto_sistema:
             Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
             return
-        
+
         if not hasattr(self, 'cantidad_inicial_consulta'):
             self.cantidad_inicial_consulta_productos_sistema = 0
         else:
             self.cantidad_inicial_consulta_productos_sistema = 0
-        
+
         if busqueda_nueva:
             self.cantidad_inicial_consulta_productos_sistema = 0
             self.no_hay_mas_registros_productos_sistema = False
@@ -569,7 +578,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_filtrar_productos_del_sistema_vproveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_sistema_vproveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-                
+
     def filtrar_productos_del_sistema_exacto_query(self, session, nombre):
         try:
             productos, estado = ProductosModel(session).consultar_por_nombre_exacto(nombre=nombre, cantidad_inicial=self.cantidad_inicial_consulta_productos_sistema, cantidad_final=self.cantidad_final_consulta_productos_sistema)
@@ -592,7 +601,7 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
-    
+
     def filtrar_productos_del_sistema_query(self, session, nombre):
         try:
             productos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre,cantidad_inicial=self.cantidad_inicial_consulta_productos_sistema, cantidad_final=self.cantidad_final_consulta_productos_sistema)
@@ -615,7 +624,7 @@ class Productos_de_proveedorController(QWidget):
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
-    
+
     def obtener_productos_de_sistema_hilo(self):
         try:
             self.cantidad_inicial_consulta_productos_sistema = 0
@@ -626,7 +635,7 @@ class Productos_de_proveedorController(QWidget):
         except Exception as e:
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
             self.ui.btn_RefrescarTablaProductos.setEnabled(True)
-            
+
     def consultar_productos_db_sistema(self, reset_paginacion=False):
         if reset_paginacion:
             self.cantidad_inicial_consulta_productos_sistema = 0
@@ -651,7 +660,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_obtener_productos_del_sistema_vproveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-        
+
     def obtener_productos_de_sistema_query(self, session):
         try:
             productos, estado = ProductosModel(session).obtener_productos(
@@ -665,25 +674,25 @@ class Productos_de_proveedorController(QWidget):
                     "exito": False,
                     "mensaje": f'No se encontraron registros',
                     "data": []
-                } 
+                }
         except Exception as e:
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema critico: {e}',
                 "data": []
-            }    
+            }
         return {
                 "exito": estado,
                 "mensaje": f'Se encontraron registros',
                 "data": productos
             }
-                
+
     def productos_del_sistema_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
             return
         self.modelo_tabla_productos_del_sistemaproductos.update_data(resultado["data"], reset=True)
-    
+
     def paginar_productos_del_sistema(self):
         self._is_refreshing_productos_sistema = False
         if hasattr(self, 'no_hay_mas_registros_productos_sistema') and self.no_hay_mas_registros_productos_sistema:
@@ -693,7 +702,7 @@ class Productos_de_proveedorController(QWidget):
             self.consultar_productos_db_sistema_paginacion()
         else:
             self.consulta_paginacion_productos_del_sistema()
-            
+
     def consultar_productos_db_sistema_paginacion(self):
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -716,7 +725,7 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_obtener_productos_del_sistema_vproveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_del_sistema_vproveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-            
+
     def consulta_paginacion_productos_del_sistema(self):
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -739,11 +748,11 @@ class Productos_de_proveedorController(QWidget):
             if hasattr(self, 'id_hilo_obtener_productos_del_sistema_paginados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_del_sistema_paginados)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-    
+
     def paginar_busqueda_por_filtros_del_sistema(self, session):
         datos = []
         estado = False
-        
+
         if self.nombre_producto_sistema:
             datos, estado = ProductosModel(session).consultar_por_nombre(
                 nombre=self.nombre_producto_sistema,
@@ -752,13 +761,13 @@ class Productos_de_proveedorController(QWidget):
             )
             if datos:
                 self.cantidad_inicial_consulta_productos_sistema += len(datos)
-        
+
         return {
             "exito": estado,
             "mensaje": f'Se obtuvieron resultados',
             "data": datos
         }
-            
+
     def agregar_productos_del_sistema_en_tabla(self, resultado):
         if not resultado["exito"]:
             Mensaje().mensaje_informativo("No hay más productos por mostrar")
@@ -766,20 +775,20 @@ class Productos_de_proveedorController(QWidget):
             return
         self.modelo_tabla_productos_del_sistemaproductos.update_data(resultado["data"], reset=False)
         self.ultima_carga_cantidad_productos_sistema = len(resultado["data"])
-         
+
     def vincular_producto_al_proveedor_signal(self, producto):
         if not producto:
             Mensaje().mensaje_alerta(f"No se esta pasando el producto al seleccionarlo.")
             return
         self.lista_productos_para_vincular.add(producto)
         self.producto_para_vincular_tabla(self.lista_productos_para_vincular)
-        
+
     def quitar_de_tabla_vinculacion_producto_al_proveedor_signal(self, producto):
         if not producto:
             return
         self.lista_productos_para_vincular.discard(producto)
         self.producto_para_vincular_tabla(self.lista_productos_para_vincular)
-        
+
     def producto_para_vincular_tabla(self, productos):
         try:
             if not productos:
@@ -787,10 +796,10 @@ class Productos_de_proveedorController(QWidget):
                 return
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
             self.modelo_tabla_Productos_A_VincularProveedor.update_data(productos, reset=False)
-                
+
         except Exception as e:
             Mensaje().mensaje_alerta(f'Error en productos_proveedores_tabla: {e}')
-            
+
     def __congigurar_tabla_productos_a_vincular(self):
         cabeceras = ["Codigo_upc", "Nombre","Descripcion_producto"]
         mapeo_cabecera = {
@@ -819,7 +828,7 @@ class Productos_de_proveedorController(QWidget):
                 self.PRODUCTO_DEL_SISTEMA_SELECCIONADO_QUITAR_SELECCION_SIGNAL.emit(self.producto_seleccionado_a_vincular)
             else:
                 return
-    
+
     def vincular_producto_al_proveedor_funcion(self):
         if not self.lista_productos_para_vincular:
             Mensaje().mensaje_informativo("No se encuentra ningun elemento en la lista de productos a vincular.")
@@ -849,7 +858,7 @@ class Productos_de_proveedorController(QWidget):
                 if hasattr(self, 'id_hilo_vincular_productos_al_proveedor_vproveedor'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_vincular_productos_al_proveedor_vproveedor)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-    
+
     def vincular_productos_al_proveedor_query(self, session, proveedor, lista_de_productos):
         try:
             estado = ProveedoresModel(session).actualizar_productos_al_proveedor(proveedor_id=proveedor.id, lista_productos=lista_de_productos)
@@ -876,14 +885,14 @@ class Productos_de_proveedorController(QWidget):
 
     def mostrar_estado(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-        
+
     def mostrar_estado_productos_vinculados(self, objetoMensaje):
         self.PRODUCTO_VINCULADO_SIGNAL.emit()
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         if hasattr(self, "modelo_tabla_Productos_A_VincularProveedor") or self.modelo_tabla_Productos_A_VincularProveedor:
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
         self.lista_productos_para_vincular.clear()
-        
+
     def mostrar_error(self, mensaje):
         Mensaje().mensaje_alerta(mensaje)
 
@@ -895,20 +904,22 @@ class CambioPreciosProductosProveedores(QDialog):
         self.ui = Ui_PreciosProductosProveedor()
         self.ui.setupUi(self)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+        configure_child_modal(self, drag_widget=self.ui.contenedor_principal)
+        apply_module_theme(self)
         self.producto = producto
         self.proveedor = proveedor
         self._ventanaCentradaPrecioProducto = False
         self.lista_hilos_cambiar_precio_producto_proveedor = []
         self.ui.btn_precio_producto_cancelar.clicked.connect(self.close)
         self.ui.btn_precio_producto_aceptar.clicked.connect(self.cambiar_precio)
-        
+
         self.ui.txt_codigoupc_producto.setText(self.producto.codigo_upc)
         self.ui.txt_nombre_producto.setText(self.producto.nombre_producto)
         self.ui.etiqueta_nombre_del_proveedor.setText(self.proveedor.nombre)
-        
+
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        
+
     def cambiar_precio(self):
         precio = self.ui.decimal_costo_venta_proveedor.value()
         if precio <= 0:
@@ -938,7 +949,7 @@ class CambioPreciosProductosProveedores(QDialog):
             if hasattr(self, 'id_hilo_actualizar_precio_producto_del_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_precio_producto_del_proveedor)
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
-    
+
     def cambiar_precio_producto_query(self, session, proveedor, producto, nuevo_precio):
         try:
             estado = Proveedores_productoModel(session).establecer_precio_producto_del_proveedor(proveedor_id=proveedor.id, producto_id=producto.id, precio=nuevo_precio)
@@ -968,15 +979,15 @@ class CambioPreciosProductosProveedores(QDialog):
         self.lista_hilos_cambiar_precio_producto_proveedor.clear()
         self.VENTANA_CERRADA_PRECIO_PRODUCTO.emit()
         event.accept()
-        
+
     def showEvent(self, event):
         super().showEvent(event)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        
+
     def mostrar_estado(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-        
+
     def mostrar_error(self, mensaje):
         Mensaje().mensaje_alerta(mensaje)

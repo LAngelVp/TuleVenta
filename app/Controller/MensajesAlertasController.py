@@ -1,47 +1,80 @@
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtGui import QIcon
 from ..Source.ibootstrap_rc import *
 class Mensaje:
-    def __init__(self):
-        self.mensaje = QMessageBox()
-        self.mensaje.setWindowIcon(QIcon(':/Icons/Bootstrap/chat-text.svg'))
+    def __init__(self, parent=None):
+        self.parent = parent
+
+    def _resolver_parent(self):
+        if self.parent is not None:
+            return self.parent
+
+        parent = QApplication.activeModalWidget()
+        if parent is not None:
+            return parent
+
+        return QApplication.activeWindow()
+
+    def _crear_mensaje(self):
+        mensaje = QMessageBox(self._resolver_parent())
+        mensaje.setWindowIcon(QIcon(':/Icons/Bootstrap/chat-text.svg'))
+        mensaje.setWindowFlag(Qt.WindowType.Dialog, True)
+        mensaje.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
+        if mensaje.parentWidget() is not None:
+            mensaje.setWindowModality(Qt.WindowModality.WindowModal)
+        else:
+            mensaje.setWindowModality(Qt.WindowModality.ApplicationModal)
+        return mensaje
 
     def mensaje_informativo(self, cuerpo):
-        self.mensaje.setIcon(QMessageBox.Information)
-        self.mensaje.setWindowTitle('Informacion')
-        self.mensaje.setText(cuerpo)
-        self.mensaje.setStandardButtons(QMessageBox.Ok)
-        self.mensaje.exec_()
+        mensaje = self._crear_mensaje()
+        mensaje.setIcon(QMessageBox.Information)
+        mensaje.setWindowTitle('Informacion')
+        mensaje.setText(cuerpo)
+        mensaje.setStandardButtons(QMessageBox.Ok)
+        mensaje.raise_()
+        mensaje.activateWindow()
+        mensaje.exec_()
 
     def mensaje_alerta(self, cuerpo):
-        self.mensaje.setIcon(QMessageBox.Warning)
-        self.mensaje.setWindowTitle('Alerta')
-        self.mensaje.setText(cuerpo)
-        self.mensaje.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        mensaje = self._crear_mensaje()
+        mensaje.setIcon(QMessageBox.Warning)
+        mensaje.setWindowTitle('Alerta')
+        mensaje.setText(cuerpo)
+        mensaje.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         # Personalizando los botones
-        boton_reintentar = self.mensaje.button(QMessageBox.Cancel)
+        boton_reintentar = mensaje.button(QMessageBox.Cancel)
         boton_reintentar.setText("Cancelar")
-        respuesta = self.mensaje.exec_()
+        mensaje.raise_()
+        mensaje.activateWindow()
+        respuesta = mensaje.exec_()
         return respuesta
     def mensaje_critico(self, cuerpo):
-        self.mensaje.setIcon(QMessageBox.Critical)
-        self.mensaje.setWindowTitle('Critico')
-        self.mensaje.setText(cuerpo)
-        self.mensaje.setStandardButtons(QMessageBox.Abort | QMessageBox.Retry)
+        mensaje = self._crear_mensaje()
+        mensaje.setIcon(QMessageBox.Critical)
+        mensaje.setWindowTitle('Critico')
+        mensaje.setText(cuerpo)
+        mensaje.setStandardButtons(QMessageBox.Abort | QMessageBox.Retry)
         # Personalizando los botones
-        boton_abortar = self.mensaje.button(QMessageBox.Abort)
+        boton_abortar = mensaje.button(QMessageBox.Abort)
         boton_abortar.setText("Detener")
 
-        boton_reintentar = self.mensaje.button(QMessageBox.Retry)
+        boton_reintentar = mensaje.button(QMessageBox.Retry)
         boton_reintentar.setText("Reintentar")
 
-        respuesta = self.mensaje.exec_()
-        
+        mensaje.raise_()
+        mensaje.activateWindow()
+        respuesta = mensaje.exec_()
+
         return respuesta
     def mensaje_pregunta(self, cuerpo):
-        self.mensaje.setIcon(QMessageBox.Information)
-        self.mensaje.setWindowTitle('Pregunta')
-        self.mensaje.setText(cuerpo)
-        self.mensaje.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        respuesta = self.mensaje.exec_()
+        mensaje = self._crear_mensaje()
+        mensaje.setIcon(QMessageBox.Information)
+        mensaje.setWindowTitle('Pregunta')
+        mensaje.setText(cuerpo)
+        mensaje.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        mensaje.raise_()
+        mensaje.activateWindow()
+        respuesta = mensaje.exec_()
         return respuesta

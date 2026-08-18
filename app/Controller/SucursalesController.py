@@ -13,31 +13,39 @@ from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .Validaciones import Validaciones
 from .Hilo_consultas import *
 from .Ventana_espera import Modal_de_espera, ModalManager
+from .UiTheme import apply_module_theme
 class SucursalesController(QDialog):
     VENTANA_SUCURSALES_CERRADA = Signal()
     signal_sucursal_agregada = Signal()
-    def __init__(self, parent = None, cabecera = True):
+    def __init__(self, parent = None, cabecera = True, permisos_usuario=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._ventanaCentradaSucursales = False
         self.idSucursal = None
         self.sucursales = None
         self.listaHilosSucursales = []
+        self.permisos_usuario = {
+            str(permiso).strip().upper()
+            for permiso in (permisos_usuario or [])
+            if str(permiso).strip()
+        }
+        self.es_administrador = "ADMINISTRADOR" in self.permisos_usuario
         self.icon = QIcon(':/Icons/Bootstrap/building-fill-check.svg')
         self.manejadorModal = ModalManager()
-        
+
         self.windowSucursales = Ui_Nueva_sucursal()
         self.windowSucursales.setupUi(self)
-        
+
         self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint) 
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        
+        apply_module_theme(self)
+
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        
-        
+
+
         # ======================== BOTONES ========================
         self.windowSucursales.btn_btn_agregar.clicked.connect(self.agregar)
         self.windowSucursales.lista_sucursales.itemClicked.connect(self.obtenerId)
@@ -48,12 +56,36 @@ class SucursalesController(QDialog):
         self.windowSucursales.btn_RefrescarTabla.clicked.connect(self.obtener_sucursales)
         self.windowSucursales.btn_btn_buscar_sucursal.clicked.connect(self.buscar_sucursal)
 
-        
+
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.ingresarValidaciones()
-        
+        self._aplicar_permisos_ui()
+
         if cabecera is False:
             self.windowSucursales.contenedor_encabezado.hide()
+
+    def _tiene_algun_permiso(self, permisos_requeridos):
+        if not permisos_requeridos:
+            return True
+        if self.es_administrador:
+            return True
+        return bool(self.permisos_usuario.intersection({permiso.upper() for permiso in permisos_requeridos}))
+
+    def _restringir_widget(self, widget):
+        if widget is None:
+            return
+        widget.setEnabled(False)
+        widget.hide()
+
+    def _aplicar_permisos_ui(self):
+        reglas = [
+            (self.windowSucursales.btn_btn_agregar, {"CREARSUCURSAL"}),
+            (self.windowSucursales.btn_btn_actualizar, {"MODIFICARSUCURSAL"}),
+            (self.windowSucursales.btn_btn_eliminar, {"ELIMINARSUCURSAL"}),
+        ]
+        for widget, permisos in reglas:
+            if not self._tiene_algun_permiso(permisos):
+                self._restringir_widget(widget)
 
     def ingresarValidaciones(self):
         # =============== VALIDACIONES ================
@@ -79,12 +111,12 @@ class SucursalesController(QDialog):
         if not self._ventanaCentradaSucursales:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaSucursales = True
-    
+
     def closeEvent(self, event):
         for hilos in self.listaHilosSucursales:
             WorkerDB.cleanup_managed_worker(hilos)
         self.listaHilosSucursales.clear()
-        self.VENTANA_SUCURSALES_CERRADA.emit() 
+        self.VENTANA_SUCURSALES_CERRADA.emit()
         super().closeEvent(event)
 
     def buscar_sucursal(self):
@@ -115,7 +147,7 @@ class SucursalesController(QDialog):
             if hasattr(self, 'id_hilo_buscar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_sucursal)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}")
-            
+
     def buscar_sucursal_query(self, session, nombre_sucursal):
         try:
             sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
@@ -136,7 +168,7 @@ class SucursalesController(QDialog):
                 "mensaje" : f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}",
                 "data" : None
             }
-        
+
     def limpiar(self):
         for campo in self.campos_nomales().values():
             # Limpiar QLineEdit
@@ -146,7 +178,7 @@ class SucursalesController(QDialog):
             elif isinstance(campo, QPlainTextEdit):
                 campo.clear()
         self.id_sucursal = None
-        
+
     def campos_nomales(self):
         return {
             'nombre_sucursal': self.windowSucursales.txt_nombre,
@@ -159,7 +191,7 @@ class SucursalesController(QDialog):
             "rfc": self.windowSucursales.txt_rfcsucursal,
             'direccion': self.windowSucursales.txtlargo_direccion
         }
-    
+
     def obtener_datos_campos(self):
         return {
             'nombre_sucursal': self.windowSucursales.txt_nombre.text().strip(),
@@ -203,7 +235,7 @@ class SucursalesController(QDialog):
             if hasattr(self, 'id_hilo_agregar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_sucursal)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-    
+
     def agregar_sucursal_query(self, session, datos):
         """Manejar resultado del modelo"""
         try:
@@ -216,12 +248,12 @@ class SucursalesController(QDialog):
                     'mensaje': f"Registro exitoso, '{nombre}' almacenado",
                     'data': sucursal
                 }
-            mensaje = (f"La sucursal '{nombre}' ya existe" 
-                    if sucursal else 
+            mensaje = (f"La sucursal '{nombre}' ya existe"
+                    if sucursal else
                     f"No se pudo crear la sucursal '{nombre}'")
             session.rollback()
             return {
-                'exito': False, 
+                'exito': False,
                 'mensaje': mensaje,
                 'data': []
                 }
@@ -232,7 +264,7 @@ class SucursalesController(QDialog):
                 'mensaje': f"Error al agregar sucursal: {e}",
                 'data': []
             }
-                        
+
     def obtener_sucursales(self):
         self.windowSucursales.lista_sucursales.clear()
         try:
@@ -256,7 +288,7 @@ class SucursalesController(QDialog):
             if hasattr(self, 'id_hilo_obtener_sucursales'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_sucursales)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
-            
+
     def obtener_sucursales_query(self, session):
         try:
             sucursales, estado = SucursalesModel(session).obtener_todo()
@@ -290,7 +322,7 @@ class SucursalesController(QDialog):
                     item.setIcon(self.icon)
                     item.setData(Qt.UserRole, sucursal)
                     self.windowSucursales.lista_sucursales.addItem(item)
-                    
+
             except Exception as e:
                 Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
         else:
@@ -310,23 +342,23 @@ class SucursalesController(QDialog):
             self.windowSucursales.txtlargo_direccion.setPlainText(sucursal.direccion)
             self.listar_departamentos_asignados(sucursal.departamentos)
             self.idSucursal = sucursal
-        
+
     def listar_departamentos_asignados(self, departamentos = None):
         if departamentos:
             self.windowSucursales.lista_departamentosasociados.clear()
             for  departamento in departamentos:
                 # Crear un QListWidgetItem
                 item = QListWidgetItem(departamento.nombre)
-                
+
                 # Establecer el ícono en el ítem
                 item.setIcon(self.icon)
                 item.setData(Qt.UserRole, departamento)
-                
+
                 # Agregar el ítem a la lista
                 self.windowSucursales.lista_departamentosasociados.addItem(item)
         else:
             self.windowSucursales.lista_departamentosasociados.clear()
-            
+
     def eliminar(self):
         if self.idSucursal == None:
             Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal")
@@ -341,7 +373,7 @@ class SucursalesController(QDialog):
                 if not self.consultor_eliminar_sucursal:
                     raise Exception("No se logro hacer la operación para eliminar el registro")
                 self.listaHilosSucursales.append(self.id_hilo_eliminar_sucursal)
-                
+
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_eliminar_sucursal,
                     resultado_callback=self.mensaje_estado_eliminado,
@@ -356,23 +388,23 @@ class SucursalesController(QDialog):
             if hasattr(self, 'id_hilo_eliminar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
-        
+
     def mensaje_estado_eliminado(self, estado):
         if estado:
             Mensaje().mensaje_informativo("Registro eliminado")
         else:
             Mensaje().mensaje_informativo("No se logro eliminar el registro")
         self.idSucursal = None
-        
+
     def eliminar_sucursal_query(self, session, sucursal):
         sucursal_eliminada = SucursalesModel(session).eliminar(sucursal)
         if sucursal_eliminada:
             session.commit()
         return sucursal_eliminada
-    
+
     def actualizar(self):
         datos = self.obtener_datos_campos()  # Asumo que esto retorna los campos correctamente
-        
+
         # Verifica que todos los campos estén completos
         if any(value == '' for value in datos.values()):
             Mensaje().mensaje_informativo("Error: Todos los campos deben estar completos")
@@ -404,7 +436,7 @@ class SucursalesController(QDialog):
                     if hasattr(self, 'id_hilo_actualizar_sucursal'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_sucursal)
                     Mensaje().mensaje_critico(f"Error al actualizar: {e}")
-        
+
     def actualizar_sucursal_query(self, session, sucursal, datos):
         sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
         if not estado:
@@ -418,14 +450,14 @@ class SucursalesController(QDialog):
                 'exito': estado,
                 'mensaje': f'Opereacion exitosa, registro {sucursal_actualizada.nombre_sucursal} actualizado'
             }
-        
+
     def mostrar_resultado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.signal_sucursal_agregada.emit()
-        
+
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
-    
+
     def keyPressEvent(self, event):
         """Sobrescribir el evento de teclado para ignorar Escape y Enter"""
         if event.key() == Qt.Key_Escape:
@@ -433,12 +465,12 @@ class SucursalesController(QDialog):
             event.ignore()
             print("⚠️ Escape presionado - Diálogo no se cerrará")
             return
-            
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             # Ignorar Enter/Return
             event.ignore()
             print("⚠️ Enter presionado - Diálogo no se cerrará")
             return
-            
+
         # Permitir otras teclas
         super().keyPressEvent(event)

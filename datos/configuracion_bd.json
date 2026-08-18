@@ -1,0 +1,10 @@
+{
+  "database_url": "",
+  "driver": "postgresql+psycopg2",
+  "host": "127.0.0.1",
+  "port": 5432,
+  "database": "TuleVenta",
+  "username": "postgres",
+  "password": "holamundo",
+  "options": {}
+}

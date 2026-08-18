@@ -20,6 +20,7 @@ from .FuncionesAuxiliares import *
 from .Productos_del_Proveedor import *
 from .Ventana_espera import *
 from .Hilo_consultas import *
+from .UiTheme import apply_module_theme, bring_window_to_front
 from app.Model.AbstractTableModel import ComprobarModelosTablas
 import traceback
 
@@ -31,6 +32,7 @@ class Control_proveedores(QWidget):
         super().__init__(parent)
         self.WindowSupplier = Ui_Control_Proveedores()
         self.WindowSupplier.setupUi(self)
+        apply_module_theme(self)
 # VARIABLES
         self.ejecutando_trabajo = False
         self.lista_categorias = {}
@@ -128,15 +130,14 @@ class Control_proveedores(QWidget):
                 except TypeError:
                     pass
                 self.LIMPIAR_CAMPOS_INTERNOS.emit()
-                self.ventana_productos_precios.show()
+                bring_window_to_front(self.ventana_productos_precios)
             else:
-                self.ventana_productos_precios.raise_()
-                self.ventana_productos_precios.activateWindow()
+                bring_window_to_front(self.ventana_productos_precios)
 
     def nueva_categoria(self):
-        self.WindowSupplierCategory = CategoriasController(tipo_categoria="proveedores")
+        self.WindowSupplierCategory = CategoriasController(tipo_categoria="proveedores", parent=self)
         self.WindowSupplierCategory.categoria_agregada_signal.connect(self.mostrar_categorias_proveedor)
-        self.WindowSupplierCategory.show()
+        bring_window_to_front(self.WindowSupplierCategory)
 
     def mostrar_categorias_proveedor(self):
         try:

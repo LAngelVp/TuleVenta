@@ -5,21 +5,24 @@ from PySide6.QtWidgets import *
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from .MensajesAlertasController import Mensaje
+from .UiTheme import apply_module_theme, configure_child_modal
 from ..View.UserInterfacePy.UI_AGREGAR_UN_DATO import Ui_Formulario
 from ..Model.ProductosModel import ProductosModel
 from ..DataBase.conexionBD import Conexion_base_datos
 
 class UnidadMedidaProductos(QWidget):
     unidad_medida_agregada_signal = Signal()
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent = None):
+        super().__init__(parent)
         self.ui = Ui_Formulario()
         self.ui.setupUi(self)
+        configure_child_modal(self, frameless=True)
+        apply_module_theme(self)
         self.setWindowTitle("Unidad de Medida")
         self.ui.btn_btn_guardar.clicked.connect(self.agregar)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
-        
+
     def agregar(self):
         nombre = self.ui.txt_nombre.text().upper().strip()
         if not nombre:
@@ -47,7 +50,7 @@ class UnidadMedidaProductos(QWidget):
             if hasattr(self, 'id_hilo_agregar_unidad_medida'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_unidad_medida)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
-            
+
     def agregar_unidad_medida_query(self, session, nombre):
         try:
             dato, estado = ProductosModel(session).agregar_unidad_medida(nombre=nombre)
@@ -71,10 +74,10 @@ class UnidadMedidaProductos(QWidget):
             "mensaje": f'Registro {nombre} almacenado.',
             "data": dato
         }
-            
+
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         self.unidad_medida_agregada_signal.emit()
-        
+
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un problema en el proceso: {error}')

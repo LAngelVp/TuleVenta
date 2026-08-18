@@ -14,6 +14,7 @@ from ..Source.logos_rc import *
 from ..Source.ibootstrap_rc import *
 from .CreadencialesUsuarioController import *
 from .Validaciones import Validaciones
+from .UiTheme import apply_access_theme
 
 class Login(QWidget):
     def __init__(self, parent = None):
@@ -24,6 +25,8 @@ class Login(QWidget):
         self.ventana_saludo = None
         self.ui = Ui_Inicio_Sesion()
         self.ui.setupUi(self)
+        apply_access_theme(self)
+        self._configurar_iconos_credenciales()
 
 
         self.ui.imgFacebook.mousePressEvent = self.facebook()
@@ -36,9 +39,15 @@ class Login(QWidget):
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor("#3D403A"))
+        self.sombra.setColor(QColor(15, 76, 129, 90))
 
         self.ui.principal.setGraphicsEffect(self.sombra)
+
+        self.sombra_ilustracion = QGraphicsDropShadowEffect()
+        self.sombra_ilustracion.setBlurRadius(28)
+        self.sombra_ilustracion.setOffset(0, 10)
+        self.sombra_ilustracion.setColor(QColor(15, 76, 129, 70))
+        self.ui.Conteneror_imgLogin.setGraphicsEffect(self.sombra_ilustracion)
 
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -56,6 +65,60 @@ class Login(QWidget):
         self.ui.btnMinimizar.clicked.connect(self.minimizar)
         self.ui.btnAceptar.clicked.connect(self.ingresar)
         self.ui.txt_Password.returnPressed.connect(self.ingresar)
+        self._centrar_elementos_login()
+
+    def _configurar_iconos_credenciales(self):
+        estilo_icono_usuario = (
+            "background-color: #15803D;"
+            "image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);"
+            "border-radius: 12px;"
+            "min-width: 20px;"
+            "min-height: 20px;"
+            "padding: 2px;"
+        )
+        estilo_icono_password = (
+            "background-color: #15803D;"
+            "image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);"
+            "border-radius: 12px;"
+            "min-width: 20px;"
+            "min-height: 20px;"
+            "padding: 2px;"
+        )
+        self.ui.img_User.setStyleSheet(estilo_icono_usuario)
+        self.ui.img_Password.setStyleSheet(estilo_icono_password)
+        self.ui.img_User.setMinimumSize(24, 24)
+        self.ui.img_Password.setMinimumSize(24, 24)
+        self.ui.img_User.setMaximumSize(24, 24)
+        self.ui.img_Password.setMaximumSize(24, 24)
+        self.ui.img_User.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ui.img_Password.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ui.img_User.setScaledContents(False)
+        self.ui.img_Password.setScaledContents(False)
+
+    def _centrar_elementos_login(self):
+        panel_ilustracion = self.ui.Conteneror_imgLogin
+        panel_login = self.ui.principal
+        separacion = 0
+        ancho_total = panel_ilustracion.width() + separacion + panel_login.width()
+        margen_izquierdo = max(24, (self.width() - ancho_total) // 2)
+        y_ilustracion = max(16, (self.height() - panel_ilustracion.height()) // 2)
+        y_login = max(16, (self.height() - panel_login.height()) // 2)
+
+        panel_ilustracion.move(margen_izquierdo, y_ilustracion)
+        panel_login.move(margen_izquierdo + panel_ilustracion.width() + separacion, y_login)
+
+        for widget in (self.ui.img_Login, self.ui.layoutWidget1, self.ui.layoutWidget, self.ui.btnAceptar, self.ui.widget_2):
+            widget.move((panel_login.width() - widget.width()) // 2, widget.y())
+
+        self.ui.widget.move(panel_login.width() - self.ui.widget.width() - 12, self.ui.widget.y())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self._centrar_elementos_login)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._centrar_elementos_login()
 
     def mostrar_saludos(self):
         if self.ventana_saludo is None or not self.ventana_saludo.isVisible():
@@ -107,15 +170,17 @@ class SaludoIngreso(QWidget):
         self.usuario = usuario
         self.ui = Ui_Saludo_bienvenida()
         self.ui.setupUi(self)
+        apply_access_theme(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.ui.etiquetaBuendia.setEnabled(True)
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor(0, 102, 204))
+        self.sombra.setColor(QColor(15, 76, 129, 90))
 
         self.ui.contenedor.setGraphicsEffect(self.sombra)
         self.ui.btn_entrar.clicked.connect(self.entrar_al_sistema)

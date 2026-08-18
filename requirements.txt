@@ -10,3 +10,4 @@ openpyxl
 asyncpg
 faker
 reportlab
+pyinstaller

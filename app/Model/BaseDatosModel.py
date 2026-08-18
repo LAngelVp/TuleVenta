@@ -17,7 +17,8 @@ from sqlalchemy import (
     Boolean,
     CHAR,
     DateTime,
-    Time
+    Time,
+    UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, configure_mappers, Mapped, mapped_column
@@ -74,7 +75,7 @@ class Permisos(Base):
     id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
     nombre:Mapped[str] = mapped_column(String(50), unique=True)
     roles = relationship(
-        "Roles", secondary=rol_permiso, back_populates="permisos", 
+        "Roles", secondary=rol_permiso, back_populates="permisos",
         )
 
 # Apartado de Roles
@@ -97,7 +98,7 @@ class Usuarios(Base):
     fecha_creacion:Mapped[datetime] = mapped_column(Date, nullable=False)
     fecha_actualizacion:Mapped[datetime] = mapped_column(Date, nullable=True)
     rol_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Roles.id", ondelete='SET NULL'),
         nullable=True
     )
@@ -118,7 +119,7 @@ class Puestos(Base):
     hora_salida:Mapped[datetime] = mapped_column(Time)
     empleados = relationship("Empleados", back_populates="puesto")
     departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Departamentos.id", ondelete='SET NULL'),
         nullable=True
         )
@@ -128,7 +129,7 @@ class Puestos(Base):
     hora_salida:Mapped[datetime] = mapped_column(Time)
     empleados = relationship("Empleados", back_populates="puesto")
     departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Departamentos.id", ondelete='SET NULL'),
         nullable=True
     )
@@ -169,13 +170,13 @@ class Empleados(Base):
     num_exterior:Mapped[str] = mapped_column(String(10), nullable=True)
     direccion_adicional:Mapped[str] = mapped_column(Text, nullable=True)
     puesto_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Puestos.id", ondelete='SET NULL'),
         nullable=True
     )
     puesto = relationship("Puestos", back_populates="empleados")
     departamento_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Departamentos.id", ondelete='SET NULL'),
         nullable=True
     )
@@ -185,7 +186,7 @@ class Empleados(Base):
     activo:Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     foto_empleado:Mapped[str] = mapped_column(Text, nullable=True)
     usuario_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Usuarios.id", ondelete='SET NULL'),
         nullable=True
     )
@@ -193,7 +194,7 @@ class Empleados(Base):
     ventas = relationship("Ventas", back_populates="empleado")
     turnos = relationship("Turnos", back_populates="empleado")
     sucursal_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Sucursales.id", ondelete='RESTRICT'),
         nullable=True
     )
@@ -226,7 +227,7 @@ class Sucursales(Base):
 class Departamentos(Base):
     __tablename__ = "Departamentos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(70))
@@ -244,25 +245,25 @@ class Departamentos(Base):
 class Presentacion_productos(Base):
     __tablename__ = "Presentacion_productos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100), nullable=False)
     productos = relationship("Productos", back_populates="presentacion_productos")
-    
+
 class Unidad_medida_productos(Base):
     __tablename__ = "Unidad_medida_productos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
     productos = relationship("Productos", back_populates="unidad_medida_productos")
-    
+
 class Productos(Base):
     __tablename__ = "Productos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
     )
     codigo_upc:Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
@@ -294,26 +295,78 @@ class Productos(Base):
     categoria_id:Mapped[int] = mapped_column(BigInteger, ForeignKey('Categorias_productos.id', ondelete='SET NULL'), nullable=True)
     categoria = relationship("Categorias_productos", back_populates="productos")
     sucursales = relationship(
-        "Sucursales", secondary=sucursal_producto, back_populates="productos", 
+        "Sucursales", secondary=sucursal_producto, back_populates="productos",
     )
     producto_proveedor_asociaciones = relationship("ProductoProveedor", back_populates="producto", cascade="all, delete-orphan", collection_class=set)
-    
+
     proveedores = relationship(
         "Proveedores",
         secondary="producto_proveedor",
         viewonly=True
     )
-    
+
     detalles_compras = relationship("Detalles_compras", back_populates="producto")
-    
+
     detalles_ventas = relationship("Detalles_ventas", back_populates="producto")
-    
+
     movimientos_inventario = relationship("Movimientos_Inventario", back_populates="producto", cascade="all, delete-orphan")
+    promociones_asociadas = relationship(
+        "PromocionProducto",
+        back_populates="producto",
+        cascade="all, delete-orphan",
+    )
+
+
+class Promociones(Base):
+    __tablename__ = "Promociones"
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    descripcion:Mapped[str] = mapped_column(Text, nullable=True)
+    tipo_promocion:Mapped[str] = mapped_column(String(40), nullable=False)
+    porcentaje_descuento:Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    cantidad_compra_requerida:Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    cantidad_beneficio:Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    aplica_mismo_producto:Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    activa:Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    fecha_inicio:Mapped[datetime] = mapped_column(Date, nullable=True)
+    fecha_fin:Mapped[datetime] = mapped_column(Date, nullable=True)
+    fecha_creacion:Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
+    fecha_actualizacion:Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+    productos_promocion = relationship(
+        "PromocionProducto",
+        back_populates="promocion",
+        cascade="all, delete-orphan",
+    )
+
+
+class PromocionProducto(Base):
+    __tablename__ = "Promocion_productos"
+    __table_args__ = (
+        UniqueConstraint("promocion_id", "producto_id", "rol_producto", name="uq_promocion_producto_rol"),
+    )
+
+    id:Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    promocion_id:Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("Promociones.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    producto_id:Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("Productos.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    rol_producto:Mapped[str] = mapped_column(String(20), nullable=False)
+    fecha_creacion:Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
+
+    promocion = relationship("Promociones", back_populates="productos_promocion")
+    producto = relationship("Productos", back_populates="promociones_asociadas")
 
 class Movimientos_Inventario(Base):
     __tablename__ = "Movimientos_inventario"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     producto_id:Mapped[int] = mapped_column(Integer, ForeignKey("Productos.id", ondelete="CASCADE"), nullable=True)
@@ -322,16 +375,16 @@ class Movimientos_Inventario(Base):
     fecha_movimiento:Mapped[datetime] = mapped_column(Date)
     notas:Mapped[str] = mapped_column(Text)
     usuario_id:Mapped[int] = mapped_column(Integer, ForeignKey("Usuarios.id", ondelete='SET NULL'), nullable=True)
-    
+
     # Relación con Productos
     producto = relationship("Productos", back_populates="movimientos_inventario")
-    
+
     usuario = relationship("Usuarios", back_populates="movimientos_inventario")
 
 class Categorias_productos(Base):
     __tablename__ = "Categorias_productos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -342,7 +395,7 @@ class Categorias_productos(Base):
 class Proveedores(Base):
     __tablename__ = "Proveedores"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(150))
@@ -371,7 +424,7 @@ class Proveedores(Base):
         viewonly=True
     )
     compras = relationship("Compras", back_populates="proveedor")
-    
+
 class ProductoProveedor(Base):
     __tablename__ = "producto_proveedor"
     producto_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Productos.id", ondelete='SET NULL'), primary_key=True)
@@ -383,7 +436,7 @@ class ProductoProveedor(Base):
 class Representantes_proveedores(Base):
     __tablename__ = "Representantes_proveedores"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -397,19 +450,19 @@ class Representantes_proveedores(Base):
 class Categorias_proveedores(Base):
     __tablename__ = "Categorias_proveedores"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(150))
     descripcion:Mapped[str] = mapped_column(Text)
     proveedores = relationship(
-        "Proveedores", back_populates="categoria", 
+        "Proveedores", back_populates="categoria",
     )
 
 class Clientes(Base):
     __tablename__ = "Clientes"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(255))
@@ -447,7 +500,7 @@ class Clientes(Base):
 class Categorias_de_clientes(Base):
     __tablename__ = "Categorias_de_clientes"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -457,7 +510,7 @@ class Categorias_de_clientes(Base):
 class Compras(Base):
     __tablename__ = "Compras"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     proveedor_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Proveedores.id"), nullable=False)
@@ -469,7 +522,7 @@ class Compras(Base):
     metodos_pago_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Metodos_pagos.id"), nullable=False)
     plazo_pago: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
     fecha_vencimiento: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    detalles = relationship("Detalles_compras", 
+    detalles = relationship("Detalles_compras",
     back_populates="compra",
     cascade="all, delete-orphan",
     passive_deletes=True
@@ -481,7 +534,7 @@ class Compras(Base):
 class Detalles_compras(Base):
     __tablename__ = "Detalles_compras"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     compra_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("Compras.id", ondelete='CASCADE'), nullable=False)
@@ -495,7 +548,7 @@ class Detalles_compras(Base):
 class Turnos(Base):
     __tablename__ = "Turnos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     empleado_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Empleados.id"), nullable=False)
@@ -508,7 +561,7 @@ class Turnos(Base):
 class Transacciones(Base):
     __tablename__ = "Transacciones"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     tipo:Mapped[str] = mapped_column(String(100))
@@ -524,7 +577,7 @@ class Transacciones(Base):
 class Areas_negocios(Base):
     __tablename__ = "Areas_negocios"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -568,7 +621,7 @@ class Clientes_morales(Clientes):
 class Metodos_pagos(Base):
     __tablename__ = "Metodos_pagos"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -578,7 +631,7 @@ class Metodos_pagos(Base):
 class Representantes_clientes_morales(Base):
     __tablename__ = "Representantes_clientes_morales"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     nombre:Mapped[str] = mapped_column(String(100))
@@ -586,11 +639,11 @@ class Representantes_clientes_morales(Base):
     correo:Mapped[str] = mapped_column(String(100))
     puesto:Mapped[str] = mapped_column(String(100))
     clientes_morales = relationship("Clientes_morales", back_populates="representante")
-    
+
 class Detalles_ventas(Base):
     __tablename__ = "Detalles_ventas"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     venta_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Ventas.id", ondelete="RESTRICT"), nullable=False)  # Relación con la venta
@@ -614,7 +667,7 @@ class Detalles_ventas(Base):
 class Ventas(Base):
     __tablename__ = "Ventas"
     id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         primary_key=True
         )
     folio:Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
@@ -633,17 +686,17 @@ class Ventas(Base):
     forma_pago:Mapped[str] = mapped_column(String(50), nullable=True)
 
     cliente_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Clientes.id", ondelete='RESTRICT'),
         nullable=False
     )
     empleado_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Empleados.id", ondelete='RESTRICT'),
         nullable=False
     )
     metodos_pagos_id:Mapped[int] = mapped_column(
-        BigInteger, 
+        BigInteger,
         ForeignKey("Metodos_pagos.id", ondelete='RESTRICT'),
         nullable=False
     )
@@ -651,18 +704,18 @@ class Ventas(Base):
     cliente = relationship("Clientes", back_populates="ventas")
     empleado = relationship("Empleados", back_populates="ventas")
     metodos_de_pago = relationship("Metodos_pagos", back_populates="ventas")
-    
+
     detalles_ventas = relationship(
-        "Detalles_ventas", 
+        "Detalles_ventas",
         back_populates="venta",
         cascade="save-update, merge",
         passive_deletes=False
     )
     cancelada_por_usuario = relationship(
-        "Usuarios", 
+        "Usuarios",
         foreign_keys=[cancelada_por_usuario_id]
     )
-    
+
 # Índices para mejorar el rendimiento en búsquedas
 Index("idx_usuario", Usuarios.usuario)
 Index("idx_curp", Empleados.curp)
@@ -674,3 +727,5 @@ Index("idx_categoriaProducto", Categorias_productos.id)
 Index("idx_unidadMedidaProducto", Unidad_medida_productos.id)
 Index("idx_presentacionProducto", Presentacion_productos.id)
 Index("idx_proveedorId", Proveedores.id)
+Index("idx_promocion_nombre", Promociones.nombre)
+Index("idx_promocion_tipo", Promociones.tipo_promocion)

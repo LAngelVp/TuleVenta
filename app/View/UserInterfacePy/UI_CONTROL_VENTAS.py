@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'UI_CONTROL_VENTAS.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.2
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QTableView,
-    QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QFrame,
+    QGridLayout, QHBoxLayout, QHeaderView, QLabel,
+    QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
+    QTableView, QWidget)
 from ...Source import ibootstrap_rc
 from ...Source import iconosSVG_rc
 
@@ -154,6 +154,50 @@ class Ui_Control_Ventas(object):
 "background-color: #cce4ff;\n"
 "color: black;\n"
 "}\n"
+"[objectName*=\"cajaOpciones\"] {\n"
+"    border: none;\n"
+"    border-bottom: 1px solid #787878 ;\n"
+"    padding: 2px ;\n"
+"    background-color: #F5F5F5 ;\n"
+"    font-size: 14px ;\n"
+"    min-width: 200px ;\n"
+"    font-family: \"Arial\" ;\n"
+"    color: #1d1c1c ;\n"
+"	selection-background-color:"
+                        " #4791F5; \n"
+"}\n"
+"\n"
+"/* ESTILO DEL DROPDOWN (LISTA) */\n"
+"[objectName*=\"cajaOpciones\"] QListView {\n"
+"    background: #F5F5F5 ;\n"
+"    border-radius: 3px;\n"
+"    outline: none;\n"
+"}\n"
+"\n"
+"/* ESTILO DE LOS \u00cdTEMS */\n"
+"[objectName*=\"cajaOpciones\"] QListView::item {\n"
+"    padding: 6px 10px ;\n"
+"    margin: 2px ;\n"
+"}\n"
+"/* BOT\u00d3N DESPLEGABLE */\n"
+"[objectName*=\"cajaOpciones\"]::drop-down {\n"
+"    subcontrol-origin: padding ;\n"
+"    subcontrol-position: top right ;\n"
+"    padding-right: 5px ;\n"
+"    width: 20% ;\n"
+"    border-left-width: 1px ;\n"
+"    border-radius: 3px ;\n"
+"    background-color: #F5F5F5 ;\n"
+"}\n"
+"/* FLECHA DESPLEGABLE */\n"
+"[objectName*=\"cajaOpciones\"]::down-arrow {\n"
+"    image: url(:/Icons/Bootstrap/filter-left.svg);\n"
+"    width: 17% ;\n"
+"    height: 17% ;\n"
+"    padding-left: 5px ;\n"
+"    padding-right: 5px ;\n"
+"}\n"
+"\n"
 "")
         self.gridLayout = QGridLayout(Control_Ventas)
         self.gridLayout.setSpacing(0)
@@ -248,6 +292,16 @@ class Ui_Control_Ventas(object):
 
         self.horizontalLayout_2.addWidget(self.txt_buscar)
 
+        self.label = QLabel(self.contenedor_tabla)
+        self.label.setObjectName(u"label")
+
+        self.horizontalLayout_2.addWidget(self.label)
+
+        self.cajaOpciones_estadosVentas = QComboBox(self.contenedor_tabla)
+        self.cajaOpciones_estadosVentas.setObjectName(u"cajaOpciones_estadosVentas")
+
+        self.horizontalLayout_2.addWidget(self.cajaOpciones_estadosVentas)
+
         self.btn_btn_buscar = QPushButton(self.contenedor_tabla)
         self.btn_btn_buscar.setObjectName(u"btn_btn_buscar")
         self.btn_btn_buscar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -308,6 +362,7 @@ class Ui_Control_Ventas(object):
         self.btn_btn_eliminar.setText(QCoreApplication.translate("Control_Ventas", u"ELIMINAR", None))
         self.btn_btn_modificar.setText(QCoreApplication.translate("Control_Ventas", u"MODIFICAR", None))
         self.etiqueta_buscar.setText("")
+        self.label.setText(QCoreApplication.translate("Control_Ventas", u"Estado", None))
         self.btn_btn_buscar.setText(QCoreApplication.translate("Control_Ventas", u"Buscar", None))
         self.btn_PaginarTabla.setText("")
 #if QT_CONFIG(tooltip)

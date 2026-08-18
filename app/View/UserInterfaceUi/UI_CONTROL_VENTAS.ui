@@ -139,6 +139,49 @@ color: white;
 background-color: #cce4ff;
 color: black;
 }
+[objectName*=&quot;cajaOpciones&quot;] {
+    border: none;
+    border-bottom: 1px solid #787878 ;
+    padding: 2px ;
+    background-color: #F5F5F5 ;
+    font-size: 14px ;
+    min-width: 200px ;
+    font-family: &quot;Arial&quot; ;
+    color: #1d1c1c ;
+	selection-background-color: #4791F5; 
+}
+
+/* ESTILO DEL DROPDOWN (LISTA) */
+[objectName*=&quot;cajaOpciones&quot;] QListView {
+    background: #F5F5F5 ;
+    border-radius: 3px;
+    outline: none;
+}
+
+/* ESTILO DE LOS ÍTEMS */
+[objectName*=&quot;cajaOpciones&quot;] QListView::item {
+    padding: 6px 10px ;
+    margin: 2px ;
+}
+/* BOTÓN DESPLEGABLE */
+[objectName*=&quot;cajaOpciones&quot;]::drop-down {
+    subcontrol-origin: padding ;
+    subcontrol-position: top right ;
+    padding-right: 5px ;
+    width: 20% ;
+    border-left-width: 1px ;
+    border-radius: 3px ;
+    background-color: #F5F5F5 ;
+}
+/* FLECHA DESPLEGABLE */
+[objectName*=&quot;cajaOpciones&quot;]::down-arrow {
+    image: url(:/Icons/Bootstrap/filter-left.svg);
+    width: 17% ;
+    height: 17% ;
+    padding-left: 5px ;
+    padding-right: 5px ;
+}
+
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -330,6 +373,16 @@ color: black;
               </item>
               <item>
                <widget class="QLineEdit" name="txt_buscar"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Estado</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cajaOpciones_estadosVentas"/>
               </item>
               <item>
                <widget class="QPushButton" name="btn_btn_buscar">

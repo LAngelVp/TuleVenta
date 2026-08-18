@@ -1,23 +1,31 @@
 import sys
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from app.Controller.MensajesAlertasController import *
 from ..Model.BaseDatosModel import Base
-Base = declarative_base()
+from .configuracionConexion import ConfiguracionConexionBD
+
 class Conexion_base_datos:
-    def __init__(self):
-        self.link_conexion = 'postgresql+psycopg2://postgres:holamundo@127.0.0.1:5432/TuleVenta'
+    def __init__(self, link_conexion=None):
+        self.link_conexion = link_conexion
+        self._usar_configuracion_compartida = link_conexion is None
         self.conectar()
 
     def conectar(self):
         try:
-            self.engine = create_engine(self.link_conexion)
+            if self._usar_configuracion_compartida:
+                self.link_conexion = ConfiguracionConexionBD.obtener_url_conexion()
+            self.engine = create_engine(self.link_conexion, pool_pre_ping=True)
             self.Session = sessionmaker(bind=self.engine)
             self.session = None
             Base.metadata.create_all(self.engine)
         except exc.SQLAlchemyError as e:
-            mensaje = Mensaje().mensaje_critico('No se logró hacer conexión con la base de datos.')
+            ruta_configuracion = ConfiguracionConexionBD.ruta_configuracion()
+            mensaje = Mensaje().mensaje_critico(
+                'No se logro hacer conexion con la base de datos.\n\n'
+                f'Revisa la configuracion en:\n{ruta_configuracion}\n\n'
+                f'Conexion esperada:\n{ConfiguracionConexionBD.obtener_resumen_conexion()}'
+            )
             if mensaje == QMessageBox.Abort:
                 sys.exit()
             elif mensaje == QMessageBox.Retry:

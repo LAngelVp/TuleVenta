@@ -21,6 +21,7 @@ from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .ControlSucursalesController import SucursalesController
 from .DepartamentosController import DepartamentosController
 from .PuestosController import PuestosController
+from .UiTheme import apply_title_text_scale
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import *
 import traceback
@@ -54,7 +55,7 @@ class Registro_personal_inicial(QDialog):
         self.consultor = None
         self.manejadorModal = ModalManager()
         self.lista_hilos_registroEmpleado = []
-        
+
         # ====================== INICIALIZACION DE LA VENTANA ========================
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -107,19 +108,21 @@ class Registro_personal_inicial(QDialog):
         AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_parentesco)
         self.WindowRegistroEmpleado.cajaOpciones_genero.addItems(self.generos)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_genero)
-        
+        apply_title_text_scale(self)
+        self._configurar_botones_catalogos_dependencias()
+
         # ====================== INICIALIZACION DE FUNCIONES ========================
         self.manejadorModal.set_modal_class(Modal_de_espera)
         self.ingresar_validaciones()
         self.listar_grupo_permisos_rol()
-        self.listar_departamentos()
+        self.listar_departamentos(mostrar_modal=False)
         self.listar_puestos()
         self.obtener_sucursales()
 
         # ============================ SEÑALES Y SLOTS ============================
         self.CAMBIO_DE_ESTADO_CONTRATACION.connect(self.mostrar_estatus_empleado)
         self.WindowRegistroEmpleado.foto_usuario.mousePressEvent = self.cargar_imagen
-        
+
         # ====================== COMPROBAR SI SE PASO UN EMPLEADO ========================
         if empleado is not None:
             self.cargar_datos_empleado()
@@ -130,7 +133,7 @@ class Registro_personal_inicial(QDialog):
         if not self._ventanaCerradaRegistro:
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCerradaRegistro = True
-    
+
     def closeEvent(self, event):
         for hilo in self.lista_hilos_registroEmpleado:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -138,7 +141,35 @@ class Registro_personal_inicial(QDialog):
         self.empleado_existente = None
         self.VENTANA_REGISTRO_CERRADA.emit()
         event.accept()
-        
+
+    def _configurar_botones_catalogos_dependencias(self):
+        layout = getattr(self.WindowRegistroEmpleado, "gridLayout_3", None)
+        if layout is not None:
+            layout.setHorizontalSpacing(max(layout.horizontalSpacing(), 10))
+            layout.setVerticalSpacing(max(layout.verticalSpacing(), 8))
+            layout.setColumnStretch(0, 1)
+            layout.setColumnMinimumWidth(1, 48)
+            for fila in (2, 5, 7):
+                layout.setRowMinimumHeight(fila, 36)
+
+        botones_catalogo = (
+            (self.WindowRegistroEmpleado.Button_nuevasucursal, "Agregar sucursal"),
+            (self.WindowRegistroEmpleado.Button_agregardepartamento, "Agregar departamento"),
+            (self.WindowRegistroEmpleado.Button_agregarpuesto, "Agregar puesto"),
+        )
+        for boton, tooltip in botones_catalogo:
+            boton.setMinimumSize(40, 34)
+            boton.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            boton.setToolTip(tooltip)
+
+    def _es_primer_registro(self):
+        return bool(self.variable_primer_registro)
+
+    def _permisos_catalogos_dependencias(self):
+        if self._es_primer_registro():
+            return {"ADMINISTRADOR"}
+        return set()
+
     def permiso_actualizar_credenciales(self):
         if self.WindowRegistroEmpleado.opcion_actualizar_datoscredenciales.isChecked():
             self.WindowRegistroEmpleado.txt_usuario_iniciosesion.setEnabled(True)
@@ -150,7 +181,7 @@ class Registro_personal_inicial(QDialog):
             self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setEnabled(False)
             self.WindowRegistroEmpleado.Button_actualizarcredenciales.setEnabled(False)
             self.WindowRegistroEmpleado.Button_eliminar_credenciales.setEnabled(False)
-            
+
     def eliminar_credenciales(self):
         empleado = self.empleado_existente
         if empleado:
@@ -201,7 +232,7 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": f"Error al eliminar las credenciales: {str(e)}",
                 "resultado":None
             }
-    
+
     def actualizar_credenciales(self):
         id_usuario = self.empleado_existente.usuario.id
         usuario = self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text()
@@ -239,7 +270,7 @@ class Registro_personal_inicial(QDialog):
                 if hasattr(self, 'id_hilo_actualizar_credenciales_usuario'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-    
+
     def actualizar_credenciales_query(self, session, empleado, id_usuario, nuevo_nombre, nueva_password, fecha_actualizacion, rol):
         try:
             usuario_actualizado = UsuarioModel(session).actualizar_usuario(
@@ -262,7 +293,7 @@ class Registro_personal_inicial(QDialog):
                 "exito": False,
                 "mensaje": f"Ocurrio un error en el sistema. {e}"
             }
-            
+
     def alta_empleado(self):
         fecha_actual = datetime.now().date().strftime("%Y/%m/%d")
         if self.empleado_existente is None:
@@ -292,7 +323,7 @@ class Registro_personal_inicial(QDialog):
                 if hasattr(self, 'id_hilo_dar_de_baja_registro'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_dar_de_baja_registro)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-    
+
     def alta_empleado_query(self, session, empleado, fecha_actual):
         try:
             empleado, estado = EmpleadosModel(session).alta_empleado(empleado.id, fecha_actual)
@@ -316,7 +347,7 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": f"Ocurrio un error en el sistema. {e}",
                 "estado" : "inactivo"
             }
-        
+
     def baja_empleado(self):
         fecha_actual = datetime.now().date().strftime("%Y/%m/%d")
         if self.empleado_existente is None:
@@ -346,7 +377,7 @@ class Registro_personal_inicial(QDialog):
                 if hasattr(self, 'id_hilo_dar_de_baja_registro'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_dar_de_baja_registro)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-        
+
     def baja_empleado_query(self, session, empleado, fecha_actual):
         try:
             empleado, estado = EmpleadosModel(session).baja_empleado(empleado.id, fecha_actual)
@@ -370,13 +401,13 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": f"Ocurrio un error en el sistema. {e}",
                 "estado" : "activo"
             }
-    
+
     def mostrar_agregar_credenciales(self):
         if self.WindowRegistroEmpleado.opcion_usodelsistema.isChecked():
             self.WindowRegistroEmpleado.contenedor_credencialesusuario.show()
         else:
             self.WindowRegistroEmpleado.contenedor_credencialesusuario.hide()
-            
+
     def obtener_empleado(self, empleado_seleccionado = None):
         if empleado_seleccionado is not None:
             self.WindowRegistroEmpleado.btn_btn_bajapersona.show()
@@ -388,7 +419,7 @@ class Registro_personal_inicial(QDialog):
         opciones_estado_civil = self.estados_civiles
         opciones_niveles_academicos = self.niveles_academicos
         opciones_parentesco = self.parentesco_contacto
-        
+
         if not empleado_seleccionado:
             Mensaje().mensaje_informativo("No se ha seleccionado un empleado de la base de datos")
             return
@@ -403,7 +434,7 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.txt_correoelectronico.setText(empleado_seleccionado.correo_electronico)
         self.WindowRegistroEmpleado.txt_numerosegurosicial.setText(empleado_seleccionado.numero_seguro_social)
         self.WindowRegistroEmpleado.fecha_fechacontratacion.setDate(empleado_seleccionado.fecha_contratacion)
-        
+
         self.WindowRegistroEmpleado.txt_ciudad.setText(empleado_seleccionado.ciudad)
         self.WindowRegistroEmpleado.txt_codigopostal.setText(empleado_seleccionado.codigo_postal)
         self.WindowRegistroEmpleado.txt_estado.setText(empleado_seleccionado.estado)
@@ -422,46 +453,46 @@ class Registro_personal_inicial(QDialog):
             self.WindowRegistroEmpleado.foto_usuario.setPixmap(pixmap)
         else:
             self.WindowRegistroEmpleado.foto_usuario.clear()
-            
+
         self.file_name = empleado_seleccionado.foto_empleado
-        
+
         self.WindowRegistroEmpleado.Button_aceptar.hide()
         self.WindowRegistroEmpleado.Button_actualizar.show()
-        
+
 
         if empleado_seleccionado.puesto:
             objeto = empleado_seleccionado.puesto
             nombre = empleado_seleccionado.puesto.nombre
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_puestos, objeto, "nombre")
-                
+
         if empleado_seleccionado.parentesco_contacto:
             nombre = empleado_seleccionado.parentesco_contacto
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_parentesco, nombre)
-        
+
         if empleado_seleccionado.nivel_academico:
             nombre = empleado_seleccionado.nivel_academico
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_nivelacademico, nombre)
-        
+
         if empleado_seleccionado.estado_civil:
             nombre = empleado_seleccionado.estado_civil
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_estadocvil, nombre)
-            
+
         if empleado_seleccionado.genero:
             nombre = empleado_seleccionado.genero
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_genero, nombre)
-            
+
         if empleado_seleccionado.sucursal:
             objeto = empleado_seleccionado.sucursal
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_sucursales, objeto, "nombre_sucursal")
-        
+
         if empleado_seleccionado.departamento:
             objeto = empleado_seleccionado.departamento
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_departamentos, objeto, "nombre")
-            
+
         if empleado_seleccionado.usuario and empleado_seleccionado.usuario.rol:
             objeto = empleado_seleccionado.usuario.rol
             FuncionesAuxiliaresController().caja_opciones_mover_elemento(self.WindowRegistroEmpleado.cajaOpciones_rol_usuario, objeto, "nombre")
-            
+
         if empleado_seleccionado.usuario:
             self.WindowRegistroEmpleado.opcion_usodelsistema.setText("Cambiar Creadenciales")
             self.WindowRegistroEmpleado.opcion_actualizar_datoscredenciales.show()
@@ -470,17 +501,17 @@ class Registro_personal_inicial(QDialog):
             self.WindowRegistroEmpleado.txt_usuario_iniciosesion.setEnabled(False)
             self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setEnabled(False)
             self.WindowRegistroEmpleado.opcion_actualizar_datoscredenciales.toggled.connect(self.permiso_actualizar_credenciales)
-            
+
         if not empleado_seleccionado.usuario:
             self.WindowRegistroEmpleado.opcion_usodelsistema.setText("Crear usuario para acceso al sistema")
             self.WindowRegistroEmpleado.Button_agregarUsuario.show()
-            
+
         self.mostrar_estatus_empleado(empleado_seleccionado)
-                    
+
     def mostrar_estatus_empleado(self, empleado_seleccionado, objetoMensaje = None):
         try:
             if not empleado_seleccionado or not hasattr(empleado_seleccionado, 'activo'):
-                Mensaje().mensaje_informativo("Empleado inválido para mostrar estatus")  
+                Mensaje().mensaje_informativo("Empleado inválido para mostrar estatus")
                 return
             if objetoMensaje and objetoMensaje.get("estado") == "activo":
                 esta_activo = True
@@ -488,7 +519,7 @@ class Registro_personal_inicial(QDialog):
                 esta_activo = False
             else:
                 esta_activo = empleado_seleccionado.activo
-            
+
             if esta_activo:
                 self.WindowRegistroEmpleado.etiqueta_status_empleado.show()
                 self.WindowRegistroEmpleado.etiqueta_status_empleado.setText("Estado: Activo")
@@ -514,17 +545,21 @@ class Registro_personal_inicial(QDialog):
                 self.WindowRegistroEmpleado.fecha_fechadespido.show()
                 self.WindowRegistroEmpleado.etiqueta_fechadespido.show()
                 self.WindowRegistroEmpleado.fecha_fechadespido.setEnabled(False)
-                if (hasattr(empleado_seleccionado, 'fecha_despido') and 
+                if (hasattr(empleado_seleccionado, 'fecha_despido') and
                     empleado_seleccionado.fecha_despido):
                     self.WindowRegistroEmpleado.fecha_fechadespido.setDate(empleado_seleccionado.fecha_despido)
                 else:
                     self.WindowRegistroEmpleado.fecha_fechadespido.hide()
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error en mostrar_estatus_empleado: {e}")
-    
+
     def agregar_sucursal(self):
+        self.manejadorModal.cerrar_modal()
         if self.windowSucursales is None or not self.windowSucursales.isVisible():
-            self.windowSucursales = SucursalesController(parent=None)
+            self.windowSucursales = SucursalesController(
+                parent=self,
+                permisos_usuario=self._permisos_catalogos_dependencias(),
+            )
             self.listar_sucursales_signal.connect(
                 self.windowSucursales.obtener_sucursales,
                 Qt.UniqueConnection
@@ -537,13 +572,15 @@ class Registro_personal_inicial(QDialog):
                 self.ventana_sucursales_cerrada,
                 Qt.UniqueConnection
                 )
-            self.listar_sucursales_signal.emit()
             self.windowSucursales.setModal(True)
             self.windowSucursales.show()
+            self.windowSucursales.raise_()
+            self.windowSucursales.activateWindow()
+            self.listar_sucursales_signal.emit()
         else:
             self.windowSucursales.raise_()
             self.windowSucursales.activateWindow()
-            
+
     def obtener_sucursales(self):
         try:
             WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
@@ -564,7 +601,7 @@ class Registro_personal_inicial(QDialog):
             if hasattr(self, 'id_hilo_obtener_sucursales'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_sucursales)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
-            
+
     def obtener_sucursales_query(self, session):
         try:
             sucursales, estado = SucursalesModel(session).obtener_todo()
@@ -589,10 +626,14 @@ class Registro_personal_inicial(QDialog):
     def ventana_sucursales_cerrada(self):
         self.windowSucursales.deleteLater()
         self.windowSucursales = None
-    
+
     def ventana_departamentos(self):
+        self.manejadorModal.cerrar_modal()
         if self.windowDepartamentos is None or not self.windowDepartamentos.isVisible():
-            self.windowDepartamentos = DepartamentosController()
+            self.windowDepartamentos = DepartamentosController(
+                parent=self,
+                permisos_usuario=self._permisos_catalogos_dependencias(),
+            )
             self.listar_departamentos_signal.connect(
                 self.windowDepartamentos.obtener_departamentos,
                 Qt.UniqueConnection
@@ -609,32 +650,42 @@ class Registro_personal_inicial(QDialog):
                 self.ventana_departamentos_cerrada,
                 Qt.UniqueConnection
                 )
-            self.listar_sucursales_en_departamentos_signal.emit()
-            self.listar_departamentos_signal.emit()
             self.windowDepartamentos.setModal(True)
             self.windowDepartamentos.show()
+            self.windowDepartamentos.raise_()
+            self.windowDepartamentos.activateWindow()
+            self.listar_sucursales_en_departamentos_signal.emit()
+            self.listar_departamentos_signal.emit()
         else:
             self.windowDepartamentos.raise_()
             self.windowDepartamentos.activateWindow()
-            
+
     def ventana_departamentos_cerrada(self):
         self.windowDepartamentos.deleteLater()
         self.windowDepartamentos = None
-    
+
     def ventana_puestos(self):
+        self.manejadorModal.cerrar_modal()
         if self.windowPuestos is None or not self.windowPuestos.isVisible():
-            self.windowPuestos = PuestosController()
+            modal_puestos = not self._es_primer_registro()
+            self.windowPuestos = PuestosController(
+                parent=self,
+                permisos_usuario=self._permisos_catalogos_dependencias(),
+                modal=modal_puestos,
+            )
             self.windowPuestos.signal_puesto_agregado.connect(self.listar_puestos)
             self.windowPuestos.VENTANA_PUESTOS_CERRADA.connect(self.ventana_puestos_cerrada)
-            self.listar_puestos_signal.connect(self.windowPuestos.listar_puestos)
-            self.listar_depas_en_puestos_signal.connect(self.windowPuestos.listar_departamentos)
-            self.listar_depas_en_puestos_signal.emit()
-            self.listar_puestos_signal.emit()
+            if modal_puestos:
+                self.windowPuestos.setModal(True)
             self.windowPuestos.show()
+            self.windowPuestos.raise_()
+            self.windowPuestos.activateWindow()
+            self.windowPuestos.listar_departamentos(mostrar_modal=False)
+            self.windowPuestos.listar_puestos(mostrar_modal=False)
         else:
             self.windowPuestos.raise_()
             self.windowPuestos.activateWindow()
-            
+
     def ventana_puestos_cerrada(self):
         self.windowPuestos.deleteLater()
         self.windowPuestos = None
@@ -648,7 +699,7 @@ class Registro_personal_inicial(QDialog):
                 AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_sucursales)
         except Exception as e:
             Mensaje().mensaje_critico(f"Error al obtener sucursales debido a lo siguiente: {e}")
-            
+
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
 
@@ -673,7 +724,7 @@ class Registro_personal_inicial(QDialog):
             if hasattr(self, 'id_hilo_obtener_grupos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-    
+
     def obtener_grupos_query(self, session):
         try:
             grupos, estado = RolesModel(session).obtener_todos()
@@ -694,7 +745,7 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": f"Ocurrio un error en la operacion.\n{e}",
                 "data": []
             }
-    
+
     def listar_grupos_opciones(self, resultado):
         if hasattr(self, 'id_hilo_obtener_grupos'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_grupos)
@@ -703,11 +754,12 @@ class Registro_personal_inicial(QDialog):
                 self.WindowRegistroEmpleado.cajaOpciones_rol_usuario.addItem(grupo.nombre, grupo)
             AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_rol_usuario)
 
-    def listar_departamentos(self):
+    def listar_departamentos(self, mostrar_modal=False):
         self.WindowRegistroEmpleado.cajaOpciones_departamentos.clear()
         departamentos = None
         try:
-            self.manejadorModal.mostrar_modal(None)
+            if mostrar_modal:
+                self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_departamentos_thread")
             self.id_hilo_obtener_departamentos_lista = WorkerDB.create_managed_worker(owner_id="obtener_departamentos_thread")
             self.consultor_obtener_departamentos_lista = WorkerDB.get_managed_worker(self.id_hilo_obtener_departamentos_lista)
@@ -718,7 +770,7 @@ class Registro_personal_inicial(QDialog):
                 worker_id=self.id_hilo_obtener_departamentos_lista,
                 resultado_callback=self.listar_departamentos_opciones,
                 error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
+                terminado_callback=self.manejadorModal.cerrar_modal if mostrar_modal else None
             )
             self.consultor_obtener_departamentos_lista.ejecutar(
                 funcion=self.obtener_departamentos_query
@@ -727,7 +779,7 @@ class Registro_personal_inicial(QDialog):
             if hasattr(self, 'id_hilo_obtener_departamentos_lista'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_departamentos_lista)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-            
+
     def obtener_departamentos_query(self, session):
         try:
             departamentos, estado = DepartamentosModel(session).obtener_todos()
@@ -748,7 +800,7 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": "Ocurrio un error en la operacion de obtener los departamentos",
                 "data": []
             }
-    
+
     def listar_departamentos_opciones(self, objetoMensaje):
             if objetoMensaje["exito"]:
                 for departamento in objetoMensaje["data"]:
@@ -776,7 +828,7 @@ class Registro_personal_inicial(QDialog):
             if hasattr(self, 'id_hilo_obtener_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_puestos)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
-            
+
     def obtener_puestos_query(self, session):
         try:
             puestos, estado = PuestoModel(session).obtener_todos()
@@ -797,7 +849,7 @@ class Registro_personal_inicial(QDialog):
                 "mensaje": "Ocurrio un error en la operacion de obtener los puestos",
                 "data": []
             }
-    
+
     def listar_puestos_opciones(self, objetoMensaje):
         if objetoMensaje["exito"]:
             for puesto in objetoMensaje["data"]:
@@ -818,10 +870,10 @@ class Registro_personal_inicial(QDialog):
             else:
                 Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
         return
-    
+
     def eliminar_foto(self):
         self.WindowRegistroEmpleado.foto_usuario.clear()
-        self.file_name = None 
+        self.file_name = None
 
     def ingresar_validaciones(self):
         self.WindowRegistroEmpleado.txt_nombre.setMaxLength(60)
@@ -846,7 +898,7 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.txt_nexterior.setMaxLength(10)
         self.WindowRegistroEmpleado.txt_usuario_iniciosesion.setMaxLength(60)
         self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setMaxLength(10)
-        
+
         self.WindowRegistroEmpleado.txt_nombre.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_nombre))
         self.WindowRegistroEmpleado.txt_apellidop.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_apellidop))
         self.WindowRegistroEmpleado.txt_apellidom.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_apellidom))
@@ -867,7 +919,7 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.txt_colonia.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_colonia))
         self.WindowRegistroEmpleado.txt_ninterior.setValidator(Validaciones().get_int_validator(self.WindowRegistroEmpleado.txt_ninterior))
         self.WindowRegistroEmpleado.txt_nexterior.setValidator(Validaciones().get_int_validator(self.WindowRegistroEmpleado.txt_nexterior))
-        
+
     def campos(self):
         return {
             "nombre": self.WindowRegistroEmpleado.txt_nombre,
@@ -903,7 +955,7 @@ class Registro_personal_inicial(QDialog):
             "departamento": self.WindowRegistroEmpleado.cajaOpciones_departamentos,
             "rol": self.WindowRegistroEmpleado.cajaOpciones_rol_usuario
         }
-    
+
     def obtener_datos(self):
         datos = {}
         campos = self.campos()
@@ -932,7 +984,7 @@ class Registro_personal_inicial(QDialog):
                 QMessageBox.critical(self, "Error", "El salario debe ser mayor a 0.")
                 return False
         return True
-    
+
     def agregar_nuevo_empleado(self):
         fecha_actual = datetime.now().date()
         uso_del_sistema = self.WindowRegistroEmpleado.opcion_usodelsistema.isChecked()
@@ -948,10 +1000,10 @@ class Registro_personal_inicial(QDialog):
                 WorkerDB.cleanup_owner_workers("agregar_empleado")
                 self.id_hilo_agregar_empleado = WorkerDB.create_managed_worker(owner_id="agregar_empleado")
                 self.consultor = WorkerDB.get_managed_worker(self.id_hilo_agregar_empleado)
-                
+
                 if not self.consultor:
                     raise Exception("No se pudo obtener el worker gestionado")
-                
+
                 WorkerDB.connect_managed_signals(
                     worker_id=self.id_hilo_agregar_empleado,
                     resultado_callback=self.mostrar_estado_usuario,
@@ -974,13 +1026,13 @@ class Registro_personal_inicial(QDialog):
                 if hasattr(self, 'id_hilo_agregar_empleado'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_empleado)
                 Mensaje.mensaje_alerta(f"Error al iniciar el proceso: {e}")
-                
+
     def mensaje_resultado_hilo(self, mensaje, estado):
         Mensaje().mensaje_informativo(f"{mensaje}")
-        
+
     def mensaje_error_hilo(self, error):
         Mensaje().mensaje_alerta(f"{error}")
-        
+
     def mostrar_estado_usuario(self, objetoMensaje):
         if objetoMensaje["exito"]:
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
@@ -992,10 +1044,10 @@ class Registro_personal_inicial(QDialog):
     def mostrar_estado_contratacion_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         self.CAMBIO_DE_ESTADO_CONTRATACION.emit(self.empleado_existente, objetoMensaje)
-    
+
     def mostrar_estado_hilo(self, objetoMensaje):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-        
+
     def almacenar_informacion_query(self, session, uso_del_sistema, id_empleado, imagen, nombre_usuario, password_usuario, fecha_creacion, fecha_actualizacion, current_data_rol, datos):
         try:
             usuario = None
@@ -1117,7 +1169,7 @@ class Registro_personal_inicial(QDialog):
         else:
             Mensaje().mensaje_informativo("Todos los campos deben de estar completos")
             return
-    
+
     def actualizar_empleado_query(self, session, id_empleado, imagen,  datos):
         try:
             empleado, estado = EmpleadosModel(session).actualizar_empleado(
@@ -1169,12 +1221,12 @@ class Registro_personal_inicial(QDialog):
                     "exito": True,
                     "mensaje": mensaje
                     }
-        
+
         return {
             "exito": False,
             "mensaje": f"No se logro hacer la operación"
             }
-            
+
     def agregar_usuario(self):
         if not self.empleado_existente:
             Mensaje().mensaje_alerta("No se encuentra vinculado el empleado a la session de base de datos")
@@ -1192,7 +1244,7 @@ class Registro_personal_inicial(QDialog):
             WorkerDB.cleanup_owner_workers("agregar_usuario_thread")
             self.id_hilo_agregar_usuario = WorkerDB.create_managed_worker(owner_id="agregar_usuario_thread")
             self.consultor_agregar_usuario = WorkerDB.get_managed_worker(self.id_hilo_agregar_usuario)
-            
+
             if not self.consultor_agregar_usuario:
                 raise Exception("No se pudo obtener el worker gestionado")
             WorkerDB.connect_managed_signals(
@@ -1201,7 +1253,7 @@ class Registro_personal_inicial(QDialog):
                 error_callback=self.mensaje_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
-            
+
             self.consultor_agregar_usuario.ejecutar(
                 funcion=self.agregar_usuario_query,
                 empleado = self.empleado_existente,
@@ -1215,7 +1267,7 @@ class Registro_personal_inicial(QDialog):
             if hasattr(self, 'id_hilo_agregar_usuario'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_usuario)
             Mensaje.mensaje_alerta(f"Error al iniciar el proceso: {e}")
-            
+
     def agregar_usuario_query(self, session, empleado, nombre_usuario, password, fecha_actual, fecha_actualizacion, rol):
         try:
             usuario, estado = UsuarioModel(session).crear_usuario(
@@ -1252,7 +1304,7 @@ class Registro_personal_inicial(QDialog):
                     "mensaje": f"Ocurrio un problema con el sistema al agregar el usuario",
                     "data": None
                 }
-            
+
     def abrir_inicio(self):
         if self.variable_primer_registro:
             from app.Controller.InicioDeSesionController import Login
@@ -1292,15 +1344,15 @@ class Registro_personal_inicial(QDialog):
         if event.key() == Qt.Key_Escape:
             event.ignore()
             return
-            
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             event.ignore()
             return
-            
+
         super().keyPressEvent(event)
 
     def mostrar_status_hilo(self, respuesta):
         Mensaje().mensaje_informativo(respuesta["mensaje"])
-        
+
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(error)

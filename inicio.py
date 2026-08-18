@@ -2,6 +2,7 @@ from sqlalchemy import MetaData, Table, select, func
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from app.DataBase.conexionBD import Conexion_base_datos
+from app.DataBase.postgres_manager import PostgresStartupError, asegurar_servicio_postgres
 from app.Controller.InicioDeSesionController import Login
 from app.Controller.VentanaInicialController import *
 from app.Model.BaseDatosModel import Usuarios
@@ -10,16 +11,16 @@ from app.Controller.MensajesAlertasController import Mensaje
 class Inicio_sistema(QObject):
     def __init__(self):
         super().__init__()
-        
+
         self.ventana_principal = None
         self.login = None
         self.lista_hilos_inicio = []
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
         palette = QPalette()
-        
+
         palette.setColor(QPalette.Window, QColor("#f5f5f5"))
-        palette.setColor(QPalette.Base, QColor("#ffffff"))  
+        palette.setColor(QPalette.Base, QColor("#ffffff"))
         palette.setColor(QPalette.AlternateBase, QColor("#f0f0f0"))
         palette.setColor(QPalette.Text, Qt.black)
         palette.setColor(QPalette.WindowText, Qt.black)
@@ -31,9 +32,17 @@ class Inicio_sistema(QObject):
         palette.setColor(QPalette.ToolTipBase, QColor("#1B305B"))
         palette.setColor(QPalette.ToolTipText, QColor("#ECEFF4"))
         self.app.setPalette(palette)
-        
+
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+
+    def preparar_postgresql_portable(self):
+        try:
+            asegurar_servicio_postgres()
+            return True
+        except PostgresStartupError as exc:
+            Mensaje().mensaje_alerta(str(exc))
+            return False
 
     def comprobar_usuarios(self):
         try:
@@ -57,7 +66,7 @@ class Inicio_sistema(QObject):
             if hasattr(self, 'id_hilo_consultar_cantidad_usuarios'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
-        
+
     def comprobar_existencia_usuarios_query(self, session):
         try:
             consulta = select(func.count()).select_from(Usuarios)
@@ -76,13 +85,13 @@ class Inicio_sistema(QObject):
                 "mensaje": f'Ocurrio un error en el proceso',
                 "resultado": 0
             }
-        
+
         return {
             "exito": True,
             "mensaje": f"Iniciando el sistema",
-            "resultado": resultado  
+            "resultado": resultado
         }
-        
+
     def mostrar_resultado_hilo(self, objetoMensaje):
         if hasattr(self, 'id_hilo_consultar_cantidad_usuarios'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
@@ -106,5 +115,7 @@ class Inicio_sistema(QObject):
 
 if __name__ == "__main__":
     sistema = Inicio_sistema()
+    if not sistema.preparar_postgresql_portable():
+        sys.exit(1)
     sistema.comprobar_usuarios()
     sys.exit(sistema.app.exec())

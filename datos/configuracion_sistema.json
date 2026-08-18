@@ -1,0 +1,5 @@
+{
+  "iva_porcentaje": 10.0,
+  "impresora_tickets": "SeafonPrinter",
+  "ancho_ticket_mm": 58.0
+}

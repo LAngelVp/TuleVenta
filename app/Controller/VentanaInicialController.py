@@ -19,6 +19,7 @@ from ..Model.ProductosModel import ProductosModel
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.ClientesFisicosAndMoralesModel import ClientesFisicosAndMorales
 from ..Model.MetodoPagoModel import MetodoPagoModel
+from .UiTheme import apply_access_theme
 
 class Inicio_principal(QWidget):
     def __init__(self, parent = None):
@@ -26,32 +27,33 @@ class Inicio_principal(QWidget):
         self.registro = None
         self.ui = Ui_Bienvenida()
         self.ui.setupUi(self)
+        apply_access_theme(self)
         self.ui.btn_btn_registrar.clicked.connect(self.abrir_registro)
-        
+
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         self.setWindowTitle("Inicio")
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        
+
         self.sombra = QGraphicsDropShadowEffect()
-        self.sombra.setBlurRadius(25) 
+        self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)
-        self.sombra.setColor(QColor(0, 102, 204)) 
+        self.sombra.setColor(QColor(15, 76, 129, 90))
 
         self.ui.contenedor.setGraphicsEffect(self.sombra)
-        
+
     #// inicializar valores de algunas tablas
         self.crear_datos_principales()
 
-        
+
     def abrir_registro(self):
         self.registro = Registro_personal_inicial(parent=None)
         self.registro.variable_primer_registro = True
         self.registro.show()
         self.close()
-        
+
     def crear_datos_principales(self):
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
@@ -68,4 +70,3 @@ class Inicio_principal(QWidget):
                     MetodoPagoModel(session).crear_metodos_pagos_compras_inicial()
                 except Exception as e:
                     print(f'Existio un error en la creacion de datos principales: {e}')
-    
