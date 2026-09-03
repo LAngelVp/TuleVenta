@@ -126,7 +126,7 @@ class SucursalesController(QDialog):
             return
         self.windowSucursales.txt_buscarsucursales.clearFocus()
         try:
-            self.manejadorModal.mostrar_modal()
+            self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("buscar_sucursal_thread")
             self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id="buscar_sucursal_thread")
             self.consultor_buscar_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_buscar_sucursal)
@@ -177,7 +177,7 @@ class SucursalesController(QDialog):
             # Limpiar QPlainTextEdit
             elif isinstance(campo, QPlainTextEdit):
                 campo.clear()
-        self.id_sucursal = None
+        self.idSucursal = None
 
     def campos_nomales(self):
         return {
@@ -268,7 +268,7 @@ class SucursalesController(QDialog):
     def obtener_sucursales(self):
         self.windowSucursales.lista_sucursales.clear()
         try:
-            self.manejadorModal.mostrar_modal()
+            self.manejadorModal.mostrar_modal(self)
             WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
             self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
@@ -311,7 +311,6 @@ class SucursalesController(QDialog):
             }
 
     def listar_sucursales(self, resultado):
-        Mensaje().mensaje_informativo(f"{resultado['mensaje']}")
         if resultado['exito']:
             try:
                 self.windowSucursales.lista_sucursales.clear()
@@ -326,7 +325,7 @@ class SucursalesController(QDialog):
             except Exception as e:
                 Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
         else:
-            Mensaje().mensaje_informativo(f"{resultado['mensaje']}")
+            Mensaje(self).mensaje_alerta(f"{resultado['mensaje']}")
 
     def obtenerId(self, item):
         if item:
@@ -452,8 +451,14 @@ class SucursalesController(QDialog):
             }
 
     def mostrar_resultado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
+        if not objetoMensaje.get('exito', False):
+            Mensaje(self).mensaje_alerta(f"{objetoMensaje['mensaje']}")
+            return
+
+        self.idSucursal = None
         self.signal_sucursal_agregada.emit()
+        self.limpiar()
+        QTimer.singleShot(0, self.obtener_sucursales)
 
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")

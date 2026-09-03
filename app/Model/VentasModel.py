@@ -279,6 +279,7 @@ class VentasModel:
                 cliente_id=cliente.id,
                 empleado_id=empleado.id,
                 metodos_pagos_id=metodo_pago.id,
+                sesion_caja_id=sale_details.get("sesion_caja_id"),
             )
             self.session.add(venta)
             self.session.flush()

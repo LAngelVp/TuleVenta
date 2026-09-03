@@ -1,0 +1,1 @@
+from app.Source.iconsdvg_rc import *  # noqa: F401,F403

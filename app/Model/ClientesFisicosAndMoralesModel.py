@@ -100,6 +100,7 @@ class ClientesFisicosAndMorales:
 
     def agregar_cliente_fisico(self, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
         try:
+            foto = str(foto).strip() if foto else ""
             cliente_existente = (
                 self.session.query(Clientes_fisicos)
                 .filter(
@@ -300,6 +301,7 @@ class ClientesFisicosAndMorales:
 
     def actualizar_cliente_fisico(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
         try:
+            foto = str(foto).strip() if foto else ""
             clientes_fisicos_alias = aliased(Clientes_fisicos)
             if id:
                 # Consultar el cliente base y cliente físico

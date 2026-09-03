@@ -46,7 +46,7 @@ QTabWidget::pane {
         position: absolute;
         top: 10px;
     }
-    
+
     /* Pestaña no seleccionada */
     QTabBar::tab {
         background: #F5F4F1;
@@ -60,25 +60,25 @@ QTabWidget::pane {
         margin-right: 2px;
 		margin-top:10px;
     }
-    
+
     /* Pestaña seleccionada */
     QTabBar::tab:selected {
         background: #22C55E;
         color: white;
         font-weight: bold;
     }
-    
+
     /* Pestaña al pasar el mouse */
     QTabBar::tab:hover {
         background: #2196F3;
     }
-    
+
     /* Pestaña deshabilitada */
     QTabBar::tab:disabled {
         background: #EEEEEE;
         color: #AAAAAA;
     }
-    
+
     /* Área de las pestañas */
     QTabBar {
         background: transparent;
@@ -337,7 +337,7 @@ QCalendarWidget QAbstractItemView::item:hover {
     min-width: 250px ;
     font-family: &quot;Arial&quot; ;
     color: #1d1c1c ;
-	selection-background-color: #4791F5; 
+	selection-background-color: #4791F5;
 }
 
 /* ESTILO DEL DROPDOWN (LISTA) */
@@ -403,7 +403,7 @@ QCalendarWidget QAbstractItemView::item:hover {
       </size>
      </property>
      <property name="text">
-      <string>administración de compras</string>
+      <string>ADMINISTRACIÓN DE COMPRAS</string>
      </property>
     </widget>
    </item>

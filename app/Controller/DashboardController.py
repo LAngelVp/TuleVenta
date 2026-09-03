@@ -3,7 +3,6 @@ from pathlib import Path
 import shutil
 import tempfile
 
-import pandas as pd
 import plotly.graph_objects as go
 from PySide6.QtCore import QDate, Qt, QUrl
 from PySide6.QtGui import QColor
@@ -57,6 +56,12 @@ class DashboardController(QWidget):
         self._conectar_filtros_dinamicos()
         self._cargar_estados_dashboard()
         self._cargar_tab_dashboard(self.tabs_dashboard.currentIndex(), force=True)
+
+    @staticmethod
+    def _importar_pandas():
+        import pandas as pd
+
+        return pd
 
     def refrescar_dashboard(self):
         self._aplicar_permisos_ui()
@@ -892,6 +897,7 @@ class DashboardController(QWidget):
             return
 
         try:
+            pd = self._importar_pandas()
             df = pd.DataFrame(filas)
             df.to_csv(archivo, index=False, encoding="utf-8-sig")
             Mensaje().mensaje_informativo(f"Reporte exportado correctamente en: {archivo}")

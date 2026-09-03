@@ -1,34 +1,4 @@
-import json 
-import os 
-import socket 
-import tempfile 
-from pathlib import Path 
-from app.DataBase.postgres_manager import PostgresServiceManager 
-base = Path(tempfile.mkdtemp()) 
-appdata = base / 'AppData' / 'Roaming' 
-programdata = base / 'ProgramData' 
-data_dir = appdata / 'TuleVenta' / 'data' 
-bin_dir = appdata / 'TuleVenta' / 'PostgreSQL16' / 'bin' 
-data_dir.mkdir(parents=True, exist_ok=True) 
-bin_dir.mkdir(parents=True, exist_ok=True) 
-(data_dir / 'PG_VERSION').write_text('16', encoding='utf-8') 
-(bin_dir / 'pg_ctl.exe').write_text('', encoding='utf-8') 
-config_dir = programdata / 'TuleVenta' 
-config_dir.mkdir(parents=True, exist_ok=True) 
-server = socket.socket() 
-server.bind(('127.0.0.1', 0)) 
-server.listen(1) 
-port = server.getsockname()[1] 
-config_path = config_dir / 'configuracion_bd.json' 
-config_path.write_text(json.dumps({'driver': 'postgresql+psycopg2', 'host': '127.0.0.1', 'port': port, 'database': 'demo', 'username': 'demo', 'password': 'demo', 'options': {}}), encoding='utf-8') 
-os.environ['APPDATA'] = str(appdata) 
-os.environ['PROGRAMDATA'] = str(programdata) 
-os.environ.pop('TULEVENTA_DB_CONFIG_PATH', None) 
-manager = PostgresServiceManager() 
-settings = manager.cargar_configuracion() 
-paths = manager.resolver_rutas_instalacion(settings) 
-print(settings.config_path) 
-print(paths.data_dir) 
-print(paths.pg_ctl_path) 
-print(manager.asegurar_servicio_postgres()) 
-server.close() 
+import sys 
+sys.path.insert(0, r'C:\Users\XML0234\Documents\Personal\TuleVenta') 
+from app.Controller.SistemaPrincipalController import SistemaPrincipal 
+print('IMPORT_OK') 

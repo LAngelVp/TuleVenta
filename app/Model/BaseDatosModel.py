@@ -684,6 +684,7 @@ class Ventas(Base):
     cancelada_por_usuario_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("Usuarios.id"), nullable=True)
     fecha_cancelacion:Mapped[datetime] = mapped_column(DateTime, nullable=True)
     forma_pago:Mapped[str] = mapped_column(String(50), nullable=True)
+    sesion_caja_id:Mapped[int] = mapped_column(BigInteger, ForeignKey("SesionCaja.id"), nullable=True)
 
     cliente_id:Mapped[int] = mapped_column(
         BigInteger,
@@ -704,6 +705,7 @@ class Ventas(Base):
     cliente = relationship("Clientes", back_populates="ventas")
     empleado = relationship("Empleados", back_populates="ventas")
     metodos_de_pago = relationship("Metodos_pagos", back_populates="ventas")
+    sesion_caja = relationship("SesionCaja", back_populates="ventas")
 
     detalles_ventas = relationship(
         "Detalles_ventas",
@@ -729,3 +731,25 @@ Index("idx_presentacionProducto", Presentacion_productos.id)
 Index("idx_proveedorId", Proveedores.id)
 Index("idx_promocion_nombre", Promociones.nombre)
 Index("idx_promocion_tipo", Promociones.tipo_promocion)
+
+# Modelo Sesión de Caja (Corte / Arqueo de Caja)
+class SesionCaja(Base):
+    __tablename__ = "SesionCaja"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("Usuarios.id", ondelete="RESTRICT"), nullable=False)
+    fecha_apertura: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    monto_inicial: Mapped[float] = mapped_column(Float, default=0.0)
+    ventas_efectivo: Mapped[float] = mapped_column(Float, default=0.0)
+    ventas_tarjeta: Mapped[float] = mapped_column(Float, default=0.0)
+    ventas_transferencia: Mapped[float] = mapped_column(Float, default=0.0)
+    entradas_efectivo: Mapped[float] = mapped_column(Float, default=0.0)
+    retiros_efectivo: Mapped[float] = mapped_column(Float, default=0.0)
+    conteo_usuario: Mapped[float] = mapped_column(Float, nullable=True)
+    efectivo_esperado: Mapped[float] = mapped_column(Float, default=0.0)
+    diferencia: Mapped[float] = mapped_column(Float, default=0.0)
+    fecha_cierre: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    estado: Mapped[str] = mapped_column(String(50), default="ABIERTA")  # "ABIERTA" o "CERRADA"
+
+    usuario = relationship("Usuarios")
+    ventas = relationship("Ventas", back_populates="sesion_caja")
+

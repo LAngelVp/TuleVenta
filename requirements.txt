@@ -11,3 +11,4 @@ asyncpg
 faker
 reportlab
 pyinstaller
+cryptography

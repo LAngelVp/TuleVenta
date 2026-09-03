@@ -1,15 +1,18 @@
 from datetime import date, datetime
 
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtCore import QDate, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
     QHeaderView,
+    QHBoxLayout,
     QInputDialog,
     QLabel,
     QMenu,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QTableView,
     QTableWidget,
     QTableWidgetItem,
@@ -52,6 +55,12 @@ class Venta(QWidget):
         self._inicializar_formulario()
         self._cargar_menu_cobro()
         self._actualizar_resumen_venta()
+
+        # Control de Turno y Botón Dinámico de Corte de Caja
+        self.sesion_caja_id = None
+        self.caja_abierta = False
+        self._crear_boton_corte_caja()
+        QTimer.singleShot(50, self._verificar_y_asegurar_caja)
 
     def _cargar_configuracion_fiscal(self):
         self.iva_tasa = ConfiguracionSistemaModel.obtener_iva_tasa()
@@ -416,6 +425,8 @@ class Venta(QWidget):
             )
 
     def buscar_y_agregar_producto(self):
+        if not self._verificar_y_asegurar_caja():
+            return
         criterio = self.ui.txt_buscarproducto.text().strip()
         if not criterio:
             Mensaje().mensaje_informativo("Ingresa el código o nombre del producto que deseas agregar.")
@@ -609,6 +620,8 @@ class Venta(QWidget):
         self.ui.numerodecimal_cantidadcredito.setValue(min(total_actual, credito_disponible))
 
     def cobrar_venta(self, metodo_pago):
+        if not self._verificar_y_asegurar_caja():
+            return
         if not self._validar_contexto_usuario():
             return
         if not self.ticket_items:
@@ -628,7 +641,7 @@ class Venta(QWidget):
 
         resumen = self._calcular_totales()
         items_venta = self._construir_items_venta(resumen)
-        respuesta = Mensaje().mensaje_pregunta(
+        respuesta = Message = Mensaje().mensaje_pregunta(
             f"¿Deseas registrar la venta por {self._formatear_moneda(resumen['total'])} con {metodo_pago.nombre}?"
         )
         if respuesta != QMessageBox.Yes:
@@ -649,11 +662,14 @@ class Venta(QWidget):
             "forma_pago": metodo_pago.nombre,
             "comentarios": self._construir_comentarios_venta(es_credito=False),
             "es_credito": False,
+            "sesion_caja_id": self.sesion_caja_id,
         }
 
         self._registrar_venta(detalles_venta, items_venta)
 
     def cobrar_a_credito(self):
+        if not self._verificar_y_asegurar_caja():
+            return
         if not self._validar_contexto_usuario():
             return
         if not self.ticket_items:
@@ -716,6 +732,7 @@ class Venta(QWidget):
             "comentarios": self._construir_comentarios_venta(es_credito=True),
             "es_credito": True,
             "fecha_pago_credito": self.ui.fecha_fechapagocredito.date().toPython(),
+            "sesion_caja_id": self.sesion_caja_id,
         }
 
         self._registrar_venta(detalles_venta, items_venta)
@@ -729,6 +746,15 @@ class Venta(QWidget):
         if not exito or not venta:
             Mensaje().mensaje_alerta(mensaje)
             return
+
+        # Acumular monto de la venta en la sesión de caja activa
+        if self.sesion_caja_id:
+            from sesion_caja import GestorSesionCaja
+            GestorSesionCaja.acumular_venta(
+                sesion_id=self.sesion_caja_id,
+                monto=detalles_venta["total"],
+                forma_pago=detalles_venta["forma_pago"]
+            )
 
         mensaje_impresion = self._imprimir_ticket_venta(venta_id)
         mensaje_final = mensaje if not mensaje_impresion else f"{mensaje}\n{mensaje_impresion}"
@@ -984,6 +1010,150 @@ class Venta(QWidget):
     @staticmethod
     def _formatear_moneda(valor):
         return f"${float(valor or 0.0):,.2f}"
+
+    def _crear_boton_corte_caja(self):
+        """
+        Dynamically instantiates and injects the 'Corte de Caja' button into a horizontal layout
+        together with the 'Cancelar Ticket' button, so that both buttons form a single aligned header
+        above the 'Resumen de venta' (contenedor_detallesventa) card.
+        """
+        # Create horizontal container layout for the top right buttons
+        self.layout_botones_derecha = QHBoxLayout()
+        self.layout_botones_derecha.setSpacing(8)
+        self.layout_botones_derecha.setContentsMargins(0, 0, 0, 0)
+
+        # Remove "Cancelar Ticket" from gridLayout_4 in order to shift it to our new QHBoxLayout
+        self.ui.gridLayout_4.removeWidget(self.ui.btn_btn_cancelarticket)
+
+        # Instantiate "Corte de Caja" button
+        self.btn_btn_cortecaja = QPushButton("Corte de Caja", self.ui.contenedor_controlcentral)
+        self.btn_btn_cortecaja.setObjectName("btn_btn_cortecaja")
+        self.btn_btn_cortecaja.setCursor(Qt.PointingHandCursor)
+        self.btn_btn_cortecaja.setStyleSheet("""
+            QPushButton#btn_btn_cortecaja {
+                height: 25px;
+                color: #fffefb;
+                background: #dc3545;  /* Red styling for closure actions */
+                border-radius: 5px;
+                font-family: Arial;
+                font-weight: bold;
+                font-size: 14px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            QPushButton#btn_btn_cortecaja:hover {
+                background: #bd2130;
+            }
+            QPushButton#btn_btn_cortecaja:pressed {
+                background: #b21f2d;
+            }
+        """)
+        self.btn_btn_cortecaja.clicked.connect(self.realizar_corte_caja)
+
+        # Add both buttons to the new layout horizontal
+        self.layout_botones_derecha.addWidget(self.ui.btn_btn_cancelarticket)
+        self.layout_botones_derecha.addWidget(self.btn_btn_cortecaja)
+
+        # Create a vertical layout on the right side to hold both the buttons layout and the details card
+        self.layout_columna_derecha = QVBoxLayout()
+        self.layout_columna_derecha.setSpacing(10)
+        self.layout_columna_derecha.setContentsMargins(0, 0, 0, 0)
+
+        # Remove "contenedor_detallesventa" from gridLayout_4 to move it inside our new column layout
+        self.ui.gridLayout_4.removeWidget(self.ui.contenedor_detallesventa)
+
+        # Adjust size policy and maximum width of "contenedor_detallesventa" so that it expands horizontally
+        # to match exactly the sum of both buttons
+        self.ui.contenedor_detallesventa.setMaximumWidth(16777215) # Remove any hardcoded max width limit
+        self.ui.contenedor_detallesventa.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        # Add buttons sub-layout and details card to our column layout
+        self.layout_columna_derecha.addLayout(self.layout_botones_derecha)
+        self.layout_columna_derecha.addWidget(self.ui.contenedor_detallesventa)
+
+        # Add the entire right column layout to gridLayout_4 encompassing rows 0 to 3, column 4 (and column 5)
+        # Row 0 to Row 3 (span=4) to align beautifully next to the search bar and product table
+        self.ui.gridLayout_4.addLayout(self.layout_columna_derecha, 0, 4, 4, 1)
+
+    def _verificar_y_asegurar_caja(self) -> bool:
+        """
+        Checks if there is an active OPEN box session.
+        If there isn't, prompts the mandatory Opening Dialog.
+        Returns:
+            bool: True if there is a session active, False if canceled.
+        """
+        from sesion_caja import GestorSesionCaja
+        exito, mensaje, sesion = GestorSesionCaja.obtener_sesion_activa()
+        if exito and sesion:
+            self.sesion_caja_id = sesion["id"]
+            self.caja_abierta = True
+            self._set_controles_habilitados(True)
+            return True
+
+        # No open shift found: force opening
+        from gui.apertura_caja_dialog import AperturaCajaDialog
+        usuario_id = self.datos_usuario.get("id_usuario") if self.datos_usuario else 1
+
+        dialogo = AperturaCajaDialog(usuario_id=usuario_id, parent=self)
+        if dialogo.exec() == QDialog.Accepted:
+            # Recheck to get details of newly opened session
+            exito, mensaje, sesion = GestorSesionCaja.obtener_sesion_activa()
+            if exito and sesion:
+                self.sesion_caja_id = sesion["id"]
+                self.caja_abierta = True
+                self._set_controles_habilitados(True)
+                return True
+
+        # Closed/rejected: lock sales operations
+        self.sesion_caja_id = None
+        self.caja_abierta = False
+        self._set_controles_habilitados(False)
+        return False
+
+    def _set_controles_habilitados(self, enabled: bool):
+        """
+        Enables or disables widgets in the Sales Manager to enforce the mandatory active shift rule.
+        """
+        self.ui.txt_buscarproducto.setEnabled(enabled)
+        self.ui.tabla_productos.setEnabled(enabled)
+        self.ui.btn_btn_cancelarticket.setEnabled(enabled)
+        self.ui.btn_btn_cobrar.setEnabled(enabled)
+        self.ui.btn_btn_aplicardescuento.setEnabled(enabled)
+        self.ui.btn_btn_buscarclientedescuento.setEnabled(enabled)
+        self.ui.btn_btn_buscarcreditocliente.setEnabled(enabled)
+        self.ui.btn_btn_cobrarconcredito.setEnabled(enabled)
+
+        # Modify the placeholder so the user is informed
+        if not enabled:
+            self.ui.txt_buscarproducto.setPlaceholderText("SE REQUIERE APERTURA DE CAJA")
+        else:
+            self.ui.txt_buscarproducto.setPlaceholderText("Buscar por código o nombre del producto...")
+
+    def realizar_corte_caja(self):
+        """
+        Triggers the cash closure and turn audits dialog.
+        Blocks the sales screen upon clean closure and shifts user back to opening state.
+        """
+        from sesion_caja import GestorSesionCaja
+        if not self.sesion_caja_id:
+            exito, mensaje, sesion = GestorSesionCaja.obtener_sesion_activa()
+            if exito and sesion:
+                self.sesion_caja_id = sesion["id"]
+            else:
+                Mensaje().mensaje_alerta("No hay ninguna sesión de caja activa abierta para realizar un corte de caja.")
+                self._verificar_y_asegurar_caja()
+                return
+
+        from gui.corte_caja_dialog import CorteCajaDialog
+        dialogo = CorteCajaDialog(sesion_id=self.sesion_caja_id, parent=self)
+        if dialogo.exec() == QDialog.Accepted:
+            # Drop current state and transition user back to locked/open-required flow
+            self.sesion_caja_id = None
+            self.caja_abierta = False
+            self._set_controles_habilitados(False)
+
+            # Immediately offer to open box for next turn/user
+            self._verificar_y_asegurar_caja()
 
 
 class DialogoSeleccionProductoVenta(QDialog):

@@ -1,8 +1,11 @@
+import sys
+from PySide6.QtWidgets import QApplication, QDialog
+from licencia import leer_licencia, validar_licencia
+from gui.activacion_dialog import VentanaActivacion
+
 from sqlalchemy import MetaData, Table, select, func
-from app.Controller.Hilo_consultas import WorkerDB
-from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from app.DataBase.conexionBD import Conexion_base_datos
-from app.DataBase.postgres_manager import PostgresStartupError, asegurar_servicio_postgres
+# from app.DataBase.postgres_manager import PostgresStartupError, asegurar_servicio_postgres
 from app.Controller.InicioDeSesionController import Login
 from app.Controller.VentanaInicialController import *
 from app.Model.BaseDatosModel import Usuarios
@@ -33,39 +36,22 @@ class Inicio_sistema(QObject):
         palette.setColor(QPalette.ToolTipText, QColor("#ECEFF4"))
         self.app.setPalette(palette)
 
-        self.manejadorModal = ModalManager()
-        self.manejadorModal.set_modal_class(Modal_de_espera)
-
-    def preparar_postgresql_portable(self):
-        try:
-            asegurar_servicio_postgres()
-            return True
-        except PostgresStartupError as exc:
-            Mensaje().mensaje_alerta(str(exc))
-            return False
+    # def preparar_postgresql_portable(self):
+    #     try:
+    #         asegurar_servicio_postgres()
+    #         return True
+    #     except PostgresStartupError as exc:
+    #         Mensaje().mensaje_alerta(str(exc))
+    #         return False
 
     def comprobar_usuarios(self):
         try:
-            self.manejadorModal.mostrar_modal(None)
-            WorkerDB.cleanup_owner_workers("consultar_cantidad_usuarios_thread")
-            self.id_hilo_consultar_cantidad_usuarios = WorkerDB.create_managed_worker(owner_id="consultar_cantidad_usuarios_thread")
-            self.consultor_cantidad_usuarios = WorkerDB.get_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
-            if not self.consultor_cantidad_usuarios:
-                raise Exception("No se pudo obtener el worker gestionado")
-            self.lista_hilos_inicio.append(self.id_hilo_consultar_cantidad_usuarios)
-            WorkerDB.connect_managed_signals(
-                worker_id=self.id_hilo_consultar_cantidad_usuarios,
-                resultado_callback=self.mostrar_resultado_hilo,
-                error_callback=self.mostrar_error_hilo,
-                terminado_callback=self.manejadorModal.cerrar_modal
-            )
-            self.consultor_cantidad_usuarios.ejecutar(
-                funcion=self.comprobar_existencia_usuarios_query
-            )
+            with Conexion_base_datos() as db:
+                session = db.abrir_sesion()
+                resultado = self.comprobar_existencia_usuarios_query(session)
+            self.mostrar_resultado_hilo(resultado)
         except Exception as e:
-            if hasattr(self, 'id_hilo_consultar_cantidad_usuarios'):
-                WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            self.mostrar_error_hilo(str(e))
 
     def comprobar_existencia_usuarios_query(self, session):
         try:
@@ -93,8 +79,6 @@ class Inicio_sistema(QObject):
         }
 
     def mostrar_resultado_hilo(self, objetoMensaje):
-        if hasattr(self, 'id_hilo_consultar_cantidad_usuarios'):
-            WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_cantidad_usuarios)
         if objetoMensaje["exito"]:
             self.login = Login()
             self.login.show()
@@ -109,13 +93,20 @@ class Inicio_sistema(QObject):
         self.login.show()
 
     def terminar_hilo_inicio(self):
-        for hilo in self.lista_hilos_inicio:
-            WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_inicio.clear()
 
 if __name__ == "__main__":
     sistema = Inicio_sistema()
-    if not sistema.preparar_postgresql_portable():
-        sys.exit(1)
+
+    # Verificación de Licencia antes del arranque de la app
+    lic_guardada = leer_licencia()
+    valida, mensaje, payload = validar_licencia(lic_guardada)
+    if not valida:
+        dialogo = VentanaActivacion()
+        if dialogo.exec() != QDialog.Accepted:
+            sys.exit(0)
+
+    # if not sistema.preparar_postgresql_portable():
+    #     sys.exit(1)
     sistema.comprobar_usuarios()
     sys.exit(sistema.app.exec())

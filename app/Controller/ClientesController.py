@@ -316,7 +316,7 @@ class Clientes(QWidget):
                     'area': area_cliente,
                     'categoria': categoria_cliente,
                     'cliente_fisico': cliente_fisico,
-                    'foto': self.foto_cliente if self.foto_cliente else None
+                    'foto': self.foto_cliente if self.foto_cliente else ""
                 }
                 self.consultor_actualizar_clientes_vclientes.ejecutar(
                     funcion=self.actualizar_clientes_query,
@@ -678,7 +678,7 @@ class Clientes(QWidget):
                 "ocupacion": datos["ocupacion"],
                 "ingresos": datos["ingresos"],
                 "estado_civil": datos["estado civil"],
-                "foto": self.foto_cliente,
+                "foto": self.foto_cliente or "",
             }
             funcion_query = self.agregar_cliente_fisico_query
         else:
