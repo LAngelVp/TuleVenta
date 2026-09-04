@@ -514,6 +514,9 @@ class SistemaPrincipal(QWidget):
 class OpcionesSistemaController(QDialog):
     def __init__(self, parent=None, permisos_usuario=None):
         super().__init__(parent)
+        # Activar los botones estándar de minimizar y maximizar (expandir) nativos de Windows
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinMaxButtonsHint)
+
         self.permisos_usuario = {
             str(permiso).strip().upper()
             for permiso in (permisos_usuario or [])
@@ -531,6 +534,7 @@ class OpcionesSistemaController(QDialog):
         self._crear_boton_promociones()
         self._crear_controles_configuracion_fiscal()
         self._crear_controles_configuracion_impresora()
+        self._crear_tarjeta_licenciamiento()
         self._cargar_configuracion_fiscal()
         self._cargar_configuracion_impresora()
         self._aplicar_permisos_ui()
@@ -647,6 +651,15 @@ class OpcionesSistemaController(QDialog):
         self.ui.gridLayout_2.removeItem(self.ui.verticalSpacer)
         self.ui.gridLayout_2.addWidget(self.contenedor_configuracion_impresora, 4, 0, 1, 1)
         self.ui.gridLayout_2.addItem(self.ui.verticalSpacer, 5, 0, 1, 1)
+
+    def _crear_tarjeta_licenciamiento(self):
+        from gui.herramientas_view import TarjetaLicenciaWidget
+        self.tarjeta_licencia = TarjetaLicenciaWidget(self.ui.contenedor_scrollInternoOpcionesSistema)
+
+        self.ui.gridLayout_2.removeItem(self.ui.verticalSpacer)
+        # Añadir al grid en la fila 5 e insertar de nuevo el spacer al final en la fila 6
+        self.ui.gridLayout_2.addWidget(self.tarjeta_licencia, 5, 0, 1, 1)
+        self.ui.gridLayout_2.addItem(self.ui.verticalSpacer, 6, 0, 1, 1)
 
     def _cargar_configuracion_fiscal(self):
         self.entrada_iva_porcentaje.setValue(ConfiguracionSistemaModel.obtener_iva_porcentaje())

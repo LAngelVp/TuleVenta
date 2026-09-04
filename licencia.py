@@ -146,3 +146,39 @@ def leer_licencia() -> str:
     if isinstance(val, str):
         return val.strip()
     return ""
+
+def obtener_info_licencia() -> dict:
+    """
+    Reads the stored license key via QSettings, decodes the JSON payload,
+    calculates remaining days and validity, returning a metadata dict.
+
+    Returns:
+        dict: {
+            "cliente": str,
+            "vencimiento": str,
+            "dias_restantes": int,
+            "estado_valido": bool,
+            "mensaje": str
+        }
+    """
+    lic_str = leer_licencia()
+    valido, mensaje, payload = validar_licencia(lic_str)
+
+    cliente = payload.get("cliente", "Sin activar / Desconocido")
+    vencimiento_str = payload.get("vencimiento", "N/D")
+
+    dias_restantes = 0
+    if vencimiento_str != "N/D":
+        try:
+            exp_date = datetime.strptime(vencimiento_str, "%Y-%m-%d").date()
+            dias_restantes = (exp_date - date.today()).days
+        except Exception:
+            pass
+
+    return {
+        "cliente": cliente,
+        "vencimiento": vencimiento_str,
+        "dias_restantes": dias_restantes,
+        "estado_valido": valido,
+        "mensaje": mensaje
+    }
