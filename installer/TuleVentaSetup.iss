@@ -75,7 +75,7 @@ function SetEnvironmentVariable(lpName, lpValue: String): Boolean;
   external 'SetEnvironmentVariableW@kernel32.dll stdcall';
 
 var
-  PostgreSqlPage: TInputQueryWizardPage;
+  PostgreSqlPage: TWizardPage;
   PgPort: String;
   PgSuperUser: String;
   PgSuperPassword: String;
@@ -83,6 +83,14 @@ var
   PgAppUser: String;
   PgAppPassword: String;
   PgBootstrapOk: Boolean;
+
+  // Controles de interfaz para la página personalizada (2 columnas)
+  EdtPgPort: TNewEdit;
+  EdtPgSuperUser: TNewEdit;
+  EdtPgSuperPassword: TPasswordEdit;
+  EdtPgAppDatabase: TNewEdit;
+  EdtPgAppUser: TNewEdit;
+  EdtPgAppPassword: TPasswordEdit;
 
 function Q(const S: String): String;
 begin
@@ -135,12 +143,12 @@ end;
 
 procedure CargarValoresPostgreSql();
 begin
-  PgPort := Trim(PostgreSqlPage.Values[0]);
-  PgSuperUser := Lowercase(Trim(PostgreSqlPage.Values[1]));
-  PgSuperPassword := Trim(PostgreSqlPage.Values[2]);
-  PgAppDatabase := Lowercase(Trim(PostgreSqlPage.Values[3]));
-  PgAppUser := Lowercase(Trim(PostgreSqlPage.Values[4]));
-  PgAppPassword := Trim(PostgreSqlPage.Values[5]);
+  PgPort := Trim(EdtPgPort.Text);
+  PgSuperUser := Lowercase(Trim(EdtPgSuperUser.Text));
+  PgSuperPassword := Trim(EdtPgSuperPassword.Text);
+  PgAppDatabase := Lowercase(Trim(EdtPgAppDatabase.Text));
+  PgAppUser := Lowercase(Trim(EdtPgAppUser.Text));
+  PgAppPassword := Trim(EdtPgAppPassword.Text);
 end;
 
 function ValidarPaginaPostgreSql(): Boolean;
@@ -311,27 +319,138 @@ begin
 end;
 
 procedure InitializeWizard();
+var
+  LblIntro: TNewStaticText;
+  LblPgPort, LblPgSuperUser: TNewStaticText;
+  LblPgSuperPassword, LblPgAppDatabase: TNewStaticText;
+  LblPgAppUser, LblPgAppPassword: TNewStaticText;
+  ColWidth, ColGap, LeftColX, RightColX: Integer;
+  TopY, RowSpacing, LabelOffset: Integer;
 begin
   PgBootstrapOk := False;
 
-  PostgreSqlPage := CreateInputQueryPage(
+  PostgreSqlPage := CreateCustomPage(
     wpSelectDir,
     'Instancia local de PostgreSQL',
-    'Configura la base de datos local de TuleVenta',
-    'El instalador configurara la base de datos en modo local para tu usuario.'
+    'Configura la base de datos local de TuleVenta'
   );
 
-  PostgreSqlPage.Add('Puerto PostgreSQL:', False);
-  PostgreSqlPage.Add('Usuario superadministrador:', False);
-  PostgreSqlPage.Add('Contrasena superadministrador:', True);
-  PostgreSqlPage.Add('Base de datos de la aplicacion:', False);
-  PostgreSqlPage.Add('Usuario de la aplicacion:', False);
-  PostgreSqlPage.Add('Contrasena de la aplicacion:', True);
+  // Texto descriptivo superior equivalente al SubCaption de CreateInputQueryPage
+  LblIntro := TNewStaticText.Create(PostgreSqlPage);
+  LblIntro.Parent := PostgreSqlPage.Surface;
+  LblIntro.Left := 0;
+  LblIntro.Top := 0;
+  LblIntro.Width := PostgreSqlPage.SurfaceWidth;
+  LblIntro.AutoSize := True;
+  LblIntro.WordWrap := True;
+  LblIntro.Caption := 'El instalador configurara la base de datos en modo local para tu usuario.';
 
-  PostgreSqlPage.Values[0] := '5432';
-  PostgreSqlPage.Values[1] := 'postgres';
-  PostgreSqlPage.Values[3] := 'TuleVenta';
-  PostgreSqlPage.Values[4] := 'tuleventa_app';
+  // Calculo dinamico de geometria en 2 columnas adaptable a DPI (100%, 125%, 150%)
+  ColGap := ScaleX(16);
+  ColWidth := (PostgreSqlPage.SurfaceWidth - ColGap) div 2;
+  LeftColX := 0;
+  RightColX := ColWidth + ColGap;
+
+  TopY := LblIntro.Top + LblIntro.Height + ScaleY(16);
+  LabelOffset := ScaleY(18);
+  RowSpacing := ScaleY(54);
+
+  // ==================== FILA 1 ====================
+  // Columna 1: Puerto PostgreSQL
+  LblPgPort := TNewStaticText.Create(PostgreSqlPage);
+  LblPgPort.Parent := PostgreSqlPage.Surface;
+  LblPgPort.Left := LeftColX;
+  LblPgPort.Top := TopY;
+  LblPgPort.Width := ColWidth;
+  LblPgPort.Caption := 'Puerto PostgreSQL:';
+
+  EdtPgPort := TNewEdit.Create(PostgreSqlPage);
+  EdtPgPort.Parent := PostgreSqlPage.Surface;
+  EdtPgPort.Left := LeftColX;
+  EdtPgPort.Top := TopY + LabelOffset;
+  EdtPgPort.Width := ColWidth;
+  EdtPgPort.Text := '5432';
+
+  // Columna 2: Usuario administrador
+  LblPgSuperUser := TNewStaticText.Create(PostgreSqlPage);
+  LblPgSuperUser.Parent := PostgreSqlPage.Surface;
+  LblPgSuperUser.Left := RightColX;
+  LblPgSuperUser.Top := TopY;
+  LblPgSuperUser.Width := ColWidth;
+  LblPgSuperUser.Caption := 'Usuario administrador:';
+
+  EdtPgSuperUser := TNewEdit.Create(PostgreSqlPage);
+  EdtPgSuperUser.Parent := PostgreSqlPage.Surface;
+  EdtPgSuperUser.Left := RightColX;
+  EdtPgSuperUser.Top := TopY + LabelOffset;
+  EdtPgSuperUser.Width := ColWidth;
+  EdtPgSuperUser.Text := 'postgres';
+
+  // ==================== FILA 2 ====================
+  TopY := TopY + RowSpacing;
+
+  // Columna 1: Contraseña administrador
+  LblPgSuperPassword := TNewStaticText.Create(PostgreSqlPage);
+  LblPgSuperPassword.Parent := PostgreSqlPage.Surface;
+  LblPgSuperPassword.Left := LeftColX;
+  LblPgSuperPassword.Top := TopY;
+  LblPgSuperPassword.Width := ColWidth;
+  LblPgSuperPassword.Caption := 'Contrasena administrador:';
+
+  EdtPgSuperPassword := TPasswordEdit.Create(PostgreSqlPage);
+  EdtPgSuperPassword.Parent := PostgreSqlPage.Surface;
+  EdtPgSuperPassword.Left := LeftColX;
+  EdtPgSuperPassword.Top := TopY + LabelOffset;
+  EdtPgSuperPassword.Width := ColWidth;
+  EdtPgSuperPassword.Text := '';
+
+  // Columna 2: Base de datos aplicación
+  LblPgAppDatabase := TNewStaticText.Create(PostgreSqlPage);
+  LblPgAppDatabase.Parent := PostgreSqlPage.Surface;
+  LblPgAppDatabase.Left := RightColX;
+  LblPgAppDatabase.Top := TopY;
+  LblPgAppDatabase.Width := ColWidth;
+  LblPgAppDatabase.Caption := 'Base de datos aplicacion:';
+
+  EdtPgAppDatabase := TNewEdit.Create(PostgreSqlPage);
+  EdtPgAppDatabase.Parent := PostgreSqlPage.Surface;
+  EdtPgAppDatabase.Left := RightColX;
+  EdtPgAppDatabase.Top := TopY + LabelOffset;
+  EdtPgAppDatabase.Width := ColWidth;
+  EdtPgAppDatabase.Text := 'TuleVenta';
+
+  // ==================== FILA 3 ====================
+  TopY := TopY + RowSpacing;
+
+  // Columna 1: Usuario aplicación
+  LblPgAppUser := TNewStaticText.Create(PostgreSqlPage);
+  LblPgAppUser.Parent := PostgreSqlPage.Surface;
+  LblPgAppUser.Left := LeftColX;
+  LblPgAppUser.Top := TopY;
+  LblPgAppUser.Width := ColWidth;
+  LblPgAppUser.Caption := 'Usuario aplicacion:';
+
+  EdtPgAppUser := TNewEdit.Create(PostgreSqlPage);
+  EdtPgAppUser.Parent := PostgreSqlPage.Surface;
+  EdtPgAppUser.Left := LeftColX;
+  EdtPgAppUser.Top := TopY + LabelOffset;
+  EdtPgAppUser.Width := ColWidth;
+  EdtPgAppUser.Text := 'tuleventa_app';
+
+  // Columna 2: Contraseña aplicación
+  LblPgAppPassword := TNewStaticText.Create(PostgreSqlPage);
+  LblPgAppPassword.Parent := PostgreSqlPage.Surface;
+  LblPgAppPassword.Left := RightColX;
+  LblPgAppPassword.Top := TopY;
+  LblPgAppPassword.Width := ColWidth;
+  LblPgAppPassword.Caption := 'Contrasena aplicacion:';
+
+  EdtPgAppPassword := TPasswordEdit.Create(PostgreSqlPage);
+  EdtPgAppPassword.Parent := PostgreSqlPage.Surface;
+  EdtPgAppPassword.Left := RightColX;
+  EdtPgAppPassword.Top := TopY + LabelOffset;
+  EdtPgAppPassword.Width := ColWidth;
+  EdtPgAppPassword.Text := '';
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

@@ -6,4 +6,4 @@ dist/
 __pycache__/
 alembic/versions/
 installer/output/
-installer/third_party/postgresql-portable/
+#installer/third_party/postgresql-portable/

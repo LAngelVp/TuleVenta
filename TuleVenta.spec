@@ -14,6 +14,7 @@ datas += collect_data_files("reportlab")
 datas += [
     (str(PROJECT_ROOT / "app" / "Source"), "app/Source"),
     (str(PROJECT_ROOT / "datos"), "datos"),
+    (str(PROJECT_ROOT / "licencia_publica.pem"), "."),
 ]
 
 hiddenimports = collect_submodules("plotly") + [
