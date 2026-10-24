@@ -132,7 +132,7 @@ class DepartamentosController(QDialog):
     def buscar(self):
         nombre = self.WindowRegistroDepartamentos.txt_buscardepartamento.text().strip()
         if not nombre:
-            Mensaje().mensaje_informativo("No haz ingresado lo que quieres buscar")
+            Mensaje(self).mensaje_informativo("No haz ingresado lo que quieres buscar")
             return
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -155,7 +155,7 @@ class DepartamentosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_departamento'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_departamento)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def buscar_departamento_query(self, session, nombre):
         try:
@@ -217,7 +217,7 @@ class DepartamentosController(QDialog):
     def guardar(self):
         datos = self.obtener_contenido_campos()
         if not self.validar(datos):
-            Mensaje().mensaje_informativo('campos incompletos')
+            Mensaje(self).mensaje_informativo('campos incompletos')
             return
         self.manejadorModal.mostrar_modal(self)
         try:
@@ -240,7 +240,7 @@ class DepartamentosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_agregar_departamento'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_departamento)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def agregar_departamento_query(self, session, datos):
         try:
@@ -271,7 +271,7 @@ class DepartamentosController(QDialog):
     def eliminar(self):
         if self.objetoDepartamento is not None:
             try:
-                respuesta = Mensaje().mensaje_pregunta('Estas seguro de eliminar el departamento?')
+                respuesta = Mensaje(self).mensaje_pregunta('Estas seguro de eliminar el departamento?')
                 if respuesta == QMessageBox.Yes:
                             self.manejadorModal.mostrar_modal(self)
                             WorkerDB.cleanup_owner_workers("eliminar_departamento_thread")
@@ -295,7 +295,7 @@ class DepartamentosController(QDialog):
             except Exception as e:
                 if hasattr(self, 'id_hilo_eliminar_departamento'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_departamento)
-                Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
+                Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def eliminar_departamento_query(self, session, departamento):
         estado = DepartamentosModel(session).eliminar_departamento(departamento.id)
@@ -311,7 +311,7 @@ class DepartamentosController(QDialog):
         }
 
     def mensaje_estado_eliminado(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        Mensaje(self).mensaje_informativo(objetoMensaje["mensaje"])
         self.objetoDepartamento = None
         self.signal_departamento_agregado.emit()
         self.limpiar()
@@ -320,10 +320,10 @@ class DepartamentosController(QDialog):
         if self.objetoDepartamento:
             nuevos_datos = self.obtener_contenido_campos()
             if not self.validar(nuevos_datos):
-                Mensaje().mensaje_alerta('No puedes dejar campos de nombre y descripcion vacios')
+                Mensaje(self).mensaje_alerta('No puedes dejar campos de nombre y descripcion vacios')
                 return
             sucursales_seleccionadas = self.sucursales_seleccionadas
-            respuesta = Mensaje().mensaje_pregunta('Estas seguro de actualizar el departamento')
+            respuesta = Mensaje(self).mensaje_pregunta('Estas seguro de actualizar el departamento')
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
@@ -349,7 +349,7 @@ class DepartamentosController(QDialog):
                 except Exception as e:
                     if hasattr(self, 'id_hilo_actualizar_departamento'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_departamento)
-                    Mensaje().mensaje_critico(f'Error al actualizar el departamento por lo siguiente: {e}')
+                    Mensaje(self).mensaje_critico(f'Error al actualizar el departamento por lo siguiente: {e}')
 
     def actualizar_departamento_query(self, session, departamento, sucursales_seleccionadas, nuevos_datos):
         try:
@@ -402,7 +402,7 @@ class DepartamentosController(QDialog):
         if sucursal_seleccionada:
             sucursal = sucursal_seleccionada.data(Qt.UserRole)
             if not hasattr(sucursal, 'id'):
-                Mensaje().mensaje_alerta("Error: Datos de sucursal inválidos")
+                Mensaje(self).mensaje_alerta("Error: Datos de sucursal inválidos")
                 return
             if sucursal.id not in self.sucursales_seleccionadas:
                 self.sucursales_seleccionadas[sucursal.id] = sucursal
@@ -416,16 +416,16 @@ class DepartamentosController(QDialog):
                     self.WindowRegistroDepartamentos.lista_sucursalesexistentes.row(sucursal_seleccionada)
                 )
             else:
-                Mensaje().mensaje_informativo("Esta sucursal ya está vinculada")
+                Mensaje(self).mensaje_informativo("Esta sucursal ya está vinculada")
         else:
-            Mensaje().mensaje_informativo("Selecciona una sucursal para vincular")
+            Mensaje(self).mensaje_informativo("Selecciona una sucursal para vincular")
 
     def desvincular_sucursal(self):
         sucursal_seleccionada = self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.currentItem()
         if sucursal_seleccionada:
             sucursal = sucursal_seleccionada.data(Qt.UserRole)
             if not hasattr(sucursal, 'id'):
-                Mensaje().mensaje_alerta("Error: Datos de sucursal inválidos")
+                Mensaje(self).mensaje_alerta("Error: Datos de sucursal inválidos")
                 return
             sucursal_id = sucursal.id
             if sucursal_id in self.sucursales_seleccionadas:
@@ -440,9 +440,9 @@ class DepartamentosController(QDialog):
                     self.WindowRegistroDepartamentos.lista_sucursalesvinculadas.row(sucursal_seleccionada)
                 )
             else:
-                Mensaje().mensaje_alerta(f"Sucursal ID {sucursal_id} no encontrada en la lista de seleccionadas.")
+                Mensaje(self).mensaje_alerta(f"Sucursal ID {sucursal_id} no encontrada en la lista de seleccionadas.")
         else:
-            Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal para desvincular.")
+            Mensaje(self).mensaje_informativo("No se ha seleccionado ninguna sucursal para desvincular.")
 
     def actualizar_sucursales_existentes(self):
         self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
@@ -476,7 +476,7 @@ class DepartamentosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_listar_sucursales_del_sistema'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_sucursales_del_sistema)
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
+            Mensaje(self).mensaje_alerta(f'Ocurrio un error en la operación: {e}')
 
     def listar_sucursales_del_sistema_query(self, session):
         try:
@@ -533,7 +533,7 @@ class DepartamentosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_listar_departamentos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operación: {e}')
+            Mensaje(self).mensaje_alerta(f'Ocurrio un error en la operación: {e}')
 
     def obtener_departamentos_query(self, session):
         try:
@@ -570,7 +570,7 @@ class DepartamentosController(QDialog):
 
     def listar_departamentos(self, resultado):
         if resultado['exito']:
-            Mensaje().mensaje_informativo(resultado['mensaje'])
+            Mensaje(self).mensaje_informativo(resultado['mensaje'])
             departamentos = resultado['data']
             self.WindowRegistroDepartamentos.lista_puestosasignados.clear()
             self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
@@ -580,7 +580,7 @@ class DepartamentosController(QDialog):
                 item.setData(Qt.UserRole, departamento)
                 self.WindowRegistroDepartamentos.lista_departamentosexistentes.addItem(item)
         else:
-            Mensaje().mensaje_informativo(resultado['mensaje'])
+            Mensaje(self).mensaje_informativo(resultado['mensaje'])
             self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
 
     def obtenerId(self, item):
@@ -590,7 +590,7 @@ class DepartamentosController(QDialog):
             self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
             self.sucursales_seleccionadas = {}
             if not self.objetoDepartamento:
-                Mensaje().mensaje_informativo("Departamento no encontrado")
+                Mensaje(self).mensaje_informativo("Departamento no encontrado")
                 return
             self.WindowRegistroDepartamentos.txt_nombredepartamento.setText(self.objetoDepartamento.nombre or "")
             self.WindowRegistroDepartamentos.txtlargo_descripciondepartamento.setPlainText(self.objetoDepartamento.descripcion or "")
@@ -599,7 +599,7 @@ class DepartamentosController(QDialog):
             self.listar_puestos_asignados(self.objetoDepartamento.puestos)
 
         except Exception as e:
-            Mensaje().mensaje_critico(f'Error al cargar departamento: {e}')
+            Mensaje(self).mensaje_critico(f'Error al cargar departamento: {e}')
 
     def _cargar_sucursales_vinculadas(self, sucursales_vinculadas):
         try:
@@ -658,12 +658,12 @@ class DepartamentosController(QDialog):
             raise e
 
     def mostrar_resultado_hilo(self, mensaje, estado):
-        Mensaje().mensaje_informativo(f'{mensaje["mensaje"]}')
+        Mensaje(self).mensaje_informativo(f'{mensaje["mensaje"]}')
         self.objetoDepartamento = None
         self.signal_departamento_agregado.emit()
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un error en el sistema {error}')
+        Mensaje(self).mensaje_alerta(f'Ocurrio un error en el sistema {error}')
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

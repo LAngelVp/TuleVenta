@@ -5,7 +5,7 @@ from gui.activacion_dialog import VentanaActivacion
 
 from sqlalchemy import MetaData, Table, select, func
 from app.DataBase.conexionBD import Conexion_base_datos
-# from app.DataBase.postgres_manager import PostgresStartupError, asegurar_servicio_postgres
+from app.DataBase.postgres_manager import PostgresStartupError, asegurar_servicio_postgres
 from app.Controller.InicioDeSesionController import Login
 from app.Controller.VentanaInicialController import *
 from app.Model.BaseDatosModel import Usuarios
@@ -36,13 +36,13 @@ class Inicio_sistema(QObject):
         palette.setColor(QPalette.ToolTipText, QColor("#ECEFF4"))
         self.app.setPalette(palette)
 
-    # def preparar_postgresql_portable(self):
-    #     try:
-    #         asegurar_servicio_postgres()
-    #         return True
-    #     except PostgresStartupError as exc:
-    #         Mensaje().mensaje_alerta(str(exc))
-    #         return False
+    def preparar_postgresql_portable(self):
+        try:
+            asegurar_servicio_postgres()
+            return True
+        except PostgresStartupError as exc:
+            Mensaje().mensaje_alerta(str(exc))
+            return False
 
     def comprobar_usuarios(self):
         try:
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         if dialogo.exec() != QDialog.Accepted:
             sys.exit(0)
 
-    # if not sistema.preparar_postgresql_portable():
-    #     sys.exit(1)
+    if not sistema.preparar_postgresql_portable():
+        sys.exit(1)
     sistema.comprobar_usuarios()
     sys.exit(sistema.app.exec())

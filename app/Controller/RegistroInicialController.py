@@ -583,8 +583,8 @@ class Registro_personal_inicial(QDialog):
 
     def obtener_sucursales(self):
         try:
-            WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
-            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
+            WorkerDB.cleanup_owner_workers("obtener_sucursales_registro_empleado_thread")
+            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_sucursales_registro_empleado_thread")
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
             self.lista_hilos_registroEmpleado.append(self.id_hilo_obtener_sucursales)
             if not self.consultor_obtener_sucursal_hilo:

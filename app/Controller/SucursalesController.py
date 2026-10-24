@@ -122,7 +122,7 @@ class SucursalesController(QDialog):
     def buscar_sucursal(self):
         nombre_sucursal = self.windowSucursales.txt_buscarsucursales.text().strip()
         if not nombre_sucursal:
-            Mensaje().mensaje_informativo("No haz ingresado algun dato para realizar la busqueda.")
+            Mensaje(self).mensaje_informativo("No haz ingresado algun dato para realizar la busqueda.")
             return
         self.windowSucursales.txt_buscarsucursales.clearFocus()
         try:
@@ -146,7 +146,7 @@ class SucursalesController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_sucursal)
-            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}")
+            Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion de busqueda de sucursal.\n{e}")
 
     def buscar_sucursal_query(self, session, nombre_sucursal):
         try:
@@ -210,7 +210,7 @@ class SucursalesController(QDialog):
         datos = self.obtener_datos_campos()
         # Verifica si todos los campos están completos
         if any(value == '' for value in datos.values()):
-            Mensaje().mensaje_alerta("Todos los campos deben de estar completos.")
+            Mensaje(self).mensaje_alerta("Todos los campos deben de estar completos.")
             return  # Salir del método si hay campos vacíos
         # Iniciar la conexión a la base de datos
         try:
@@ -234,7 +234,7 @@ class SucursalesController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_agregar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_sucursal)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def agregar_sucursal_query(self, session, datos):
         """Manejar resultado del modelo"""
@@ -287,7 +287,7 @@ class SucursalesController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_obtener_sucursales'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_sucursales)
-            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
+            Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion de obtener las sucursales.\n{e}")
 
     def obtener_sucursales_query(self, session):
         try:
@@ -323,7 +323,7 @@ class SucursalesController(QDialog):
                     self.windowSucursales.lista_sucursales.addItem(item)
 
             except Exception as e:
-                Mensaje().mensaje_alerta(f"Error en listar sucursales: {e}")
+                Mensaje(self).mensaje_alerta(f"Error en listar sucursales: {e}")
         else:
             Mensaje(self).mensaje_alerta(f"{resultado['mensaje']}")
 
@@ -360,10 +360,10 @@ class SucursalesController(QDialog):
 
     def eliminar(self):
         if self.idSucursal == None:
-            Mensaje().mensaje_informativo("No se ha seleccionado ninguna sucursal")
+            Mensaje(self).mensaje_informativo("No se ha seleccionado ninguna sucursal")
             return
         try:
-            respuesta = Mensaje().mensaje_pregunta(f"Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}")
+            respuesta = Mensaje(self).mensaje_pregunta(f"Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}")
             if respuesta == QMessageBox.Yes:
                 self.manejadorModal.mostrar_modal(self)
                 WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
@@ -386,13 +386,16 @@ class SucursalesController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_eliminar_sucursal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
-            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
+            Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def mensaje_estado_eliminado(self, estado):
         if estado:
-            Mensaje().mensaje_informativo("Registro eliminado")
+            Mensaje(self).mensaje_informativo("Registro eliminado")
+            self.signal_sucursal_agregada.emit()
+            self.limpiar()
+            QTimer.singleShot(0, self.obtener_sucursales)
         else:
-            Mensaje().mensaje_informativo("No se logro eliminar el registro")
+            Mensaje(self).mensaje_informativo("No se logro eliminar el registro")
         self.idSucursal = None
 
     def eliminar_sucursal_query(self, session, sucursal):
@@ -406,10 +409,10 @@ class SucursalesController(QDialog):
 
         # Verifica que todos los campos estén completos
         if any(value == '' for value in datos.values()):
-            Mensaje().mensaje_informativo("Error: Todos los campos deben estar completos")
+            Mensaje(self).mensaje_informativo("Error: Todos los campos deben estar completos")
             return
         if self.idSucursal:
-            respuesta = Mensaje().mensaje_pregunta("Estas seguro de actualizar")
+            respuesta = Mensaje(self).mensaje_pregunta("Estas seguro de actualizar")
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
@@ -434,7 +437,7 @@ class SucursalesController(QDialog):
                 except Exception as e:
                     if hasattr(self, 'id_hilo_actualizar_sucursal'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_sucursal)
-                    Mensaje().mensaje_critico(f"Error al actualizar: {e}")
+                    Mensaje(self).mensaje_critico(f"Error al actualizar: {e}")
 
     def actualizar_sucursal_query(self, session, sucursal, datos):
         sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
@@ -461,7 +464,7 @@ class SucursalesController(QDialog):
         QTimer.singleShot(0, self.obtener_sucursales)
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
+        Mensaje(self).mensaje_alerta(f"Ocurrio un error en el sistema {error}")
 
     def keyPressEvent(self, event):
         """Sobrescribir el evento de teclado para ignorar Escape y Enter"""

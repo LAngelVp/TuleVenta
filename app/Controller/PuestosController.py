@@ -174,7 +174,7 @@ class PuestosController(QDialog):
     def buscar_puesto(self):
         nombre_puesto = self.ui.txt_buscarpuesto.text().strip()
         if not nombre_puesto:
-            Mensaje().mensaje_informativo("No haz ingresado información pora hacer la busqueda")
+            Mensaje(self).mensaje_informativo("No haz ingresado información pora hacer la busqueda")
             return
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -199,7 +199,7 @@ class PuestosController(QDialog):
             # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_filtrar_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_filtrar_puestos)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def filtrar_puestos_query(self, session, dato):
         try:
@@ -224,7 +224,7 @@ class PuestosController(QDialog):
 
     def roles(self):
         if not self._tiene_algun_permiso({"CREARGRUPOPERMISOS", "MODIFICARGRUPOPERMISOS", "ELIMINARGRUPOPERMISOS"}):
-            Mensaje().mensaje_informativo("No cuentas con permisos para administrar roles.")
+            Mensaje(self).mensaje_informativo("No cuentas con permisos para administrar roles.")
             return
         if self.ventana_roles is None:
             self.ventana_roles = ControlRolesController(parent=self, permisos_usuario=self.permisos_usuario)
@@ -289,7 +289,7 @@ class PuestosController(QDialog):
                 for campo in campos_vacios:
                     lista_vacios.append(campo)
             lista_vacios.append("Asignar dia laboral")
-            Mensaje().mensaje_alerta(f"No se realizo el registro, falta agregar los campos{lista_vacios}")
+            Mensaje(self).mensaje_alerta(f"No se realizo el registro, falta agregar los campos{lista_vacios}")
             return
         try:
             self.manejadorModal.mostrar_modal(self)
@@ -313,7 +313,7 @@ class PuestosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_agregar_puesto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_puesto)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def agregar_puestos_query(self, session, diasLaborales, datos):
         try:
@@ -347,9 +347,9 @@ class PuestosController(QDialog):
 
     def eliminar(self):
         if not self.puesto_actual:
-            Mensaje().mensaje_informativo("No se a seleccionado ningun registro para eliminar")
+            Mensaje(self).mensaje_informativo("No se a seleccionado ningun registro para eliminar")
             return
-        respuesta = Mensaje().mensaje_pregunta("Quieres eliminar el registro")
+        respuesta = Mensaje(self).mensaje_pregunta("Quieres eliminar el registro")
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
@@ -372,7 +372,7 @@ class PuestosController(QDialog):
             except Exception as e:
                 if hasattr(self, 'id_hilo_eliminar_puesto'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_puesto)
-                Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+                Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
         self.signal_puesto_agregado.emit()
 
     def eliminar_puesto_query(self, session, puesto_seleccionado):
@@ -413,11 +413,11 @@ class PuestosController(QDialog):
                 for campo in campos_vacios:
                     lista_vacios.append(campo)
             lista_vacios.append("Asignar dia laboral")
-            Mensaje().mensaje_alerta(f"No se logro la actualizacion, falta agregar los campos{lista_vacios}")
+            Mensaje(self).mensaje_alerta(f"No se logro la actualizacion, falta agregar los campos{lista_vacios}")
             return
 
         if id_puesto is not None:
-            respuesta = Mensaje().mensaje_pregunta("¿Quieres hacer la actualizaciòn?")
+            respuesta = Mensaje(self).mensaje_pregunta("¿Quieres hacer la actualizaciòn?")
             if respuesta == QMessageBox.Yes:
                 try:
                         self.manejadorModal.mostrar_modal(self)
@@ -443,9 +443,9 @@ class PuestosController(QDialog):
                 except Exception as e:
                     if hasattr(self, 'id_hilo_actualizar_puesto'):
                         WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_puesto)
-                    Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+                    Mensaje(self).mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
         else:
-            Mensaje().mensaje_informativo("No haz seleccionado un elemento para actualizar.")
+            Mensaje(self).mensaje_informativo("No haz seleccionado un elemento para actualizar.")
             return
 
     def actualizar_puesto_query(self, session, puesto, diasLaborales, id_departamento, datos):
@@ -501,7 +501,7 @@ class PuestosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_listar_departamentos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_departamentos)
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            Mensaje(self).mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
 
     def obtener_departamentos_query(self, session):
         try:
@@ -537,7 +537,7 @@ class PuestosController(QDialog):
                     userData=departamento  # Objeto completo
                 )
         else:
-            Mensaje().mensaje_alerta(objetoDepartamentos['mensaje'])
+            Mensaje(self).mensaje_alerta(objetoDepartamentos['mensaje'])
 
     def reestablecer_orden_original(self):
         """Restablece el orden original de los departamentos"""
@@ -571,7 +571,7 @@ class PuestosController(QDialog):
         except Exception as e:
             if hasattr(self, 'id_hilo_listar_puestos'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_listar_puestos)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def obtener_puestos_query(self, session):
         try:
@@ -680,7 +680,7 @@ class PuestosController(QDialog):
                         checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in puesto_seleccionado.dias_laborales)
 
             except Exception as e:
-                Mensaje().mensaje_critico(f'Surgio un error al obtener los datos del elemento seleccionado: {(e)}')
+                Mensaje(self).mensaje_critico(f'Surgio un error al obtener los datos del elemento seleccionado: {(e)}')
 
     def campos(self):
         return{
@@ -727,15 +727,15 @@ class PuestosController(QDialog):
         return None, True
 
     def mostrar_resultado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
+        Mensaje(self).mensaje_informativo(f"{objetoMensaje['mensaje']}")
         self.puesto_actual = None
         self.signal_puesto_agregado.emit()
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f"Ocurrio un error en el sistema {error}")
+        Mensaje(self).mensaje_alerta(f"Ocurrio un error en el sistema {error}")
 
     def mensaje_estado_eliminado(self, objectoMensaje):
-        Mensaje().mensaje_informativo(f"{objectoMensaje['mensaje']}")
+        Mensaje(self).mensaje_informativo(f"{objectoMensaje['mensaje']}")
         self.puesto_actual = None
 
     def keyPressEvent(self, event):
