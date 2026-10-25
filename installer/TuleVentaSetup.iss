@@ -24,6 +24,7 @@
 #endif
 
 [Setup]
+DisableDirPage=yes
 AppId={{E6D786A1-8D53-4DDF-BE93-EF6A3C2937A1}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -52,6 +53,7 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; GroupDescription: "Accesos directos:"
 
 [Files]
+Source: "third_party\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "{#AppDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -64,6 +66,7 @@ Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "TULEVENTA_DB_CONFIG_PATH"; ValueData: "{commonappdata}\TuleVenta\configuracion_bd.json"; Flags: preservestringtype uninsdeletevalue
 
 [Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando dependencias de sistema (Visual C++)..."; Flags: waituntilterminated
 Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait postinstall skipifsilent unchecked; Check: CanLaunchApplication
 
 [UninstallRun]
@@ -330,7 +333,7 @@ begin
   PgBootstrapOk := False;
 
   PostgreSqlPage := CreateCustomPage(
-    wpSelectDir,
+    wpWelcome,
     'Instancia local de PostgreSQL',
     'Configura la base de datos local de TuleVenta'
   );
