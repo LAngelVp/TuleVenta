@@ -198,6 +198,9 @@ class Ventas(QWidget):
         self.refrescar_tabla_ventas()
 
     def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
+        self._cargando_mas_ventas = False
+        self._actualizar_estado_paginacion()
         for hilo in self.lista_hilos_ventas:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_ventas.clear()
@@ -361,6 +364,7 @@ class Ventas(QWidget):
             )
         except Exception as e:
             self._cargando_mas_ventas = False
+            self.manejadorModal.cerrar_modal()
             self._actualizar_estado_paginacion()
             if hasattr(self, "id_obtener_ventas"):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_ventas)

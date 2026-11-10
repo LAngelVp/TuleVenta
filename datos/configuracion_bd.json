@@ -1,10 +1,10 @@
 {
-  "database_url": "postgresql+psycopg2://postgres:holamundo31@127.0.0.1:58432/TuleVenta",
+  "database_url": "postgresql+psycopg2://postgres:Holamundo31@127.0.0.1:58432/TuleVenta",
   "driver": "postgresql+psycopg2",
   "host": "127.0.0.1",
-  "port": 5432,
+  "port": 58432,
   "database": "TuleVenta",
   "username": "postgres",
-  "password": "holamundo31",
+  "password": "Holamundo31",
   "options": {}
 }

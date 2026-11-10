@@ -5,6 +5,130 @@ from unittest.mock import Mock
 import pytest
 
 
+@pytest.mark.qt
+def test_history_hide_closes_startup_loading(monkeypatch, qtbot):
+    import app.Controller.VentasController as module
+    from PySide6.QtGui import QHideEvent
+
+    monkeypatch.setattr(module.Ventas, "cargar_estados_ventas", lambda *args: None)
+    monkeypatch.setattr(module.Ventas, "refrescar_tabla_ventas", lambda *args: None)
+    window = module.Ventas()
+    qtbot.addWidget(window)
+    window.manejadorModal.mostrar_modal(window)
+    loading = window.manejadorModal.cargando
+    assert loading.isVisible()
+    window._cargando_mas_ventas = True
+    window.hideEvent(QHideEvent())
+    assert not loading.isVisible()
+    assert window.manejadorModal.cargando is None
+    assert not window._cargando_mas_ventas
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("new_cash", [False, True])
+@pytest.mark.parametrize("query_error", [False, True])
+def test_login_cash_main_transition(monkeypatch, qtbot, qapp, new_cash, query_error):
+    import app.Controller.InicioDeSesionController as access
+    import app.Controller.SistemaPrincipalController as main
+    import app.Controller.VentaController as pos
+    import app.Controller.VentasController as history
+    import app.Controller.Hilo_consultas as threads
+    import gui.apertura_caja_dialog as opening
+    from sesion_caja import GestorSesionCaja
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QWidget
+    from threading import Event
+
+    class OtherModule(QWidget):
+        def __init__(self, parent=None, **kwargs):
+            super().__init__(parent)
+
+        def mostrar_categorias_proveedor(self):
+            pass
+
+        def listar_areas(self):
+            pass
+
+        def listar_categorias(self):
+            pass
+
+    for name in ("DashboardController", "Perfil", "Compras", "Clientes", "EmpleadosController", "Control_proveedores"):
+        monkeypatch.setattr(main, name, OtherModule)
+    monkeypatch.setattr(main.SistemaPrincipal, "_cargar_contexto_autorizacion",
+                        lambda self: setattr(self, "es_administrador", True))
+    database = Mock()
+    database.__enter__ = Mock(return_value=database)
+    database.__exit__ = Mock(return_value=False)
+    for module in (pos, history, threads):
+        monkeypatch.setattr(module, "Conexion_base_datos", lambda: database)
+    release, entered = Event(), Event()
+    model = Mock()
+    model.obtener_metodos_pago_venta.return_value = ([], True, "ok")
+    model.obtener_estados_ventas.return_value = ([], True, "ok")
+
+    def query(**kwargs):
+        entered.set()
+        if not release.wait(5):
+            raise RuntimeError("synthetic timeout")
+        if query_error:
+            raise RuntimeError("synthetic query error")
+        return [], True, "ok"
+
+    model.listar_ventas_lectura.side_effect = query
+    for module in (pos, history):
+        monkeypatch.setattr(module, "VentasModel", lambda session: model)
+    monkeypatch.setattr(history, "Mensaje", Mock())
+    active = {"value": not new_cash}
+    opened = []
+
+    def current_cash():
+        return active["value"], "ok", {"id": 9} if active["value"] else None
+
+    def open_cash(user_id, amount):
+        opened.append((user_id, amount))
+        active["value"] = True
+        return True, "ok", {"id": 9}
+
+    monkeypatch.setattr(GestorSesionCaja, "obtener_sesion_activa", current_cash)
+    monkeypatch.setattr(GestorSesionCaja, "abrir_sesion_caja", open_cash)
+    monkeypatch.setattr(opening.QMessageBox, "information", lambda *args: opening.QMessageBox.Ok)
+    original_exec = opening.AperturaCajaDialog.exec
+
+    def enter_opening(dialog):
+        dialog.num_fondo.setValue(100)
+        QTimer.singleShot(0, dialog.btn_abrir.click)
+        return original_exec(dialog)
+
+    monkeypatch.setattr(opening.AperturaCajaDialog, "exec", enter_opening)
+    employee = SimpleNamespace(id=2, activo=True, nombre="Test", apellido_paterno="Local", apellido_materno="")
+    credentials = SimpleNamespace(id=1, usuario="test", empleado=employee)
+    monkeypatch.setattr(access, "CredencialesModel", lambda: SimpleNamespace(verificar_credenciales=lambda **kwargs: (credentials, True)))
+    login = access.Login()
+    qtbot.addWidget(login)
+    login.show()
+    login.ingresar()
+    welcome = login.ventana_saludo
+    qtbot.addWidget(welcome)
+    window = None
+    try:
+        welcome.entrar_al_sistema()
+        window = welcome.ventana
+        qtbot.addWidget(window)
+        qtbot.waitUntil(entered.is_set)
+        qtbot.waitUntil(lambda: window.venta.caja_abierta)
+        assert window.isVisible()
+        assert window.venta.sesion_caja_id == 9
+        assert opened == ([(1, 100.0)] if new_cash else [])
+        assert window.ventas.manejadorModal.cargando is None
+    finally:
+        release.set()
+        qtbot.waitUntil(lambda: not threads.WorkerDBManager.list_active_workers())
+    assert window.ventas.manejadorModal.cargando is None
+    assert not any(isinstance(widget, history.Modal_de_espera) and widget.isVisible()
+                   for widget in qapp.topLevelWidgets())
+    window.hide()
+
+
 def cash_session():
     cash = SimpleNamespace(id=9, estado="ABIERTA", monto_inicial=100.0, ventas_efectivo=0.0,
                            ventas_tarjeta=0.0, ventas_transferencia=0.0, entradas_efectivo=0.0,

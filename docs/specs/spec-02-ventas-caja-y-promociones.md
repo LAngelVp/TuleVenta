@@ -50,6 +50,16 @@ Promociones conserva ensure_schema legacy: solo entradas invalidas evitan ese ca
 
 REF-37 sigue bloqueada por REF-03/04/25. Persisten gates de locks, rollback/relectura con dos conexiones, idempotencia persistente, conciliacion/corte de cohorte, permisos de dominio y operacion financiera multiusuario. No se modificaron compras, configuracion real ni totales historicos. Rollback de codigo no deshace dinero confirmado. Enlaces/AST no prueban SQL ni diagramas renderizados.
 
+### Regresion Post Login Y Loading (2026-11-10)
+
+Ruta observada: Login.ingresar -> SaludoIngreso.entrar_al_sistema -> constructor SistemaPrincipal -> Venta (programa comprobacion de caja por QTimer) -> Ventas (lanza consulta y muestra loading) -> insercion/seleccion de paginas del QStackedWidget -> Ventas.hideEvent. El timer de Venta puede abrir AperturaCajaDialog mientras la consulta ya esta en marcha; si existe caja solo recupera su ID. La apertura se confirma antes de volver al dialogo, no es la responsable del modal de historial.
+
+Defecto reproducido en Qt: hideEvent limpiaba workers con cierre_seguro, suprimiendo callbacks tardios incluido terminado_callback=cerrar_modal, pero no cerraba el loading ApplicationModal ni restablecia la bandera de carga. El constructor podia completar y la ventana principal quedar bloqueada por ese modal huerfano; no era necesariamente un bloqueo SQL o del event loop. El test aislado fallo con isVisible=True tras hideEvent y luego con _cargando_mas_ventas=True.
+
+Correccion local en VentasController: al ocultar cierra el modal, libera bandera/paginacion y conserva limpieza diferida del worker; error al lanzar consulta tambien cierra el modal. No cambia WorkerDB global, commits, caja, permisos ni constructores de otros modulos. Cerrar UI no cancela SQL.
+
+Regresion en test_sales_cash: Login/Saludo/SistemaPrincipal, Venta, Ventas, Productos, dialogo de apertura y QThreads reales; BD/credenciales/servicio de caja y modulos ajenos simulados. Cuatro variantes caja nueva/existente por consulta exitosa/excepcion; exige principal visible, caja correcta y ausencia de loading antes de liberar la consulta retenida. Caso adicional verifica hideEvent/modal/bandera. Gate integrado sales_cash+ref06_notifications:150 passed; suite `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin --tb=short`:176 passed,224 deselected. Advertencia legacy declarative_base. No valida arranque con BD/licencia reales ni tiempos de consultas productivas. No se modificaron datos existentes ni configuracion. Rollback: retirar solo este incremento de ciclo de vida y sus cinco tests; no revertir cambios previos ni saldos de caja.
+
 | Fuente | Propietario |
 | --- | --- |
 | [VentaController.py](../../app/Controller/VentaController.py) | Venta, DialogoSeleccionProductoVenta |
