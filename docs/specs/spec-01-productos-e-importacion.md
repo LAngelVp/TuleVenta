@@ -166,6 +166,8 @@ sequenceDiagram
 
 **Caracterizacion del conjunto:** duplicado exacto y distinto en mayusculas; nombres 30/31 por UI, 100/101 por importacion, 150 por categoria; descripcion vacia en alta manual frente a descripcion automatica de REF-11 en guardado modal; borrar categoria usada; error del worker como str; ausencia de catalogo al editar.
 
+**Delta de semilla REF-14 (2026-11-10):** insertar_unida_de_medida_basicas prepara19 filas/nombres unicos en tabla vacia al retirar un Cilindro-(cil) duplicado. Tabla no vacia sigue sin reposicion/saneamiento; IDs y referencias existentes no se tocan. Dos [tests unitarios](../../tests/test_phase1_stabilization.py) verifican ambas ramas con sesion simulada, no carga real en PostgreSQL.
+
 ## 8. P-07: lector comun CSV/XLSX
 
 **Entrada:** OperacionMasivaCsvController.leer_y_validar_archivo(documento, columnas_requeridas, columnas_validas=None). No tiene permiso, sesion, commit ni Qt; el consumidor decide ejecutarlo en worker. Retorna lista de dicts o lanza ValueError/otro error de lectura.
@@ -263,11 +265,11 @@ flowchart TD
 
 ## 10. P-10: ajuste manual de existencias
 
-**Actor/entrada:** MODIFICARPRODUCTO en boton de existencia del principal. Productos.existencia_productos exige seleccion; ExistenciasClase.mostrar_datos_en_ui recibe producto y contexto. ejecutar_existencias toma cantidad con 3 decimales y maximum=1e45, combo Entrada/Salida, fecha yyyy-MM-dd y notas. Exige producto, id_empleado en contexto y cantidad != 0; no valida saldo suficiente para salida en ese metodo.
+**Actor/entrada:** MODIFICARPRODUCTO en boton de existencia del principal. Productos.existencia_productos exige seleccion; ExistenciasClase.mostrar_datos_en_ui recibe producto y contexto. ejecutar_existencias toma cantidad con 3 decimales y maximum=1e45, combo Entrada/Salida, fecha yyyy-MM-dd y notas. REF-12 exige producto, id_usuario entero positivo (no bool) y cantidad !=0; captura el ID en GUI antes del worker. El As-Is original usaba id_empleado. No se agrega control de saldo suficiente para salida en este parche.
 
-**Flujo/transaccion:** WorkerDB -> ExistenciasClase.ejecutar_existencia_query -> ProductosModel.ejecutar_movimiento. El modelo exige producto_id y usuarioid no falsos, recupera producto y construye Movimientos_Inventario. Si tipo lower es entrada suma, si salida resta; otro tipo aun agrega movimiento pero no cambia stock. add/flush; controlador commit solo si estado True; sin rollback explicito para False. Callback emite MOVIMIENTO_EXISTENCIA_REALIZADO y cierra al exito.
+**Flujo/transaccion:** WorkerDB -> ExistenciasClase.ejecutar_existencia_query -> ProductosModel.ejecutar_movimiento. REF-12 verifica que Usuarios.id exista antes de recuperar/mutar producto; si falta retorna None,False. El nombre legacy id_empleado_realizo_operacion de la query se conserva por compatibilidad, pero recibe ID de usuario. Si tipo lower es entrada suma, si salida resta; otro tipo aun agrega movimiento pero no cambia stock. add/flush; controlador commit solo si estado True y ahora rollback explicito al False. Callback emite MOVIMIENTO_EXISTENCIA_REALIZADO y cierra al exito.
 
-**Defectos/bordes:** usa datos_usuario["id_empleado"] como usuario_id, pero FK es Usuarios.id. Puede atribuir al usuario incorrecto si coincide otro ID, o fallar integridad si no existe. No hay rechazo de stock negativo, cantidad negativa desde llamada directa ni tipo arbitrario en modelo. Date recibe cadena desde UI, su aceptacion depende de dialecto/DBAPI; no afirmar conversion universal. No hay bloqueo concurrente ni stock por sucursal.
+**Defectos/bordes y delta:** atribucion por id_empleado era el defecto original, corregido en REF-12 (2026-11-10). [Regresion de modelo](../../tests/test_phase1_stabilization.py) y [GUI/query](../../tests/test_phase1_access.py) usan IDs distintos, entradas/salidas fraccionarias y usuario ausente con sesiones simuladas; FK/transaccion SQL real no se han probado. Siguen sin corregir: stock negativo, cantidad negativa desde llamada directa, tipo arbitrario, Date recibido como cadena, concurrencia y ausencia de saldo por sucursal.
 
 **Caracterizacion:** entrada/salida de 0, fraccion y cantidad superior al saldo; empleado/usuario con IDs distintos; tipo desconocido por llamada directa; fecha invalida; concurrencia con venta; contrastar existencia y movimiento persistidos juntos.
 
@@ -277,8 +279,9 @@ sequenceDiagram
     participant W as WorkerDB
     participant M as ProductosModel
     participant DB as PostgreSQL
-    UI->>W: Cantidad, tipo, fecha, notas e id_empleado
-    W->>M: ejecutar_movimiento(usuarioid=id_empleado)
+    UI->>W: Cantidad, tipo, fecha, notas e id_usuario validado
+    W->>M: ejecutar_movimiento(usuarioid=id_usuario)
+    M->>DB: Verificar existencia de Usuarios.id
     M->>DB: Leer producto y actualizar existencia
     M->>DB: Agregar movimiento con usuario_id y flush
     M-->>W: Objeto y estado

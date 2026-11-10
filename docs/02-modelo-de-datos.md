@@ -4,7 +4,7 @@
 
 Fecha: 2026-11-10. Fuente: [BaseDatosModel.py](../app/Model/BaseDatosModel.py). Inventario estatico: 32 entidades mapeadas y 5 tablas Table, 37 tablas en total. No se conecto a una BD ni se aplico DDL. Este documento describe las declaraciones actuales, no certifica que una instalacion tenga el mismo esquema. Contexto: [indice](00-indice-y-contexto-ia.md) y [arquitectura](01-arquitectura-y-analisis-actual.md).
 
-El diccionario enumera columnas fisicas declaradas, no atributos heredados repetidos. En Puestos, Python conserva la ultima asignacion de hora_salida y departamento_id; se enumeran una sola vez. Clientes_fisicos y Clientes_morales usan herencia joined-table: sus campos comunes viven en Clientes.
+El diccionario enumera columnas fisicas declaradas, no atributos heredados repetidos. En el As-Is original Puestos conservaba las ultimas asignaciones de hora_salida/departamento_id; REF-13 retira las declaraciones previas sin cambiar metadata efectiva. Las columnas siguen enumeradas una sola vez. Clientes_fisicos y Clientes_morales usan herencia joined-table: sus campos comunes viven en Clientes.
 
 ### Lectura de las tablas
 
@@ -813,7 +813,7 @@ Se enumeran las propiedades declaradas efectivas por clase. Notacion `atributo -
 | Permisos | roles -> Roles / permisos; secondary=rol_permiso (tabla rol_permisos) |
 | Roles | permisos -> Permisos / roles, secondary=rol_permiso; usuarios -> Usuarios / rol |
 | Usuarios | rol -> Roles / usuarios; empleado -> Empleados / usuario, uselist=False; movimientos_inventario -> Movimientos_Inventario / usuario |
-| Puestos | empleados -> Empleados / puesto; departamento -> Departamentos / puestos, lazy="joined". Ambas propiedades estan repetidas en la clase; prevalece la ultima declaracion |
+| Puestos | empleados -> Empleados / puesto; departamento -> Departamentos / puestos, lazy="joined". Repeticiones de fuente retiradas por REF-13; configuracion efectiva conservada |
 | Empleados | puesto -> Puestos / empleados; departamento -> Departamentos / empleados, lazy="joined"; usuario -> Usuarios / empleado; ventas -> Ventas / empleado; turnos -> Turnos / empleado; sucursal -> Sucursales / empleados, lazy="joined"; compras -> Compras / empleado |
 | Sucursales | productos -> Productos / sucursales, secondary=sucursal_producto; departamentos -> Departamentos / sucursales, secondary=departamento_sucursal; empleados -> Empleados / sucursal |
 | Departamentos | empleados -> Empleados / departamento; puestos -> Puestos / departamento; sucursales -> Sucursales / departamentos, secondary=departamento_sucursal, lazy="select", cascade="save-update, merge", passive_deletes=True |
@@ -917,9 +917,9 @@ flowchart TD
 
 El diagrama es el camino nominal. Si hay errores absorbidos o una transaccion fallida, no garantiza llegar al registro con todos los catalogos correctos.
 
-### 6.2 Unidades de medida: 20 filas, 19 nombres distintos
+### 6.2 Unidades de medida: 19 filas, 19 nombres distintos (REF-14)
 
-Fuente: [ProductosModel.insertar_unida_de_medida_basicas](../app/Model/ProductosModel.py#L10). Tabla Unidad_medida_productos. Los literales conservan erratas y duplicados del codigo.
+Fuente: [ProductosModel.insertar_unida_de_medida_basicas](../app/Model/ProductosModel.py#L10). Tabla Unidad_medida_productos. El As-Is original tenia20 filas y Cilindro-(cil) repetido. REF-14 (2026-11-10) retira solo una repeticion de la semilla futura; no sanea instalaciones ni modifica IDs/referencias. Se conservan las demas erratas del literal. Regresiones de ambas ramas en [test_phase1_stabilization.py](../tests/test_phase1_stabilization.py), sin PostgreSQL.
 
 | nombre |
 | --- |
@@ -941,10 +941,9 @@ Fuente: [ProductosModel.insertar_unida_de_medida_basicas](../app/Model/Productos
 | Rol-(rol) |
 | Tarro-(tarro) |
 | Cilindro-(cil) |
-| Cilindro-(cil) |
 | Saco-(sac) |
 
-No hay unique(nombre) en esa tabla, por lo que la declaracion no evita las dos filas Cilindro-(cil).
+Sigue sin unique(nombre): instalaciones existentes pueden conservar dos filas Cilindro-(cil); el inicializador no las modifica si hay alguna fila.
 
 ### 6.3 Presentaciones: 26 filas
 
@@ -1257,7 +1256,7 @@ PostgreSQL no trunca automaticamente un varchar largo en la insercion ordinaria:
 | DAT-13 | sucursal_producto carece de saldo; existencia se guarda en Productos | El esquema no representa inventario por sucursal en esa asociacion. Una separacion futura requiere datos y reglas nuevas, no solo extraer servicios |
 | DAT-14 | Sin unicidad de nombre en catalogos, PUBLICO GENERAL ni caja ABIERTA por usuario; sin restriccion de rango/solapamiento en promociones | Consultar antes de insertar no elimina carreras. Definir claves de negocio y tratamiento de duplicados antes de introducir constraints |
 | DAT-15 | Clientes.tipo_cliente es discriminador libre; subtipos tienen FK/PK independientes | SQL directo puede introducir discriminadores desconocidos o combinaciones no esperadas. Probar carga polimorfica y migraciones de subtipo |
-| DAT-16 | Puestos repite dos columnas y dos relaciones en el cuerpo de clase | No son columnas SQL duplicadas; las ultimas declaraciones sustituyen las previas. Mantener metadata equivalente al limpiar la fuente |
+| DAT-16 | As-Is original: Puestos repetia dos columnas y dos relaciones; REF-13 retira las primeras declaraciones | Snapshot unitario de columnas/FK/relaciones efectivo identico antes/despues, sin DDL. No se ejecuto autogenerate contra PostgreSQL |
 
 La columna NT solo permite NULL; no garantiza que el programa lo maneje. La columna NI/NF tampoco rechaza cadena vacia ni impone validacion de formato, salvo la longitud del tipo y otras restricciones expresas.
 

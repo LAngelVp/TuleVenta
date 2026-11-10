@@ -1,4 +1,4 @@
-from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores
+from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores, Usuarios
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import select, func
 
@@ -29,7 +29,6 @@ class ProductosModel:
                 {"nombre": 'Set-(set)'},
                 {"nombre": 'Rol-(rol)'},
                 {"nombre": 'Tarro-(tarro)'},
-                {"nombre": 'Cilindro-(cil)'},
                 {"nombre": 'Cilindro-(cil)'},
                 {"nombre": 'Saco-(sac)'},
             ]
@@ -401,6 +400,8 @@ class ProductosModel:
 
     def ejecutar_movimiento(self, producto_id, cantidad_cambio, tipo_movimiento, fecha_movimiento, notas, usuarioid):
         if not producto_id or not usuarioid:
+            return None, False
+        if self.session.get(Usuarios, usuarioid) is None:
             return None, False
         producto = self.session.get(Productos, producto_id)
         if not producto:

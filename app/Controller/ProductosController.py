@@ -84,10 +84,10 @@ class ExistenciasClase(QWidget):
         if not self.producto:
             Mensaje().mensaje_informativo("No se encontró un producto seleccionado para actualizar existencias")
             return
-        if not self.datos_usuario or "id_empleado" not in self.datos_usuario:
+        id_usuario = self.datos_usuario.get("id_usuario") if self.datos_usuario else None
+        if not isinstance(id_usuario, int) or isinstance(id_usuario, bool) or id_usuario <= 0:
             Mensaje().mensaje_informativo("No se encontró el usuario que realiza la operación")
             return
-        id_usuario = self.datos_usuario["id_empleado"]
         if cant_existencia != 0:
             try:
                 self.manejadorModal.mostrar_modal(self)
@@ -132,6 +132,7 @@ class ExistenciasClase(QWidget):
                 "mensaje": f"Operación exitosa ({tipo_de_movimiento}), se realizo el cambio de existencia para el producto: {self.producto.nombre_producto}",
                 "resultado": datos
             }
+        session.rollback()
         return {
             "exito": estado,
             "mensaje": f"Operación fallida ({tipo_de_movimiento}), no se pudo realizar el cambio de existencia para el producto: {self.producto.nombre_producto}",

@@ -207,6 +207,7 @@ Entrada: REF-01 y la caracterizacion focalizada de REF-02. Estas correcciones no
 
 ### REF-12: atribuir ajuste de stock al usuario correcto
 
+- **Estado de ejecucion (2026-11-10):** aplicado con TDD: 3 regresiones unitarias y 6 Qt, todas reproducen el fallo previo y pasan despues. GUI exige id_usuario entero positivo, no bool; modelo comprueba Usuarios antes de mutar y query revierte al False. [Modelo](../tests/test_phase1_stabilization.py) prueba IDs empleado7/usuario19, otro usuario7 y entrada/salida fraccionaria; [Qt](../tests/test_phase1_access.py) prueba contexto invalido y usuario ausente. Parametro legacy de query conserva nombre/firma, pero transporta ID de usuario. Sin saneamiento historico ni SQL real.
 - **Problema/evidencia:** P-10/C-10, ExistenciasClase.ejecutar_existencias en [ProductosController.py](../app/Controller/ProductosController.py) toma id_empleado para usuarioid de ProductosModel.ejecutar_movimiento, cuya FK apunta a Usuarios.id.
 - **Cambio:** exigir id_usuario valido en contexto, capturarlo en hilo UI y pasarlo a query/modelo; no sustituir por id1 ni inferir usuario por coincidencia con empleado. Si no existe usuario, error sin movimiento ni stock actualizado.
 - **Dependencias/casos:** REF-01/REF-02; P-10, C-10.
@@ -215,6 +216,7 @@ Entrada: REF-01 y la caracterizacion focalizada de REF-02. Estas correcciones no
 
 ### REF-13: limpiar declaraciones duplicadas de Puestos
 
+- **Estado de ejecucion (2026-11-10):** retiradas solo las primeras declaraciones repetidas. [Tests unitarios](../tests/test_phase1_stabilization.py): AST paso de rojo a verde, snapshot efectivo de9 columnas, FK SET NULL y ambas relaciones identico antes/despues; 37 tablas conservadas. Sin DDL. Autogenerate y CRUD PostgreSQL pendientes; no se afirma comparacion con instalacion real.
 - **Problema/evidencia:** S-11 y datos DAT-16, clase Puestos en [BaseDatosModel.py](../app/Model/BaseDatosModel.py) repite hora_salida, departamento_id y relaciones empleados/departamento. Es una clase de metadata sin metodos propios; consumidor representativo PuestoModel.crear_puesto en [PuestoModel.py](../app/Model/PuestoModel.py). Python usa las ultimas declaraciones; no hay dos columnas SQL por ese motivo.
 - **Cambio:** conservar una sola declaracion efectiva de cada atributo, identica a la ultima actual. No renombrar relaciones, cambiar lazy/cascade ni borrar tabla/columna. Es P2 temprano, no incidente P0 demostrado.
 - **Dependencias/casos:** REF-02 y snapshot AST/metadata; S-11. No requiere migracion si la comparacion es equivalente.
@@ -223,6 +225,7 @@ Entrada: REF-01 y la caracterizacion focalizada de REF-02. Estas correcciones no
 
 ### REF-14: deduplicar solo la semilla futura de unidades
 
+- **Estado de ejecucion (2026-11-10):** eliminado un literal Cilindro-(cil). [Regresiones](../tests/test_phase1_stabilization.py): nueva carga prepara19 nombres unicos; tabla ya poblada no ejecuta INSERT/delete/commit ni altera IDs17/18 o referencia de producto, con sesion simulada. Solo fallaba la prueba de semilla nueva antes del parche. Diccionario/spec actualizados con delta y nota historica. No se ha deduplicado ninguna BD ni se inicia REF-42.
 - **Problema/evidencia:** datos6.2 y P-06/S-01, ProductosModel.insertar_unida_de_medida_basicas en [ProductosModel.py](../app/Model/ProductosModel.py) contiene Cilindro-(cil) dos veces; no hay unique de nombre.
 - **Cambio:** quitar una repeticion del literal para instalaciones nuevas. No borrar unidades existentes, fusionar IDs ni reenumerar catalogos: productos pueden referir a cualquiera. Preparar solo diagnostico de duplicados para una migracion posterior autorizada REF-42.
 - **Dependencias/casos:** REF-01/REF-02; P-06, S-01.
@@ -231,6 +234,7 @@ Entrada: REF-01 y la caracterizacion focalizada de REF-02. Estas correcciones no
 
 ### REF-15: distinguir error de consulta de cero usuarios
 
+- **Estado de ejecucion (2026-11-10):** resultado agrega error_consulta; fallo devuelve resultado=None y no abre bienvenida/login. Mensaje critico ofrece Abort/Retry; solo Retry encola QTimer.singleShot y una nueva consulta. [Cinco regresiones Qt](../tests/test_phase1_access.py) verdes tras reproducir3 fallos; count0/count1 conservados, conexion fallida no abre ventanas y reintento exitoso abre login una vez. No se invoca preparacion de PostgreSQL en tests ni se cambia wrapper de conexion.
 - **Problema/evidencia:** S-01, Inicio_sistema.comprobar_existencia_usuarios_query y mostrar_resultado_hilo en [inicio.py](../inicio.py) convergen error interno y count0 en bienvenida/semillas.
 - **Cambio:** resultado explicito de consulta fallida distinto de instalacion vacia; mostrar alerta reintentable y no abrir registro ni poblar catalogos por error. Mantener acceso a registro cuando count0 se obtuvo realmente. No repetir constructor de conexion sin limite por esta correccion.
 - **Dependencias/casos:** REF-01/REF-02; S-01, regresion S-07.
@@ -239,11 +243,16 @@ Entrada: REF-01 y la caracterizacion focalizada de REF-02. Estas correcciones no
 
 ### REF-16: login robusto sin empleado activo implicito
 
+- **Estado de ejecucion (2026-11-10):** guardias de hash/contexto y login aplicadas; delta correctivo aprobado en este lote: empleado inactivo no autentica, recontratado si. [21 regresiones Qt](../tests/test_phase1_access.py) aprobadas tras reproducir8 fallos de verificacion y6 del callback: bcrypt sintetico valido/invalido, contexto ausente, error tecnico, recontratacion, strip/nombre exacto y perfil. Logs solo registran categoria/tipo de fallo, no secreto/hash ni texto de excepcion. No se recalculan hashes ni se cambia politica de creacion. Persistencia/carga fuera de sesion real siguen pendientes de PostgreSQL.
 - **Problema/evidencia:** S-02/S-08, CredencialesModel.verificar_credenciales en [CreadencialesUsuarioController.py](../app/Controller/CreadencialesUsuarioController.py) no valida hash nulo/invalido ni estado de empleado; Login.ingresar en [InicioDeSesionController.py](../app/Controller/InicioDeSesionController.py) desreferencia empleado incondicionalmente.
 - **Cambio:** primer incremento captura formato de hash/contexto incompleto como fallo de autenticacion sin exception ni filtracion de causa sensible; mensaje interno trazable. Segundo, con decision correctiva explicita, rechaza empleado inactivo y prueba recontratacion; no deshabilitar cuentas existentes por suposicion. No cambiar comparacion exacta de nombre o strip de password junto con este parche.
 - **Dependencias/casos:** REF-01/REF-02; S-02, S-08, S-14.
 - **Aceptacion/verificacion:** hash NULL/corrupto, usuario sin empleado, empleado inactivo/activo y password incorrecto no lanzan excepcion; la cuenta valida conserva acceso. Ningun log contiene password/hash/licencia. Perfil sigue reautenticando y un error de conexion no se traduce en alta de usuario.
 - **Entrega/reversion:** cambio de seguridad registrado como delta aprobado; no cambiar esquema ni recalcular hashes existentes.
+
+### Cierre de implementacion de Fase 1 (2026-11-10)
+
+REF-05 a REF-16 aplicadas y verificadas a nivel unitario/Qt del alcance autorizado. Resultado conjunto: `.venv/Scripts/python.exe -m pytest -q -m unit` da37 aprobadas; `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin` da77 aprobadas; ambas ejecuciones usan PYTHONDONTWRITEBYTECODE=1. Solo advertencia legacy de declarative_base. No se ejecutan PostgreSQL, migraciones, autogenerate ni pruebas concurrentes reales; sus gates no se dan por cumplidos. REF-01 mantiene gate DB pendiente y REF-02 no se declara globalmente completada por estas regresiones focalizadas. REF-17 y Fase 2 no iniciadas. Esto cierra cambios de Fase 1, no certifica despliegue productivo ni todos los escenarios SQL de sus criterios.
 
 ## 5. Fase 2: transacciones y contratos UI/BD
 

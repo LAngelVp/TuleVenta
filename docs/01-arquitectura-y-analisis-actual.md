@@ -240,11 +240,11 @@ Fuente: [BaseDatosModel](../app/Model/BaseDatosModel.py). Inventario completo de
 | Usuarios.rol_id y tabla usuario_rol coexisten | La relacion Usuarios.rol usa la FK directa; no asumir multirol operativo por existir una tabla puente |
 | Productos.proveedores es secondary con viewonly=True | Asignarla en agregar_producto/actualizar_producto no es un mecanismo persistente de escritura de la asociacion |
 | ProductoProveedor existe como objeto de asociacion | Evaluar sus escritores antes de concluir que ningun flujo vincula proveedores |
-| Puestos repite hora_salida, empleados, departamento_id y departamento en el cuerpo de clase | Python conserva la ultima asignacion; no son dos columnas SQL separadas, pero hay fuente duplicada propensa a divergencia |
+| As-Is original: Puestos repetia hora_salida, empleados, departamento_id y departamento | REF-13 retira primeras declaraciones con snapshot unitario efectivo equivalente, sin DDL; no eran columnas SQL separadas |
 | Movimientos_Inventario usa Integer para FK producto/usuario frente a PK BigInteger | Revisar compatibilidad de tipos y capacidad a largo plazo; no afirmar fallo inmediato sin probar PostgreSQL |
 | Relaciones combinan SET NULL, CASCADE, RESTRICT y cascadas ORM | El borrado no puede homologarse con una regla generica sin casos por relacion |
 
-Los catalogos se precargan desde metodos de modelos y flujos de inicializacion, no solo desde un script SQL. En ProductosModel, unidades, categorias y presentaciones se insertan si no hay ni una fila. No se repone un catalogo parcialmente poblado. La lista de unidades contiene Cilindro-(cil) dos veces y las columnas nombre de esos catalogos no declaran unique. El inventario literal de todos los catalogos y su punto de invocacion se reserva al documento de datos.
+Los catalogos se precargan desde metodos de modelos y flujos de inicializacion, no solo desde un script SQL. En ProductosModel, unidades, categorias y presentaciones se insertan si no hay ni una fila. No se repone un catalogo parcialmente poblado. La lista original repetia Cilindro-(cil); REF-14 retira una repeticion solo para semillas futuras, no sanea instalaciones. Nombre sigue sin unique. Literales y delta historico estan en el documento de datos.
 
 ## 7. Hilos, estado y UI
 

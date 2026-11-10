@@ -1,4 +1,5 @@
 import sys
+import logging
 from datetime import datetime
 from ..Source.iconsdvg_rc import *
 from sqlalchemy import MetaData, Table, select, func
@@ -130,14 +131,26 @@ class Login(QWidget):
     def ingresar(self):
         usuario = self.ui.txt_User.text().strip()
         password = self.ui.txt_Password.text().strip()
-        usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = usuario, contraseña = password)
-        if estatus_consulta:
-            self.datos_usuario =   {
-                "id_usuario": usuario_existente.id,
-                "nombre_usuario" : usuario_existente.usuario,
-                "id_empleado": usuario_existente.empleado.id,
-                "nombre_empleado": f'{usuario_existente.empleado.nombre} {usuario_existente.empleado.apellido_paterno} {usuario_existente.empleado.apellido_materno}'
+        try:
+            usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = usuario, contraseña = password)
+            empleado = getattr(usuario_existente, "empleado", None)
+            contexto_valido = (
+                estatus_consulta and usuario_existente is not None and empleado is not None
+                and empleado.activo is True
+                and all(isinstance(identificador, int) and not isinstance(identificador, bool)
+                        and identificador > 0 for identificador in (usuario_existente.id, empleado.id))
+            )
+            if contexto_valido:
+                self.datos_usuario = {
+                    "id_usuario": usuario_existente.id,
+                    "nombre_usuario": usuario_existente.usuario,
+                    "id_empleado": empleado.id,
+                    "nombre_empleado": f'{empleado.nombre} {empleado.apellido_paterno} {empleado.apellido_materno}'
                 }
+        except Exception as error:
+            logging.getLogger(__name__).warning("No se pudo completar acceso (%s).", type(error).__name__)
+            contexto_valido = False
+        if contexto_valido:
             self.close()
             self.mostrar_saludos()
         else:

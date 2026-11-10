@@ -61,6 +61,7 @@ class Inicio_sistema(QObject):
                 session.rollback()
                 return {
                     "exito": False,
+                    "error_consulta": False,
                     "mensaje": f'Comenzar con el sistema',
                     "resultado": resultado
                 }
@@ -68,17 +69,22 @@ class Inicio_sistema(QObject):
             session.rollback()
             return {
                 "exito": False,
+                "error_consulta": True,
                 "mensaje": f'Ocurrio un error en el proceso',
-                "resultado": 0
+                "resultado": None
             }
 
         return {
             "exito": True,
+            "error_consulta": False,
             "mensaje": f"Iniciando el sistema",
             "resultado": resultado
         }
 
     def mostrar_resultado_hilo(self, objetoMensaje):
+        if objetoMensaje.get("error_consulta"):
+            self.mostrar_error_hilo(objetoMensaje["mensaje"])
+            return
         if objetoMensaje["exito"]:
             self.login = Login()
             self.login.show()
@@ -88,9 +94,10 @@ class Inicio_sistema(QObject):
         self.terminar_hilo_inicio()
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f"Ocurrió un problema: {error}")
-        self.login = Login()
-        self.login.show()
+        respuesta = Mensaje().mensaje_critico("No se pudo comprobar el acceso al sistema. Puedes reintentar la consulta.")
+        self.terminar_hilo_inicio()
+        if respuesta == QMessageBox.Retry:
+            QTimer.singleShot(0, self.comprobar_usuarios)
 
     def terminar_hilo_inicio(self):
         self.lista_hilos_inicio.clear()

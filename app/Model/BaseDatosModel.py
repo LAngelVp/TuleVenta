@@ -122,16 +122,6 @@ class Puestos(Base):
         BigInteger,
         ForeignKey("Departamentos.id", ondelete='SET NULL'),
         nullable=True
-        )
-    departamento = relationship(
-        "Departamentos", back_populates="puestos", lazy="joined"
-    )
-    hora_salida:Mapped[datetime] = mapped_column(Time)
-    empleados = relationship("Empleados", back_populates="puesto")
-    departamento_id:Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("Departamentos.id", ondelete='SET NULL'),
-        nullable=True
     )
     departamento = relationship(
         "Departamentos", back_populates="puestos", lazy="joined"

@@ -2,7 +2,7 @@
 
 ## 1. Estado y contrato documental
 
-Fecha del levantamiento: 2026-11-10. Estado: Fases 1 a 4 completadas documentalmente; refactorizacion productiva no iniciada. Esta base describe el codigo disponible y un plan To-Be, no certifica el esquema de una instalacion ni resultados de ejecucion. No se conecto a PostgreSQL ni se modificaron datos o codigo funcional.
+Fecha del levantamiento: 2026-11-10. Fases 1 a 4 documentales entregadas; ejecucion del plan: infraestructura REF-01 y cambios REF-05 a REF-16 aplicados. Cierre de implementacion de Fase 1 con37 pruebas unitarias y77 Qt aprobadas; gates PostgreSQL/Alembic no ejecutados. REF-17 y Fase 2 no iniciadas. El levantamiento original no modificaba codigo; los deltas posteriores estan registrados en cada ficha/spec. No se conecto a PostgreSQL ni se modificaron datos de una instalacion.
 
 El codigo es la evidencia primaria del comportamiento implementado. Estos documentos son su referencia tecnica trazable: una discrepancia debe resolverse contrastando la fuente, no suponiendo que la especificacion describe un comportamiento ya probado. Los cambios futuros deben actualizar codigo, especificacion y pruebas conjuntamente.
 
@@ -17,7 +17,7 @@ El codigo es la evidencia primaria del comportamiento implementado. Estos docume
 | [specs/spec-04-clientes-personal-sucursales-y-seguridad.md](specs/spec-04-clientes-personal-sucursales-y-seguridad.md) | Completado | 17 casos de clientes, personal, organizacion, acceso, licencia y configuracion |
 | [04-plan-de-refactorizacion.md](04-plan-de-refactorizacion.md) | Completado | 44 tareas REF, Fases de ejecucion 0 a 4, dependencias, gates y workflow Copilot |
 
-La estructura documental acordada esta entregada. Las capacidades solicitadas ausentes (Asistencias, respaldo y determinados controladores) se delimitan en las specs, sin inventar implementaciones. El plan de refactorizacion esta redactado, pero sus tareas, pruebas funcionales y migraciones siguen pendientes de ejecucion y autorizacion por incremento.
+La estructura documental acordada esta entregada. Las capacidades ausentes se delimitan sin inventar implementaciones. Los parches locales de Fase 1 y pruebas de infraestructura estan aplicados con evidencia de unit/Qt; no equivale a certificar todos los escenarios SQL de los51 casos. REF-01 conserva gate DB pendiente, REF-02 no se da por completada globalmente y REF-03/REF-04 (Alembic) no ejecutadas. Las tareas siguientes requieren autorizacion por incremento.
 
 ## 2. Mapa del sistema
 
