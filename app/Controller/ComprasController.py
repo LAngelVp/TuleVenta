@@ -597,6 +597,9 @@ class Compras(QWidget):
                 self.orderSelected = orden_compra
 
     def orden_compra_window(self, orderSelected = None):
+        if orderSelected is not None:
+            Mensaje().mensaje_informativo("La edicion de ordenes de compra no esta disponible.")
+            return
         if self.orden_compra is None or not self.orden_compra.isVisible():
             self.orden_compra = Orden_compra(parent = self, usuario = self.usuario)
 
@@ -604,9 +607,6 @@ class Compras(QWidget):
                 self.ventana_cerrada_nueva_compra,
                 Qt.UniqueConnection
             )
-            if orderSelected:
-                self.ENVIAR_ORDEN_COMPRA.connect(self.orden_compra.recibirOrdenCompra)
-                self.ENVIAR_ORDEN_COMPRA.emit()
             self.orden_compra.setWindowModality(Qt.ApplicationModal)
 
             self.orden_compra.exec_()
@@ -1009,7 +1009,7 @@ class Orden_compra(QDialog):
             list(self.setConjuntoProductosDelProveedor),
             reset=True
         )
-        Mensaje().mensaje_exito("Producto agregado")
+        Mensaje().mensaje_informativo("Producto agregado")
         return True
 
     def consultar_productos_del_proveedor_query(self, session, codigo_upc):

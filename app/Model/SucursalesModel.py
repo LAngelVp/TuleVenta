@@ -80,8 +80,8 @@ class SucursalesModel:
                 sucursal.estado = estado
                 sucursal.pais = pais
                 sucursal.num_telefono = num_telefono
-                sucursal.razon_social = razon_social,
-                sucursal.rfc = rfc,
+                sucursal.razon_social = razon_social
+                sucursal.rfc = rfc
                 sucursal.direccion = direccion
                 return sucursal, True
             else:

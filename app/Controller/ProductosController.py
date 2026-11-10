@@ -532,17 +532,23 @@ class Admin_productosController(QWidget):
 
     def cargar_imagen(self, event):
         options = QFileDialog.Options()
-        self.imagenProducto, _ = QFileDialog.getOpenFileName(self, 'SELECCIONA UNA IMAGEN', ' ', 'Archivo de Imagen (*.png *.jpg *.jpeg);; Todos los archivos (*)', options=options)
-        image_accept = FuncionesAuxiliaresController().size_validator_image(self.imagenProducto)
-        if self.imagenProducto:
-            if image_accept:
-                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(self.imagenProducto)
-                pixmap = QPixmap(self.imagenProducto)
-                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap)
-                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setScaledContents(True)
-                self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.adjustSize()
-            else:
-                Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
+        imagen_seleccionada, _ = QFileDialog.getOpenFileName(self, 'SELECCIONA UNA IMAGEN', ' ', 'Archivo de Imagen (*.png *.jpg *.jpeg);; Todos los archivos (*)', options=options)
+        if not imagen_seleccionada:
+            return
+        try:
+            image_accept = FuncionesAuxiliaresController().size_validator_image(imagen_seleccionada)
+        except OSError:
+            Mensaje().mensaje_alerta("No se pudo leer la imagen seleccionada.")
+            return
+        if not image_accept:
+            Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
+            return
+        self.imagenProducto = imagen_seleccionada
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(self.imagenProducto)
+        pixmap = QPixmap(self.imagenProducto)
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap)
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setScaledContents(True)
+        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.adjustSize()
         return
 
     def datos_campos(self):
@@ -728,7 +734,10 @@ class Admin_productosController(QWidget):
                     if nombre_unidad_de_medida:
                         unidad_medida, _ = ProductosModel(session).agregar_unidad_medida(nombre=nombre_unidad_de_medida)
                     if nombre_categoria:
-                        categoria, _ = CategoriasModel(session).agregar(tipo_categoria="productos", nombre=nombre_categoria)
+                        categoria, _ = CategoriasModel(session).agregar(
+                            tipo_categoria="productos", nombre=nombre_categoria,
+                            descripcion=f"Categoria creada desde el modal de productos: {nombre_categoria}"
+                        )
                     proveedores = [proveedor] if proveedor else []
                     producto_obj, estatus_producto = ProductosModel(session).agregar_producto(
                         codigo_upc=producto["codigo_barras"],
@@ -751,7 +760,7 @@ class Admin_productosController(QWidget):
                         material=producto["material"],
                         fecha_fabricacion=producto["fecha_fabricacion"],
                         fecha_vencimiento=producto["fecha_vencimiento"] if self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.isChecked() or producto["fecha_vencimiento"] else None,
-                        imagen= producto["imagen"] if producto["imagen"] else None,
+                        imagen= producto["imagen"] if producto["imagen"] is not None else "",
                         notas=producto["notas"],
                         presentacion_producto_id=presentacion.id if presentacion else None,
                         unidad_medida_productos_id=unidad_medida.id if unidad_medida else None,
@@ -794,6 +803,20 @@ class Admin_productosController(QWidget):
             Mensaje().mensaje_informativo("No se selecciono ningun producto para actualizar")
             return
         datos_producto = self.datos_campos()
+        for campo, tipo_catalogo in (
+            ("presentacion_producto", Presentacion_productos),
+            ("unidad_medida_producto", Unidad_medida_productos),
+            ("categoria_producto", Categorias_productos),
+        ):
+            catalogo = datos_producto[campo]
+            if catalogo is None:
+                datos_producto[campo] = None
+            elif (isinstance(catalogo, tipo_catalogo)
+                  and isinstance(catalogo.id, int) and not isinstance(catalogo.id, bool)):
+                datos_producto[campo] = catalogo.id
+            else:
+                Mensaje().mensaje_alerta(f"Seleccion de catalogo invalida: {campo}")
+                return
         proveedores_vinculados = list(self.proveedores_vinculados.values())
         proveedores_no_repetidos = [
             proveedor for proveedor_id, proveedor in self.lista_proveedores_a_asignar.items()
@@ -857,11 +880,11 @@ class Admin_productosController(QWidget):
                 material = datos_producto["material_producto"],
                 fecha_fabricacion = datos_producto["fecha_fabricacion_producto"],
                 fecha_vencimiento = caducidad,
-                imagen = imagen if imagen else None,
+                imagen = imagen,
                 notas = datos_producto["notas_producto"],
-                presentacion_producto_id = datos_producto["presentacion_producto"].id,
-                unidad_medida_productos_id = datos_producto["unidad_medida_producto"].id,
-                categoria_id = datos_producto["categoria_producto"].id,
+                presentacion_producto_id = datos_producto["presentacion_producto"],
+                unidad_medida_productos_id = datos_producto["unidad_medida_producto"],
+                categoria_id = datos_producto["categoria_producto"],
                 sucursales = [],
                 proveedores = todos_los_proveedores
             )

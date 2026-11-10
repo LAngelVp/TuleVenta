@@ -861,7 +861,7 @@ class Productos_de_proveedorController(QWidget):
 
     def vincular_productos_al_proveedor_query(self, session, proveedor, lista_de_productos):
         try:
-            estado = ProveedoresModel(session).actualizar_productos_al_proveedor(proveedor_id=proveedor.id, lista_productos=lista_de_productos)
+            _, estado = ProveedoresModel(session).actualizar_productos_al_proveedor(proveedor_id=proveedor.id, lista_productos=lista_de_productos)
             if not estado:
                 session.rollback()
                 return {

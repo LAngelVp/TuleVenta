@@ -42,7 +42,7 @@ class MetodosPagoController(QWidget):
                        nombre = nombre
                        )
            except Exception as e:
-               Mensaje().mensaje(f"Ocurrio un error en el hilo: {e}")
+               Mensaje().mensaje_alerta(f"Ocurrio un error en el hilo: {e}")
 
     def agregar_metodo_pago_query(self, session, nombre):
         try:
@@ -66,10 +66,13 @@ class MetodosPagoController(QWidget):
         }
 
     def resultado_del_hilo(self, resultado):
-        Mensaje().mensaje(resultado['mensaje'])
+        if resultado['exito']:
+            Mensaje().mensaje_informativo(resultado['mensaje'])
+        else:
+            Mensaje().mensaje_alerta(resultado['mensaje'])
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje(f"Ocurrio un error en el hilo: {error}")
+        Mensaje().mensaje_alerta(f"Ocurrio un error en el hilo: {error}")
 
     def eliminar_metodo_pago(self):
         pass

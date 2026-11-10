@@ -576,17 +576,16 @@ class Control_proveedores(QWidget):
                     }
 
                 if proveedor_existente.representante_id:
-                    representante_actualizado, estado_rep = RepresentanteProveedorModel(session).actualizar_representante(
+                    representante_id = RepresentanteProveedorModel(session).actualizar_representante(
                         id_representante=proveedor_existente.representante_id,
                         **datos_representante
                     )
-                    if not estado_rep:
+                    if representante_id is None:
                         session.rollback()
                         return {
                             "exito": False,
                             "mensaje": "No se pudo actualizar el representante"
                         }
-                    representante_id = proveedor_existente.representante_id
                 else:
                     nuevo_representante, estado_nuevo_rep = RepresentanteProveedorModel(session).agregar_representante(**datos_representante)
                     if not estado_nuevo_rep:
@@ -899,24 +898,24 @@ class Control_proveedores(QWidget):
 
     def eliminar_proveedor_query(self, session, proveedor):
         try:
-            estado = ProveedoresModel(session).eliminar_proveedor(proveedor.id)
+            _, estado = ProveedoresModel(session).eliminar_proveedor(proveedor.id)
             if not estado:
                 session.rollback()
                 return {
                     "exito": estado,
                     "mensaje": f'No se logro eliminar el registro'
                 }
+            session.commit()
+            return {
+                "exito": estado,
+                "mensaje": f'Operación exitosa, el registro {proveedor.nombre} fue eliminado'
+            }
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un error en el proceso : {e}'
             }
-        session.commit()
-        return {
-            "exito": estado,
-            "mensaje": f'Operación exitosa, el registro {proveedor.nombre} fue eliminado'
-        }
 
     def mostrar_error_hilo(self, error):
         Mensaje().mensaje_alerta(f'Ocurrio un error en el proceso : {error}')

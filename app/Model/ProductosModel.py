@@ -209,7 +209,7 @@ class ProductosModel:
                 material=material,
                 fecha_fabricacion=fecha_fabricacion,
                 fecha_vencimiento=fecha_vencimiento,
-                imagen=imagen,
+                imagen=imagen if imagen is not None else "",
                 notas=notas,
                 presentacion_producto_id=presentacion_producto_id,
                 unidad_medida_productos_id=unidad_medida_productos_id,
@@ -279,7 +279,7 @@ class ProductosModel:
         producto_actual.material = material
         producto_actual.fecha_fabricacion = fecha_fabricacion
         producto_actual.fecha_vencimiento = fecha_vencimiento
-        producto_actual.imagen = imagen
+        producto_actual.imagen = (producto_actual.imagen or "") if imagen is None else imagen
         producto_actual.notas = notas
         producto_actual.presentacion_producto_id = presentacion_producto_id
         producto_actual.unidad_medida_productos_id = unidad_medida_productos_id

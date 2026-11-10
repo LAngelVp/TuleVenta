@@ -1,0 +1,1 @@
+"""Infraestructura de prueba aislada de TuleVenta (REF-01)."""

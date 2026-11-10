@@ -388,8 +388,8 @@ class SucursalesController(QDialog):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_sucursal)
             Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
-    def mensaje_estado_eliminado(self, estado):
-        if estado:
+    def mensaje_estado_eliminado(self, resultado):
+        if resultado["exito"]:
             Mensaje(self).mensaje_informativo("Registro eliminado")
             self.signal_sucursal_agregada.emit()
             self.limpiar()
@@ -399,10 +399,16 @@ class SucursalesController(QDialog):
         self.idSucursal = None
 
     def eliminar_sucursal_query(self, session, sucursal):
-        sucursal_eliminada = SucursalesModel(session).eliminar(sucursal)
-        if sucursal_eliminada:
+        try:
+            estado, error = SucursalesModel(session).eliminar(sucursal)
+            if not estado:
+                session.rollback()
+                return {"exito": False, "mensaje": "No se logro eliminar el registro"}
             session.commit()
-        return sucursal_eliminada
+            return {"exito": True, "mensaje": "Registro eliminado"}
+        except Exception as e:
+            session.rollback()
+            return {"exito": False, "mensaje": f"No se logro eliminar el registro: {e}"}
 
     def actualizar(self):
         datos = self.obtener_datos_campos()  # Asumo que esto retorna los campos correctamente
