@@ -2,7 +2,53 @@
 
 ## 1. Alcance, fuentes y permisos
 
-Fecha: 2026-11-10. As-Is por lectura estatica, sin cobros ni cortes ejecutados. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). Las pruebas propuestas son escenarios de caracterizacion, no tests existentes ni cambios funcionales.
+Fecha: 2026-11-10. Levantamiento As-Is original por lectura estatica, sin cobros ni cortes reales. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). Las secciones originales conservan evidencia historica; los deltas implementados siguientes prevalecen para los caminos modificados.
+
+### Lote Local REF-17 A REF-20 (2026-11-10)
+
+Resultado:176 unitarias y160 Qt aprobadas (82 nuevas), con `PYTHONDONTWRITEBYTECODE=1`, sandbox/firewall y sin PostgreSQL. [Evidencia, dependencias y rollback](../04-plan-de-refactorizacion.md#evidencia-del-lote-ventas-caja-ref-17-a-ref-20-2026-11-10). Tests en [test_sales_cash.py](../../tests/test_sales_cash.py). No se declara cerrado el modulo ni las fichas globales. La numeracion oficial es REF-19 cobro atomico y REF-20 cancelacion/edicion; promociones se caracterizan adicionalmente en V-03/V-05.
+
+| Casos / REF | Delta implementado | Limite |
+| --- | --- | --- |
+| V-07..V-10 / REF-17 | createSale/updateSale/cancelSale y mutaciones caja admiten confirmar=False; True conserva commit legacy | Composicion usa Session exterior; integridad/rollback PostgreSQL no ejecutados |
+| V-06/V-09/V-12 / REF-18 | Pago por ID de catalogo y etiqueta canonica normalizada; desconocido falla; tarjeta incluida en contado; credito al cliente sin entrada de efectivo | No modifica catalogo ni acumulados historicos; compras C-12 pendiente |
+| V-07/V-09/V-11 / REF-19 | POS usa registrar_venta_con_caja con caja origen ABIERTA, una Session/commit y resultado ID/folio simple; impresion fuera de transaccion | REF-26/40 pendientes; no lock ni idempotencia persistente |
+| V-10 / REF-20 | Historial coordina reversos de stock/credito/caja y cambios de pago; snapshot de origen prevalece sobre catalogo renombrado | Solo cohorte nueva con caja ABIERTA para cambios monetarios; historicos/caja cerrada requieren conciliacion |
+| V-03/V-05 | Caracterizados cuatro tipos, vigencia, unidades/beneficio barato, orden promocion->cliente->IVA; ID desempata tipo/nombre | Sin nueva precision, exclusividad de unidades ni algoritmo de mejor precio |
+
+Contrato de pago explicito en clasificar_forma_pago: Contado/Efectivo -> ventas_efectivo; Tarjeta/Tarjeta de credito/debito -> ventas_tarjeta; Transferencia/Cheque -> ventas_transferencia; Credito/Credito al cliente -> sin bucket de caja. Normaliza mayusculas, espacios y acentos; no interpreta substrings ni etiquetas mixtas. Menu y selector usan el mismo resolver. createSale valida que es_credito coincida con el metodo de catalogo y guarda ese nombre como forma_pago; no acepta un texto arbitrario del llamador para alterar la clasificacion. Metodo desconocido falla antes de agregar cabecera. La politica rige operaciones futuras, no recalcula historicos; liberar exige conciliar/cerrar cajas anteriores y abrir la nueva sesion de corte. Ese gate operativo no se impone automaticamente por fecha en codigo.
+
+Cobro: registrar_venta_con_caja valida caja origen, llama createSale(False), acumular_venta(False), flush y un commit. Mutacion y acumulacion usan la misma Session. Cualquier fallo previo pide rollback del conjunto; los tests con dobles no prueban que otra conexion vea cero efectos. Captura ID/folio antes de confirmar. Una excepcion durante commit conserva referencia y confirmacion_incierta, incluso si rollback falla; POS no imprime/limpia y bloquea reenvio desde esa instancia hasta conciliacion. Reiniciar o abrir otra ventana no constituye recuperacion idempotente: no hay referencia persistente de solicitud/reintento. Impresion fallida no deshace venta ni vuelve a cobrar.
+
+Cohorte de reversos: folios del nuevo coordinador llevan sufijo reservado -TV2- seguido de UUID hexadecimal32. No se agregan columnas ni se infiere evidencia de comentarios. Longitud completa <=100; la marca reserva37 caracteres. Edicion conserva la marca aun al cambiar folio y no permite introducirla en historicos desde el editor. Es obligatorio comprobar ausencia de marcas anteriores y ensayar el corte antes de liberar: el sufijo no sustituye esa evidencia operativa.
+
+Cancelacion de cohorte nueva: exige caja origen ABIERTA y forma_pago guardada reconocida; resta total solo del bucket de origen, repone stock, inactiva detalles, registra entradas de inventario y restituye credito solo si snapshot es credito al cliente. No usa nombre actual de metodo ni clampa saldos incoherentes para aparentar exito; saldo insuficiente, detalle invalido o acumulado insuficiente requieren conciliacion. Estado CANCELADA rechaza segundo intento serial. Error tecnico hace rollback exterior; concurrencia real pendiente.
+
+Edicion: metadatos/folio del mismo metodo conservan forma_pago y no tocan caja, incluso en historicos/caja cerrada. Cambiar metodo requiere cohorte nueva y caja ABIERTA: reversa origen y acumula destino; contado->credito exige cliente habilitado/saldo disponible, credito->contado/tarjeta libera disponible/utilizado, sin alterar stock. Cambios monetarios de historicos/cajas cerradas se rechazan, no se inventa reembolso ni se reconstruye SUM(Ventas). coordinar_cambio_venta posee commit/rollback en el camino de historial; devuelve datos simples y bloquea acciones de esa instancia ante commit incierto.
+
+REF-26 sigue pendiente: se conservan Float, precision, reparto de descuentos/IVA y totales historicos. Guardias basicas de finitud/no negatividad no prueban reconciliacion universal de cabecera y detalles. REF-18 conserva pendiente compras C-12 fuera de los cinco archivos autorizados. V-01/V-02/V-04/V-08/V-12 no quedan certificados integralmente por pruebas de este lote. Sin DDL, migraciones, hardware, impresoras ni configuracion real. Rollback de codigo conserva datos confirmados y requiere conciliacion operativa; no revierte dinero.
+
+### Lote Local 2 Fases 2 Y 3 (2026-11-10)
+
+Este delta prevalece sobre los pendientes historicos anteriores solo en los caminos indicados. Cierre local probado, no cierre productivo del modulo ni de las fichas globales. [Evidencia y rollback](../04-plan-de-refactorizacion.md#evidencia-del-lote-2-de-ventas-2026-11-10):222 unitarias +171 Qt =393,57 nuevas respecto al Lote1; sin PostgreSQL.
+
+| REF / casos | Contrato implementado | Pendiente |
+| --- | --- | --- |
+| REF-22 / V-04, V-10, V-12 | Pago nombre1..100, promocion nombre1..120/porcentaje finito0..100, folio editor100 | Otros campos/dominios, integridad SQL |
+| REF-25 / V-05, V-12 | Pago propaga excepcion al coordinador con rollback/codigo; promocion valida antes de ensure_schema y serializa tras flush antes de commit | Taxonomia integral y SQL real |
+| REF-26 / V-02, V-03, V-05..V-07 | Calculo puro y validacion de cabecera/detalles previa al primer add | Decimal/escala y concurrencia |
+| REF-33 / lecturas POS/historial | Consultas en modelos y snapshots materializados dentro de sesion | Impresion/renderizado real |
+| REF-36 / historial/pagos | Owners por instancia, capturas GUI, funciones libres, estado tuple real, cierre seguro | Infraestructura REF-37 y SQL real |
+
+[VentaCalculos.py](../../app/Model/VentaCalculos.py) conserva Float/round2, precio capturado y orden promocion->cliente->IVA. Rechaza cantidades no positivas/no finitas, precios negativos/no finitos, descuentos excesivos y cabecera o importes de detalle suministrados incoherentes; no corrige silenciosamente para cuadrar. Reparte descuentos e IVA proporcionalmente y asigna residuo solo donde existe base positiva. Es un cambio deliberado frente al remanente en ultima linea: puede cambiar centavos por detalle, no recalcula historicos. Matriz determinista de fracciones, descuentos0/10/50/100 y tasas0/0.16/1 verifica sumas, no demuestra todos los payloads posibles. POS ya no agrega1 con stock0.5 ni inventa captura fraccionaria automatica; descuento cliente no finito/>100 se rechaza, rama legacy no positiva se conserva.
+
+[VentaLecturas.py](../../app/Model/VentaLecturas.py) define snapshots frozen de producto, cliente, pago y venta con detalles/empleado/sucursal fiscal para tabla, editor y ticket. Los metodos opt-in como_lectura conservan salidas legacy por defecto; filtros, orden y paginacion se mantienen. La ausencia AST de SQL directo en controladores es guardia estructural: las consultas ya eran mayormente propiedad de modelos. No certifica rendimiento, lazy loading real ni PDF/impresora.
+
+Historial y alta de pago capturan parametros antes del worker; no pasan metodos ligados a widgets. Se reutiliza cierre seguro opt-in existente: cerrar suprime callbacks tardios y mantiene vivo el hilo hasta finalizar; no cancela ni revierte SQL. Dos QThreads reales con conexiones simuladas verifican sesiones separadas, afinidad GUI y aislamiento de cierre entre ventanas. No hay evidencia de concurrencia PostgreSQL.
+
+Promociones conserva ensure_schema legacy: solo entradas invalidas evitan ese camino; no se retiro DDL ni se provisiono esquema. Guardar prepara respuesta antes de confirmar y no reconsulta despues; error de integridad no se etiqueta siempre como nombre duplicado. Alta de pago conserva wrapper legacy y distingue validacion/persistencia con mensaje seguro; esto no sanea todos los errores legacy del modulo. Limite UI de pago30->100 es override local autorizado, sin regenerar vistas compartidas. CRUD ausente no se implementa.
+
+REF-37 sigue bloqueada por REF-03/04/25. Persisten gates de locks, rollback/relectura con dos conexiones, idempotencia persistente, conciliacion/corte de cohorte, permisos de dominio y operacion financiera multiusuario. No se modificaron compras, configuracion real ni totales historicos. Rollback de codigo no deshace dinero confirmado. Enlaces/AST no prueban SQL ni diagramas renderizados.
 
 | Fuente | Propietario |
 | --- | --- |

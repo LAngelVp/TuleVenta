@@ -6,6 +6,11 @@ class CategoriasModel:
         self.session = session
         
     def agregar(self, tipo_categoria, nombre, descripcion = None):
+        if tipo_categoria == "productos":
+            if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
+                raise ValueError("nombre: categoria de producto requiere entre 1 y 100 caracteres")
+            if not isinstance(descripcion, str) or not descripcion.strip():
+                raise ValueError("descripcion: es obligatoria")
         modelo = self.__tipo_categoria(tipo_categoria)
         categoria = self.session.scalar(select(modelo).where(modelo.nombre == nombre))
         if categoria is not None:

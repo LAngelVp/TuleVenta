@@ -21,15 +21,15 @@
 ## Validacion de entradas: UI y BD
 
 - Consulta tipos, longitudes, FK, unique, NULL y defaults en [BaseDatosModel.py](../app/Model/BaseDatosModel.py). Mapped[T] no Optional puede inferir NOT NULL aunque nullable=False no este escrito; nullable=True explicito prevalece. Un limite de widget o un default Python no es una restriccion SQL.
-- Estos son limites de producto de la BD y la captura modal actual; no afirmar que la homologacion ya se realizo:
+- Limites de producto tras Lote 1 (REF-21): contrato compartido en app/Model/ProductoEntrada.py y captura modal homologada; verificacion unit/Qt, persistencia PostgreSQL pendiente. La ampliacion modelo50->100 y color20->255 es delta autorizado, sin DDL:
 
 | Campo de Productos | String en BD | setMaxLength modal As-Is |
 | --- | --- | --- |
-| codigo_upc | 20 | 255 |
-| nombre_producto | 60 | 255 |
+| codigo_upc | 20 | 20 |
+| nombre_producto | 60 | 60 |
 | marca | 100 | 100 |
-| modelo | 100 | 50 |
-| color | 255 | 20 |
+| modelo | 100 | 100 |
+| color | 255 | 255 |
 | material | 255 | 255 |
 
 - Al modificar un canal, valida su contrato antes de persistir y prueba limites n-1/n/n+1. No trunques cadenas para evitar errores SQL ni amplias columnas sin migracion autorizada. Mantener o ampliar captura mas restrictiva que BD requiere registrar el delta; no aplicarlo incidentalmente.

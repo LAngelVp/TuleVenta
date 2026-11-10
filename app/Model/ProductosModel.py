@@ -1,10 +1,115 @@
-from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores, Usuarios
+from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Movimientos_Inventario, Categorias_productos, Proveedores, Usuarios, ProductoProveedor
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import select, func
+from .ProductoEntrada import validar_textos_producto
+from dataclasses import dataclass
+from .Proveedores_ProductosModel import sincronizar_proveedores_producto
+
+
+@dataclass(frozen=True)
+class CategoriaListadoDTO:
+    id: int
+    nombre: str
+    descripcion: str
+    tipo: str = "categoria_producto"
+
+
+@dataclass(frozen=True)
+class CatalogoListadoDTO:
+    id: int
+    nombre: str
+    tipo: str
+
+
+@dataclass(frozen=True)
+class ProductoListadoDTO:
+    id: int
+    codigo_upc: str
+    nombre_producto: str
+    descripcion_producto: str
+    precio: float
+    existencia: float
+    categoria: CategoriaListadoDTO | None
+    marca: str = ""
+    modelo: str = ""
+    color: str = ""
+    material: str = ""
+    notas: str = ""
+    imagen: str = ""
+    costo_inicial: float = 0.0
+    costo_final: float = 0.0
+    margen_porcentaje: float = 0.0
+    existencia_minima: float = 0.0
+    existencia_maxima: float = 0.0
+    peso: float = 0.0
+    alto_cm: float = 0.0
+    largo_cm: float = 0.0
+    ancho_cm: float = 0.0
+    fecha_fabricacion: object = None
+    fecha_vencimiento: object = None
+    categoria_id: int | None = None
+    presentacion_producto_id: int | None = None
+    unidad_medida_productos_id: int | None = None
+    presentacion_productos: CatalogoListadoDTO | None = None
+    unidad_medida_productos: CatalogoListadoDTO | None = None
+    proveedores: tuple = ()
 
 class ProductosModel:
     def __init__(self, session):
         self.session = session
+
+    def codigos_upc_registrados(self):
+        return {str(fila[0]).strip() for fila in self.session.query(Productos.codigo_upc).all()}
+
+    def ids_catalogos_importacion(self):
+        return {
+            "presentacion_producto_id": {fila[0] for fila in self.session.query(Presentacion_productos.id).all()},
+            "unidad_medida_productos_id": {fila[0] for fila in self.session.query(Unidad_medida_productos.id).all()},
+            "categoria_id": {fila[0] for fila in self.session.query(Categorias_productos.id).all()},
+        }
+
+    def buscar_productos_dto(self, nombre, codigo, offset=0, limit=100):
+        if bool(nombre) == bool(codigo):
+            raise ValueError("Se requiere exactamente un filtro de producto")
+        consulta = self.session.query(Productos).options(
+            joinedload(Productos.categoria), joinedload(Productos.presentacion_productos),
+            joinedload(Productos.unidad_medida_productos), selectinload(Productos.proveedores),
+        )
+        if nombre:
+            consulta = consulta.filter(Productos.nombre_producto.ilike(f"%{nombre}%"))
+        else:
+            consulta = consulta.filter(Productos.codigo_upc == codigo)
+        productos = consulta.order_by(Productos.nombre_producto.asc()).offset(offset).limit(limit).all()
+        return [ProductoListadoDTO(
+            id=producto.id, codigo_upc=producto.codigo_upc, nombre_producto=producto.nombre_producto,
+            descripcion_producto=producto.descripcion_producto, precio=producto.precio,
+            existencia=producto.existencia,
+            categoria=CategoriaListadoDTO(producto.categoria.id, producto.categoria.nombre, producto.categoria.descripcion)
+            if producto.categoria is not None else None,
+            presentacion_productos=CatalogoListadoDTO(producto.presentacion_productos.id, producto.presentacion_productos.nombre, "presentacion_producto")
+            if producto.presentacion_productos is not None else None,
+            unidad_medida_productos=CatalogoListadoDTO(producto.unidad_medida_productos.id, producto.unidad_medida_productos.nombre, "unidad_medida_producto")
+            if producto.unidad_medida_productos is not None else None,
+            proveedores=tuple(CatalogoListadoDTO(proveedor.id, proveedor.nombre, "proveedor") for proveedor in producto.proveedores),
+            **{campo: getattr(producto, campo) for campo in (
+                "marca", "modelo", "color", "material", "notas", "imagen", "costo_inicial", "costo_final",
+                "margen_porcentaje", "existencia_minima", "existencia_maxima", "peso", "alto_cm", "largo_cm",
+                "ancho_cm", "fecha_fabricacion", "fecha_vencimiento", "categoria_id", "presentacion_producto_id",
+                "unidad_medida_productos_id",
+            )},
+        ) for producto in productos]
+
+    def _proveedores_ids(self, proveedores):
+        identificadores = set()
+        for proveedor in proveedores:
+            identificador = proveedor.get("id") if isinstance(proveedor, dict) else proveedor.id
+            if not isinstance(identificador, int) or isinstance(identificador, bool) or identificador <= 0:
+                raise ValueError("proveedores: ID invalido")
+            identificadores.add(identificador)
+        return identificadores
+
+    def _sincronizar_proveedores(self, producto, identificadores):
+        sincronizar_proveedores_producto(producto, identificadores)
 
 # // presentaciones de los productos:
     def insertar_unida_de_medida_basicas(self):
@@ -182,6 +287,11 @@ class ProductosModel:
         sucursales,
         proveedores
         ):
+        validar_textos_producto(
+            codigo_upc=codigo_upc, nombre_producto=nombre_producto, marca=marca,
+            modelo=modelo, color=color, material=material,
+        )
+        proveedores_ids = self._proveedores_ids(proveedores)
         try:
             producto = self.session.query(Productos).filter(Productos.codigo_upc == codigo_upc).first()
             if producto:
@@ -213,16 +323,16 @@ class ProductosModel:
                 presentacion_producto_id=presentacion_producto_id,
                 unidad_medida_productos_id=unidad_medida_productos_id,
                 categoria_id=categoria_id,
-                sucursales=sucursales,
-                proveedores=proveedores
+                sucursales=sucursales
             )
             if not producto:
                 return None, False
             self.session.add(producto)
+            self._sincronizar_proveedores(producto, proveedores_ids)
             self.session.flush()
             return producto, True
         except Exception as e:
-            return None, False
+            raise
 
     def actualizar_producto(self,
                             id_producto,
@@ -254,8 +364,12 @@ class ProductosModel:
                             sucursales,
                             proveedores
                         ):
+        validar_textos_producto(
+            codigo_upc=codigo_upc, nombre_producto=nombre_producto, marca=marca,
+            modelo=modelo, color=color, material=material,
+        )
+        proveedores_ids = self._proveedores_ids(proveedores)
         producto_actual = self.session.get(Productos, id_producto)
-        print(producto_actual)
         if not producto_actual:
             return None, False
 
@@ -284,18 +398,7 @@ class ProductosModel:
         producto_actual.unidad_medida_productos_id = unidad_medida_productos_id
         producto_actual.categoria_id = categoria_id
         # producto_actual.sucursales = sucursales
-        producto_actual.proveedores = []
-
-        proveedores_fusionados = []
-        for proveedor_dict in proveedores:
-            if isinstance(proveedor_dict, dict):
-                proveedor_obj = Proveedores(**proveedor_dict)
-            else:
-                proveedor_obj = proveedor_dict
-            proveedor_fusionado = self.session.merge(proveedor_obj)
-            proveedores_fusionados.append(proveedor_fusionado)
-
-        producto_actual.proveedores = proveedores_fusionados
+        self._sincronizar_proveedores(producto_actual, proveedores_ids)
 
         return producto_actual, True
 

@@ -9,7 +9,9 @@ from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.CategoriasModel import CategoriasModel
-from ..Model.ProductosModel import ProductosModel
+from ..Model.ProductosModel import ProductosModel, CategoriaListadoDTO, CatalogoListadoDTO
+from ..Model.ProductoEntrada import LIMITES_PRODUCTO, validar_filas_producto, validar_captura_producto, ResultadoProductos
+from ..Model.ProductosImportacion import COLUMNAS_PRINCIPAL, COLUMNAS_MODAL, coordinar_importacion_productos, resumen_reporte_productos
 from ..Model.AbstractTableModel import ComprobarModelosTablas, GenericTableModel
 from .MensajesAlertasController import Mensaje
 from .CategoriasController import CategoriasController
@@ -27,6 +29,12 @@ from .Ventana_espera import *
 from ..Model.BaseDatosModel import Productos as ProductoDB, Presentacion_productos, Unidad_medida_productos, Categorias_productos
 from datetime import datetime
 import traceback
+from functools import partial
+
+
+def ejecutar_consulta_productos(session, consulta, **parametros):
+    return ResultadoProductos(consulta(None, session, **parametros))
+
 
 class ExistenciasClase(QWidget):
     # =============== SEÑALES PERSONALIZADAS ================
@@ -91,8 +99,8 @@ class ExistenciasClase(QWidget):
         if cant_existencia != 0:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("actualizar_existencia_productos_vexistencia")
-                self.id_hilo_actualizar_existencia_producto_vexistencia = WorkerDB.create_managed_worker(owner_id="actualizar_existencia_productos_vexistencia")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}:actualizar_existencia_productos_vexistencia")
+                self.id_hilo_actualizar_existencia_producto_vexistencia = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:actualizar_existencia_productos_vexistencia", cierre_seguro=True)
                 self.consultor_actualizar_existencia_producto_vexistencia = WorkerDB.get_managed_worker(self.id_hilo_actualizar_existencia_producto_vexistencia)
                 if not self.consultor_actualizar_existencia_producto_vexistencia:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -220,12 +228,12 @@ class Admin_productosController(QWidget):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.ajustador_presentacion_producto = AjustarcajaOpciones()
         # ================== VALIDACIONES =======================
-        self.WindowsAddProduct_Dialog.txt_codBarras.setMaxLength(255)
-        self.WindowsAddProduct_Dialog.txt_nombreProducto.setMaxLength(255)
-        self.WindowsAddProduct_Dialog.txt_marcaProducto.setMaxLength(100)
-        self.WindowsAddProduct_Dialog.txt_modeloProducto.setMaxLength(50)
-        self.WindowsAddProduct_Dialog.txt_colorProducto.setMaxLength(20)
-        self.WindowsAddProduct_Dialog.txt_materialProducto.setMaxLength(255)
+        for campo, widget in (
+            ("codigo_upc", "txt_codBarras"), ("nombre_producto", "txt_nombreProducto"),
+            ("marca", "txt_marcaProducto"), ("modelo", "txt_modeloProducto"),
+            ("color", "txt_colorProducto"), ("material", "txt_materialProducto"),
+        ):
+            getattr(self.WindowsAddProduct_Dialog, widget).setMaxLength(LIMITES_PRODUCTO[campo])
         self._translate = QtCore.QCoreApplication.translate
 
         # ====================== SEÑALES DE BOTONES ================
@@ -300,8 +308,8 @@ class Admin_productosController(QWidget):
 
     def listar_presentaciones_productos(self):
         try:
-            WorkerDB.cleanup_owner_workers("obtener_presentaciones_thread_vagregarproducto")
-            self.id_hilo_obtener_presentaciones_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_presentaciones_thread_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_presentaciones_thread_vagregarproducto")
+            self.id_hilo_obtener_presentaciones_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_presentaciones_thread_vagregarproducto", cierre_seguro=True)
             self.consultor_obtener_presentaciones_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_presentaciones_vagregarproducto)
             if not self.consultor_obtener_presentaciones_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
@@ -354,8 +362,8 @@ class Admin_productosController(QWidget):
 
     def listar_unidades_medida(self):
         try:
-            WorkerDB.cleanup_owner_workers("obtener_unidades_medida_thread_vagregarproducto")
-            self.id_hilo_obtener_unidades_medida_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_unidades_medida_thread_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_unidades_medida_thread_vagregarproducto")
+            self.id_hilo_obtener_unidades_medida_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_unidades_medida_thread_vagregarproducto", cierre_seguro=True)
             self.consultor_obtener_unidades_medida_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_unidades_medida_vagregarproducto)
             if not self.consultor_obtener_unidades_medida_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
@@ -408,8 +416,8 @@ class Admin_productosController(QWidget):
 
     def listar_categorias(self):
         try:
-            WorkerDB.cleanup_owner_workers("obtener_categorias_producto_vagregarproducto")
-            self.id_hilo_obtener_categorias_productos_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_categorias_producto_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_categorias_producto_vagregarproducto")
+            self.id_hilo_obtener_categorias_productos_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_categorias_producto_vagregarproducto", cierre_seguro=True)
             self.consultor_obtener_categorias_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_productos_vagregarproducto)
             if not self.consultor_obtener_categorias_producto_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado.")
@@ -585,6 +593,7 @@ class Admin_productosController(QWidget):
     def __agregar_producto(self):
         try:
             datos = self.datos_campos()
+            validar_captura_producto(datos)
             if not datos["codigo_barras"]:
                 Mensaje().mensaje_alerta("El campo Código de Barras es obligatorio")
                 return
@@ -687,8 +696,8 @@ class Admin_productosController(QWidget):
     def agregar_productos_en_bd(self, productos = None):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("guardar_producto_thread_vagregarproducto")
-            self.id_hilo_agregar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id="guardar_producto_thread_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:guardar_producto_thread_vagregarproducto")
+            self.id_hilo_agregar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:guardar_producto_thread_vagregarproducto", cierre_seguro=True)
             self.consultor_agregar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_agregar_producto_vagregarproducto)
             if not self.consultor_agregar_producto_vagregarproducto:
                 raise Exception("No se pudo obtener el resultado de agregar producto.")
@@ -716,6 +725,15 @@ class Admin_productosController(QWidget):
             Mensaje().mensaje_informativo("No se pudieron agregar productos.")
 
     def agregar_productos_query(self, session, productos = None):
+        try:
+            return Admin_productosController._agregar_productos_query(self, session, productos)
+        except Exception as error:
+            session.rollback()
+            return {"exito": False, "codigo": "validacion" if isinstance(error, ValueError) else "tecnico",
+                    "mensaje": str(error) if isinstance(error, ValueError) else "No se pudo guardar el lote",
+                    "resultado": []}
+
+    def _agregar_productos_query(self, session, productos=None):
             productos_no_agregados = []
             productos_agregados = []
             if productos:
@@ -730,11 +748,11 @@ class Admin_productosController(QWidget):
                     categoria = None
                     if nombre_proveedor:
                         proveedor, _ = ProveedoresModel(session).consultar_proveedor(nombre_proveedor)
-                    if nombre_presentacion:
+                    if nombre_presentacion and producto.get("presentacion_producto_id") is None:
                         presentacion, _ = ProductosModel(session).agregar_presentacion(nombre=nombre_presentacion)
-                    if nombre_unidad_de_medida:
+                    if nombre_unidad_de_medida and producto.get("unidad_medida_productos_id") is None:
                         unidad_medida, _ = ProductosModel(session).agregar_unidad_medida(nombre=nombre_unidad_de_medida)
-                    if nombre_categoria:
+                    if nombre_categoria and producto.get("categoria_id") is None:
                         categoria, _ = CategoriasModel(session).agregar(
                             tipo_categoria="productos", nombre=nombre_categoria,
                             descripcion=f"Categoria creada desde el modal de productos: {nombre_categoria}"
@@ -760,12 +778,12 @@ class Admin_productosController(QWidget):
                         color=producto["color"],
                         material=producto["material"],
                         fecha_fabricacion=producto["fecha_fabricacion"],
-                        fecha_vencimiento=producto["fecha_vencimiento"] if self.WindowsAddProduct_Dialog.opcion_TieneCaducidad.isChecked() or producto["fecha_vencimiento"] else None,
+                        fecha_vencimiento=producto["fecha_vencimiento"],
                         imagen= producto["imagen"] if producto["imagen"] is not None else "",
                         notas=producto["notas"],
-                        presentacion_producto_id=presentacion.id if presentacion else None,
-                        unidad_medida_productos_id=unidad_medida.id if unidad_medida else None,
-                        categoria_id=categoria.id if categoria else None,
+                        presentacion_producto_id=producto.get("presentacion_producto_id") if producto.get("presentacion_producto_id") is not None else (presentacion.id if presentacion else None),
+                        unidad_medida_productos_id=producto.get("unidad_medida_productos_id") if producto.get("unidad_medida_productos_id") is not None else (unidad_medida.id if unidad_medida else None),
+                        categoria_id=producto.get("categoria_id") if producto.get("categoria_id") is not None else (categoria.id if categoria else None),
                         sucursales=[],
                         proveedores=proveedores
                     )
@@ -775,17 +793,13 @@ class Admin_productosController(QWidget):
                         productos_no_agregados.append(producto_obj)
             try:
                 session.commit()
-                if len(self.lista_productos) > 1:
-                    lema = "productos agregados con éxito."
-                if len(self.lista_productos) == 1:
-                    lema = "producto agregado con éxito."
                 return {
                     "exito": True,
-                    "mensaje": f"{len(self.lista_productos)} {lema}",
+                    "codigo": "guardado" if productos_agregados else "sin_cambios",
+                    "mensaje": f"{len(productos_agregados)} productos agregados con éxito.",
                     "resultado": productos_agregados
                 }
             except Exception as e:
-                session.rollback()
                 raise e
 
     def __guardar_producto(self):
@@ -804,20 +818,26 @@ class Admin_productosController(QWidget):
             Mensaje().mensaje_informativo("No se selecciono ningun producto para actualizar")
             return
         datos_producto = self.datos_campos()
+        try:
+            validar_captura_producto(datos_producto)
+        except ValueError as error:
+            Mensaje().mensaje_alerta(str(error))
+            return
         for campo, tipo_catalogo in (
             ("presentacion_producto", Presentacion_productos),
             ("unidad_medida_producto", Unidad_medida_productos),
             ("categoria_producto", Categorias_productos),
         ):
-            catalogo = datos_producto[campo]
-            if catalogo is None:
-                datos_producto[campo] = None
-            elif (isinstance(catalogo, tipo_catalogo)
-                  and isinstance(catalogo.id, int) and not isinstance(catalogo.id, bool)):
-                datos_producto[campo] = catalogo.id
-            else:
+            seleccionado = datos_producto[campo]
+            if seleccionado is None:
+                continue
+            es_snapshot = isinstance(seleccionado, (CategoriaListadoDTO, CatalogoListadoDTO))
+            tipo_valido = isinstance(seleccionado, tipo_catalogo) or (es_snapshot and seleccionado.tipo == campo)
+            identificador = getattr(seleccionado, "id", None)
+            if not tipo_valido or not isinstance(identificador, int) or isinstance(identificador, bool):
                 Mensaje().mensaje_alerta(f"Seleccion de catalogo invalida: {campo}")
                 return
+            datos_producto[campo] = identificador
         proveedores_vinculados = list(self.proveedores_vinculados.values())
         proveedores_no_repetidos = [
             proveedor for proveedor_id, proveedor in self.lista_proveedores_a_asignar.items()
@@ -832,8 +852,8 @@ class Admin_productosController(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("actualizar_producto_vagregarproducto")
-                self.id_hilo_actualizar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id="actualizar_producto_vagregarproducto")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}:actualizar_producto_vagregarproducto")
+                self.id_hilo_actualizar_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:actualizar_producto_vagregarproducto", cierre_seguro=True)
                 self.consultor_actualizar_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_producto_vagregarproducto)
                 if not self.consultor_actualizar_producto_vagregarproducto:
                     raise Exception("No se pudo obtener el resultado de actualizar producto.")
@@ -896,14 +916,15 @@ class Admin_productosController(QWidget):
                     "mensaje": f'No se logro realizar la operación',
                     "data": datos
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
             "exito": False,
-            "mensaje": f'Ocurrio un problema en el proceso {e}',
+            "codigo": "validacion" if isinstance(e, ValueError) else "tecnico",
+            "mensaje": str(e) if isinstance(e, ValueError) else 'Ocurrio un problema en el proceso',
             "data": []
         }
-        session.commit()
         return {
             "exito": estado,
             "mensaje": f'Registro {datos_producto["nombre"]} actualizado',
@@ -1125,8 +1146,8 @@ class Admin_productosController(QWidget):
         self.texto_busqueda_proveedor_vincular = texto_busqueda
 
         try:
-            WorkerDB.cleanup_owner_workers("obtener_proveedores_thread_vagregarproducto")
-            self.id_hilo_obtener_proveedores_vagregarproducto = WorkerDB.create_managed_worker(owner_id="obtener_proveedores_thread_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_proveedores_thread_vagregarproducto")
+            self.id_hilo_obtener_proveedores_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_proveedores_thread_vagregarproducto", cierre_seguro=True)
             self.consultor_obtener_proveedores_vagregarproductos = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores_vagregarproducto)
             if not self.consultor_obtener_proveedores_vagregarproductos:
                 raise Exception("No se pudo obtener el resultado de la consulta de proveedores.")
@@ -1367,8 +1388,8 @@ class Admin_productosController(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("importar_productos_vagregarproducto")
-            self.id_hilo_importar_productos_vagregarproducto = WorkerDB.create_managed_worker(owner_id="importar_productos_vagregarproducto")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:importar_productos_vagregarproducto")
+            self.id_hilo_importar_productos_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:importar_productos_vagregarproducto", cierre_seguro=True)
             self.consultor_importar_productos_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_importar_productos_vagregarproducto)
             if not self.consultor_importar_productos_vagregarproducto:
                 raise Exception("No se pudo obtener el worker de importación.")
@@ -1380,108 +1401,45 @@ class Admin_productosController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_importar_productos_vagregarproducto.ejecutar(
-                self.importar_productos_modal_query,
-                documento=documento
+                partial(ejecutar_consulta_productos, consulta=Admin_productosController.importar_productos_modal_query),
+                documento=documento,
+                codigos_lista_actual=tuple(str(producto.get("codigo_barras", "")).strip() for producto in self.lista_productos)
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_importar_productos_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_importar_productos_vagregarproducto)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso de importación: {e}")
 
-    def importar_productos_modal_query(self, session, documento):
-        columnas_validas = {
-            "id", "codigo_upc", "nombre_producto", "descripcion_producto", "costo_inicial",
-            "costo_final", "margen_porcentaje", "precio", "precio_venta", "existencia",
-            "existencia_minima", "existencia_maxima", "existencia_min", "existencia_max", "marca",
-            "modelo", "peso", "alto_cm", "largo_cm", "ancho_cm", "color", "material",
-            "fecha_fabricacion", "fecha_vencimiento", "imagen", "notas", "presentacion_producto_id",
-            "unidad_medida_productos_id", "categoria_id", "categoria", "proveedor", "presentacion",
-            "unidad_medida"
-        }
-        columnas_requeridas = ["codigo_upc", "nombre_producto"]
-        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+    def importar_productos_modal_query(self, session, documento, codigos_lista_actual=None):
+        archivo = OperacionMasivaCsvController.leer_con_reporte(
             documento=documento,
-            columnas_requeridas=columnas_requeridas,
-            columnas_validas=columnas_validas
+            columnas_requeridas=["codigo_upc", "nombre_producto"],
+            columnas_validas=COLUMNAS_MODAL
         )
-
-        codigos_bd = {str(p[0]).strip() for p in session.query(ProductoDB.codigo_upc).all()}
-        codigos_lista_actual = {
-            str(producto.get("codigo_barras", "")).strip()
-            for producto in self.lista_productos
-            if str(producto.get("codigo_barras", "")).strip()
-        }
-        codigos_registrados = set(codigos_bd)
-        codigos_registrados.update(codigos_lista_actual)
-
-        productos_nuevos = []
-        duplicados = []
-
-        for row in registros:
-            codigo = str(row.get("codigo_upc", "")).strip()
-            nombre = str(row.get("nombre_producto", "")).strip()
-            if not codigo or not nombre:
-                continue
-            if codigo in codigos_registrados:
-                duplicados.append(codigo)
-                continue
-
-            producto = {
-                "proveedor": str(row.get("proveedor", "")).strip() or None,
-                "codigo_barras": codigo,
-                "nombre": nombre,
-                "categoria": str(row.get("categoria", "")).strip() or None,
-                "marca": str(row.get("marca", "")).strip(),
-                "modelo": str(row.get("modelo", "")).strip(),
-                "color": str(row.get("color", "")).strip(),
-                "material": str(row.get("material", "")).strip(),
-                "unidad_medida": str(row.get("unidad_medida", "")).strip() or None,
-                "presentacion": str(row.get("presentacion", "")).strip() or None,
-                "costo_inicial": OperacionMasivaCsvController.parse_float(row.get("costo_inicial", 0.0)),
-                "precio_venta": OperacionMasivaCsvController.parse_float(
-                    row.get("precio_venta", row.get("precio", 0.0))
-                ),
-                "margen_porcentaje": OperacionMasivaCsvController.parse_int(row.get("margen_porcentaje", 0)),
-                "costo_final": OperacionMasivaCsvController.parse_float(row.get("costo_final", 0.0)),
-                "existencia": OperacionMasivaCsvController.parse_float(row.get("existencia", 0.0)),
-                "existencia_min": OperacionMasivaCsvController.parse_float(
-                    row.get("existencia_min", row.get("existencia_minima", 0.0))
-                ),
-                "existencia_max": OperacionMasivaCsvController.parse_float(
-                    row.get("existencia_max", row.get("existencia_maxima", 0.0))
-                ),
-                "peso": OperacionMasivaCsvController.parse_float(row.get("peso", 0.0)),
-                "alto_cm": OperacionMasivaCsvController.parse_float(row.get("alto_cm", 0.0)),
-                "largo_cm": OperacionMasivaCsvController.parse_float(row.get("largo_cm", 0.0)),
-                "ancho_cm": OperacionMasivaCsvController.parse_float(row.get("ancho_cm", 0.0)),
-                "descripcion_producto": str(row.get("descripcion_producto", "")).strip(),
-                "notas": str(row.get("notas", "")).strip(),
-                "fecha_vencimiento": OperacionMasivaCsvController.parse_date(row.get("fecha_vencimiento")),
-                "fecha_fabricacion": OperacionMasivaCsvController.parse_date(
-                    row.get("fecha_fabricacion"),
-                    default=datetime.now().date()
-                ),
-                "imagen": str(row.get("imagen", "")).strip() or None
-            }
-            productos_nuevos.append(producto)
-            codigos_registrados.add(codigo)
-
-        return {
-            "exito": True,
-            "productos": productos_nuevos,
-            "duplicados": duplicados
-        }
+        if codigos_lista_actual is None:
+            codigos_lista_actual = tuple(str(producto.get("codigo_barras", "")).strip() for producto in self.lista_productos)
+        codigos = set(codigos_lista_actual)
+        if not archivo["errores"]:
+            codigos.update(ProductosModel(session).codigos_upc_registrados())
+        resultado = coordinar_importacion_productos(archivo, "modal", codigos, datetime.now().date())
+        resultado["duplicados"] = resultado["reporte"]["duplicados"]
+        return resultado
 
     def resultado_documento_excel(self, resultado):
         if hasattr(self, 'id_hilo_importar_productos_vagregarproducto'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_importar_productos_vagregarproducto)
 
+        if resultado.get("exito") is False:
+            Mensaje().mensaje_alerta(resumen_reporte_productos(resultado.get("reporte", {})))
+            return
         lista_nuevos_productos = resultado.get("productos", [])
         duplicados = resultado.get("duplicados", [])
         self.lista_productos.extend(lista_nuevos_productos)
         self.__actualizar_tabla_productos(productos = self.lista_productos)
 
-        if duplicados:
+        if "reporte" in resultado:
+            Mensaje().mensaje_informativo(resumen_reporte_productos(resultado["reporte"]))
+        elif duplicados:
             Mensaje().mensaje_informativo(
                 f"Se encontraron {len(duplicados)} registros duplicados que no fueron agregados.\n"
                 f"Solo se agregaron {len(lista_nuevos_productos)} registros sin duplicar."
@@ -1564,8 +1522,8 @@ class Productos(QWidget):
         self.WindowProducts.setupUi(self)
         apply_module_theme(self)
 
-        self.WindowProducts.txt_buscar.setValidator(Validaciones().get_text_validator(self.WindowProducts.txt_buscar))
-        self.WindowProducts.txt_buscar_productoUPC.setValidator(Validaciones().get_int_validator(self.WindowProducts.txt_buscar_productoUPC))
+        self.WindowProducts.txt_buscar.setValidator(None)
+        self.WindowProducts.txt_buscar_productoUPC.setValidator(None)
         self.WindowProducts.btn_btn_adminProductos_agregar.clicked.connect(self.agregar_producto)
         self.WindowProducts.btn_btn_adminProductos_eliminar.clicked.connect(self.eliminar_producto)
         self.WindowProducts.btn_btn_adminProductos_modificar.clicked.connect(self.modificar_producto)
@@ -1618,8 +1576,8 @@ class Productos(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("filtrar_productos_vprincipal")
-            self.id_hilo_filtrar_productos_vprincipal = WorkerDB.create_managed_worker(owner_id="filtrar_productos_vprincipal")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:filtrar_productos_vprincipal")
+            self.id_hilo_filtrar_productos_vprincipal = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:filtrar_productos_vprincipal", cierre_seguro=True)
             self.consultor_filtrar_productos_vprincipal = WorkerDB.get_managed_worker(self.id_hilo_filtrar_productos_vprincipal)
             if not self.consultor_filtrar_productos_vprincipal:
                 raise Exception("No se pudo obtener el resultado.")
@@ -1631,28 +1589,28 @@ class Productos(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_filtrar_productos_vprincipal.ejecutar(
-                self.buscar_producto_query,
+                partial(ejecutar_consulta_productos, consulta=Productos.buscar_producto_query),
                 nombre_producto = self.nombre_producto,
-                codigo_del_producto = self.codigo_del_producto
+                codigo_del_producto = self.codigo_del_producto,
+                offset=self.cantidad_inicial_consulta,
+                limit=self.cantidad_final_consulta
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_filtrar_productos_vprincipal'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_filtrar_productos_vprincipal)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
-    def buscar_producto_query(self, session, nombre_producto, codigo_del_producto):
-        if nombre_producto:
-            datos, estado = ProductosModel(session).consultar_por_nombre(nombre=nombre_producto, cantidad_inicial=self.cantidad_inicial_consulta, cantidad_final=self.cantidad_final_consulta)
-        elif codigo_del_producto:
-            datos, estado = ProductosModel(session).consultar_producto_por_codigoUPC(codigo_upc=codigo_del_producto)
-            datos = [datos] if estado else []
-        if estado:
-            self.busqueda_realizada = True
-            self.cantidad_inicial_consulta = self.cantidad_inicial_consulta + self.cantidad_final_consulta
+    def buscar_producto_query(self, session, nombre_producto, codigo_del_producto, offset=None, limit=None):
+        offset = self.cantidad_inicial_consulta if offset is None else offset
+        limit = self.cantidad_final_consulta if limit is None else limit
+        datos = ProductosModel(session).buscar_productos_dto(nombre_producto, codigo_del_producto, offset=offset, limit=limit)
+        estado = bool(datos)
         return {
             "exito": estado,
             "mensaje": "Productos obtenidos correctamente" if estado else "No se encontraron productos",
-            "resultado": datos
+            "resultado": datos,
+            "siguiente_offset": offset + limit if estado else offset,
+            "busqueda_realizada": estado,
         }
 
     def agregar_producto(self):
@@ -1699,8 +1657,8 @@ class Productos(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_producto")
-                self.id_hilo_eliminar_producto = WorkerDB.create_managed_worker(owner_id="eliminar_producto")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}:eliminar_producto")
+                self.id_hilo_eliminar_producto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:eliminar_producto", cierre_seguro=True)
                 self.consultor_eliminar_producto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_producto)
                 if not self.consultor_eliminar_producto:
                     raise Exception("No se pudo obtener el resultado.")
@@ -1805,6 +1763,9 @@ class Productos(QWidget):
             if not resultado["exito"]:
                 Mensaje().mensaje_alerta(resultado["mensaje"])
                 return
+            if "siguiente_offset" in resultado:
+                self.cantidad_inicial_consulta = resultado["siguiente_offset"]
+                self.busqueda_realizada = resultado["busqueda_realizada"]
             if not hasattr(self, 'modelo_tabla_productos'):
                 self.__configurar_tabla_productos_principal()
             self.modelo_lista_productos_principal.update_data(resultado["resultado"], reset=True)
@@ -1828,8 +1789,8 @@ class Productos(QWidget):
                 self.cantidad_inicial_consulta = 0
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_productos_tablaproductos_thread")
-                self.id_hilo_obtener_productos_tabla_productos = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_productos_tablaproductos_thread")
+                self.id_hilo_obtener_productos_tabla_productos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_productos_tablaproductos_thread", cierre_seguro=True)
                 self.consultor_obtener_productos_tabla_productos = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos)
                 if not self.consultor_obtener_productos_tabla_productos:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -1889,8 +1850,8 @@ class Productos(QWidget):
         if not hasattr(self, 'busqueda_realizada') or not self.busqueda_realizada:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_productos_tablaproductos_thread")
-                self.id_hilo_obtener_productos_tabla_productos_cargarMas = WorkerDB.create_managed_worker(owner_id="obtener_productos_tablaproductos_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_productos_tablaproductos_thread")
+                self.id_hilo_obtener_productos_tabla_productos_cargarMas = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_productos_tablaproductos_thread", cierre_seguro=True)
                 self.consultor_obtener_productos_tabla_productos_cargarMas = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_tabla_productos_cargarMas)
                 if not self.consultor_obtener_productos_tabla_productos_cargarMas:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -1914,8 +1875,8 @@ class Productos(QWidget):
     def consulta_hilo_paginar_productos(self):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_productos_paginados_thread")
-            self.id_hilo_obtener_productos_paginados = WorkerDB.create_managed_worker(owner_id="obtener_productos_paginados_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_productos_paginados_thread")
+            self.id_hilo_obtener_productos_paginados = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_productos_paginados_thread", cierre_seguro=True)
             self.consultor_obtener_productos_paginados = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_paginados)
             if not self.consultor_obtener_productos_paginados:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -2044,8 +2005,8 @@ class Productos(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("importar_productos_vprincipal")
-            self.id_hilo_importar_productos = WorkerDB.create_managed_worker(owner_id="importar_productos_vprincipal")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:importar_productos_vprincipal")
+            self.id_hilo_importar_productos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:importar_productos_vprincipal", cierre_seguro=True)
             self.consultor_importar_productos = WorkerDB.get_managed_worker(self.id_hilo_importar_productos)
             if not self.consultor_importar_productos:
                 raise Exception("No se pudo obtener el worker de importación.")
@@ -2066,103 +2027,32 @@ class Productos(QWidget):
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso de importación: {e}")
 
     def importar_productos_query(self, session, documento):
-        # Estructura del modelo que define las columnas de la tabla Productos
-        columnas_validas = {
-            "id", "codigo_upc", "nombre_producto", "descripcion_producto", "costo_inicial", "costo_final",
-            "margen_porcentaje", "precio", "existencia", "existencia_minima", "existencia_maxima",
-            "marca", "modelo", "peso", "alto_cm", "largo_cm", "ancho_cm", "color", "material",
-            "fecha_fabricacion", "fecha_vencimiento", "imagen", "notas", "presentacion_producto_id",
-            "unidad_medida_productos_id", "categoria_id"
-        }
-        columnas_requeridas = ["codigo_upc", "nombre_producto"]
+        try:
+            return Productos._importar_productos_query(self, session, documento)
+        except Exception:
+            session.rollback()
+            raise
 
-        # Reutilizamos el controlador genérico de importaciones masivas
-        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+    def _importar_productos_query(self, session, documento):
+        archivo = OperacionMasivaCsvController.leer_con_reporte(
             documento=documento,
-            columnas_requeridas=columnas_requeridas,
-            columnas_validas=columnas_validas
+            columnas_requeridas=["codigo_upc", "nombre_producto"],
+            columnas_validas=COLUMNAS_PRINCIPAL
         )
-
-        # Consultar IDs existentes de claves foráneas para mantener la integridad referencial
-        presentaciones_existentes = {p[0] for p in session.query(Presentacion_productos.id).all()}
-        unidades_existentes = {u[0] for u in session.query(Unidad_medida_productos.id).all()}
-        categorias_existentes = {c[0] for c in session.query(Categorias_productos.id).all()}
-
-        # Cargar todos los códigos UPC existentes para evitar duplicados
-        codigos_existentes = {str(p[0]).strip() for p in session.query(ProductoDB.codigo_upc).all()}
-
-        productos_nuevos = []
-        duplicados = []
-
-        for row in registros:
-            codigo = row.get("codigo_upc", "")
-            if not codigo:
-                continue
-
-            if codigo in codigos_existentes:
-                duplicados.append(codigo)
-                continue
-
-            nombre = row.get("nombre_producto", "")
-            if not nombre:
-                continue
-
-            # Mapear claves foráneas si existen en la BD, si no, se define como None para respetar Integridad Referencial
-            pres_id = OperacionMasivaCsvController.parse_int(row.get("presentacion_producto_id")) if "presentacion_producto_id" in row else None
-            if pres_id not in presentaciones_existentes:
-                pres_id = None
-
-            uni_id = OperacionMasivaCsvController.parse_int(row.get("unidad_medida_productos_id")) if "unidad_medida_productos_id" in row else None
-            if uni_id not in unidades_existentes:
-                uni_id = None
-
-            cat_id = OperacionMasivaCsvController.parse_int(row.get("categoria_id")) if "categoria_id" in row else None
-            if cat_id not in categorias_existentes:
-                cat_id = None
-
-            fecha_fab = OperacionMasivaCsvController.parse_date(row.get("fecha_fabricacion")) if "fecha_fabricacion" in row else None
-            if fecha_fab is None:
-                fecha_fab = datetime.now().date()
-
-            producto_obj = ProductoDB(
-                codigo_upc=codigo,
-                nombre_producto=nombre,
-                descripcion_producto=row.get("descripcion_producto", ""),
-                costo_inicial=OperacionMasivaCsvController.parse_float(row.get("costo_inicial", 0.0)),
-                costo_final=OperacionMasivaCsvController.parse_float(row.get("costo_final", 0.0)),
-                margen_porcentaje=OperacionMasivaCsvController.parse_float(row.get("margen_porcentaje", 0.0)),
-                precio=OperacionMasivaCsvController.parse_float(row.get("precio", 0.0)),
-                existencia=OperacionMasivaCsvController.parse_float(row.get("existencia", 0.0)),
-                existencia_minima=OperacionMasivaCsvController.parse_float(row.get("existencia_minima", 0.0)),
-                existencia_maxima=OperacionMasivaCsvController.parse_float(row.get("existencia_maxima", 0.0)),
-                marca=row.get("marca", ""),
-                modelo=row.get("modelo", ""),
-                peso=OperacionMasivaCsvController.parse_float(row.get("peso", 0.0)),
-                alto_cm=OperacionMasivaCsvController.parse_float(row.get("alto_cm", 0.0)),
-                largo_cm=OperacionMasivaCsvController.parse_float(row.get("largo_cm", 0.0)),
-                ancho_cm=OperacionMasivaCsvController.parse_float(row.get("ancho_cm", 0.0)),
-                color=row.get("color", ""),
-                material=row.get("material", ""),
-                fecha_fabricacion=fecha_fab,
-                fecha_vencimiento=OperacionMasivaCsvController.parse_date(row.get("fecha_vencimiento")),
-                imagen=row.get("imagen", ""),
-                notas=row.get("notas", ""),
-                presentacion_producto_id=pres_id,
-                unidad_medida_productos_id=uni_id,
-                categoria_id=cat_id
-            )
-            session.add(producto_obj)
-            productos_nuevos.append(codigo)
-            codigos_existentes.add(codigo)
-
-        if productos_nuevos:
+        modelo = ProductosModel(session)
+        codigos = modelo.codigos_upc_registrados() if not archivo["errores"] else set()
+        catalogos = modelo.ids_catalogos_importacion() if not archivo["errores"] else None
+        resultado = coordinar_importacion_productos(archivo, "principal", codigos, datetime.now().date(), catalogos)
+        for entrada in resultado["productos"]:
+            session.add(ProductoDB(**entrada))
+        if resultado["productos"]:
             session.commit()
-
         return {
-            "exito": True,
-            "agregados": len(productos_nuevos),
-            "duplicados": len(duplicados),
-            "codigos_duplicados": duplicados
+            "exito": resultado["exito"],
+            "agregados": len(resultado["productos"]),
+            "duplicados": len(resultado["reporte"]["duplicados"]),
+            "codigos_duplicados": resultado["reporte"]["duplicados"],
+            "reporte": resultado["reporte"]
         }
 
     def resultado_importacion(self, resultado):
@@ -2171,13 +2061,14 @@ class Productos(QWidget):
 
         if resultado.get("exito"):
             Mensaje().mensaje_informativo(
+                resumen_reporte_productos(resultado["reporte"]) if "reporte" in resultado else
                 f"Importación completada con éxito.\n"
                 f"Productos agregados: {resultado['agregados']}\n"
                 f"Productos duplicados omitidos: {resultado['duplicados']}"
             )
             self.refrescar_tabla()
         else:
-            Mensaje().mensaje_alerta("Ocurrió un problema durante la importación.")
+            Mensaje().mensaje_alerta(resumen_reporte_productos(resultado.get("reporte", {})))
 
     def error_importacion(self, error_msg):
         if hasattr(self, 'id_hilo_importar_productos'):

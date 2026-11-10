@@ -63,6 +63,17 @@ def test_ref06_worker_error_uses_alert(payments):
     payments.messages.mensaje_informativo.assert_not_called()
 
 
+def test_ref25_payment_commit_failure_rolls_back_and_alerts(payments):
+    session = Mock(spec=["add", "commit", "rollback"])
+    session.commit.side_effect = RuntimeError("synthetic commit failure")
+    result = payments.controller.agregar_metodo_pago_query(session, "CONTADO")
+    payments.controller.resultado_del_hilo(result)
+    assert result["exito"] is False
+    session.rollback.assert_called_once_with()
+    payments.messages.mensaje_informativo.assert_not_called()
+    payments.messages.mensaje_alerta.assert_called_once()
+
+
 def test_ref06_worker_startup_failure_uses_alert(payments, monkeypatch):
     worker_manager = Mock(spec=["cleanup_owner_workers", "create_managed_worker"])
     worker_manager.create_managed_worker.side_effect = RuntimeError("Error simulado")

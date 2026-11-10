@@ -4,6 +4,20 @@
 
 Fecha: 2026-11-10. Estado: As-Is documentado por lectura estatica, no ejecutado. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). No se refactoriza ni corrige codigo en esta entrega.
 
+**Actualizacion de ejecucion, Lote 1 (2026-11-10):** la descripcion original As-Is se conserva como evidencia historica; los deltas de esta seccion prevalecen para los caminos modificados. REF-21 implementada localmente, REF-22 solo categoria de producto, REF-24/25 parciales. Evidencia:78 unitarias y132 Qt aprobadas con `PYTHONDONTWRITEBYTECODE=1`; sin PostgreSQL ni cambios de esquema. Detalle de dependencias, comandos, propietarios, riesgos y rollback en [plan, Lote 1](../04-plan-de-refactorizacion.md#evidencia-del-lote-1-de-productos-2026-11-10).
+
+| Casos / REF | Delta implementado y caracterizado | Pendiente |
+| --- | --- | --- |
+| P-01 / REF-21 | Busqueda admite Unicode, numeros y UPC alfanumerico; igualdad UPC e ILIKE no cambian | Consulta/DTO y diferenciacion error SQL de ausencia REF-25/32/36 |
+| P-02/P-03/P-08/P-09 / REF-21 | Contrato compartido20/60/100/100/255/255; valida antes de mutar; UPC/nombre obligatorios; captura modelo50->100/color20->255 | Relectura y restricciones PostgreSQL reales |
+| P-02/P-03 / REF-24 | Alta/edicion escribe objetos ProductoProveedor, deduplica IDs y conserva precios existentes; nuevos0.0; desvincula solo pares ausentes | Migrar editor proveedor/reutilizar escritor, REF-17/25 y persistencia real |
+| P-02/P-03/P-06/P-08 / REF-25 | Modelo propaga fallo tecnico; coordinacion revierte mutacion/commit fallidos; categoria no emite exito ante error str/dict incompleto | Resultado tipado/DTO integral, causa/diagnostico y restantes consultas/bajas |
+| P-06 / REF-22 | Categoria de producto nombre1..100 y descripcion obligatoria antes de persistir; captura100 | Clientes/proveedores y gates SQL |
+
+Regresiones en [modelo](../../tests/test_product_inputs.py) y [Qt/canales](../../tests/test_phase2_products_qt.py). Fronteras n-1/n/n+1 en seis campos de modelo e importadores; Qt comprueba maxLength y valores n-1/n. QLineEdit conserva su comportamiento nativo de limitar entrada; servicios/importaciones rechazan exceso sin recortar. Error de importacion incluye ordinal de registro (no necesariamente linea fisica) y campo, y rechaza el archivo antes de escribir. Esto reemplaza la omision silenciosa de UPC/nombre vacios en los importadores; aliases, defaults numericos y diferencias26/33 columnas no se unifican.
+
+Alta modal ya no lee checkbox desde la query: usa fecha de vencimiento capturada en la lista. Su mensaje cuenta agregados reales, no longitud de self.lista_productos. El modelo ya no captura flush como None/False. Commit de edicion y alta de categoria quedan bajo try/rollback; importacion principal revierte antes de propagar el fallo al worker. Firma y tuplas legacy se conservan; UPC de edicion sigue sin reasignarse, stock/precio no se alteran por sincronizar proveedores. Los retornos ORM aun requieren REF-25/36. No se certifican P-04/P-05/P-07/P-10 completos por las pruebas de este lote.
+
 | Fuente | Simbolos propietarios |
 | --- | --- |
 | [ProductosController.py](../../app/Controller/ProductosController.py) | Productos, Admin_productosController, ExistenciasClase |
@@ -25,6 +39,48 @@ Fecha: 2026-11-10. Estado: As-Is documentado por lectura estatica, no ejecutado.
 
 ## 2. Actores, permisos y contratos compartidos
 
+### Lote 2 Parcial Autorizado (2026-11-10)
+
+No se declara cerrado el modulo: REF-37 depende de REF-04 (aun hay create_all), y REF-17/24/25 tienen remanentes. Tras verificarlo, el usuario autorizo continuar un incremento parcial sin retirar DDL. Resultados:97 unitarias y141 Qt aprobadas (28 nuevas), con bytecode deshabilitado, sandbox y sin PostgreSQL. Ver detalle, comandos, limites y rollback en [evidencia Lote 2](../04-plan-de-refactorizacion.md#evidencia-del-lote-2-parcial-de-productos-2026-11-10).
+
+| Caso / REF | Delta implementado | Pendiente |
+| --- | --- | --- |
+| P-07 / REF-27 | leer_con_reporte opt-in con columnas, origen, valores limpios/originales y errores estructurados; numero_con_reporte distingue vacio/invalido/no_finito | Integracion en importadores/reportes UI; API legacy y Clientes/Proveedores intactos |
+| P-08/P-09 / REF-28 | Preparacion comun en ProductosImportacion, contrato25 (26 con id ignorado), aliases/defaults por canal conservados | Unificar servicio de coordinacion/dedupe e informe por fila |
+| P-02/P-09 / REF-28 | Preview conserva tres IDs y guardado los transmite con prioridad sobre nombres; nombre sin ID mantiene autocreacion actual | FK real de IDs inexistentes y REF-24/25; no se crean proveedores |
+| P-01 / REF-32 | Buscar ILIKE/UPC exacto en modelo; salida DTO frozen de listado/categoria sin entidades lazy | Listado general/paginacion posterior, otras consultas y SQL real |
+| P-01/P-09 / REF-36 | Captura offset/limite/filtros/UPCs en GUI; worker sin metodo ligado al widget en caminos migrados | Otros flujos, owner por instancia y cancelacion cooperativa |
+| Infraestructura / REF-37 | Sin cambios: bloqueo comprobado | REF-03/04/25 y provisionamiento PostgreSQL |
+
+ResultadoProductos es opt-in: WorkerDB traduce exito al bool real solo en busqueda/preview migrados. Los callbacks legacy mantienen su contrato, incluido dict exitoFalse emitido con boolTrue. Pruebas Qt con worker/hilo reales y conexion simulada verifican afinidad GUI, fin unico y compatibilidad; tabla pinta y selecciona101 DTO mediante clicked sin sesion. Esto no prueba persistencia, SQL de filtros ni cierre seguro de ventana durante una transaccion.
+
+El editor consume directamente la seleccion: DTO de busqueda incluye todos los escalares, fechas y snapshots de catalogos/proveedores necesarios, no solo columnas visibles de tabla. Prueba Qt comprueba carga de marca/modelo/color en el modal real sin excepcion. La captura admite los catalogos DTO tipados del caso correcto y sigue extrayendo IDs antes del guardado; no se envian esas entidades ORM entre hilos desde la busqueda migrada.
+
+El reporte conserva la fila real XLSX y linea final del registro CSV (puede ocupar varias lineas); celda/formula sin cache sigue vacia con data_only. Libro corrupto/.xls producen error seguro. Reporte de archivos no equivale aun a reporte integrado del importador. Originales permiten distinguir nan de vacio sin alterar limpiar_valor ni parse_float/parse_int legacy. Advertencias de dominio y filas mal formadas adicionales siguen pendientes.
+
+Compatibilidad25 columnas verificada con un XLSX real: precio, existencia_minima/maxima y tres FK llegan a ambos adaptadores; id adicional se admite/ignora. Se conserva margen float principal/int modal y preferencia de alias presente aunque vacio; no se aprueba una nueva precision monetaria. IDs desconocidos principales conservan normalizacion a None; IDs explicitos modales se validaran por FK al guardar, con rollback ante fallo, sin inventar entidades ni reinterpretar el ID como nombre. Gate SQL no ejecutado.
+
+Las secciones As-Is siguientes conservan evidencia historica; estos deltas y los de Lote 1 prevalecen para los caminos modificados. Ver [pruebas del incremento](../../tests/test_products_phase3.py).
+
+### Lote 3 Local (2026-11-10)
+
+Este delta prevalece sobre estados historicos de Lotes 1/2 y As-Is siguientes. Sin cierre de modulo ni REF-03/04/Alembic. Evidencia:102 unitarias/152 Qt, bytecode deshabilitado y sandbox, sin PostgreSQL. Ver [plan y gates Lote 3](../04-plan-de-refactorizacion.md#evidencia-del-lote-3-de-productos-2026-11-10).
+
+| Caso / REF | Contrato implementado | Pendiente |
+| --- | --- | --- |
+| P-07/P-08/P-09 / REF-27/28 | Ambos canales usan reporte de archivo y coordinar_importacion_productos; claves legacy conservadas mas reporte; callbacks muestran counts y fila/campo | Guardado modal integral, mas casos de lector y gates SQL |
+| P-08/P-09 / REF-32 | UPCs y conjuntos de IDs en ProductosModel; controlador sin consultas session.query/get/execute/scalar directas | Todos los flujos DTO, equivalencia PostgreSQL |
+| P-02/P-03/C-09 / REF-24/25 | Escritor compartido: producto reemplaza por diferencias, proveedor agrega pares; conserva precios/stock; editor posee commit; fallo no limpia ni emite exito | REF-17/25 globales, persistencia/rollback entre sesiones |
+| P-01..P-09 / REF-36 | Owners por instancia/operacion, limpieza diferida y supresion de callbacks; no terminate en workers opt-in activos | Snapshots/DTO restantes y REF-17/25/37; SQL real |
+
+Politica deliberada de filas: encabezado invalido bloquea sin consultas/escrituras; textos fuera de contrato, obligatorios vacios y no finitos se reportan y omiten. Duplicados se omiten tras validacion, incluyendo UPCs de BD, temporales y aceptados del mismo lote. Principal confirma juntas las aceptadas; fallo tecnico revierte ese lote completo, sin catch/continue ni SAVEPOINT por fila. Preview no persiste y sus validas no significan productos confirmados. Esto sustituye el rechazo integral por validacion del Lote 1.
+
+Reporte: total/validas/omitidas cuentan filas leidas no vacias; duplicados es lista de UPCs; errores/advertencias son diagnosticos con fila/campo/codigo/mensaje. Un error estructural puede tener fila de encabezado. Originales detectan NaN/inf aunque limpieza los convierta a vacio. Conversion numerica invalida retiene default legacy con advertencia; FK principal desconocida -> None con advertencia. Fechas/defaults, margen principal float/modal int y prioridad de alias presente/vacio se conservan. ID modal explicito se mantiene, sujeto a FK al guardar; no se crea proveedor. La UI presenta contadores y primeros10 diagnosticos; payload conserva el reporte completo.
+
+Editor proveedor: confirmar=False propaga fallo tecnico al coordinador; confirmar=True mantiene wrapper legacy commit/rollback. Productos faltantes invalidan el vinculo completo antes de mutar. Un mismo par no se duplica, precios existentes no se reemplazan por0.0 y agregar desde proveedor no desvincula otros pares. Pruebas usan entidades ORM transitorias, no relectura SQL.
+
+Cierre: cada uno de los14 owners de ProductosController incluye instancia y operacion. Worker activo queda registrado hasta finalizar, se rechaza reemplazo del mismo owner y callbacks cancelados no actualizan UI. Otra instancia no se limpia. Prueba de QThread real con conexion simulada y consulta bloqueada comprueba salida de contexto y limpieza; no demuestra cancelacion/rollback SQL. Una operacion puede confirmar tras cerrar ventana. Otros dominios conservan comportamiento legacy.
+
 Actor: operador con acceso al modulo productos. SistemaPrincipal admite ADMINISTRADOR o cualquiera de CREARPRODUCTO/MODIFICARPRODUCTO/ELIMINARPRODUCTO para entrar. Sus reglas de botones asignan alta e importacion principal a CREARPRODUCTO, edicion y ajuste de stock a MODIFICARPRODUCTO y baja a ELIMINARPRODUCTO. Los metodos del modelo no validan esos permisos.
 
 Las reglas de widgets internos del principal intentan resolver WindowsAddProduct_Dialog sobre self.productos, pero ese atributo reside en la instancia modal Admin_productosController. _resolver_widget_anidado devuelve None si no lo encuentra y _restringir_widget no actua sobre None. No afirmar que los botones del modal queden protegidos por esas reglas ni que exista autorizacion de dominio. Importadores/casos de catalogos no tienen permisos semilla dedicados.
@@ -33,18 +89,18 @@ Las reglas de widgets internos del principal intentan resolver WindowsAddProduct
 
 | Entrada | UI efectiva | BD / discrepancia |
 | --- | --- | --- |
-| UPC | txt_codBarras, strip, maxLength=255; alta exige no vacio | codigo_upc String(20), unique, NOT NULL; no validacion comun de longitud del importador |
-| Nombre | strip, maxLength=255; alta manual no comprueba no vacio | String(60), NOT NULL inferido; cadena vacia no es NULL |
-| Marca / modelo | 100 / 50 caracteres | String(100) / String(100) |
-| Color / material | 20 / 255 caracteres | String(255) / String(255) |
+| UPC | txt_codBarras, strip, maxLength=20; obligatorio | codigo_upc String(20), unique, NOT NULL; contrato comun REF-21 |
+| Nombre | strip, maxLength=60; obligatorio REF-21 | String(60), NOT NULL inferido |
+| Marca / modelo | 100 / 100 caracteres tras REF-21 (modelo antes50) | String(100) / String(100) |
+| Color / material | 255 / 255 caracteres tras REF-21 (color antes20) | String(255) / String(255) |
 | Costos, precio, existencias min/max, peso, dimensiones | QDoubleSpinBox, maximum=10000000000.0 en vista; sin minimum/decimals propio, rigen defaults Qt (0 y 2 decimales) | Float sin CHECK de rango, positividad, finitud ni min <= max; importacion no usa el spinbox |
 | Margen | QSpinBox maximum=100, minimo Qt 0; entero | Float; modal CSV usa parse_int; guardado lo pasa como cadena |
 | Fabricacion / vencimiento | QDateEdit; caducidad condicionada por checkbox en alta/edicion | Fabricacion Date NOT NULL inferido; vencimiento nullable |
 | Imagen | Ruta local seleccionada; filtro png/jpg/jpeg y todos; validacion de tamano | Text NOT NULL inferido; REF-10 normaliza altas sin imagen a "" y conserva ruta al editar sin reemplazo |
 | Descripcion / notas | QPlainTextEdit, sin limite de caracteres adicional en controlador | Text NOT NULL inferido |
 | Categoria/presentacion/unidad | Objetos en currentData | FK nullable con ON DELETE SET NULL; REF-11 valida tipo/ID en GUI y envia int/None al worker |
-| Busqueda por nombre | Validaciones.get_text_validator: ^[a-zA-ZñÑ ]+$ | No permite acentos como á/é, numeros o signos en captura aunque BD los admite |
-| Busqueda UPC | get_int_validator: ^[0-9]+ | El modelo almacena texto de hasta 20; codigos alfanumericos pueden existir por otros canales |
+| Busqueda por nombre | Sin validator de formato tras REF-21 | Admite acentos, numeros y signos; conserva ILIKE |
+| Busqueda UPC | Sin validator numerico tras REF-21 | Conserva igualdad exacta y ceros iniciales |
 
 No se establece validator numerico sobre txt_codBarras en el constructor del modal; el de busqueda principal no define el contrato de alta. Los formatos de fecha y limites de Qt no son restricciones CHECK SQL.
 
@@ -220,9 +276,9 @@ categoria, proveedor, presentacion, unidad_medida
 | Aspecto | Principal P-08 | Modal P-09 |
 | --- | --- | --- |
 | Duplicados | UPC de BD y conjunto que se amplia en cada alta del lote | UPC de BD + self.lista_productos + lote; amplia conjunto en cada producto preparado |
-| Filas sin UPC/nombre | Comprueba UPC, luego duplicado, luego nombre; puede contar duplicado aunque nombre falte | Comprueba ambos antes de duplicado; no cuenta duplicado si nombre falta |
+| Filas sin UPC/nombre | Lote 3: invalidas con fila/campo, antes de dedupe | Lote 3: misma validacion antes de dedupe |
 | Columna id | Aceptada pero no asignada | Aceptada pero no incorporada al dict temporal |
-| Tres FK por ID | parse_int y conjuntos de IDs existentes; invalido/inexistente/ausente -> None | Columnas admitidas pero ignoradas; solo consume nombres de catalogos |
+| Tres FK por ID | parse_int y conjuntos de IDs existentes; invalido/inexistente/ausente -> None | Lote 2 conserva IDs en preview/guardado con prioridad sobre nombres; ausente usa nombres; desconocido sujeto a FK al guardar |
 | Nombres de catalogos | Columnas categoria/presentacion/unidad_medida no admitidas | Nombre strip o None; al guardar crea categoria/presentacion/unidad si faltan (P-02) |
 | Proveedor | Columna proveedor no admitida; no construye asociacion | Nombre o None; se busca proveedor existente al guardar; no se crea |
 | Precio | parse_float(precio, 0.0) | Si existe clave precio_venta usa ese valor incluso si vacio; de otro modo precio; parse_float |
@@ -235,8 +291,8 @@ categoria, proveedor, presentacion, unidad_medida
 | Textos opcionales | descripcion, marca, modelo, color, material, notas usan valor de fila o "" | str/strip de los mismos textos; descripcion/notas tambien strip |
 | Persistencia | Construye ProductoDB directamente, session.add; no llama agregar_producto | Solo devuelve lista temporal; no add/flush/commit de productos en importar_productos_modal_query |
 | Commit | Uno al final si hay productos_nuevos; no try/rollback explicito dentro del metodo | Ninguno en preparacion; despues agregar_productos_query hace commit global |
-| Resultado | exito=True, agregados, duplicados (cantidad), codigos_duplicados | exito=True, productos (lista), duplicados (lista); callback extiende lista y avisa |
-| Rechazos por vacios | Omitidos, no reportados por fila | Omitidos, no reportados por fila |
+| Resultado | Lote 3: claves legacy mas reporte; exito=False ante error estructural | Lote 3: claves legacy mas reporte; callback no extiende lista ante error estructural |
+| Rechazos por vacios | Lote 3: omitidos con diagnostico por fila | Lote 3: omitidos con diagnostico por fila |
 | Stock e historico | Existencia inicial directa, sin Movimientos_inventario | Igual al guardar por P-02; no hay movimiento por importar |
 
 **Transaccion principal:** lectura de catalogos/UPC y altas en una sesion WorkerDB; los queries o autoflush pueden fallar antes del commit final. Un error aborta el metodo y el worker emite error; cierre de sesion descarta trabajo no confirmado, sin rollback explicito del importador. No hay savepoints, validacion previa completa del lote ni informe por fila de errores SQL. El retorno exito=True con cero altas es posible.

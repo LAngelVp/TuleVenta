@@ -27,12 +27,17 @@ class MetodoPagoModel:
             print(f'Existio un error en la creacion de metodos de pago iniciales: {e}')
             return False
 
-    def agregar_metodo_pago_compra(self, nombre):
+    def agregar_metodo_pago_compra(self, nombre, propagar=False):
         try:
+            if not isinstance(nombre, str) or not nombre.strip() or len(nombre.strip()) > 100:
+                raise ValueError("El nombre del metodo de pago debe contener entre 1 y 100 caracteres.")
+            nombre = nombre.strip()
             metodo_pago = Metodos_pagos(nombre=nombre)
             self.session.add(metodo_pago)
             return metodo_pago, True
         except Exception as e:
+            if propagar:
+                raise
             return None, False
 
     def obtener_metodos_pagos(self):

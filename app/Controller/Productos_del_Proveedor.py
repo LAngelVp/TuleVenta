@@ -861,7 +861,7 @@ class Productos_de_proveedorController(QWidget):
 
     def vincular_productos_al_proveedor_query(self, session, proveedor, lista_de_productos):
         try:
-            _, estado = ProveedoresModel(session).actualizar_productos_al_proveedor(proveedor_id=proveedor.id, lista_productos=lista_de_productos)
+            _, estado = ProveedoresModel(session).actualizar_productos_al_proveedor(proveedor_id=proveedor.id, lista_productos=lista_de_productos, confirmar=False)
             if not estado:
                 session.rollback()
                 return {
@@ -887,9 +887,12 @@ class Productos_de_proveedorController(QWidget):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
 
     def mostrar_estado_productos_vinculados(self, objetoMensaje):
+        if not objetoMensaje.get("exito"):
+            Mensaje().mensaje_alerta(objetoMensaje.get("mensaje", "No se pudo vincular"))
+            return
         self.PRODUCTO_VINCULADO_SIGNAL.emit()
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-        if hasattr(self, "modelo_tabla_Productos_A_VincularProveedor") or self.modelo_tabla_Productos_A_VincularProveedor:
+        if getattr(self, "modelo_tabla_Productos_A_VincularProveedor", None) is not None:
             self.modelo_tabla_Productos_A_VincularProveedor.clear()
         self.lista_productos_para_vincular.clear()
 

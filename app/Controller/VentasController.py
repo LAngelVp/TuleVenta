@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from functools import partial
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -25,6 +26,11 @@ from .MensajesAlertasController import Mensaje
 from .UiTheme import apply_module_theme
 from .Ventana_espera import Modal_de_espera, ModalManager
 from app.Model.AbstractTableModel import ComprobarModelosTablas
+
+
+def ejecutar_consulta_ventas(session, consulta, **datos):
+    resultado = consulta(None, session, **datos)
+    return resultado, bool(resultado.get("exito"))
 
 
 class DialogoEditarVenta(QDialog):
@@ -75,6 +81,7 @@ class DialogoEditarVenta(QDialog):
         formulario = QFormLayout()
 
         self.txt_folio = QLineEdit(self)
+        self.txt_folio.setMaxLength(100)
         self.txt_folio.setText(venta.folio or "")
 
         self.cmb_metodo_pago = QComboBox(self)
@@ -333,8 +340,8 @@ class Ventas(QWidget):
             self._actualizar_estado_paginacion()
 
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_ventas_thread")
-            self.id_obtener_ventas = WorkerDB.create_managed_worker(owner_id="obtener_ventas_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:obtener_ventas_thread")
+            self.id_obtener_ventas = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:obtener_ventas_thread", cierre_seguro=True)
             self.consultor_obtener_ventas = WorkerDB.get_managed_worker(self.id_obtener_ventas)
             if not self.consultor_obtener_ventas:
                 raise Exception("No se logró obtener el worker gestionado")
@@ -346,9 +353,11 @@ class Ventas(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal,
             )
             self.consultor_obtener_ventas.ejecutar(
-                funcion=self.obtener_ventas_query,
+                funcion=partial(ejecutar_consulta_ventas, consulta=Ventas.obtener_ventas_query),
                 texto_busqueda=texto_busqueda,
                 estado=estado,
+                offset=self.cantidad_inicial_consulta_ventas,
+                limite=self.cantidad_final_consulta_ventas,
             )
         except Exception as e:
             self._cargando_mas_ventas = False
@@ -357,22 +366,13 @@ class Ventas(QWidget):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_ventas)
             Mensaje().mensaje_alerta(f"Ocurrió un error al consultar ventas: {e}")
 
-    def obtener_ventas_query(self, session, texto_busqueda="", estado="TODOS"):
+    def obtener_ventas_query(self, session, texto_busqueda="", estado="TODOS", offset=None, limite=None):
         try:
             modelo = VentasModel(session)
-            if (texto_busqueda or "").strip():
-                ventas, exito, mensaje = modelo.searchSalesByFolio(
-                    texto_busqueda,
-                    offset=self.cantidad_inicial_consulta_ventas,
-                    limit=self.cantidad_final_consulta_ventas,
-                    estado=estado,
-                )
-            else:
-                ventas, exito, mensaje = modelo.allSales(
-                    offset=self.cantidad_inicial_consulta_ventas,
-                    limit=self.cantidad_final_consulta_ventas,
-                    estado=estado,
-                )
+            ventas, exito, mensaje = modelo.listar_ventas_lectura(
+                texto_busqueda=texto_busqueda, estado=estado,
+                offset=offset if offset is not None else self.cantidad_inicial_consulta_ventas,
+                limite=limite if limite is not None else self.cantidad_final_consulta_ventas)
 
             return {
                 "exito": exito,
@@ -437,7 +437,7 @@ class Ventas(QWidget):
     def _obtener_metodos_pago(self):
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            return VentasModel(session).obtener_metodos_pago_venta(incluir_credito=True)
+            return VentasModel(session).obtener_metodos_pago_venta(incluir_credito=True, como_lectura=True)
 
     def cargar_estados_ventas(self):
         try:
@@ -463,6 +463,9 @@ class Ventas(QWidget):
             self._cargando_estados_ventas = False
 
     def modificar_venta(self):
+        if getattr(self, "_operacion_incierta", None):
+            Mensaje().mensaje_alerta("Concilie la operacion pendiente antes de modificar otra venta.")
+            return
         if not self.saleSelected:
             Mensaje().mensaje_informativo("No has seleccionado una venta para modificar.")
             return
@@ -482,8 +485,8 @@ class Ventas(QWidget):
 
         datos = dialogo.get_data()
         self.manejadorModal.mostrar_modal(self)
-        WorkerDB.cleanup_owner_workers("actualizar_venta_thread")
-        self.id_actualizar_venta = WorkerDB.create_managed_worker(owner_id="actualizar_venta_thread")
+        WorkerDB.cleanup_owner_workers(f"{id(self)}:actualizar_venta_thread")
+        self.id_actualizar_venta = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:actualizar_venta_thread", cierre_seguro=True)
         worker = WorkerDB.get_managed_worker(self.id_actualizar_venta)
         if not worker:
             WorkerDB.cleanup_managed_worker(self.id_actualizar_venta)
@@ -497,13 +500,14 @@ class Ventas(QWidget):
             terminado_callback=self.manejadorModal.cerrar_modal,
         )
         worker.ejecutar(
-            funcion=self.actualizar_venta_query,
+            funcion=partial(ejecutar_consulta_ventas, consulta=Ventas.actualizar_venta_query),
             venta_id=self.saleSelected.id,
             **datos,
         )
 
     def actualizar_venta_query(self, session, venta_id, folio, metodo_pago_id, forma_pago, comentarios):
-        venta, exito, mensaje = VentasModel(session).updateSale(
+        venta, exito, mensaje = VentasModel(session).coordinar_cambio_venta(
+            "editar",
             venta_id=venta_id,
             folio=folio,
             metodo_pago_id=metodo_pago_id,
@@ -517,6 +521,9 @@ class Ventas(QWidget):
         }
 
     def cancelar_venta(self):
+        if getattr(self, "_operacion_incierta", None):
+            Mensaje().mensaje_alerta("Concilie la operacion pendiente antes de cancelar otra venta.")
+            return
         if not self.saleSelected:
             Mensaje().mensaje_informativo("No has seleccionado una venta para cancelar.")
             return
@@ -543,8 +550,8 @@ class Ventas(QWidget):
             usuario_id = self.datos_usuario.get("id_usuario")
 
         self.manejadorModal.mostrar_modal(self)
-        WorkerDB.cleanup_owner_workers("cancelar_venta_thread")
-        self.id_cancelar_venta = WorkerDB.create_managed_worker(owner_id="cancelar_venta_thread")
+        WorkerDB.cleanup_owner_workers(f"{id(self)}:cancelar_venta_thread")
+        self.id_cancelar_venta = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:cancelar_venta_thread", cierre_seguro=True)
         worker = WorkerDB.get_managed_worker(self.id_cancelar_venta)
         if not worker:
             WorkerDB.cleanup_managed_worker(self.id_cancelar_venta)
@@ -558,14 +565,15 @@ class Ventas(QWidget):
             terminado_callback=self.manejadorModal.cerrar_modal,
         )
         worker.ejecutar(
-            funcion=self.cancelar_venta_query,
+            funcion=partial(ejecutar_consulta_ventas, consulta=Ventas.cancelar_venta_query),
             venta_id=self.saleSelected.id,
             motivo_cancelacion=(motivo or "").strip(),
             usuario_id=usuario_id,
         )
 
     def cancelar_venta_query(self, session, venta_id, motivo_cancelacion, usuario_id=None):
-        venta, exito, mensaje = VentasModel(session).cancelSale(
+        venta, exito, mensaje = VentasModel(session).coordinar_cambio_venta(
+            "cancelar",
             venta_id=venta_id,
             usuario_id=usuario_id,
             motivo_cancelacion=motivo_cancelacion,
@@ -577,6 +585,8 @@ class Ventas(QWidget):
         }
 
     def resultado_operacion_venta(self, resultado):
+        if isinstance(resultado.get("data"), dict) and resultado["data"].get("confirmacion_incierta"):
+            self._operacion_incierta = resultado["data"]["folio"]
         if resultado.get("exito"):
             Mensaje().mensaje_informativo(resultado.get("mensaje", "Operación realizada correctamente."))
             self.saleSelected = None

@@ -317,6 +317,7 @@ class PromocionesController(QDialog):
         layout_formulario.setSpacing(12)
 
         self.txt_nombre = QLineEdit(grupo_formulario)
+        self.txt_nombre.setMaxLength(120)
         self.cmb_tipo_promocion = QComboBox(grupo_formulario)
         self.lbl_ayuda_tipo = QLabel(grupo_formulario)
         self.lbl_ayuda_tipo.setObjectName("ayudaTipoPromocion")

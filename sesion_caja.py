@@ -1,7 +1,24 @@
 from datetime import datetime
+import math
+import unicodedata
 from sqlalchemy import select, update
 from app.DataBase.conexionBD import Conexion_base_datos
 from app.Model.BaseDatosModel import SesionCaja, Ventas
+
+
+def clasificar_forma_pago(nombre):
+    etiqueta = " ".join("".join(caracter for caracter in unicodedata.normalize("NFKD", nombre or "")
+                               if not unicodedata.combining(caracter)).upper().split())
+    categorias = {
+        "CONTADO": "efectivo", "EFECTIVO": "efectivo",
+        "TARJETA DE CREDITO": "tarjeta", "TARJETA DE DEBITO": "tarjeta", "TARJETA": "tarjeta",
+        "TRANSFERENCIA": "transferencia", "CHEQUE": "transferencia",
+        "CREDITO": "credito", "CREDITO AL CLIENTE": "credito",
+    }
+    if etiqueta not in categorias:
+        raise ValueError("Metodo de pago sin clasificacion aprobada.")
+    return categorias[etiqueta]
+
 
 class GestorSesionCaja:
     @staticmethod
@@ -46,11 +63,13 @@ class GestorSesionCaja:
                 return False, f"Error al obtener sesión de caja abierta: {str(e)}", None
 
     @staticmethod
-    def abrir_sesion_caja(usuario_id: int, monto_inicial: float, session=None) -> tuple[bool, str, dict | None]:
+    def abrir_sesion_caja(usuario_id: int, monto_inicial: float, session=None, confirmar=True) -> tuple[bool, str, dict | None]:
         """
         Registers a new box session with the state 'ABIERTA' and its initial fund.
         """
         def _abrir(s):
+            if not math.isfinite(float(monto_inicial)) or monto_inicial < 0:
+                return False, "Fondo inicial invalido.", None
             # Verify if there is already an open session
             stmt = select(SesionCaja).where(SesionCaja.estado == "ABIERTA")
             existing = s.execute(stmt).scalars().first()
@@ -71,8 +90,11 @@ class GestorSesionCaja:
                 estado="ABIERTA"
             )
             s.add(nueva_sesion)
-            s.commit()
-            s.refresh(nueva_sesion)
+            if confirmar:
+                s.commit()
+                s.refresh(nueva_sesion)
+            else:
+                s.flush()
             return True, "Caja abierta con éxito.", {
                 "id": nueva_sesion.id,
                 "usuario_id": nueva_sesion.usuario_id,
@@ -90,6 +112,8 @@ class GestorSesionCaja:
                 "estado": nueva_sesion.estado
             }
 
+        if not confirmar and session is None:
+            return False, "Se requiere session para confirmar=False.", None
         if session is not None:
             return _abrir(session)
         else:
@@ -102,33 +126,20 @@ class GestorSesionCaja:
                 return False, f"Error al abrir la sesión de caja: {str(e)}", None
 
     @staticmethod
-    def acumular_venta(sesion_id: int, monto: float, forma_pago: str, session=None) -> tuple[bool, str]:
+    def acumular_venta(sesion_id: int, monto: float, forma_pago: str, session=None, confirmar=True) -> tuple[bool, str]:
         """
         Accumulates money from a sale into the open session of the box, filtered by payment method.
         """
         def _acumular(s):
-            sesion = s.get(SesionCaja, sesion_id)
-            if not sesion:
-                return False, f"No se encontró la sesión de caja {sesion_id}."
-            if sesion.estado != "ABIERTA":
-                return False, f"La sesión de caja {sesion_id} no está abierta."
+            if not math.isfinite(float(monto)) or monto < 0:
+                return False, "Monto de venta invalido."
+            exito, mensaje = GestorSesionCaja.ajustar_venta(sesion_id, monto, forma_pago, s)
+            if exito and confirmar:
+                s.commit()
+            return exito, mensaje
 
-            forma_pago_upper = forma_pago.upper()
-            if "EFECTIVO" in forma_pago_upper or "CONTADO" in forma_pago_upper:
-                sesion.ventas_efectivo += monto
-            elif "TARJETA" in forma_pago_upper:
-                sesion.ventas_tarjeta += monto
-            elif "TRANSFERENCIA" in forma_pago_upper or "CHEQUE" in forma_pago_upper:
-                sesion.ventas_transferencia += monto
-            else:
-                # Fallback to efectivo if indeterminate
-                sesion.ventas_efectivo += monto
-
-            # Update expected cash
-            sesion.efectivo_esperado = sesion.monto_inicial + sesion.ventas_efectivo + sesion.entradas_efectivo - sesion.retiros_efectivo
-            s.commit()
-            return True, "Acumulación exitosa."
-
+        if not confirmar and session is None:
+            return False, "Se requiere session para confirmar=False."
         if session is not None:
             return _acumular(session)
         else:
@@ -141,11 +152,33 @@ class GestorSesionCaja:
                 return False, f"Error al acumular venta a la sesión de caja: {str(e)}"
 
     @staticmethod
-    def registrar_entrada_retiro(sesion_id: int, monto: float, es_entrada: bool, session=None) -> tuple[bool, str]:
+    def ajustar_venta(sesion_id, monto, forma_pago, session):
+        try:
+            categoria = clasificar_forma_pago(forma_pago)
+        except ValueError as error:
+            return False, str(error)
+        if not math.isfinite(float(monto)):
+            return False, "Delta de caja invalido."
+        sesion = session.get(SesionCaja, sesion_id)
+        if sesion is None or sesion.estado != "ABIERTA":
+            return False, "La caja origen no esta ABIERTA; requiere conciliacion."
+        if categoria != "credito":
+            campo = f"ventas_{categoria}"
+            saldo = round(getattr(sesion, campo) + monto, 2)
+            if saldo < 0:
+                return False, "Acumulado insuficiente; requiere conciliacion."
+            setattr(sesion, campo, saldo)
+        sesion.efectivo_esperado = sesion.monto_inicial + sesion.ventas_efectivo + sesion.entradas_efectivo - sesion.retiros_efectivo
+        return True, "Acumulacion ajustada."
+
+    @staticmethod
+    def registrar_entrada_retiro(sesion_id: int, monto: float, es_entrada: bool, session=None, confirmar=True) -> tuple[bool, str]:
         """
         Register a custom cash entry or withdrawal during the shift.
         """
         def _registrar(s):
+            if not math.isfinite(float(monto)) or monto < 0:
+                return False, "Monto de entrada/retiro invalido."
             sesion = s.get(SesionCaja, sesion_id)
             if not sesion or sesion.estado != "ABIERTA":
                 return False, "La sesión de caja no coincide o no está abierta."
@@ -156,9 +189,12 @@ class GestorSesionCaja:
                 sesion.retiros_efectivo += monto
 
             sesion.efectivo_esperado = sesion.monto_inicial + sesion.ventas_efectivo + sesion.entradas_efectivo - sesion.retiros_efectivo
-            s.commit()
+            if confirmar:
+                s.commit()
             return True, "Registro exitoso."
 
+        if not confirmar and session is None:
+            return False, "Se requiere session para confirmar=False."
         if session is not None:
             return _registrar(session)
         else:
@@ -171,11 +207,13 @@ class GestorSesionCaja:
                 return False, f"Error al registrar entrada/retiro en caja: {str(e)}"
 
     @staticmethod
-    def cerrar_sesion_caja(sesion_id: int, conteo_usuario: float, session=None) -> tuple[bool, str, dict | None]:
+    def cerrar_sesion_caja(sesion_id: int, conteo_usuario: float, session=None, confirmar=True) -> tuple[bool, str, dict | None]:
         """
         Closes the active cash session of the box calculating differences and setting state 'CERRADA'.
         """
         def _cerrar(s):
+            if not math.isfinite(float(conteo_usuario)) or conteo_usuario < 0:
+                return False, "Conteo invalido.", None
             sesion = s.get(SesionCaja, sesion_id)
             if not sesion:
                 return False, f"No se encontró la sesión de caja con ID {sesion_id}.", None
@@ -192,7 +230,8 @@ class GestorSesionCaja:
             sesion.fecha_cierre = datetime.now()
             sesion.estado = "CERRADA"
 
-            s.commit()
+            if confirmar:
+                s.commit()
             return True, "Caja cerrada con éxito.", {
                 "id": sesion.id,
                 "usuario_id": sesion.usuario_id,
@@ -210,6 +249,8 @@ class GestorSesionCaja:
                 "estado": sesion.estado
             }
 
+        if not confirmar and session is None:
+            return False, "Se requiere session para confirmar=False.", None
         if session is not None:
             return _cerrar(session)
         else:

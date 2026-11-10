@@ -24,7 +24,7 @@ class CategoriasController(QWidget):
         configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
         apply_module_theme(self)
         self.setWindowTitle("Categoría")
-        self.ui.txt_nombre.setMaxLength(150)
+        self.ui.txt_nombre.setMaxLength(100 if tipo_categoria == "productos" else 150)
         self.ui.btn_btn_guardar.clicked.connect(self.guardar)
 
         self.manejadorModal = ModalManager()
@@ -68,15 +68,17 @@ class CategoriasController(QWidget):
             if not estado:
                 session.rollback()
                 return {
-                    "exito": estado
+                    "exito": estado,
+                    "codigo": "duplicado",
+                    "mensaje": "La categoria ya existe"
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
                 "mensaje": f"Ocurrio un error en el proceso"
             }
-        session.commit()
         return {
             "exito": estado,
             "mensaje": f"Registro {nombre} agregado"
@@ -130,9 +132,12 @@ class CategoriasController(QWidget):
         self.eliminacion_completada.emit(objetoMensaje)
 
     def resultado_del_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
+        if not isinstance(objetoMensaje, dict) or not objetoMensaje.get("exito"):
+            Mensaje().mensaje_alerta("No se pudo guardar la categoria")
+            return
+        Mensaje().mensaje_informativo(objetoMensaje.get("mensaje", "Categoria guardada"))
         self.categoria_agregada_signal.emit()
         self.close()
 
     def mostrar_error_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
+        Mensaje().mensaje_alerta("No se pudo completar la operacion de categoria")

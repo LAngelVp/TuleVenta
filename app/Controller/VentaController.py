@@ -26,6 +26,8 @@ from ..Model.AbstractTableModel import ComprobarModelosTablas
 from ..Model.ConfiguracionSistemaModel import ConfiguracionSistemaModel
 from ..Model.PromocionesModel import PromocionesModel
 from ..Model.VentasModel import VentasModel
+from ..Model.VentaCalculos import calcular_totales_venta, preparar_items_venta
+import math
 from ..View.UserInterfacePy.UI_CONTROL_VENTA import Ui_Venta
 from .MensajesAlertasController import Mensaje
 from .VentaTicketPrinter import TicketVentaPrinter
@@ -409,7 +411,7 @@ class Venta(QWidget):
 
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            metodos, exito, mensaje = VentasModel(session).obtener_metodos_pago_venta(incluir_credito=False)
+            metodos, exito, mensaje = VentasModel(session).obtener_metodos_pago_venta(incluir_credito=False, como_lectura=True)
 
         if not exito:
             Mensaje().mensaje_alerta(mensaje)
@@ -441,7 +443,7 @@ class Venta(QWidget):
     def _buscar_y_agregar_producto_por_codigo(self, criterio):
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            producto, exito, mensaje = VentasModel(session).buscar_producto_para_venta(criterio)
+            producto, exito, mensaje = VentasModel(session).buscar_producto_para_venta(criterio, como_lectura=True)
 
         if not exito or not producto:
             Mensaje().mensaje_alerta(mensaje)
@@ -454,7 +456,7 @@ class Venta(QWidget):
     def _buscar_y_agregar_producto_por_nombre(self, criterio):
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            productos, exito, mensaje = VentasModel(session).buscar_productos_por_nombre_para_venta(criterio)
+            productos, exito, mensaje = VentasModel(session).buscar_productos_por_nombre_para_venta(criterio, como_lectura=True)
 
         if not exito or not productos:
             Mensaje().mensaje_alerta(mensaje)
@@ -475,7 +477,7 @@ class Venta(QWidget):
 
     def _agregar_producto_a_ticket(self, producto):
         existencia = float(producto.existencia or 0.0)
-        if existencia <= 0:
+        if not math.isfinite(existencia) or existencia < 1:
             Mensaje().mensaje_alerta(f"El producto {producto.nombre_producto} no tiene existencias disponibles.")
             return
 
@@ -592,6 +594,9 @@ class Venta(QWidget):
 
         aplica_descuento = bool(getattr(self.cliente_descuento, "aplica_descuento", False))
         porcentaje = float(getattr(self.cliente_descuento, "porcentaje_descuento", 0.0) or 0.0)
+        if not math.isfinite(porcentaje) or porcentaje > 100:
+            Mensaje().mensaje_alerta("Porcentaje de descuento invalido; debe estar entre 0 y 100.")
+            return
         if not aplica_descuento or porcentaje <= 0:
             self.porcentaje_descuento_aplicado = 0.0
             self._actualizar_resumen_venta()
@@ -634,7 +639,7 @@ class Venta(QWidget):
         if not cliente:
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
-                cliente, exito, mensaje = VentasModel(session).obtener_o_crear_cliente_publico_general()
+                cliente, exito, mensaje = VentasModel(session).obtener_o_crear_cliente_publico_general(como_lectura=True)
             if not exito or not cliente:
                 Mensaje().mensaje_alerta(mensaje)
                 return
@@ -738,25 +743,24 @@ class Venta(QWidget):
         self._registrar_venta(detalles_venta, items_venta)
 
     def _registrar_venta(self, detalles_venta, items_venta=None):
-        with Conexion_base_datos() as db:
-            session = db.abrir_sesion()
-            venta, exito, mensaje = VentasModel(session).createSale(detalles_venta, items_venta or self.ticket_items)
-            venta_id = getattr(venta, "id", None) if venta else None
-
-        if not exito or not venta:
+        if getattr(self, "_cobro_incierto", None):
+            Mensaje().mensaje_alerta(f"Concilie el folio {self._cobro_incierto} antes de otro cobro en esta pantalla.")
+            return
+        try:
+            with Conexion_base_datos() as db:
+                session = db.abrir_sesion()
+                resultado, exito, mensaje = VentasModel(session).registrar_venta_con_caja(
+                    detalles_venta, self.ticket_items if items_venta is None else items_venta)
+        except Exception:
+            Mensaje().mensaje_alerta("No se pudo completar la operacion. Verifique su estado antes de reintentar.")
+            return
+        if not exito or not resultado:
+            if resultado and resultado.get("confirmacion_incierta"):
+                self._cobro_incierto = resultado["folio"]
             Mensaje().mensaje_alerta(mensaje)
             return
 
-        # Acumular monto de la venta en la sesión de caja activa
-        if self.sesion_caja_id:
-            from sesion_caja import GestorSesionCaja
-            GestorSesionCaja.acumular_venta(
-                sesion_id=self.sesion_caja_id,
-                monto=detalles_venta["total"],
-                forma_pago=detalles_venta["forma_pago"]
-            )
-
-        mensaje_impresion = self._imprimir_ticket_venta(venta_id)
+        mensaje_impresion = self._imprimir_ticket_venta(resultado["id"])
         mensaje_final = mensaje if not mensaje_impresion else f"{mensaje}\n{mensaje_impresion}"
         Mensaje().mensaje_informativo(mensaje_final)
         self._limpiar_ticket()
@@ -768,7 +772,7 @@ class Venta(QWidget):
         try:
             with Conexion_base_datos() as db:
                 session = db.abrir_sesion()
-                venta, exito, mensaje = VentasModel(session).obtener_venta_para_ticket(venta_id)
+                venta, exito, mensaje = VentasModel(session).obtener_venta_para_ticket(venta_id, como_lectura=True)
 
             if not exito or not venta:
                 return f"No fue posible preparar el ticket para impresion: {mensaje}"
@@ -785,7 +789,7 @@ class Venta(QWidget):
 
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            cliente, exito, mensaje = VentasModel(session).buscar_cliente_por_id(cliente_id)
+            cliente, exito, mensaje = VentasModel(session).buscar_cliente_por_id(cliente_id, como_lectura=True)
 
         if not exito or not cliente:
             Mensaje().mensaje_alerta(mensaje)
@@ -794,17 +798,18 @@ class Venta(QWidget):
         return cliente
 
     def _obtener_metodo_credito(self):
+        from sesion_caja import clasificar_forma_pago
+
         with Conexion_base_datos() as db:
             session = db.abrir_sesion()
-            metodos, exito, mensaje = VentasModel(session).obtener_metodos_pago_venta(incluir_credito=True)
+            metodos, exito, mensaje = VentasModel(session).obtener_metodos_pago_venta(incluir_credito=True, como_lectura=True)
 
         if not exito:
             Mensaje().mensaje_alerta(mensaje)
             return None
 
         for metodo in metodos:
-            nombre = (metodo.nombre or "").lower()
-            if "crédito" in nombre or "credito" in nombre:
+            if clasificar_forma_pago(metodo.nombre) == "credito":
                 return metodo
         return None
 
@@ -833,26 +838,8 @@ class Venta(QWidget):
             self.ui.numerodecimal_cantidadcredito.setValue(min(resumen["total"], credito_disponible))
 
     def _calcular_totales(self):
-        subtotal = round(sum(float(item.get("subtotal", 0.0)) for item in self.ticket_items), 2)
-        descuento_promociones = round(
-            float((self.resumen_promociones_ticket or {}).get("descuento_total", 0.0) or 0.0),
-            2,
-        )
-        base_descuento_cliente = round(max(subtotal - descuento_promociones, 0.0), 2)
-        descuento_cliente = round(base_descuento_cliente * (self.porcentaje_descuento_aplicado / 100.0), 2)
-        descuento = round(min(subtotal, descuento_promociones + descuento_cliente), 2)
-        base_imponible = round(max(subtotal - descuento, 0.0), 2)
-        iva = round(base_imponible * self.iva_tasa, 2)
-        total = round(base_imponible + iva, 2)
-        return {
-            "subtotal": subtotal,
-            "descuento": descuento,
-            "descuento_cliente": descuento_cliente,
-            "descuento_promociones": descuento_promociones,
-            "iva": iva,
-            "total": total,
-            "promociones_aplicadas": list((self.resumen_promociones_ticket or {}).get("promociones_aplicadas", [])),
-        }
+        return calcular_totales_venta(self.ticket_items, self.resumen_promociones_ticket,
+                                     self.porcentaje_descuento_aplicado, self.iva_tasa)
 
     @staticmethod
     def _crear_resumen_promociones_vacio():
@@ -891,66 +878,7 @@ class Venta(QWidget):
         return True
 
     def _construir_items_venta(self, resumen):
-        if not self.ticket_items:
-            return []
-
-        descuento_promociones_por_item = dict(
-            (self.resumen_promociones_ticket or {}).get("descuento_por_item", {})
-        )
-        descuento_cliente_total = round(float(resumen.get("descuento_cliente", 0.0) or 0.0), 2)
-        subtotal_base_cliente = round(
-            max(
-                float(resumen.get("subtotal", 0.0) or 0.0)
-                - float(resumen.get("descuento_promociones", 0.0) or 0.0),
-                0.0,
-            ),
-            2,
-        )
-
-        items_preparados = []
-        bases_cliente = []
-        for item in self.ticket_items:
-            subtotal_linea = round(float(item.get("subtotal", 0.0) or 0.0), 2)
-            descuento_promocion = round(
-                float(descuento_promociones_por_item.get(item.get("producto_id"), 0.0) or 0.0),
-                2,
-            )
-            descuento_promocion = min(descuento_promocion, subtotal_linea)
-            base_cliente_linea = round(max(subtotal_linea - descuento_promocion, 0.0), 2)
-            item_preparado = dict(item)
-            item_preparado["descuento_promocion"] = descuento_promocion
-            item_preparado["descuento_cliente"] = 0.0
-            item_preparado["descuento"] = descuento_promocion
-            items_preparados.append(item_preparado)
-            bases_cliente.append(base_cliente_linea)
-
-        indices_con_base = [indice for indice, base in enumerate(bases_cliente) if base > 0]
-        descuento_cliente_acumulado = 0.0
-        total_bases = len(indices_con_base)
-        for posicion, indice in enumerate(indices_con_base, start=1):
-            base_cliente_linea = bases_cliente[indice]
-            if posicion < total_bases and subtotal_base_cliente > 0 and descuento_cliente_total > 0:
-                descuento_cliente_linea = round(
-                    descuento_cliente_total * (base_cliente_linea / subtotal_base_cliente),
-                    2,
-                )
-                descuento_restante = round(descuento_cliente_total - descuento_cliente_acumulado, 2)
-                descuento_cliente_linea = min(descuento_cliente_linea, base_cliente_linea, descuento_restante)
-                descuento_cliente_acumulado = round(
-                    descuento_cliente_acumulado + descuento_cliente_linea,
-                    2,
-                )
-            else:
-                descuento_cliente_linea = round(descuento_cliente_total - descuento_cliente_acumulado, 2)
-                descuento_cliente_linea = min(descuento_cliente_linea, base_cliente_linea)
-
-            items_preparados[indice]["descuento_cliente"] = descuento_cliente_linea
-            items_preparados[indice]["descuento"] = round(
-                items_preparados[indice]["descuento_promocion"] + descuento_cliente_linea,
-                2,
-            )
-
-        return items_preparados
+        return preparar_items_venta(self.ticket_items, self.resumen_promociones_ticket, resumen)
 
     def _nombre_cliente(self, cliente):
         if hasattr(cliente, "apellido_paterno") and getattr(cliente, "apellido_paterno", ""):

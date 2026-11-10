@@ -2,6 +2,7 @@ import inspect
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from ..DataBase.conexionBD import Conexion_base_datos
+from ..Model.ProductoEntrada import ResultadoProductos
 from contextlib import contextmanager
 from typing import Optional, Callable, Dict, Any
 import logging
@@ -17,6 +18,7 @@ class _CallbackRelay(QObject):
         self._error_conectado = False
         self._terminado_conectado = False
         self._terminado_notificado = False
+        self.cancelado = False
 
     @staticmethod
     def _invocar_callback(callback, *args):
@@ -52,16 +54,22 @@ class _CallbackRelay(QObject):
 
     @Slot(object, bool)
     def on_resultado(self, payload, estado):
+        if self.cancelado:
+            return
         self._notificar_terminado_si_corresponde()
         self._invocar_callback(self._resultado_callback, payload, estado)
 
     @Slot(str)
     def on_error(self, mensaje):
+        if self.cancelado:
+            return
         self._notificar_terminado_si_corresponde()
         self._invocar_callback(self._error_callback, mensaje)
 
     @Slot()
     def on_terminado(self):
+        if self.cancelado:
+            return
         self._notificar_terminado_si_corresponde()
 
 class WorkerDBManager:
@@ -85,7 +93,7 @@ class WorkerDBManager:
         return cls._instance
 
     @classmethod
-    def create_worker(cls, owner_id: str = "default") -> str:
+    def create_worker(cls, owner_id: str = "default", cierre_seguro=False) -> str:
         """Crea un nuevo worker y retorna su ID"""
         worker_id = f"{owner_id}_worker_{cls._worker_counter}"
         cls._worker_counter += 1
@@ -93,7 +101,11 @@ class WorkerDBManager:
         # Limpiar worker anterior del mismo owner
         cls.cleanup_owner_workers(owner_id)
 
+        if cierre_seguro and any(identificador.startswith(f"{owner_id}_worker_") for identificador in cls._workers):
+            raise RuntimeError("La operacion anterior aun esta en curso")
         worker = WorkerDB()
+        worker.cierre_seguro = cierre_seguro
+        worker.limpieza_pendiente = False
         cls._workers[worker_id] = worker
 
         if cls._instance:
@@ -176,6 +188,15 @@ class WorkerDBManager:
         if worker_id not in cls._workers:
             return
 
+        activo = cls._workers[worker_id]
+        if getattr(activo, "cierre_seguro", False) is True and activo.thread.isRunning():
+            relay_activo = cls._instance._callback_relays.get(worker_id) if cls._instance else None
+            if relay_activo is not None:
+                relay_activo.cancelado = True
+            if not activo.limpieza_pendiente:
+                activo.limpieza_pendiente = True
+                activo.thread.finished.connect(lambda: cls.cleanup_worker(worker_id))
+            return
         worker = cls._workers.pop(worker_id)
         relay = cls._instance._callback_relays.pop(worker_id, None) if cls._instance else None
 
@@ -283,7 +304,9 @@ class WorkerDB(QObject):
                 result = self._funcion(session, *self._args, **self._kwargs)
 
                 # Emitir resultados según el tipo de retorno
-                if isinstance(result, tuple) and len(result) == 2:
+                if isinstance(result, ResultadoProductos):
+                    self.resultado.emit(result.datos, result.exito)
+                elif isinstance(result, tuple) and len(result) == 2:
                     data, estado = result
                     self.resultado.emit(data, estado)
                 else:
@@ -298,9 +321,9 @@ class WorkerDB(QObject):
 
     # Métodos estáticos para acceso fácil al manager
     @staticmethod
-    def create_managed_worker(owner_id: str = "default") -> str:
+    def create_managed_worker(owner_id: str = "default", cierre_seguro=False) -> str:
         """Crea un worker gestionado globalmente"""
-        return WorkerDBManager.create_worker(owner_id)
+        return WorkerDBManager.create_worker(owner_id, cierre_seguro=cierre_seguro)
 
     @staticmethod
     def connect_managed_signals(worker_id: str,

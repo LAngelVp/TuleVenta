@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from math import floor
+from math import floor, isfinite
 
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -123,12 +123,12 @@ class PromocionesModel:
 
     def guardar_promocion(self, payload):
         try:
-            self.ensure_schema(self.session.bind)
             datos = self._normalizar_payload(payload)
             mensaje_error = self._validar_payload(datos)
             if mensaje_error:
                 self.session.rollback()
                 return None, False, mensaje_error
+            self.ensure_schema(self.session.bind)
 
             promocion = None
             if datos["id"]:
@@ -166,13 +166,14 @@ class PromocionesModel:
                 )
 
             self.session.add(promocion)
+            self.session.flush()
+            resultado = self._serializar_promocion_detalle(promocion)
             self.session.commit()
-            promocion = self._query_promociones().filter(Promociones.id == promocion.id).first()
             mensaje = "Promoción actualizada correctamente." if datos["id"] else "Promoción creada correctamente."
-            return self._serializar_promocion_detalle(promocion), True, mensaje
+            return resultado, True, mensaje
         except IntegrityError:
             self.session.rollback()
-            return None, False, "Ya existe una promoción con ese nombre."
+            return None, False, "No se pudo guardar la promocion: restriccion de integridad."
         except Exception as error:
             self.session.rollback()
             return None, False, f"No fue posible guardar la promoción: {error}"
@@ -243,7 +244,8 @@ class PromocionesModel:
             cls.TIPO_DESCUENTO_GRUPAL: 3,
         }
         tipo_promocion = str(promocion.get("tipo_promocion", "") or "").strip().upper()
-        return prioridades.get(tipo_promocion, 99), str(promocion.get("nombre", "") or "").lower()
+        return (prioridades.get(tipo_promocion, 99), str(promocion.get("nombre", "") or "").lower(),
+            int(promocion.get("id") or 0))
 
     @classmethod
     def _calcular_descuento_promocion(cls, items, promocion, descuento_por_item):
@@ -483,6 +485,10 @@ class PromocionesModel:
     def _validar_payload(self, datos):
         if not datos["nombre"]:
             return "Debes capturar el nombre de la promoción."
+        if len(datos["nombre"]) > 120:
+            return "El nombre de la promocion excede 120 caracteres."
+        if not isfinite(datos["porcentaje_descuento"]) or not 0 <= datos["porcentaje_descuento"] <= 100:
+            return "El porcentaje debe ser finito y estar entre 0 y 100."
         if datos["tipo_promocion"] not in self.TIPOS_PROMOCION:
             return "Debes seleccionar un tipo de promoción válido."
         if datos["fecha_inicio"] and datos["fecha_fin"] and datos["fecha_fin"] < datos["fecha_inicio"]:

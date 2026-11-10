@@ -1,6 +1,18 @@
 from .BaseDatosModel import Productos, Presentacion_productos, Unidad_medida_productos, Categorias_proveedores, Representantes_proveedores, Proveedores, ProductoProveedor
 from sqlalchemy.orm import joinedload
 
+
+def sincronizar_proveedores_producto(producto, identificadores, reemplazar=True):
+    asociaciones = producto.producto_proveedor_asociaciones
+    if reemplazar:
+        for asociacion in list(asociaciones):
+            if asociacion.proveedor_id not in identificadores:
+                asociaciones.remove(asociacion)
+    existentes = {asociacion.proveedor_id for asociacion in asociaciones}
+    for proveedor_id in identificadores - existentes:
+        asociaciones.add(ProductoProveedor(proveedor_id=proveedor_id, precio_venta=0.0))
+
+
 class Proveedores_productoModel:
     def __init__(self, session):
         self.session = session

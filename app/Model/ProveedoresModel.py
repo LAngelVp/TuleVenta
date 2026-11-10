@@ -2,6 +2,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import select, func
 from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, ProductoProveedor
 import logging
+from .Proveedores_ProductosModel import sincronizar_proveedores_producto
 
 class ProveedoresModel:
     def __init__(self, session):
@@ -285,45 +286,32 @@ class ProveedoresModel:
             print(f"Error al filtrar productos que contengan nombre: {e}")
             return [], False
 
-    def actualizar_productos_al_proveedor(self, proveedor_id, lista_productos):
+    def actualizar_productos_al_proveedor(self, proveedor_id, lista_productos, confirmar=True):
+        if not confirmar:
+            return self._vincular_productos(proveedor_id, lista_productos)
+        try:
+            resultado, estado = self._vincular_productos(proveedor_id, lista_productos)
+            if estado:
+                self.session.commit()
+            return resultado, estado
+        except Exception:
+            self.session.rollback()
+            return [], False
+
+    def _vincular_productos(self, proveedor_id, lista_productos):
         if not lista_productos or not proveedor_id:
             return [], False
-
-        try:
-            proveedor = (
-                self.session.query(Proveedores)
-                .filter_by(id=proveedor_id)
-                .first()
-            )
-            if not proveedor:
-                return [], False
-
-            for producto in lista_productos:
-                producto_db = self.session.get(Productos, producto.id)
-                if not producto_db:
-                    continue
-
-                # Verificar si ya existe una relación
-                relacion_existente = (
-                    self.session.query(ProductoProveedor)
-                    .filter_by(proveedor_id=proveedor_id, producto_id=producto_db.id)
-                    .first()
-                )
-
-                # Si no existe, la creamos
-                if not relacion_existente:
-                    nueva_relacion = ProductoProveedor(
-                        proveedor_id=proveedor_id,
-                        producto_id=producto_db.id,
-                        precio_venta= 0.00
-                    )
-                    self.session.add(nueva_relacion)
-
-            self.session.commit()
-            return proveedor, True
-
-        except Exception as e:
-            self.session.rollback()
-            print(f"⚠️ Error al vincular producto al proveedor: {e}")
+        proveedor = self.session.query(Proveedores).filter_by(id=proveedor_id).first()
+        if proveedor is None:
             return [], False
+        identificadores = {producto.id for producto in lista_productos}
+        if any(not isinstance(identificador, int) or isinstance(identificador, bool) or identificador <= 0
+               for identificador in identificadores):
+            raise ValueError("Producto invalido")
+        productos = [self.session.get(Productos, identificador) for identificador in identificadores]
+        if any(producto is None for producto in productos):
+            return [], False
+        for producto in productos:
+            sincronizar_proveedores_producto(producto, {proveedor_id}, reemplazar=False)
+        return proveedor, True
 

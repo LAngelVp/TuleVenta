@@ -1,10 +1,15 @@
 import csv
 import math
 import os
+from collections import Counter
+from contextlib import closing
+from zipfile import BadZipFile
+from xml.etree.ElementTree import ParseError
 from datetime import date, datetime
 
 from openpyxl import load_workbook
 from openpyxl.utils.datetime import from_excel
+from openpyxl.utils.exceptions import InvalidFileException
 
 class OperacionMasivaCsvController:
     """
@@ -27,7 +32,7 @@ class OperacionMasivaCsvController:
         return False
 
     @staticmethod
-    def _leer_csv(documento: str):
+    def _leer_csv(documento: str, con_origen=False):
         ultimo_error = None
         for encoding in ('utf-8-sig', 'utf-8', 'latin-1'):
             try:
@@ -35,6 +40,7 @@ class OperacionMasivaCsvController:
                     lector = csv.DictReader(archivo)
                     columnas = [str(columna).strip() for columna in (lector.fieldnames or [])]
                     registros = []
+                    filas_origen = []
                     for fila in lector:
                         if not fila:
                             continue
@@ -46,7 +52,10 @@ class OperacionMasivaCsvController:
                             registro[columna] = OperacionMasivaCsvController.limpiar_valor(valor)
                         if any(not OperacionMasivaCsvController._es_valor_nulo(valor) for valor in registro.values()):
                             registros.append(registro)
-                    return columnas, registros
+                            filas_origen.append({"fila": lector.line_num, "valores": registro,
+                                                 "originales": {str(campo).strip(): "" if valor is None else str(valor)
+                                                                for campo, valor in fila.items()}})
+                    return (columnas, registros, filas_origen) if con_origen else (columnas, registros)
             except UnicodeDecodeError as e:
                 ultimo_error = e
                 continue
@@ -56,33 +65,79 @@ class OperacionMasivaCsvController:
         raise ValueError(f"No se pudo leer el archivo CSV: {ultimo_error}")
 
     @staticmethod
-    def _leer_excel(documento: str, ext: str):
+    def _leer_excel(documento: str, ext: str, con_origen=False):
         if ext == '.xls':
             raise ValueError('Los archivos .xls no son compatibles en esta instalación. Guarda el archivo como .xlsx o .csv.')
 
-        workbook = load_workbook(documento, read_only=True, data_only=True)
-        hoja = workbook.active
-        filas = hoja.iter_rows(values_only=True)
-        encabezados = next(filas, None)
-
-        if not encabezados:
-            return [], []
-
-        columnas = [str(columna).strip() if columna is not None else '' for columna in encabezados]
-        registros = []
-
-        for fila in filas:
-            if fila is None or all(OperacionMasivaCsvController._es_valor_nulo(valor) for valor in fila):
-                continue
-            registro = {}
-            for indice, columna in enumerate(columnas):
-                if not columna:
+        with closing(load_workbook(documento, read_only=True, data_only=True)) as workbook:
+            hoja = workbook.active
+            filas = hoja.iter_rows(values_only=True)
+            encabezados = next(filas, None)
+            if not encabezados:
+                return ([], [], []) if con_origen else ([], [])
+            columnas = [str(columna).strip() if columna is not None else '' for columna in encabezados]
+            registros = []
+            filas_origen = []
+            for numero, fila in enumerate(filas, start=2):
+                if fila is None or all(OperacionMasivaCsvController._es_valor_nulo(valor) for valor in fila):
                     continue
-                valor = fila[indice] if indice < len(fila) else ''
-                registro[columna] = OperacionMasivaCsvController.limpiar_valor(valor)
-            registros.append(registro)
+                registro = {}
+                for indice, columna in enumerate(columnas):
+                    if not columna:
+                        continue
+                    valor = fila[indice] if indice < len(fila) else ''
+                    registro[columna] = OperacionMasivaCsvController.limpiar_valor(valor)
+                registros.append(registro)
+                filas_origen.append({"fila": numero, "valores": registro,
+                                     "originales": {columna: "" if valor is None else str(valor)
+                                                    for columna, valor in zip(columnas, fila)}})
+            return (columnas, registros, filas_origen) if con_origen else (columnas, registros)
 
-        return columnas, registros
+    @staticmethod
+    def leer_con_reporte(documento, columnas_requeridas, columnas_validas=None):
+        reporte = {"columnas": [], "filas": [], "errores": [], "advertencias": []}
+        try:
+            extension = os.path.splitext(documento)[1].lower()
+            if extension == ".csv":
+                columnas, _, filas = OperacionMasivaCsvController._leer_csv(documento, con_origen=True)
+            elif extension in (".xlsx", ".xls"):
+                columnas, _, filas = OperacionMasivaCsvController._leer_excel(documento, extension, con_origen=True)
+            else:
+                raise ValueError("Formato compatible: .csv o .xlsx")
+        except (ValueError, OSError, BadZipFile, ParseError, InvalidFileException):
+            reporte["errores"].append({"fila": None, "campo": None, "codigo": "lectura",
+                                       "mensaje": "No se pudo leer el archivo; formatos compatibles: .csv y .xlsx"})
+            return reporte
+        reporte["columnas"] = columnas
+        reporte["filas"] = filas
+        for columna, cantidad in Counter(columnas).items():
+            if not columna:
+                codigo = "encabezado_vacio"
+            elif cantidad > 1:
+                codigo = "encabezado_duplicado"
+            elif columnas_validas is not None and columna not in columnas_validas:
+                codigo = "columna_desconocida"
+            else:
+                continue
+            reporte["errores"].append({"fila": 1, "campo": columna, "codigo": codigo,
+                                       "mensaje": "Encabezado no valido"})
+        for columna in columnas_requeridas:
+            if columna not in columnas:
+                reporte["errores"].append({"fila": 1, "campo": columna, "codigo": "columna_requerida",
+                                           "mensaje": "Falta columna requerida"})
+        return reporte
+
+    @staticmethod
+    def numero_con_reporte(valor):
+        if valor is None or not str(valor).strip():
+            return {"valor": None, "codigo": "vacio"}
+        try:
+            numero = float(valor)
+        except (ValueError, TypeError, OverflowError):
+            return {"valor": None, "codigo": "invalido"}
+        if not math.isfinite(numero):
+            return {"valor": None, "codigo": "no_finito"}
+        return {"valor": numero, "codigo": "valido"}
 
     @staticmethod
     def leer_y_validar_archivo(documento: str, columnas_requeridas: list, columnas_validas: set = None) -> list:
