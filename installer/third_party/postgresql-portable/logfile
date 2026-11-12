@@ -134,3 +134,12 @@
 2026-11-12 00:27:31.942 CST [11652] LOG:  checkpoint complete: wrote 12 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.310 s, sync=0.031 s, total=1.364 s; sync files=7, longest=0.025 s, average=0.005 s; distance=75 kB, estimate=75 kB; lsn=0/1F10878, redo lsn=0/1F10820
 2026-11-12 00:32:30.958 CST [11652] LOG:  checkpoint starting: time
 2026-11-12 00:32:31.565 CST [11652] LOG:  checkpoint complete: wrote 5 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.553 s, sync=0.034 s, total=0.608 s; sync files=5, longest=0.030 s, average=0.007 s; distance=30 kB, estimate=70 kB; lsn=0/1F18350, redo lsn=0/1F182F8
+2026-11-12 02:07:30.754 CST [11652] LOG:  checkpoint starting: time
+2026-11-12 02:07:32.318 CST [11652] LOG:  checkpoint complete: wrote 13 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.454 s, sync=0.058 s, total=1.564 s; sync files=11, longest=0.028 s, average=0.006 s; distance=66 kB, estimate=70 kB; lsn=0/1F28BF8, redo lsn=0/1F28BA0
+2026-11-12 02:17:30.342 CST [11652] LOG:  checkpoint starting: time
+2026-11-12 02:17:30.530 CST [11652] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.115 s, sync=0.024 s, total=0.189 s; sync files=1, longest=0.024 s, average=0.024 s; distance=2 kB, estimate=63 kB; lsn=0/1F295A8, redo lsn=0/1F29550
+2026-11-12 02:21:21.669 CST [11020] LOG:  background worker "logical replication launcher" (PID 23408) was terminated by exception 0xC000013A
+2026-11-12 02:21:21.669 CST [11020] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-11-12 02:21:21.669 CST [11020] LOG:  terminating any other active server processes
+2026-11-12 02:21:21.731 CST [11020] LOG:  all server processes terminated; reinitializing
+^C

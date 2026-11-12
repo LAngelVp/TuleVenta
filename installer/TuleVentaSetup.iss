@@ -63,7 +63,7 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 Source: "third_party\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "{#AppDistDir}\*"; DestDir: "{app}"; Excludes: "data\*,datos\*.json,_internal\datos\*.json,PostgreSQL*\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#AppDistDir}\_internal\datos\*.json"; DestDir: "{app}\_internal\datos"; Flags: onlyifdoesntexist skipifsourcedoesntexist
-Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Excludes: "data\*"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: not ExistingInstallation
+Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Excludes: "data,data\*,logfile,*.log"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: not ExistingInstallation
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"

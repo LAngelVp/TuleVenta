@@ -262,3 +262,63 @@ def test_install_confirmation_emits_verified_payload(qtbot, monkeypatch, tmp_pat
     with qtbot.waitSignal(widget.instalar_solicitado) as received:
         widget.confirmar()
     assert received.args == [widget.instalador, 'a' * 64]
+
+
+@pytest.mark.unit
+def test_build_batch_and_inno_output_contract():
+    root = Path(__file__).resolve().parents[1]
+    batch = (root / 'installer/build_installer.bat').read_text(encoding='utf-8')
+    app_batch = (root / 'build_app.bat').read_text(encoding='utf-8')
+    setup = (root / 'installer/TuleVentaSetup.iss').read_text(encoding='utf-8')
+    assert 'for /f "delims=" %%V' not in batch
+    assert 'build_release.py' in batch
+    assert 'pushd "%SCRIPT_DIR%"' in app_batch
+    assert '#define InstallerOutputDir "output"' in setup
+    assert 'OutputDir={#InstallerOutputDir}' in setup
+    assert 'OutputBaseFilename=TuleVenta-Update-v{#AppVersion}-windows-x64' in setup
+    portable = next(line for line in setup.splitlines() if line.startswith('Source: "{#PostgreSqlPortableDir}'))
+    assert 'Excludes: "data,data\\*,logfile,*.log"' in portable
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize('compile_fails', [False, True])
+def test_build_generates_matching_exe_and_checksum(tmp_path, compile_fails):
+    import subprocess
+    from installer.build_release import generar_instalador
+    commands = []
+    def runner(command, **kwargs):
+        commands.append(command)
+        if '--version' in command:
+            return subprocess.CompletedProcess(command, 0, 'pg_ctl (PostgreSQL) 18.4', '')
+        if compile_fails:
+            raise subprocess.CalledProcessError(7, command)
+        target = tmp_path / 'installer/output/TuleVenta-Update-v1.0.0-windows-x64.exe'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b'MZsynthetic-installer')
+        return subprocess.CompletedProcess(command, 0)
+    if compile_fails:
+        with pytest.raises(subprocess.CalledProcessError):
+            generar_instalador(tmp_path, Path('ISCC.exe'), '1.0.0', runner=runner)
+        assert not list(tmp_path.rglob('*.sha256'))
+    else:
+        executable, checksum = generar_instalador(tmp_path, Path('ISCC.exe'), '1.0.0', runner=runner)
+        assert executable.name == 'TuleVenta-Update-v1.0.0-windows-x64.exe'
+        assert checksum.name == executable.name + '.sha256'
+        assert checksum.read_text(encoding='ascii').split() == [hashlib.sha256(executable.read_bytes()).hexdigest(), executable.name]
+    assert commands[-1][1:3] == ['/DAppVersion=1.0.0', '/DPostgreSqlVersionMajor=18']
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize('stale', [False, True])
+def test_build_rejects_missing_or_stale_output(tmp_path, stale):
+    import subprocess
+    from installer.build_release import generar_instalador
+    target = tmp_path / 'installer/output/TuleVenta-Update-v1.0.0-windows-x64.exe'
+    if stale:
+        target.parent.mkdir(parents=True)
+        target.write_bytes(b'MZold')
+    def runner(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, 'pg_ctl (PostgreSQL) 18.4', '')
+    with pytest.raises(ValueError, match='no genero un instalador nuevo'):
+        generar_instalador(tmp_path, Path('ISCC.exe'), '1.0.0', runner=runner)
+    assert not list(tmp_path.rglob('*.sha256'))

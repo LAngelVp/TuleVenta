@@ -2,9 +2,6 @@
 setlocal EnableExtensions
 
 set "SCRIPT_DIR=%~dp0"
-set "APP_VERSION="
-set "PG_MAJOR="
-set "APP_EXE=%SCRIPT_DIR%..\dist\TuleVenta\TuleVenta.exe"
 set "PYTHON_EXE=%SCRIPT_DIR%..\.venv\Scripts\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 
@@ -20,7 +17,7 @@ for %%I in (
   "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
   "%ProgramFiles%\Inno Setup 6\ISCC.exe"
 ) do (
-  if not defined ISCC_EXE if exist %%~I set "ISCC_EXE=%%~I"
+  if not defined ISCC_EXE if exist "%%~I" set "ISCC_EXE=%%~I"
 )
 
 if not defined ISCC_EXE (
@@ -40,15 +37,10 @@ echo Usando ISCC.exe en: %ISCC_EXE%
 
 :compile
 pushd "%SCRIPT_DIR%.."
+if errorlevel 1 exit /b 1
 call build_app.bat
 if errorlevel 1 (popd & exit /b 1)
-for /f "delims=" %%V in ('"%PYTHON_EXE%" -B -c "from app.version import __version__; print(__version__)"') do set "APP_VERSION=%%V"
-if not defined APP_VERSION (popd & exit /b 1)
-for /f "delims=" %%V in ('"%PYTHON_EXE%" -B -c "import subprocess,re; versions={re.search(r'PostgreSQL\) (\d+)',subprocess.check_output(['installer/third_party/postgresql-portable/bin/'+name+'.exe','--version'],text=True,timeout=10)).group(1) for name in ('pg_ctl','initdb','psql')}; assert len(versions)==1, 'Motores PostgreSQL incompatibles'; print(versions.pop())"') do set "PG_MAJOR=%%V"
-if not defined PG_MAJOR (popd & exit /b 1)
-"%ISCC_EXE%" "/DAppVersion=%APP_VERSION%" "/DPostgreSqlVersionMajor=%PG_MAJOR%" "installer\TuleVentaSetup.iss"
-if errorlevel 1 (popd & exit /b 1)
-"%PYTHON_EXE%" -B -c "import hashlib,pathlib; p=pathlib.Path('installer/output/TuleVenta-Update-v%APP_VERSION%-windows-x64.exe'); p.with_suffix('.exe.sha256').write_text(hashlib.file_digest(p.open('rb'),'sha256').hexdigest()+'  '+p.name+'\n',encoding='ascii')"
-if errorlevel 1 (popd & exit /b 1)
+"%PYTHON_EXE%" -B "%SCRIPT_DIR%build_release.py" "%ISCC_EXE%"
+set "BUILD_RESULT=%errorlevel%"
 popd
-exit /b 0
+exit /b %BUILD_RESULT%

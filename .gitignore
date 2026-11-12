@@ -5,7 +5,4 @@ build/
 dist/
 __pycache__/
 .pytest_cache/
-alembic/versions/
 installer/output/
-installer/third_party/postgresql-portable/data
-#installer/third_party/postgresql-portable/
