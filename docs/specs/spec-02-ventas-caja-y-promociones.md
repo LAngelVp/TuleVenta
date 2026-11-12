@@ -1,5 +1,11 @@
 # Spec 02: ventas, caja y promociones
 
+## Historial Y Pagos: Correccion UI 2026-11-12
+
+V-08/V-09, REF-06/25/33/36: seleccion invalida del historial elimina saleSelected previo; fallos de consulta/presentacion del controlador usan mensajes seguros. Metodo de pago cierra espera al recibir resultado/error, fallar lanzamiento y ocultarse; limpia worker gestionado al fallar/ocultarse. Payload tecnico no estructurado ya no se muestra literalmente. Se conservan nombres, Float, clasificacion y coordinacion de cobro; no se cambia politica financiera.
+
+Cinco pruebas nuevas en [test_sales_cash.py](../../tests/test_sales_cash.py) caracterizaron fallos antes de corregir. Dos expectativas de [REF-06](../../tests/test_ref06_notifications.py) se actualizaron deliberadamente: la alerta se conserva, pero no revela error tecnico. [Dictamen y limites](../04-plan-de-refactorizacion.md#auditoria-transversal-ui-2026-11-12).
+
 ## Evidencia PostgreSQL 18.4 (2026-11-12)
 
 Gate SQL focalizado de V-07/V-09/V-10, REF-17..20, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): contado/credito con una Session y un unico commit real; otra Session confirma venta/detalles/stock/movimientos y saldos de caja/credito. CHECK temporal provoca fallo SQL despues de las mutaciones y se verifica cero venta/detalles/movimientos, stock5 y saldos originales. Cancelacion de cohorte nueva repone stock/credito/caja; segundo intento serial no vuelve a reponer stock.

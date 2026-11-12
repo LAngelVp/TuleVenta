@@ -1,3 +1,4 @@
+from .ImagenEstatica import mostrar_imagen_estatica
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
@@ -72,14 +73,7 @@ class Modal_de_espera(QDialog):
         self.ui.contenedor.setStyleSheet("")
         self.ui.etiqueta_logo_cargando.setGeometry(54, 18, 192, 68)
         self.ui.etiqueta_logo_cargando.setStyleSheet("")
-        self.ui.etiqueta_logo_cargando.setPixmap(
-            QPixmap(":Icons/logos/tuleVenta.png").scaled(
-                176,
-                64,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        )
+        mostrar_imagen_estatica(self.ui.etiqueta_logo_cargando, ":Icons/logos/tuleVenta.png")
         self.ui.etiqueta_logo_cargando.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.ui.etiqueta_logo_cargando.setScaledContents(False)
         self.ui.etiqueta_spiner.setGeometry(116, 124, 68, 28)

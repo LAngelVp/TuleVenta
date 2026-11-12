@@ -6,6 +6,54 @@ import pytest
 pytestmark = pytest.mark.qt
 
 
+@pytest.mark.parametrize("file,kind,signal", [
+    ("PresentacionProductosController", "PresentacionProductos", "presentacion_producto_agregada_signal"),
+    ("UnidadMedidaProductosController", "UnidadMedidaProductos", "unidad_medida_agregada_signal"),
+])
+def test_product_catalog_failure_never_emits_success(monkeypatch, qtbot, file, kind, signal):
+    import importlib
+    from PySide6.QtGui import QHideEvent
+
+    module = importlib.import_module("app.Controller." + file)
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    window = getattr(module, kind)()
+    qtbot.addWidget(window)
+    emitted = Mock()
+    getattr(window, signal).connect(emitted)
+    window.manejadorModal = Mock()
+    window.mostrar_estado_hilo({"exito": False, "mensaje": "No confirmado"})
+    emitted.assert_not_called()
+    window.hideEvent(QHideEvent())
+    window.manejadorModal.cerrar_modal.assert_called()
+
+
+@pytest.mark.parametrize("file,kind", [
+    ("PresentacionProductosController", "PresentacionProductos"),
+    ("UnidadMedidaProductosController", "UnidadMedidaProductos"),
+])
+def test_product_catalog_workers_are_safe_per_instance(monkeypatch, qtbot, file, kind):
+    import importlib
+
+    module = importlib.import_module("app.Controller." + file)
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    monkeypatch.setattr(module.WorkerDB, "cleanup_owner_workers", Mock())
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(return_value="synthetic"))
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=Mock()))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    monkeypatch.setattr(module.WorkerDB, "cleanup_managed_worker", Mock())
+    owners = []
+    for index in range(2):
+        window = getattr(module, kind)()
+        qtbot.addWidget(window)
+        window.manejadorModal = Mock()
+        window.ui.txt_nombre.setText("CATALOGO")
+        window.agregar()
+        kwargs = module.WorkerDB.create_managed_worker.call_args.kwargs
+        assert kwargs["cierre_seguro"] is True
+        owners.append(kwargs["owner_id"])
+    assert owners[0] != owners[1]
+
+
 @pytest.fixture
 def product_window(monkeypatch, qtbot):
     import app.Controller.ProductosController as module

@@ -2,6 +2,16 @@
 
 ## Evidencia SQL real de cuatro modulos (2026-11-12)
 
+### Auditoria de consumidores DTO 2026-11-12
+
+Dictamen Proveedores/Productos del Proveedor/Compras: NO100% global. El AttributeError manual de Manejar Precio demuestra un hueco de cobertura seleccion->boton->modal; no invalida escenarios SQL focalizados aprobados.
+
+Incremento C-09/REF-32/34/36: seleccion vacia controlada, proveedor del editor sin ORM en AsociacionProveedorDTO, precio actual del par, modal reemplazado al cambiar producto, consulta exacta unica y refresco/cierre solo tras precio confirmado con fallo seguro. [Pruebas](../tests/test_suppliers_vertical.py):8 regresiones Qt nuevas y1 integracion escaneo Compras->DTO->tabla real, con UPC/dedupe intactos. [Matriz auditada](specs/spec-03-compras-proveedores-e-inventario.md#auditoria-dto-y-manejar-precio-2026-11-12) e [integracion Productos](specs/spec-01-productos-e-importacion.md#auditoria-de-integracion-proveedor-y-compras-2026-11-12).
+
+Pendiente: receive_purchase_order lee PENDIENTE/stock sin locks ni actualizacion condicional (REF-40); serial SQL no certifica dos recepciones concurrentes. WindowEditarOrdenCompra sigue pass; delete_purchase_order borra sin reverso y update_purchase_order conserva commit interno legacy. REF-37/provisionamiento/migraciones, autorizacion integral, PDF/empaquetado no concluidos. No se cambia politica de anulacion, stock/costos, esquema ni datos para simular cierre.
+
+Evidencia final con PYTHONDONTWRITEBYTECODE=1: unit424 y Qt338 aprobadas,521 enlaces/anclas sin errores. Diagnosticos y diff --check focalizado sin errores. Comandos en la spec de auditoria; warning legacy declarative_base conservado. Sin nueva ejecucion PostgreSQL/DDL ni commits. Recuperacion por hunks propios y9 tests, preservando lotes/worktree ajeno. Resultados posteriores conservan fechas y alcance historicos, no certifican todas las superficies actuales.
+
 Este incremento posterior sustituye los gates SQL pendientes **solo para los escenarios ensayados**; las notas de lotes anteriores conservan su estado historico. Sin cambios de codigo productivo, reglas, configuracion habitual ni migraciones.
 
 Comando: `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/run_postgres_ephemeral.py`. El [ejecutor](../tests/run_postgres_ephemeral.py) provisiona PostgreSQL **18.4** portable con initdb/pg_ctl, directorio temporal, puerto libre en 127.0.0.1, BD dedicada y rol sin SUPERUSER/CREATEDB/CREATEROLE; ejecuta `.venv/Scripts/python.exe -m pytest -q -m db --tb=short` con autorizacion explicita del destino. Firewall, JSON y esquemas UUID del fixture se mantienen. Resultado final: **36 passed, 712 deselected, 1 warning**, 26.60 s; warning legacy de declarative_base. Detencion fast y eliminacion del directorio confirmadas tras exito y tambien tras el ensayo inicialmente fallido por fixture moral incompleto.
@@ -694,6 +704,14 @@ flowchart TD
     Ensayo --> Contract[Contract solo tras ventana aprobada]
 ```
 
+## Auditoria integral de Compras 2026-11-12
+
+Incremento C-01/C-02/C-03/C-04/C-05, REF-07/22/25/34/36 y locks focalizados REF-40 autorizado; [tabla completa de botones, modales, filtros, dependencias y transacciones](specs/spec-03-compras-proveedores-e-inventario.md#auditoria-integral-de-compras-2026-11-12). Editor explicitamente autorizado para pendientes con proveedor fijo, cantidades/lineas/pago editables y precios registrados conservados; permiso MODIFICARCOMPRA/ADMINISTRADOR en coordinacion. Baja solo pendiente confirmada; no CANCELADA/reverso contable nuevo. Guardias de doble clic, seleccion estable, carrito/subtotal, selector exacto/paginacion y visor DTO; mensajes tecnicos seguros.
+
+Verificacion PYTHONDONTWRITEBYTECODE=1:433 unit y371 Qt aprobadas; checker documental529 enlaces/anclas,0 errores. SQL con ejecutor efimero existente autorizado:6 escenarios aprobados (recepcion/rollback FK, misma orden con dos backends y solapamiento forzado, dos ordenes del mismo producto sin perdida de stock, edicion con nueva linea/precio y rollback/conflicto); cluster PostgreSQL18.4 detenido y eliminado. Diagnosticos sin errores. No cambios de conexion local, DDL en app, commit ni migracion instalada.
+
+No cerrar REF-40 global: los escritores legacy ProductosModel/ventas/ajustes no comparten todavia el contrato de locks; prueba compras-compras no los certifica. REF-37/Alembic/empaquetado y PDF/impresion visual reales permanecen abiertos. Rollback acotado: retirar solo hunks de esta auditoria; conservar cambios ajenos y secciones historicas. No hay datos productivos ni esquema que revertir. La tabla anterior de C-03 pass/commit interno queda como evidencia historica sustituida para este incremento, no se borra su trazabilidad.
+
 ## 8. Workflow SDD con Copilot
 
 ### Secuencia por tarea e iteracion
@@ -766,6 +784,31 @@ Contenido propuesto minimo (no instalado; revisar con el equipo antes de adoptar
 ```
 
 ## 9. Gates, recuperacion y cierre del plan
+
+### Auditoria Transversal UI 2026-11-12
+
+Alcance autorizado: nueve bloques UI y renderizado estatico; sin cambio SQL, Float, precios/costos, permisos, licencia o despliegue. Revision transversal de entradas, creacion de workers, seleccion, snapshots y pruebas existentes; **cierre parcial, no auditoria exhaustiva ni certificacion de extremo a extremo**. Los parches previos de Compras/Proveedores se conservaron y no se atribuyen a este incremento. Casos P-02/P-03/P-04/P-06, V-08/V-09 y S-03/S-07/S-08/S-14; incrementos REF-06/10/25/33/36, sin cerrar globalmente esas fichas.
+
+| Bloque | Evidencia revisada / correccion nueva | Pendiente de cierre integral |
+| --- | --- | --- |
+| 1 Gestor de ventas | POS, selector, cantidades, promociones, credito y ticket cubiertos por regresion existente; sin cambio financiero nuevo | Escaneo/hardware, impresion, promociones SQL y concurrencia |
+| 2 Control de ventas/caja/pagos | Seleccion residual corregida; consulta/presentacion segura; espera de pago cerrada en fallo/resultado/hide; 5 pruebas Qt nuevas | Respuestas tardias de historial, caja multiusuario y edicion SQL |
+| 3 Compras | Se conservan correcciones previas de editor/DTO, seleccion, recepcion, PDF y filtros; regresion existente ejecutada | PDF/impresion real, workers SQL, carreras de recepcion |
+| 4 Empleados | Foto de registro/edicion y perfil centralizada; pruebas previas de DTO/roles/permisos incluidas | Mensajes tecnicos legacy en EmpleadosController; callbacks tardios y usuarios SQL |
+| 5 Proveedores | Regresion previa de importacion, asociaciones, Manejar Precio/seleccion y paginacion incluida; no carga dinamica de fotos localizada | Mensajes legacy y revision exhaustiva de consultas/modal; SQL/concurrencia |
+| 6 Clientes | Foto centralizada, adjustSize retirado y limites contradictorios normalizados | Mensajes tecnicos legacy, todas las carreras de filtros y persistencia de credito |
+| 7 Inventario | Foto alta/edicion centralizada; presentacion/unidad con workers por instancia seguros y callbacks sin falso exito; 4 pruebas Qt nuevas | DTO/transaccion de catalogos legacy y mensajes tecnicos en otros caminos |
+| 8 Sucursal | DTO/CRUD/organizacion incluidos en regresion existente; no editor de logo localizado | No hay paginacion ni captura de logo; permisos de dominio y vinculacion SQL integral |
+| 9 Herramientas | Entrada real gui/herramientas_view.py y configuracion de impresora en SistemaPrincipal; regresion AutoUpdater/licencia aislada | Respaldo/restauracion no implementados en esta superficie; instalacion/licencia/impresora reales |
+| Imagenes estaticas | Helper QLabel/boton, entradas nulas, 2000x2000, cuatro vistas reales y UiTheme para recursos; 4 unit + 13 Qt nuevas | Smoke visual interactivo y ejecutable empaquetado; HTML de placeholders se conserva |
+
+Verificacion automatica en sandbox: PYTHONDONTWRITEBYTECODE=1; sin destino PostgreSQL nuevo autorizado ni conexion/DDL local. La evidencia PostgreSQL historica posterior conserva su fecha/alcance, no se reejecuto ni amplia en esta auditoria. Pruebas nuevas: 26 (4 unit y22 Qt). Gates ejecutados: **437 unit passed, 433 deselected** (revalidacion final); **393 Qt passed, 477 deselected**. Un warning SQLAlchemy de declarative_base deprecado en cada suite; sin fallos. Documentacion: **539 enlaces locales, 0 errores**. git diff --check de los archivos del incremento sin errores. Comandos:
+
+- `.venv/Scripts/python.exe -m pytest -q -m unit`
+- `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`
+- `.venv/Scripts/python.exe tests/check_docs_links.py`
+
+Rollback: revertir solo los hunks de este incremento y las expectativas de mensajes nuevas; retirar helper/prueba de imagen si se retiran sus imports. No usar reset/checkout global en este arbol con cambios previos. No requiere migracion ni saneamiento de datos. Riesgos abiertos: no se eliminaron todos los errores tecnicos legacy ni se verificaron todos los modales/callbacks; los suites verdes no prueban todas las nueve superficies.
 
 ### Lote 2 Cierre Local Modulo 3 2026-11-12
 
@@ -857,7 +900,7 @@ Incremento autorizado en dos bloques, capacidad nueva independiente de los 44 RE
 - [Puente PowerShell](../installer/scripts/aplicar_actualizacion.ps1) se copia al temporal, espera salida del PID hasta 120 segundos, rechaza otras instancias, vuelve a comprobar SHA-256 y ejecuta /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /UPDATEONLY /DIR con destino instalado. Solo reinicia si Setup retorna cero; fallo deja log y no repite automaticamente la instalacion. Mutex Local/TuleVentaPOS coordina app empaquetada/Inno.
 - [TuleVentaSetup.iss](../installer/TuleVentaSetup.iss) toma snapshot antes de copiar; exe/configuracion/PG_VERSION existentes implican actualizacion. En ese modo no copia PostgreSQL, no inicializa, no escribe configuracion ni variable de entorno y no instala VC++. /UPDATEONLY sin instalacion valida falla; instalacion limpia silenciosa falla. Una carpeta data preexistente sin PG_VERSION tampoco se borra ni reinicializa.
 - Copia excluye data, PostgreSQL y JSON de datos; JSON legacy opcional usa onlyifdoesntexist. [TuleVenta.spec](../TuleVenta.spec) ya no incluye los JSON locales. Licencia QSettings conserva organizacion/aplicacion/clave; no hay escrituras al registro de licencia en el actualizador.
-- [build_installer.bat](../installer/build_installer.bat) reconstruye siempre desde la raiz y delega metadatos/compilacion/checksum a [build_release.py](../installer/build_release.py), sin Python anidado en for /f. El helper verifica major coherente de pg_ctl/initdb/psql, propaga fallos de Inno y rechaza EXE ausente/obsoleto; solo entonces genera checksum. Inno excluye data,data\*,logfile,*.log del portable. [postgres_manager.py](../app/DataBase/postgres_manager.py) localiza binarios por PG_VERSION y verifica major antes de iniciar; no migra clusters ni reemplaza motores existentes.
+- [build_installer.bat](../installer/build_installer.bat) reconstruye siempre, obtiene version Python, lee major del pg_ctl portable y produce EXE/checksum. [postgres_manager.py](../app/DataBase/postgres_manager.py) localiza binarios por PG_VERSION y verifica major antes de iniciar; no migra clusters ni reemplaza motores existentes.
 
 ### Publicar un Release
 
@@ -874,9 +917,7 @@ Incremento autorizado en dos bloques, capacidad nueva independiente de los 44 RE
 
 Comandos ejecutados: PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m unit: 419 aprobadas; PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin: 327 aprobadas; PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/check_docs_links.py: 512 enlaces, 0 errores. Test focalizado del actualizador: 34 aprobadas (27 unit/7 Qt). git diff --check del alcance sin errores. Warning legacy declarative_base no corregido. No se reejecutaron las 36 pruebas db en este incremento.
 
-Compilacion real verificada el 2026-11-12 mediante installer/build_installer.bat desde Git Bash: PyInstaller e Inno completados; Inno informa Successful compile (692.766 sec). Generados [TuleVenta-Update-v1.0.0-windows-x64.exe](../installer/output/TuleVenta-Update-v1.0.0-windows-x64.exe) (256227495 bytes) y [checksum](../installer/output/TuleVenta-Update-v1.0.0-windows-x64.exe.sha256) (107 bytes). SHA-256 recalculado y coincidente: fc965d2e5fbf007f47e41f8ad38ca4df6d3a9140f8d38051dd6e82fc1bfe719c. Portable sin carpeta data en ese momento; logfile presente y excluido de compresion, sin modificarlo. Suite focalizada actualizada: 39 aprobadas, incluidas 5 nuevas pruebas unitarias del contrato/build, fallos y artefacto obsoleto. Warning Inno preexistente por UninstallRun sin RunOnceId, sin cambios incidentales.
-
-Gates de produccion pendientes: ejecucion del instalador y del puente (PowerShell denegado en el ensayo previo), HTTP real del repositorio elegido y ensayo N a N+1 en VM Windows. Probar instalacion limpia, actualizacion abierta/cerrada, otra instancia, rutas con espacios, cliente sin privilegios, disco lleno, cancelacion/fallo del instalador y reinicio. Con PostgreSQL detenido comparar hashes/listado del cluster, JSON y export sintetico de QSettings antes/despues; luego arrancar mismo major y comprobar datos. No usar cluster/credenciales/licencia reales. La compilacion no ejecuta el bootstrap ni valida por si sola conservacion de datos al instalar.
+Gates de produccion pendientes: compilacion/ejecucion Inno y PyInstaller, parser/ejecucion del puente (PowerShell denegado por el entorno de esta sesion), HTTP real del repositorio elegido y ensayo N a N+1 en VM Windows. Probar instalacion limpia, actualizacion abierta/cerrada, otra instancia, rutas con espacios, cliente sin privilegios, disco lleno, cancelacion/fallo del instalador y reinicio. Con PostgreSQL detenido comparar hashes/listado del cluster, JSON y export sintetico de QSettings antes/despues; luego arrancar mismo major y comprobar datos. No usar cluster/credenciales/licencia reales.
 
 SHA-256 garantiza integridad contra el checksum publicado, no autenticidad ante compromiso de GitHub/publicador. No hay manifiesto firmado ni verificacion Authenticode implementados; esta limitacion requiere aceptacion operativa o un incremento de firma antes de exigir autenticidad criptografica. No se afirma atomicidad del reemplazo Inno ni rollback automatico: conservar paquete anterior y copia coherente offline del cluster/configuracion/licencia para recuperacion ensayada. Reinstalar manualmente programa anterior solo si esquema es compatible; nunca desinstalar/borrar data para actualizar. Fallo deja log en temporal y requiere revision antes de reintentar.
 

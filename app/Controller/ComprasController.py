@@ -8,7 +8,7 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from .MensajesAlertasController import Mensaje
 from .Hilo_consultas import *
 from .Ventana_espera import Modal_de_espera, ModalManager
-from app.Model.AbstractTableModel import ComprobarModelosTablas
+from app.Model.AbstractTableModel import ComprobarModelosTablas, GenericTableModel
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
@@ -28,6 +28,8 @@ from ..Model.OrdenesDeCompraModel import consulta_compras, validar_orden
 
 def capturar_consulta(ventana, metodo):
     operacion = metodo.__name__.split("_Orden_compra")[-1]
+    if operacion == "__createOrder_query":
+        operacion = getattr(ventana, "_operacion_guardado", operacion)
     snapshot = None
     if operacion in ("obtener_compras_query", "buscar_ordenes_de_compra_query"):
         snapshot = {}
@@ -35,6 +37,7 @@ def capturar_consulta(ventana, metodo):
             criterios = getattr(ventana, f"busqueda_realizada_compras_{sufijo}", None) if operacion.startswith("buscar") else None
             snapshot[state] = (getattr(ventana, f"cantidad_inicial_consulta_compras_{sufijo}"),
                                getattr(ventana, f"cantidad_final_consulta_compras_{sufijo}"), dict(criterios or {}))
+        snapshot["_generaciones"] = dict(ventana._generaciones_compras)
     elif operacion in ("consultar_productos_del_proveedor_query", "filtrar_productos_del_proveedor_codigo_query",
                        "filtrar_productos_del_proveedor_nombre_query", "obtener_productos_proveedor_compras_query"):
         snapshot = (ventana.proveedor.id,
@@ -69,8 +72,13 @@ class Compras(QWidget):
         self.controlOrdenesDeCompra.btn_btn_eliminar.setVisible(False)
         # ==================== VARIABLES ====================
         self.usuario = usuario
+        self.permisos_usuario = set(getattr(parent, "permisos_usuario", ()))
         self.orden_compra = None
+        self.orden_edicion = None
+        self.orden_detalles = None
         self.orderSelected = None
+        self._recepcion_en_curso = False
+        self._generaciones_compras = {"PENDIENTE": 0, "COMPLETADA": 0}
         self.clienteFisico = True
         self.cantidad_inicial_consulta_compras_pendientes = 0
         self.cantidad_final_consulta_compras_pendientes = 100
@@ -85,11 +93,17 @@ class Compras(QWidget):
         self.lista_hilos_compras = []
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         self.manejadorModal = ModalManager()
+        self.btn_ver_detalles = QToolButton(self)
+        self.btn_ver_detalles.setObjectName("btn_ver_detalles")
+        self.btn_ver_detalles.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView))
+        self.btn_ver_detalles.setToolTip("Ver detalles de la orden")
+        self.btn_ver_detalles.clicked.connect(self.ver_detalles_orden)
+        self.controlOrdenesDeCompra.horizontalLayout_2.insertWidget(3, self.btn_ver_detalles)
         # ================ FUNCIONALIDADES DE ACCION =====================
-        self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(self.orden_compra_window)
+        self.controlOrdenesDeCompra.btn_btn_agregar.clicked.connect(lambda: self.orden_compra_window())
         self.controlOrdenesDeCompra.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_orden_compra)
         self.controlOrdenesDeCompra.btn_btn_eliminar.clicked.connect(self.orderDelete)
-        # self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.clicked.connect(self.editOrder)
+        self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.clicked.connect(self.editOrder)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompra.clicked.connect(self.generar_orden_compra_pdf)
         self.controlOrdenesDeCompra.btn_btn_generarOrdenCompraCompletada.clicked.connect(self.generar_orden_compra_pdf)
         self.controlOrdenesDeCompra.btn_btn_buscar_OCpendientes.clicked.connect(self.buscarOrdenCompraPendiente)
@@ -133,7 +147,7 @@ class Compras(QWidget):
             self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(False)
             self.controlOrdenesDeCompra.btn_btn_eliminar.setVisible(False)
         elif indice == 1:
-            # self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(True)
+            self.controlOrdenesDeCompra.btn_btn_editaOrdeCompra.setVisible(bool(self.permisos_usuario.intersection({"MODIFICARCOMPRA", "ADMINISTRADOR"})))
             self.controlOrdenesDeCompra.btn_btn_eliminar.setVisible(True)
 
     def paginarOrdenesDeCompra(self):
@@ -151,8 +165,41 @@ class Compras(QWidget):
             return
         self.windowEditarOrdenCompra(self.orderSelected)
 
+    def ver_detalles_orden(self):
+        if self.orderSelected is None:
+            Mensaje().mensaje_alerta("Debe seleccionar una orden de compra.")
+            return
+        if self.orden_detalles is not None:
+            if self.orden_detalles.orden.id == self.orderSelected.id:
+                bring_window_to_front(self.orden_detalles)
+                return
+            self.orden_detalles.close()
+        self.orden_detalles = WindowDetallesOrdenCompra(parent=self, orden=self.orderSelected)
+        self.orden_detalles.finished.connect(self._cerrar_detalles_orden)
+        self.orden_detalles.exec_()
+
+    def _cerrar_detalles_orden(self):
+        self.orden_detalles = None
+
     def windowEditarOrdenCompra(self, ordenCompra = None):
-        pass
+        if not self.permisos_usuario.intersection({"MODIFICARCOMPRA", "ADMINISTRADOR"}):
+            Mensaje().mensaje_alerta("No tiene permiso para modificar compras.")
+            return
+        if ordenCompra is None or ordenCompra.estado != "PENDIENTE":
+            Mensaje().mensaje_alerta("Solo se pueden editar ordenes pendientes.")
+            return
+        if self.orden_edicion is not None:
+            if self.orden_edicion.orden.id == ordenCompra.id:
+                bring_window_to_front(self.orden_edicion)
+                return
+            self.orden_edicion.close()
+        self.orden_edicion = WindowEditarOrdenCompra(parent=self, orden=ordenCompra, usuario=self.usuario)
+        self.orden_edicion.VENTANA_CERRADA_NUEVA_COMPRA.connect(self._cerrar_editor_orden)
+        self.orden_edicion.exec_()
+
+    def _cerrar_editor_orden(self):
+        self.orden_edicion = None
+        self.refrescar_tabla_orden_compra()
 
     # ==================== FUNCIONALIDADES PARA ORDENES DE COMPRA PENDIENTES =====================
     def buscarOrdenCompraPendiente(self):
@@ -173,6 +220,8 @@ class Compras(QWidget):
             "nombre_proveedor": nombre_proveedor if nombre_proveedor else None
         }
         self.busqueda_realizada_compras_pendientes = nueva_busqueda_datos
+        self._generaciones_compras["PENDIENTE"] += 1
+        self._cargando_mas_compras_pendientes = False
         if not hasattr(self, 'cantidad_inicial_consulta_compras_pendientes'):
             self.cantidad_inicial_consulta_compras_pendientes = 0
 
@@ -214,7 +263,8 @@ class Compras(QWidget):
             if hasattr(self, 'id_hilo_buscar_ordenes_de_compra_pendientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_ordenes_de_compra_pendientes)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            self._cargando_mas_compras_pendientes = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de compras.")
 
     def obtener_compras_realizadas_busqueda_hilo(self, paginacion = False):
         try:
@@ -246,7 +296,8 @@ class Compras(QWidget):
             if hasattr(self, 'id_hilo_buscar_ordenes_de_compra_realizadas'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_ordenes_de_compra_realizadas)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            self._cargando_mas_compras_realizadas = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de compras.")
 
     def buscar_ordenes_de_compra_query(self, session, state = None):
         try:
@@ -279,7 +330,7 @@ class Compras(QWidget):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f"Error al buscar las ordenes de compra: {e}",
+                "mensaje": "No se pudo consultar las ordenes de compra.",
                 "data": []
             }
 
@@ -328,6 +379,8 @@ class Compras(QWidget):
             "nombre_proveedor": nombre_proveedor if nombre_proveedor else None
         }
         self.busqueda_realizada_compras_realizadas = nueva_busqueda_datos
+        self._generaciones_compras["COMPLETADA"] += 1
+        self._cargando_mas_compras_realizadas = False
         if not hasattr(self, 'cantidad_inicial_consulta_compras_realizadas'):
             self.cantidad_inicial_consulta_compras_realizadas = 0
 
@@ -356,14 +409,16 @@ class Compras(QWidget):
             else:
                 os.system(f'xdg-open "{temp_file}"')
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Error al generar PDF: {str(e)}")
+            Mensaje().mensaje_alerta("No se pudo generar o abrir el PDF de la orden.")
 
     # COMPROBAMOS LA PESTAÑA ACTIVA Y PASAMOS SI ES UNA COMPRA REALIZADA O UNA COMPRA PENDIENTE
     def refrescar_tabla_orden_compra(self):
         try:
-
+            self.orderSelected = None
             indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
             if indicePestañaActual == 0:
+                self._generaciones_compras["COMPLETADA"] += 1
+                self.nueva_busqueda_compras_realizadas = False
                 self.cantidad_inicial_consulta_compras_realizadas = 0
                 self.no_hay_mas_registros_compras_realizadas = False
                 self.busqueda_realizada_compras_realizadas = None
@@ -372,6 +427,8 @@ class Compras(QWidget):
                     del self.ultima_carga_cantidad_compras_realizadas
                 self.obtener_compras_realizadas_hilo(reset_paginacion_compras_realizadas = True)
             elif indicePestañaActual == 1:
+                self._generaciones_compras["PENDIENTE"] += 1
+                self.nueva_busqueda_compras_pendientes = False
                 self.cantidad_inicial_consulta_compras_pendientes = 0
                 self.no_hay_mas_registros_compras_pendientes = False
                 self.busqueda_realizada_compras_pendientes = None
@@ -423,7 +480,8 @@ class Compras(QWidget):
             if hasattr(self, 'id_obtener_compras_realizadas'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_compras_realizadas)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
+            self._cargando_mas_compras_realizadas = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de compras.")
 
     def consulta_hilo_compras_pendientes(self, paginacion = False):
         try:
@@ -455,7 +513,8 @@ class Compras(QWidget):
             if hasattr(self, 'id_obtener_compras_pendientes'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_compras_pendientes)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
+            self._cargando_mas_compras_pendientes = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de compras.")
 
     def obtener_compras_query(self, session, state = None):
         try:
@@ -483,7 +542,7 @@ class Compras(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
+                "mensaje": "No se pudo consultar las ordenes de compra.",
                 "data": []
             }
         if state == 'COMPLETADA':
@@ -501,6 +560,8 @@ class Compras(QWidget):
     def compras_tabla_compras(self, result):
         try:
             indicePestañaActual = self._aplicar_paginacion_resultado(result)
+            if indicePestañaActual is None:
+                return
             if indicePestañaActual == 0:
                 self._cargando_mas_compras_realizadas = False
             elif indicePestañaActual == 1:
@@ -523,11 +584,13 @@ class Compras(QWidget):
                 self.modeloTablaOrdenesDeCompraPendientes.update_data(result["data"], reset=True)
             print(f"Tabla actualizada: {len(result['data']) if result['data'] else 0} compras")
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras: {e}")
+            Mensaje().mensaje_alerta("No se pudo presentar el resultado de compras.")
 
     def compras_tabla_compras_paginadas(self, result):
         try:
             indicePestañaActual = self._aplicar_paginacion_resultado(result)
+            if indicePestañaActual is None:
+                return
             if indicePestañaActual == 0:
                 self._cargando_mas_compras_realizadas = False
             elif indicePestañaActual == 1:
@@ -546,7 +609,7 @@ class Compras(QWidget):
                 self.modeloTablaOrdenesDeCompraPendientes.update_data(result["data"], reset=False)
             print(f"Tabla actualizada: {len(result['data']) if result['data'] else 0} compras")
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar compras: {e}")
+            Mensaje().mensaje_alerta("No se pudo presentar el resultado de compras.")
 
     def _manejar_scroll_compras_realizadas(self, value):
         scrollbar = self.controlOrdenesDeCompra.tabla_comprasrealizadas.verticalScrollBar()
@@ -555,6 +618,8 @@ class Compras(QWidget):
 
     def _aplicar_paginacion_resultado(self, result):
         state = result.get("state")
+        if state and "generacion" in result and result["generacion"] != self._generaciones_compras[state]:
+            return None
         indice = (1 if state == "PENDIENTE" else 0) if state else self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
         if state and result.get("exito") and result.get("data"):
             sufijo = "pendientes" if state == "PENDIENTE" else "realizadas"
@@ -597,6 +662,7 @@ class Compras(QWidget):
         return self.modeloTablaOrdenesDeCompraPendientes
 
     def seleccionar_orden_compra_pendiente(self, current, previus = None):
+        self.orderSelected = None
         if current.isValid():
             fila = current.row()
             orden_compra = self.modeloTablaOrdenesDeCompraPendientes.get_item(current)
@@ -636,6 +702,7 @@ class Compras(QWidget):
         return self.modeloTablaOrdenesDeCompraRealizadas
 
     def seleccionar_orden_compra_realizada(self, current, previus = None):
+        self.orderSelected = None
         if current.isValid():
             fila = current.row()
             orden_compra = self.modeloTablaOrdenesDeCompraRealizadas.get_item(current)
@@ -664,6 +731,12 @@ class Compras(QWidget):
         if self.orderSelected is None:
             Mensaje().mensaje_alerta("No se selecciono una orden de compra")
             return
+        if self.orderSelected.estado != "PENDIENTE":
+            Mensaje().mensaje_alerta("Solo se pueden eliminar ordenes pendientes; una compra recibida requiere un reverso.")
+            return
+        order_id = self.orderSelected.id
+        if Mensaje().mensaje_pregunta(f"¿Eliminar la orden pendiente #{order_id}?") != QMessageBox.Yes:
+            return
         try:
             self.manejadorModal.mostrar_modal(self)
             self.id_eliminar_orden_compra = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-eliminar", cierre_seguro=True)
@@ -679,15 +752,17 @@ class Compras(QWidget):
             )
             self.consultor_eliminar_orden_compra.ejecutar(
                 funcion=capturar_consulta(self, self.eliminar_orden_compra_query),
-                order=SimpleNamespace(id=self.orderSelected.id)
+                order=SimpleNamespace(id=order_id)
             )
         except Exception as e:
             if hasattr(self, 'id_eliminar_orden_compra'):
                 WorkerDB.cleanup_managed_worker(self.id_eliminar_orden_compra)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error al eliminar orden de compra: {e}")
+            Mensaje().mensaje_alerta("No se pudo iniciar la eliminacion de la orden.")
 
     def recibirOrdenCompra(self):
+        if self._recepcion_en_curso:
+            return
         if self.orderSelected is None:
             Mensaje().mensaje_alerta("No se seleccionó una orden de compra")
             return
@@ -698,12 +773,15 @@ class Compras(QWidget):
             Mensaje().mensaje_alerta("No se encontró el usuario que realiza la recepción de la orden")
             return
 
+        order_id = self.orderSelected.id
+        usuario_id = self.usuario["id_usuario"]
         respuesta = Mensaje().mensaje_pregunta(
             f"¿Deseas recibir la orden de compra #{self.orderSelected.id}?\nEsta acción sumará los productos al inventario y moverá la orden a realizadas."
         )
         if respuesta != QMessageBox.Yes:
             return
 
+        self._recepcion_en_curso = True
         try:
             self.manejadorModal.mostrar_modal(self)
             self.id_recibir_orden_compra = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-recibir", cierre_seguro=True)
@@ -719,14 +797,15 @@ class Compras(QWidget):
             )
             self.consultor_recibir_orden_compra.ejecutar(
                 funcion=capturar_consulta(self, self.recibir_orden_compra_query),
-                order_id=self.orderSelected.id,
-                usuario_id=self.usuario["id_usuario"]
+                order_id=order_id,
+                usuario_id=usuario_id
             )
         except Exception as e:
+            self._recepcion_en_curso = False
             if hasattr(self, 'id_recibir_orden_compra'):
                 WorkerDB.cleanup_managed_worker(self.id_recibir_orden_compra)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrió un error al recibir la orden de compra: {e}")
+            Mensaje().mensaje_alerta("No se pudo iniciar la recepcion de la orden.")
 
     def recibir_orden_compra_query(self, session, order_id, usuario_id):
         try:
@@ -752,7 +831,7 @@ class Compras(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f"Ocurrió un error al recibir la orden de compra: {e}",
+                "mensaje": "No se pudo confirmar la recepcion de la orden.",
                 "resultado": None,
             }
 
@@ -761,15 +840,16 @@ class Compras(QWidget):
             estatus = OrdenesDeCompraModel(session).delete_purchase_order(order.id)
             if estatus:
                 session.commit()
-                return {"mensaje": f"Orden de compra eliminada exitosamente: {order.id}"}
+                return {"exito": True, "mensaje": f"Orden de compra eliminada exitosamente: {order.id}"}
             else:
                 session.rollback()
-                return {"mensaje": f"Error al eliminar orden de compra: {order.id}"}
+                return {"exito": False, "mensaje": "La orden no existe o ya no esta pendiente."}
         except Exception as e:
             session.rollback()
-            return {"mensaje": str(e)}
+            return {"exito": False, "mensaje": "No se pudo confirmar la eliminacion de la orden."}
 
     def mostrar_estado_hilo(self, objetoMensaje):
+        self._recepcion_en_curso = False
         self.manejadorModal.cerrar_modal()
         if not objetoMensaje.get("exito", True):
             Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
@@ -779,16 +859,16 @@ class Compras(QWidget):
         self.refrescar_tabla_orden_compra()
 
     def mostrar_error_hilo(self, objetoMensaje):
+        self._recepcion_en_curso = False
         self.manejadorModal.cerrar_modal()
-        Mensaje().mensaje_alerta(objetoMensaje)
+        self._cargando_mas_compras_pendientes = False
+        self._cargando_mas_compras_realizadas = False
+        Mensaje().mensaje_alerta("No se pudo completar la operacion de compras.")
         self.orderSelected = None
 
     def ventana_cerrada_nueva_compra(self):
         self.orden_compra = None
         self.refrescar_tabla_orden_compra()
-
-class WindowEditarOrdenCompra(QDialog):
-    pass
 
 class Orden_compra(QDialog):
     VENTANA_CERRADA_NUEVA_COMPRA = Signal()
@@ -798,6 +878,8 @@ class Orden_compra(QDialog):
         # ================ VARIABLES ===================
         self._ventanaCentradaNuevaCompra = False
         self.usuario = usuario
+        self.permisos_usuario = set(getattr(parent, "permisos_usuario", ()))
+        self._guardando_orden = False
         self.proveedores = {}
         self.proveedor = None
         self.metodoPago = None
@@ -816,6 +898,18 @@ class Orden_compra(QDialog):
         self.ordenCompraUI.txt_buscarproveedor.setMaxLength(150)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
         self.ordenCompraUI.btn_btn_agregar.hide()
+        self.btn_quitar_producto = QToolButton(self)
+        self.btn_quitar_producto.setObjectName("btn_quitar_producto")
+        self.btn_quitar_producto.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+        self.btn_quitar_producto.setToolTip("Quitar producto seleccionado")
+        self.btn_quitar_producto.clicked.connect(self.quitar_producto_seleccionado)
+        self.btn_limpiar_orden = QToolButton(self)
+        self.btn_limpiar_orden.setObjectName("btn_limpiar_orden")
+        self.btn_limpiar_orden.setIcon(self.style().standardIcon(QStyle.SP_DialogResetButton))
+        self.btn_limpiar_orden.setToolTip("Limpiar orden")
+        self.btn_limpiar_orden.clicked.connect(self.limpiar_productos_seleccionados)
+        self.ordenCompraUI.horizontalLayout_2.insertWidget(1, self.btn_quitar_producto)
+        self.ordenCompraUI.horizontalLayout_2.insertWidget(2, self.btn_limpiar_orden)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         apply_module_theme(self)
@@ -874,7 +968,7 @@ class Orden_compra(QDialog):
             if hasattr(self, 'id_obtener_metodos_pagos'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_metodos_pagos)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar metodos de pago: {e}")
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de metodos de pago.")
 
     def obtener_metodos_pagos_query(self, session):
         try:
@@ -966,11 +1060,15 @@ class Orden_compra(QDialog):
             self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.setText(f"Total: {currentData['total_compra']}")
             self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.show()
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Ocurrio un error al mostrar el total: {e}")
+            Mensaje().mensaje_alerta("Verifique metodo de pago y cantidades para calcular el total.")
 
     def createOrder(self, contentData = None, orden_items = None):
         if contentData is None or orden_items is None:
             return
+        if self._guardando_orden:
+            return
+        self._guardando_orden = True
+        self.ordenCompraUI.btn_btn_terminar.setEnabled(False)
         try:
             self.manejadorModal.mostrar_modal(self)
             self.id_hilo_createOrderThread = WorkerDB.create_managed_worker(owner_id=f"orden-{id(self)}-crear", cierre_seguro=True)
@@ -987,9 +1085,12 @@ class Orden_compra(QDialog):
             self.consultor_createOrderThread.ejecutar(
                 capturar_consulta(self, self.__createOrder_query),
                 contentData=contentData,
-                orden_items=orden_items
+                orden_items=orden_items,
+                permisos=tuple(self.permisos_usuario)
             )
         except Exception as e:
+            self._guardando_orden = False
+            self.ordenCompraUI.btn_btn_terminar.setEnabled(True)
             if hasattr(self, 'id_hilo_createOrderThread'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_createOrderThread)
             self.manejadorModal.cerrar_modal()
@@ -1032,7 +1133,33 @@ class Orden_compra(QDialog):
             self.codigos_agregados.clear()
 
         if hasattr(self, 'modeloTablaProductosOrden'):
+            self.modeloTablaProductosOrden._edited_values.clear()
             self.modeloTablaProductosOrden.clear()
+        self.ordenCompraUI.etiqueta_totalNuevaOrdenCompra.hide()
+
+    def quitar_producto_seleccionado(self):
+        producto = self.modeloTablaProductosOrden.get_item(self.ordenCompraUI.tabla_ordencompra.currentIndex())
+        if producto is None:
+            Mensaje().mensaje_alerta("Seleccione un producto de la orden.")
+            return
+        restantes = [(item, self.modeloTablaProductosOrden.data(self.modeloTablaProductosOrden.index(fila, 6)))
+                     for fila, item in enumerate(self.modeloTablaProductosOrden.get_all_items()) if item != producto]
+        self.limpiar_productos_seleccionados()
+        for item, cantidad in restantes:
+            self.setConjuntoProductosDelProveedor.add(item)
+            self.codigos_agregados.add(item.producto.codigo_upc)
+            fila = self.modeloTablaProductosOrden.rowCount()
+            self.modeloTablaProductosOrden.update_data([item], reset=False)
+            self.modeloTablaProductosOrden.actualizarCelda(fila, 6, cantidad)
+        if restantes:
+            self.__mostrarTotalCompraUI()
+
+    def _subtotal_producto(self, producto):
+        for fila, item in enumerate(self.modeloTablaProductosOrden.get_all_items()):
+            if item == producto:
+                cantidad = float(self.modeloTablaProductosOrden.data(self.modeloTablaProductosOrden.index(fila, 6)))
+                return cantidad * producto.precio_venta
+        return ""
 
     def __buscar_producto_del_proveedor(self):
         codigo_upc = self.ordenCompraUI.txt_buscarproducto.text().strip()
@@ -1068,6 +1195,9 @@ class Orden_compra(QDialog):
             return False
 
         producto = resultado["data"]
+        if self.proveedor is None or (hasattr(producto, "proveedor_id") and producto.proveedor_id != self.proveedor.id):
+            Mensaje().mensaje_alerta("El producto no corresponde al proveedor actual.")
+            return False
         codigo = producto.producto.codigo_upc
 
         if codigo in self.codigos_agregados:
@@ -1078,8 +1208,8 @@ class Orden_compra(QDialog):
         self.codigos_agregados.add(codigo)
 
         self.modeloTablaProductosOrden.update_data(
-            list(self.setConjuntoProductosDelProveedor),
-            reset=True
+            [producto],
+            reset=False
         )
         Mensaje().mensaje_informativo("Producto agregado")
         return True
@@ -1105,7 +1235,7 @@ class Orden_compra(QDialog):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f"Ocurrió un error al consultar los productos: {str(e)}",
+                "mensaje": "No se pudo consultar el producto del proveedor.",
                 "data": []
             }
 
@@ -1117,7 +1247,8 @@ class Orden_compra(QDialog):
             "descripcion_producto",
             "unidad_medida_productos",
             "presentacion_productos",
-            "cantidad"
+            "cantidad",
+            "subtotal"
         ]
         mapeo_cabeceras = {
             "codigo_upc": lambda p: p.producto.codigo_upc if p and p.producto else "",
@@ -1126,7 +1257,8 @@ class Orden_compra(QDialog):
             "descripcion_producto": lambda p: p.producto.descripcion_producto if p and p.producto else "",
             "unidad_medida_productos": lambda p: p.producto.unidad_medida_productos.nombre if p and p.producto and p.producto.unidad_medida_productos else "",
             "presentacion_productos": lambda p: p.producto.presentacion_productos.nombre if p and p.producto and p.producto.presentacion_productos else "",
-            "cantidad": lambda p: "1"
+            "cantidad": lambda p: "1",
+            "subtotal": self._subtotal_producto
         }
         self.modeloTablaProductosOrden = self.comprobar_modelos_tablas.comprobarModeloTabla(
             nombreModelo="modeloTablaProductosOrden",
@@ -1142,11 +1274,22 @@ class Orden_compra(QDialog):
         return self.modeloTablaProductosOrden
 
     def escojer_cantidad_productos(self, current, previus = None):
-        if current.isValid():
-            self.fila = current.row()
+        producto = self.modeloTablaProductosOrden.get_item(current)
+        if producto is None:
+            return
+        self.fila = current.row()
         cantidadProductosComprasController = CantidadProductosComprasController(self)
-        cantidadProductosComprasController.cantidadEnviadaSignal.connect(self.actualizarCantidadProducto)
+        cantidadProductosComprasController.cantidadEnviadaSignal.connect(
+            lambda cantidad: self._actualizar_cantidad_producto_seleccionado(producto, cantidad)
+        )
         bring_window_to_front(cantidadProductosComprasController)
+
+    def _actualizar_cantidad_producto_seleccionado(self, producto, cantidad):
+        for fila, item in enumerate(self.modeloTablaProductosOrden.get_all_items()):
+            if item == producto:
+                self.fila = fila
+                self.actualizarCantidadProducto(cantidad)
+                return
 
     def actualizarCantidadProducto(self, cantidad):
         self.modeloTablaProductosOrden.actualizarCelda(self.fila, 6, cantidad)
@@ -1162,6 +1305,8 @@ class Orden_compra(QDialog):
 
         for p in lista:
             if hasattr(p, 'producto') and hasattr(p.producto, 'codigo_upc'):
+                if self.proveedor is None or (hasattr(p, "proveedor_id") and p.proveedor_id != self.proveedor.id):
+                    continue
                 codigo = p.producto.codigo_upc
 
                 if codigo not in self.codigos_agregados:
@@ -1173,7 +1318,7 @@ class Orden_compra(QDialog):
                 self.setConjuntoProductosDelProveedor = set()
             for p in productos_nuevos:
                 self.setConjuntoProductosDelProveedor.add(p)
-            self.modeloTablaProductosOrden.update_data(list(self.setConjuntoProductosDelProveedor), reset=True)
+            self.modeloTablaProductosOrden.update_data(productos_nuevos, reset=False)
             self.__mostrarTotalCompraUI()
 
         return len(productos_nuevos)
@@ -1219,7 +1364,7 @@ class Orden_compra(QDialog):
             if hasattr(self, 'id_hilo_obtener_proveedores_vcompras'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_proveedores_vcompras)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de proveedores.")
 
     def __obtener_proveedores_query(self, session):
         proveedores, estado = ProveedoresModel(session).obtener_proveedores()
@@ -1235,14 +1380,22 @@ class Orden_compra(QDialog):
         self.ordenCompraUI.txt_buscarproveedor.setCompleter(completar)
 
     def __proveedor_seleccionado(self, texto):
+        proveedor_anterior = getattr(self.proveedor, "id", None)
         for id_proveedor, proveedor in self.proveedores_generales_del_sistema_dict.items():
             if proveedor.nombre == texto:
                 self.proveedor = proveedor
                 break
         else:
             self.proveedor = None
+        if proveedor_anterior != getattr(self.proveedor, "id", None):
+            self.limpiar_productos_seleccionados()
+            if self.ventana_productos_proveedor is not None:
+                self.ventana_productos_proveedor.close()
+                self.ventana_productos_proveedor = None
 
     def mostrar_estado_hilo(self, objetoMensaje):
+        self._guardando_orden = False
+        self.ordenCompraUI.btn_btn_terminar.setEnabled(True)
         if objetoMensaje.get("exito"):
             self.manejadorModal.cerrar_modal()
             self.limpiar_productos_seleccionados()
@@ -1252,8 +1405,10 @@ class Orden_compra(QDialog):
             Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
 
     def mostrar_error_hilo(self, error):
+        self._guardando_orden = False
+        self.ordenCompraUI.btn_btn_terminar.setEnabled(True)
         self.manejadorModal.cerrar_modal()
-        Mensaje().mensaje_alerta(error)
+        Mensaje().mensaje_alerta("No se pudo completar la operacion de la orden.")
 
     def limpiarVentanaSeleccionProductosProveedor(self):
         self.ventana_productos_proveedor = None
@@ -1299,7 +1454,15 @@ class SeleccionProductosProveedor(QDialog):
         self.ui.setupUi(self)
         self.ui.txt_codigodelproducto.setMaxLength(20)
         self.ui.txt_nombredelproducto.setMaxLength(60)
+        self.modo_busqueda_nombre = QComboBox(self)
+        self.modo_busqueda_nombre.setObjectName("modo_busqueda_nombre")
+        self.modo_busqueda_nombre.addItem("Contiene", False)
+        self.modo_busqueda_nombre.addItem("Es igual", True)
+        self.modo_busqueda_nombre.setToolTip("Modo de busqueda por nombre")
+        self.ui.horizontalLayout_2.insertWidget(1, self.modo_busqueda_nombre)
+        self._busqueda_exacta = False
         self.proveedor = proveedor
+        self._carga_inicial = False
         self.cantidad_inicial_consulta_productos_proveedor_compras = 0
         self.cantidad_final_consulta_productos_proveedor_compras = 100
         self.busqueda_realizada_productos_del_proveedor_compras = False
@@ -1337,6 +1500,12 @@ class SeleccionProductosProveedor(QDialog):
         stabilize_item_view(self.ui.tabla_productosParaOrden, min_height=240)
         self.ui.gridLayout_3.setRowStretch(1, 1)
         self.ui.gridLayout_3.setRowStretch(5, 1)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._carga_inicial and self.proveedor is not None:
+            self._carga_inicial = True
+            self.consultarProductosProveedor_funcion()
 
     def __configuracionTablaProductosProveedor(self):
         cabeceras = [
@@ -1411,10 +1580,7 @@ class SeleccionProductosProveedor(QDialog):
             fila = current.row()
             producto = self.modeloTablaProductosDelProveedorSeleccionados.get_item(current)
             if producto:
-                print("producto", producto.precio_venta)
-                self.conjuntoProductosDelProveedor.remove(producto)
-                print("producto removido", producto)
-                print("conjunto", self.conjuntoProductosDelProveedor)
+                self.conjuntoProductosDelProveedor.discard(producto)
                 self.productos_proveedores_tabla_compras_seleccionados(self.conjuntoProductosDelProveedor)
 
     def productos_proveedores_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
@@ -1445,6 +1611,7 @@ class SeleccionProductosProveedor(QDialog):
         print("ejecutando la consulta", busqueda_nueva)
         self.nombre_producto_proveedor_compras = nuevo_nombre
         self.codigo_upc_producto_proveedor_compras = nuevo_codigo
+        self._busqueda_exacta = bool(self.modo_busqueda_nombre.currentData())
         # Validaciones
         if not self.nombre_producto_proveedor_compras and not self.codigo_upc_producto_proveedor_compras:
             Mensaje().mensaje_informativo("No haz insertado texto para realizar la búsqueda")
@@ -1460,6 +1627,9 @@ class SeleccionProductosProveedor(QDialog):
             self.cantidad_inicial_consulta_productos_proveedor_compras = 0
             self.no_hay_mas_registros_productos_proveedor_compras = False  # Resetear el flag
             self.busqueda_realizada_productos_proveedor_compras = True
+        self.no_hay_mas_registros_productos_proveedor_compras = False
+        self._cargando_mas_productos_proveedor_compras = False
+        self.busqueda_realizada_productos_proveedor_compras = True
         if busqueda_nueva and hasattr(self, 'modeloTablaProductosDelProveedor'):
             self.modeloTablaProductosDelProveedor.clear()
         try:
@@ -1480,7 +1650,7 @@ class SeleccionProductosProveedor(QDialog):
                 self.consultar_productos_del_proveedor_compras.ejecutar(
                     funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_nombre_query),
                     nombre=self.nombre_producto_proveedor_compras,
-                    busqueda_exacta=False
+                    busqueda_exacta=self._busqueda_exacta
                 )
             else:
                 print(f"Consultando por codigo del producto: {self.codigo_upc_producto_proveedor_compras}")
@@ -1492,7 +1662,8 @@ class SeleccionProductosProveedor(QDialog):
             if hasattr(self, 'id_filtrar_productos_del_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_proveedor_compras)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
+            self._cargando_mas_productos_proveedor_compras = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de productos.")
 
     def filtrar_productos_del_proveedor_codigo_query(self, session, proveedor, codigoProducto):
         try:
@@ -1509,7 +1680,7 @@ class SeleccionProductosProveedor(QDialog):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema critico: {e}',
+                "mensaje": "No se pudo consultar el producto del proveedor.",
                 "data": []
             }
         return {
@@ -1534,7 +1705,7 @@ class SeleccionProductosProveedor(QDialog):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema critico: {e}',
+                "mensaje": "No se pudo consultar el producto del proveedor.",
                 "data": []
             }
         return {
@@ -1549,6 +1720,9 @@ class SeleccionProductosProveedor(QDialog):
             self.no_hay_mas_registros_productos_proveedor_compras = False  # Resetear el flag de fin de datos
             self._cargando_mas_productos_proveedor_compras = False
             self.nombre_producto_proveedor_compras = None
+            self.codigo_upc_producto_proveedor_compras = None
+            self._busqueda_exacta = False
+            self.modo_busqueda_nombre.setCurrentIndex(0)
             self.busqueda_realizada_productos_proveedor_compras = None
             self.ui.txt_codigodelproducto.clear()
             self.ui.txt_nombredelproducto.clear()
@@ -1556,7 +1730,6 @@ class SeleccionProductosProveedor(QDialog):
                 del self.ultima_carga_cantidad_productos_proveedor_compras
             self.obtener_productos_proveedor_compras_hilo(reset_paginacion_productos_proveedor_compras = True)
         except Exception as e:
-            print(f"error: {e}")
             Mensaje().mensaje_alerta("Error al consultar productos del proveedor.")
 
     def obtener_productos_proveedor_compras_hilo(self, reset_paginacion_productos_proveedor_compras=False):
@@ -1584,7 +1757,8 @@ class SeleccionProductosProveedor(QDialog):
             if hasattr(self, 'id_obtener_productos_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_compras)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
+            self._cargando_mas_productos_proveedor_compras = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de productos.")
 
     def obtener_productos_proveedor_compras_query(self, session):
         print(f"DEBUG - Consultando: offset={self.cantidad_inicial_consulta_productos_proveedor_compras}, limit={self.cantidad_final_consulta_productos_proveedor_compras}")
@@ -1608,7 +1782,7 @@ class SeleccionProductosProveedor(QDialog):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema critico en el proceso: {e}',
+                "mensaje": "No se pudo consultar el producto del proveedor.",
                 "data": []
             }
         return {
@@ -1665,7 +1839,8 @@ class SeleccionProductosProveedor(QDialog):
             if hasattr(self, 'id_obtener_productos_proveedor_comprasPaginacion'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_comprasPaginacion)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
+            self._cargando_mas_productos_proveedor_compras = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de productos.")
 
     def agregar_productos_proveedor_tabla(self, resultado):
         if resultado.get("exito") and resultado.get("data") and "offset" in resultado:
@@ -1698,7 +1873,7 @@ class SeleccionProductosProveedor(QDialog):
                 self.consultor_obtener_productos_proveedor_paginados.ejecutar(
                     funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_nombre_query),
                     nombre = self.nombre_producto_proveedor_compras,
-                    busqueda_exacta = False
+                    busqueda_exacta = self._busqueda_exacta
                     )
             else:
                 print(f"Consultando por codigo del producto: {self.codigo_upc_producto_proveedor_compras}")
@@ -1710,7 +1885,8 @@ class SeleccionProductosProveedor(QDialog):
             if hasattr(self, 'id_hilo_obtener_productos_proveedor_paginados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_proveedor_paginados)
             self.manejadorModal.cerrar_modal()
-            Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
+            self._cargando_mas_productos_proveedor_compras = False
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta de productos.")
 
     def agregar_productos_del_proveedor_en_tabla(self, resultado):
         """Agrega nuevos productos al modelo existente"""
@@ -1734,7 +1910,8 @@ class SeleccionProductosProveedor(QDialog):
 
     def mostrar_error_hilo(self, objetoMensaje):
         self.manejadorModal.cerrar_modal()
-        Mensaje().mensaje_alerta(objetoMensaje)
+        self._cargando_mas_productos_proveedor_compras = False
+        Mensaje().mensaje_alerta("No se pudo completar la consulta de productos.")
 
     def closeEvent(self, event):
         self.manejadorModal.cerrar_modal()
@@ -1757,5 +1934,91 @@ class SeleccionProductosProveedor(QDialog):
     def aceptar(self):
         self.enviarProductosSignal.emit(self.conjuntoProductosDelProveedor)
         self.close()
+
+
+class WindowEditarOrdenCompra(Orden_compra):
+    def __init__(self, parent=None, orden=None, usuario=None):
+        if orden is None or orden.estado != "PENDIENTE":
+            raise ValueError("Solo se pueden editar ordenes pendientes.")
+        self.orden = orden
+        self._operacion_guardado = "actualizar_orden_compra_query"
+        super().__init__(parent=parent, usuario=usuario)
+        from ..Model.Proveedores_ProductosModel import AsociacionProveedorDTO, producto_snapshot
+        from ..Model.OrdenesDeCompraModel import version_orden
+
+        self._version_orden = version_orden(orden)
+        self.proveedor = orden.proveedor
+        self.ordenCompraUI.txt_buscarproveedor.setText(orden.proveedor.nombre)
+        self.ordenCompraUI.txt_buscarproveedor.setReadOnly(True)
+        self.ordenCompraUI.label_wc_titulo_ordencompra.setText(f"EDITAR ORDEN #{orden.id}")
+        for detalle in orden.detalles:
+            producto = detalle.producto
+            if producto is None:
+                raise ValueError("La orden contiene un producto ausente.")
+            producto = producto_snapshot(producto)
+            asociacion = AsociacionProveedorDTO(producto.id, orden.proveedor_id, detalle.precio_unitario, producto)
+            self.setConjuntoProductosDelProveedor.add(asociacion)
+            self.codigos_agregados.add(producto.codigo_upc)
+            fila = self.modeloTablaProductosOrden.rowCount()
+            self.modeloTablaProductosOrden.update_data([asociacion], reset=False)
+            self.modeloTablaProductosOrden.actualizarCelda(fila, 6, detalle.cantidad)
+        self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.setValue(orden.plazo_pago or 0)
+
+    def metodos_pagos_caja_opciones(self, objetoMensaje):
+        super().metodos_pagos_caja_opciones(objetoMensaje)
+        for indice in range(self.ordenCompraUI.cajaOpciones_metodosPago.count()):
+            metodo = self.ordenCompraUI.cajaOpciones_metodosPago.itemData(indice)
+            if metodo.id == self.orden.metodos_pago_id:
+                self.ordenCompraUI.cajaOpciones_metodosPago.setCurrentIndex(indice)
+                self._Orden_compra__obtenerDatosMetodoPago()
+                self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.setValue(self.orden.plazo_pago or 0)
+                break
+
+    def createOrder(self, contentData=None, orden_items=None):
+        if contentData is None or orden_items is None:
+            return
+        if not self.permisos_usuario.intersection({"MODIFICARCOMPRA", "ADMINISTRADOR"}):
+            Mensaje().mensaje_alerta("No tiene permiso para modificar compras.")
+            return
+        contentData = dict(contentData, id=self.orden.id, empleado=self.orden.empleado_id,
+                           fecha_creacion=self.orden.fecha_creacion, fecha_compra=None,
+                           version_orden=self._version_orden)
+        super().createOrder(contentData, orden_items)
+
+
+class WindowDetallesOrdenCompra(QDialog):
+    def __init__(self, parent=None, orden=None):
+        super().__init__(parent)
+        self.orden = orden
+        self.setWindowTitle(f"Detalles de orden #{orden.id}")
+        self.setModal(True)
+        self.resize(900, 420)
+        layout = QVBoxLayout(self)
+        encabezado = QLabel(f"#{orden.id} | {getattr(orden.proveedor, 'nombre', '')} | {orden.estado}", self)
+        encabezado.setTextFormat(Qt.PlainText)
+        encabezado.setWordWrap(True)
+        layout.addWidget(encabezado)
+        self.tabla = QTableView(self)
+        self.modelo = GenericTableModel(
+            ["UPC", "Nombre", "Descripcion", "Presentacion", "Unidad", "Cantidad", "Precio", "Subtotal"],
+            {
+                "upc": lambda detalle: getattr(detalle.producto, "codigo_upc", ""),
+                "nombre": lambda detalle: getattr(detalle.producto, "nombre_producto", ""),
+                "descripcion": lambda detalle: getattr(detalle.producto, "descripcion_producto", ""),
+                "presentacion": lambda detalle: getattr(getattr(detalle.producto, "presentacion_productos", None), "nombre", ""),
+                "unidad": lambda detalle: getattr(getattr(detalle.producto, "unidad_medida_productos", None), "nombre", ""),
+                "cantidad": lambda detalle: detalle.cantidad,
+                "precio": lambda detalle: detalle.precio_unitario,
+                "subtotal": lambda detalle: detalle.subtotal,
+            }, parent=self)
+        self.tabla.setModel(self.modelo)
+        self.modelo.update_data(list(orden.detalles))
+        self.tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        layout.addWidget(self.tabla)
+        botones = QDialogButtonBox(QDialogButtonBox.Close, parent=self)
+        botones.rejected.connect(self.reject)
+        layout.addWidget(botones)
+        apply_module_theme(self)
 
 

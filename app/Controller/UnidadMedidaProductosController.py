@@ -30,8 +30,8 @@ class UnidadMedidaProductos(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_unidad_medida_thread")
-            self.id_hilo_agregar_unidad_medida = WorkerDB.create_managed_worker(owner_id="agregar_unidad_medida_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:agregar_unidad_medida_thread")
+            self.id_hilo_agregar_unidad_medida = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:agregar_unidad_medida_thread", cierre_seguro=True)
             self.consultor_agregar_unidad_medida = WorkerDB.get_managed_worker(self.id_hilo_agregar_unidad_medida)
             if not self.consultor_agregar_unidad_medida:
                 raise Exception("No se pudo obtener el resultado.")
@@ -49,7 +49,8 @@ class UnidadMedidaProductos(QWidget):
             # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_agregar_unidad_medida'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_unidad_medida)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            self.manejadorModal.cerrar_modal()
+            Mensaje().mensaje_alerta("No se pudo iniciar el registro de la unidad de medida.")
 
     def agregar_unidad_medida_query(self, session, nombre):
         try:
@@ -65,7 +66,7 @@ class UnidadMedidaProductos(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema en el proceso : {e}',
+                "mensaje": 'No se pudo registrar la unidad de medida.',
                 "data": None
             }
         session.commit()
@@ -76,8 +77,20 @@ class UnidadMedidaProductos(QWidget):
         }
 
     def mostrar_estado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
-        self.unidad_medida_agregada_signal.emit()
+        self.manejadorModal.cerrar_modal()
+        if isinstance(objetoMensaje, dict) and objetoMensaje.get("exito"):
+            Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+            self.unidad_medida_agregada_signal.emit()
+        else:
+            Mensaje().mensaje_alerta("No se confirmo el registro de la unidad de medida.")
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un problema en el proceso: {error}')
+        self.manejadorModal.cerrar_modal()
+        Mensaje().mensaje_alerta("No se pudo completar la operacion de unidad de medida.")
+
+    def hideEvent(self, event):
+        identificador = getattr(self, "id_hilo_agregar_unidad_medida", None)
+        if identificador is not None:
+            WorkerDB.cleanup_managed_worker(identificador)
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)

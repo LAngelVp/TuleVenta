@@ -227,6 +227,7 @@ class SistemaPrincipal(QWidget):
             (self.ventas, "ui.btn_btn_modificar", {"MODIFICARVENTA"}),
             (self.ventas, "ui.btn_btn_eliminar", {"ELIMINARVENTA"}),
             (self.compras, "controlOrdenesDeCompra.btn_btn_agregar", {"CREARCOMPRA"}),
+            (self.compras, "controlOrdenesDeCompra.btn_btn_editaOrdeCompra", {"MODIFICARCOMPRA"}),
             (self.compras, "controlOrdenesDeCompra.btn_btn_eliminar", {"ELIMINARCOMPRA"}),
             (self.compras, "controlOrdenesDeCompra.btn_btn_recibirOrdenCompra", {"MODIFICARCOMPRA"}),
             (self.clientes, "WindowClient.btn_btn_cliente_agregar", {"CREARCLIENTE"}),

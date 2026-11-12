@@ -1,6 +1,79 @@
 # Spec 03: compras, proveedores e inventario
 
+## Auditoria integral de Compras 2026-11-12
+
+Incremento autorizado C-01/C-02/C-03/C-04/C-05, REF-07/22/25/34/36 y cohorte de locks REF-40. Se conserva esquema, FK por UPC, Float, stock global, costos y APIs publicas. Autorizacion explicita posterior: editor de PENDIENTE con proveedor fijo, lineas/cantidades/pago editables y precios registrados conservados; PostgreSQL efimero mediante ejecutor existente. No es certificacion global de infraestructura ni de otros escritores de stock.
+
+Fuente decisora: [ComprasController.py](../../app/Controller/ComprasController.py), [OrdenesDeCompraModel.py](../../app/Model/OrdenesDeCompraModel.py), [PurchaseOrderPDF.py](../../app/Controller/PurchaseOrderPDF.py). Se siguieron los imports efectivos de las tres vistas generadas y el dialogo de cantidades, sin regenerarlas. [Pruebas de compras](../../tests/test_purchases_dashboard.py), [SQL aislado](../../tests/test_modules_postgres.py), [proveedores](../../tests/test_suppliers_vertical.py) y [REF-06](../../tests/test_ref06_notifications.py).
+
+### Tabla de dictamen
+
+| Boton, modal, filtro o metodo | Hallazgo As-Is | Correccion y evidencia | Dictamen/limite |
+| --- | --- | --- | --- |
+| Crear orden, clicked -> orden_compra_window | False de clicked se trataba como orden para editar | Conexion sin booleano; clic real abre dialogo | Qt aprobado; adaptador de edicion legacy conservado |
+| Seleccion principal de pendientes/realizadas | Indice invalido conservaba orden antigua | Limpiar seleccion antes de resolver item; refresco/pestana tambien descartan seleccion | Qt aprobado |
+| Editar / WindowEditarOrdenCompra | Boton desconectado y clase pass | Editor sobre snapshot, proveedor fijo, carga de cantidades/precios/pago, operacion UPDATE distinta de alta | Qt y SQL aprobados; solo pendientes |
+| Permisos de editor | Nuevo escritor no tenia coordinacion autorizada | MODIFICARCOMPRA/ADMINISTRADOR en apertura, guardado y consulta_compras; regla de boton en principal | Prueba negativa; no inventa permisos |
+| Cambio de orden con modal abierto | No habia editor/visor operativo | Modal conserva su snapshot/ID; reutiliza mismo ID y reemplaza otro; cantidad liga callback al producto, no a fila mutable | No modifica la orden nueva por cambio de seleccion |
+| Ver detalles | No existia ventana independiente | WindowDetallesOrdenCompra de lectura, UPC/nombre/descripcion/catalogos/cantidad/precio/subtotal, sin consulta lazy | Qt aprobado |
+| Seleccionar proveedor | Carrito sobrevivía al cambio | Limpiar ticket y cerrar selector anterior; rechazar callbacks/asociaciones de otro proveedor | Qt aprobado |
+| Productos del proveedor, abrir selector | No cargaba productos al abrir | Primera apertura consulta una sola vez; siguientes no repiten carga inicial | Qt aprobado |
+| Escanear UPC / agregar producto | DTO correcto pero sin comprobar proveedor actual; reconstruccion de set alteraba orden de filas | Validar proveedor_id, dedupe UPC y agregar al final sin reset de filas | Qt real y adaptadores REF-06/proveedores aprobados |
+| Agregar lote desde selector | Reconstruia tabla con orden de set; podia reasignar cantidades por posicion | Agregar solo lineas nuevas, mantener filas/cantidades existentes y proveedor | Conserva precio del par, no Productos.precio |
+| Cantidad de producto | Indice invalido abria modal; callback dependia de self.fila mutable | No abrir sin item; callback captura producto y vuelve a resolver su fila | Fraccion0.125 y seleccion invalida probadas |
+| Quitar producto | No habia control de orden | Boton con icono; valida seleccion y reconstruye restantes conservando cantidades | Qt aprobado |
+| Limpiar orden | No habia boton; clear conservaba ediciones por posicion | Boton con icono; limpiar conjuntos/UPC/ediciones locales y total | Correccion acotada a carrito; modelo de tabla compartido no reescrito |
+| Columnas de carrito / subtotal | Sin subtotal visible | Subtotal precio de proveedor por cantidad; columna6 sigue cantidad,7 subtotal | Qt aprobado; Float y precision legacy conservados |
+| Guardar alta / edicion | Segundo clic podia lanzar otro worker | Guardia de operacion y boton Terminar deshabilitado; fallo libera captura; limpieza/cierre solo tras exito | Qt aprobado; worker conserva snapshot |
+| Refresco postguardado | Nuevo editor no tenia señal al principal | Cierre de editor conecta a refresco; resultado confirmado cierra, fallo conserva captura | Refrescar no repite escritura; compras no toca caja |
+| Filtros de orden ID/proveedor/empleado/estado/fechas | ID exacto y nombres parciales existentes; fechas por rango diario en modelo migrado | Caracterizacion de una consulta y mismos criterios al paginar; valida ID BigInt; estado original en callback | No existe selector de igualdad para nombres de orden; no se inventa ese filtro |
+| Paginacion de ordenes | Refrescar dejaba nueva_busqueda True con criterios None | Reiniciar modo de busqueda; conservar filtros/offset en pagina; resultado de generacion antigua descartado | Qt aprobado; interfaz tiene cargar mas/scroll, no boton Anterior |
+| Filtros selector nombre/UPC | Nombre siempre parcial; UPC exacto; no modo explicito | Contiene/Es igual para nombre, booleano estable al paginar, una sola ejecucion; refresco limpia tambien codigo | Qt aprobado |
+| Fechas de columnas realizadas | Sospecha de mapeo con espacios/guiones | Check real muestra fallback correcto; no se cambia codigo de columnas | Caracterizacion aprobada |
+| Recibir boton / confirmacion | Doble clic lanzaba dos workers | Guardia por ventana; capturar order_id/usuario_id antes de confirmacion | Qt con Yes/No y cambio de seleccion aprobado |
+| receive_purchase_order | Estado/stock leidos sin locks | FOR UPDATE OF Compras y populate_existing, productos bloqueados por ID ordenado; prevalidacion integral y suma acumulada por producto | SQL dos backends: misma orden recibe una vez; distintas ordenes mismo producto suman ambas |
+| Recepcion / commit / rollback | Coordinador activo ya confirmaba; riesgo de confundir fachada legacy | Modelo muta/flush, consulta_compras captura ID precommit y confirma una vez; rollback ante error SQL | FK invalido revierte stock/estado/movimientos; costos/caja intactos |
+| update_purchase_order | Solo cabecera, commit interno, sin estado | Pendiente bloqueada; sin commit interno; version de proveedor/pago/total/plazo/lineas evita sobrescritura; mutar despues de validar | SQL: linea nueva asociada/precio actual, cantidad editada, rollback FK y conflicto aprobados |
+| Precios y cabecera en UPDATE completo | Riesgo de alterar historico al reutilizar alta | Preservar proveedor, empleado y fecha_creacion; precio de lineas existentes inmutable; nuevas requieren asociacion y precio vigente | No cambio de proveedor ni anulacion contable |
+| Eliminar / delete_purchase_order | Baja fisica sin confirmacion/estado; adaptador sin exito | Confirmacion con ID capturado; bloqueo/estado PENDIENTE en modelo; resultado exito explicito y errores seguros | No borrar recibidas; no se implementa CANCELADA ni reverso de inventario |
+| Exportar/abrir PDF | Relaciones opcionales sin guardia, date tratado como datetime, logo hardcodeado, omision silenciosa de detalle roto | Rutas existentes, campos opcionales/date soportados, escape de datos, buffer nuevo; linea rota rechaza documento | Bytes PDF reales aprobados; visor externo/impresora/maquetacion multipagina no certificados |
+| Errores tecnicos / cierre de workers | Diez lanzamientos mostraban excepciones crudas; flags podian atascar paginacion | Mensajes seguros, recuperar flags/cierre; eliminar logs de DTO completo; adaptadores de error saneados |12 lanzamientos aprobados; cierre no cancela/revierte SQL |
+| ProveedoresModel / Proveedores_productoModel | Consultas legacy y DTOs compactos distintos | Consumidor activo usa snapshots/campos reales y asociacion_snapshot; no agregar relaciones ORM al DTO | Conserva CRUD/importaciones previos; no audita cada consumidor externo |
+| ProductosModel / inventario global | Otros escritores usan lectura seguida de suma/resta sin locks | Compras bloquea productos y no llama esos escritores; sin refactor lateral | Carrera compras-compras verificada; ventas/ajuste legacy vs recepcion sigue pendiente |
+
+### Verificacion y recuperacion
+
+TDD: defectos de clic/seleccion/carrito/locks/editor/visor/filtros/errores reproducidos antes de parche, reutilizando fixtures. Sin datos personales, passwords, impresoras ni procesos externos reales en Qt. Todos los comandos con PYTHONDONTWRITEBYTECODE=1:
+
+- `.venv/Scripts/python.exe -m pytest -q -m unit`:433 aprobadas.
+- `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`:371 aprobadas. Fixtures REF-06/proveedores ahora incluyen proveedor seleccionado, sin relajar dedupe/notificaciones.
+- `.venv/Scripts/python.exe tests/run_postgres_ephemeral.py -q tests/test_modules_postgres.py -k 'purchase_editor_update_sql or purchase_concurrent_receipts or purchase_receipt_stock_sql' --tb=short`:6 aprobadas en PostgreSQL18.4,32 deseleccionadas; dos backends y solapamiento forzado mediante eventos, sin Session compartida. Cluster temporal detenido/eliminado, incluso en ensayo fallido por fixture corregido.
+- `.venv/Scripts/python.exe tests/check_docs_links.py`:529 enlaces/anclas,0 errores. Diagnosticos de controlador/modelo/PDF/tests sin errores. Warning legacy declarative_base conservado.
+
+No100% global: no Alembic/REF-37/empaquetado, ni concurrencia con todos los escritores de stock, ni impresion fisica/render visual del PDF. No hay nuevas columnas/estados ni DDL en aplicacion; metadata solo dentro del esquema de prueba autorizado. Rollback: retirar exclusivamente hunks de esta auditoria y sus pruebas/deltas documentales, preservando cambios ajenos; datos de prueba ya eliminados. El retiro del editor deja C-03 otra vez no disponible; no revertir compras de una instalacion para revertir codigo. Las secciones siguientes conservan el levantamiento historico As-Is y su evidencia previa, no describen el estado actualizado por este incremento.
+
 ## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+### Auditoria DTO y Manejar Precio 2026-11-12
+
+Dictamen: NO100% global de Proveedores/Productos del Proveedor/Compras. Los lotes anteriores cerraban incrementos locales. La prueba manual encontro un modal no recorrido por tests: construir DTO/modal aisladamente no certifica seleccion->boton->modal->confirmacion. La evidencia SQL focalizada de esta seccion permanece vigente solo para sus escenarios, sin certificar carreras ni todos los consumidores.
+
+Correcciones C-09/REF-32/34/36 en [Productos_del_Proveedor.py](../../app/Controller/Productos_del_Proveedor.py): seleccion inicial ausente controlada antes de desreferenciar; proveedor tomado del editor y comprobado contra proveedor_id, sin agregar ORM al DTO; modal recibe precio actual del par y se reemplaza al seleccionar otro producto. Paginacion "es igual" ya no lanza exacta y luego parcial: hay una sola consulta con booleano explicito. Precio confirmado emite PRECIO_ACTUALIZADO, refresca editor y cierra modal; fallo mantiene captura, hace rollback y no expone la excepcion tecnica.
+
+[Regresiones](../../tests/test_suppliers_vertical.py):8 nuevos casos Qt de seleccion vacia/DTO real/modal alternado/precio actual/paginacion exacta-parcial/refresco postcommit/error seguro; mas1 integracion consulta_compras->DTO->tabla real Orden_compra, con UPC/dedupe preservados. Cohorte52 pruebas locales. Defectos reproducidos antes de parche; integracion de Compras caracteriza codigo vigente, no reescribe su modelo.
+
+| Superficie auditada | Estado | Limite de certificacion |
+| --- | --- | --- |
+| CRUD/importacion Proveedores | Incrementos locales y SQL focalizado previos conservados | Todos los FK/borrados y duplicados concurrentes no certificados |
+| Productos proveedor C-09 | Modal/seleccion/paginacion/postcommit corregidos con Qt | Precio del modal con SQL real no ejecutado en esta auditoria |
+| Compras C-01/C-02/C-05 | Escaneo/selector consumen DTO compartido; ticket por UPC y snapshot para PDF | PDF real y todos los consumidores legacy sin cierre integral |
+| Recepcion C-04 | Prevalidacion y evidencia SQL serial existentes | Sin locks/actualizacion condicional/prueba de carrera: REF-40 pendiente |
+| Edicion/baja C-03 | WindowEditarOrdenCompra sigue pass; baja fisica no es anulacion | Edicion/reverso requieren incremento y decision, no se inventan |
+| Infraestructura/seguridad | Workers opt-in y gates locales | REF-37, autorizacion integral, Alembic/empaquetado pendientes |
+
+Contratos revisados: proveedor/representante/categoria mediante snapshots; editor mediante asociacion/producto/catalogos; escaneo/selector de Compras via DTO compartido; detalle por UPC y orden_snapshot con proveedor/empleado/catalogos/detalles para PDF. Fachadas legacy conservan ORM/commit donde existen: no equivalen a rutas migradas ni prueban retiro global del legacy.
+
+Validacion con PYTHONDONTWRITEBYTECODE=1: `.venv/Scripts/python.exe -m pytest -q -m unit`:424 aprobadas; `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`:338 aprobadas; `.venv/Scripts/python.exe tests/check_docs_links.py`:521 enlaces/anclas,0 errores. Diagnosticos y git diff --check de archivos tocados sin errores. Warning legacy declarative_base permanece. Sin nueva conexion PostgreSQL, DDL, cambios de configuracion ni commits. Recuperacion: retirar solo hunks de esta auditoria y sus9 regresiones, conservando lotes/cambios ajenos. No hay datos/esquema que revertir. [Dictamen del plan](../04-plan-de-refactorizacion.md#auditoria-de-consumidores-dto-2026-11-12) y [integracion Productos](spec-01-productos-e-importacion.md) usan el archivo existente; spec-01-productos-y-catalogos.md no existe en el workspace.
 
 Gate SQL focalizado de C-01/C-04/C-07, REF-25/29, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): alta de compra y detalle con FK a codigo_upc, recepcion0.125 con stock5->5.125/estado COMPLETADA/movimiento durable. FK de usuario invalido falla en flush y rollback conserva stock5, orden PENDIENTE y cero movimientos; segunda recepcion serial se rechaza. Importacion real de proveedores agrega dos, omite duplicado y pais31 invalido; CHECK temporal en segunda fila revierte lote completo.
 

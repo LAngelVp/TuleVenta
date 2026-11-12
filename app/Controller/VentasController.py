@@ -235,6 +235,7 @@ class Ventas(QWidget):
         self.ui.btn_PaginarTabla.setEnabled(not self.no_hay_mas_registros_ventas and not self._cargando_mas_ventas)
 
     def seleccionar_venta_realizada(self, current, previus=None):
+        self.saleSelected = None
         if current.isValid():
             registro_venta = self.modeloTablaVentasRealizadas.get_item(current)
             if registro_venta:
@@ -260,7 +261,7 @@ class Ventas(QWidget):
                 estado=self._estado_actual_filtro(),
             )
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Error al consultar ventas: {e}")
+            Mensaje().mensaje_alerta("No se pudo consultar el historial de ventas.")
 
     def _estado_actual_filtro(self):
         estado = (self.ui.cajaOpciones_estadosVentas.currentText() or "").strip()
@@ -368,7 +369,7 @@ class Ventas(QWidget):
             self._actualizar_estado_paginacion()
             if hasattr(self, "id_obtener_ventas"):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_ventas)
-            Mensaje().mensaje_alerta(f"Ocurrió un error al consultar ventas: {e}")
+            Mensaje().mensaje_alerta("No se pudo consultar el historial de ventas.")
 
     def obtener_ventas_query(self, session, texto_busqueda="", estado="TODOS", offset=None, limite=None):
         try:
@@ -386,7 +387,7 @@ class Ventas(QWidget):
         except Exception as e:
             return {
                 "exito": False,
-                "mensaje": f"Error al obtener ventas: {e}",
+                "mensaje": "No se pudo consultar el historial de ventas.",
                 "data": [],
             }
 
@@ -436,7 +437,7 @@ class Ventas(QWidget):
             self.modeloTablaVentasRealizadas.update_data(ventas, reset=not self._append_mode_ventas)
             self._actualizar_estado_paginacion()
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Error al mostrar ventas: {e}")
+            Mensaje().mensaje_alerta("No se pudieron mostrar las ventas.")
 
     def _obtener_metodos_pago(self):
         with Conexion_base_datos() as db:

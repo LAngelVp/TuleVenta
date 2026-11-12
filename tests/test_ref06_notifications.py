@@ -58,7 +58,7 @@ def test_ref06_worker_error_uses_alert(payments):
     payments.controller.mostrar_error_hilo("Error simulado")
 
     payments.messages.mensaje_alerta.assert_called_once_with(
-        "Ocurrio un error en el hilo: Error simulado"
+        "No se pudo registrar el metodo de pago."
     )
     payments.messages.mensaje_informativo.assert_not_called()
 
@@ -84,7 +84,7 @@ def test_ref06_worker_startup_failure_uses_alert(payments, monkeypatch):
     payments.controller.agregar_metodo_pago()
 
     payments.messages.mensaje_alerta.assert_called_once_with(
-        "Ocurrio un error en el hilo: Error simulado"
+        "No se pudo iniciar el registro del metodo de pago."
     )
     payments.messages.mensaje_informativo.assert_not_called()
 
@@ -112,6 +112,7 @@ def test_ref06_purchase_line_notifies_once_and_rejects_duplicate(purchase_order)
     association = ProductoProveedor(producto=product, proveedor_id=13, precio_venta=10.0)
     result = {"exito": True, "data": association, "mensaje": "OK"}
     controller = purchase_order.controller
+    controller.proveedor = SimpleNamespace(id=13)
 
     assert controller.agregarProductoALConjuntoTabla(result) is True
 

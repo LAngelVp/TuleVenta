@@ -3,6 +3,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from .Hilo_consultas import WorkerDB
+from .ImagenEstatica import mostrar_imagen_estatica
 from ..Model.EmpleadoModel import EmpleadosModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from ..Model.PuestoModel import PuestoModel
@@ -50,22 +51,8 @@ class Perfil(QWidget):
 
     def _actualizar_foto_perfil(self, ruta_foto=None):
         self._ruta_foto_perfil = ruta_foto or None
-        if not self._ruta_foto_perfil:
-            self.ui.foto_empleadoperfil.clear()
-            return
-
-        pixmap = QPixmap(self._ruta_foto_perfil)
-        if pixmap.isNull():
+        if not mostrar_imagen_estatica(self.ui.foto_empleadoperfil, self._ruta_foto_perfil):
             self._ruta_foto_perfil = None
-            self.ui.foto_empleadoperfil.clear()
-            return
-
-        pixmap_escalado = pixmap.scaled(
-            self.ui.foto_empleadoperfil.size(),
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        self.ui.foto_empleadoperfil.setPixmap(pixmap_escalado)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

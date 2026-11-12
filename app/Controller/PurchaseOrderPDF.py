@@ -9,6 +9,16 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from datetime import datetime
 from io import BytesIO
+from xml.sax.saxutils import escape
+from app.runtime_paths import ruta_recurso
+
+
+def texto_pdf(entidad, campo):
+    return escape(str(getattr(entidad, campo, None) or ""))
+
+
+def fecha_pdf(fecha):
+    return str(fecha.date() if isinstance(fecha, datetime) else fecha or "")
 
 class NumberedCanvas(reportlab.pdfgen.canvas.Canvas):
     """Canvas personalizado para agregar número de página"""
@@ -70,6 +80,7 @@ class PurchaseOrderPDF:
         if not self.data:
             print("Error: No hay datos para generar el PDF")
             return
+        self.buffer = BytesIO()
         
         # DIMENSIONES DE LA HOJA
         ancho_total = A4[0]
@@ -131,7 +142,7 @@ class PurchaseOrderPDF:
         self.ancho_logo = self.ancho_util * 0.2
         self.ancho_titulo = self.ancho_util * 0.8
         
-        logo_path = "C:/Users/Angel Rodriguez/Microsoft/software-punto-de-venta/app/Source/Icons/logos/cuadrado_fondo.png"
+        logo_path = str(ruta_recurso("app", "Source", "Icons", "logos", "cuadrado_fondo.png"))
         if not os.path.exists(logo_path):
             logo_path = None
         
@@ -158,24 +169,26 @@ class PurchaseOrderPDF:
         self.content.append(Spacer(1, 15))
         
         # Información de empresa y orden
-        self.nombreEmpresa = self.data.empleado.sucursal.nombre_sucursal if self.data.empleado.sucursal.nombre_sucursal else ""
-        self.razonSocialEmpresa = self.data.empleado.sucursal.razon_social if self.data.empleado.sucursal.razon_social else ""
-        self.sucursalRFC = self.data.empleado.sucursal.rfc if self.data.empleado.sucursal.rfc else ""
-        self.direccionEmpresa = f"{self.data.empleado.sucursal.direccion}, CP {self.data.empleado.sucursal.codigo_postal}, {self.data.empleado.sucursal.ciudad}, {self.data.empleado.sucursal.estado}, {self.data.empleado.sucursal.pais}" if self.data.empleado.sucursal.direccion else ""
-        self.telefonoEmpresa = self.data.empleado.sucursal.num_telefono if self.data.empleado.sucursal.num_telefono else ""
-        self.correoEmpresa = self.data.empleado.correo_electronico if self.data.empleado.correo_electronico else ""
-        self.departamentoRealizo = f"{self.data.empleado.departamento.nombre}" if self.data.empleado.departamento.nombre else ""
-        self.usuarioRealizo = f"{self.data.empleado.nombre} {self.data.empleado.apellido_paterno} {self.data.empleado.apellido_materno}" if self.data.empleado.nombre else ""
-        
-        self.fechaOrden = f"{self.data.fecha_creacion.date()}" if self.data.fecha_creacion else ""
-        self.proveedor = self.data.proveedor.nombre if self.data.proveedor.nombre else ""
-        self.plazoPago = self.data.plazo_pago if self.data.plazo_pago else ""
-        self.metodoPago = self.data.metodos_de_pago.nombre if self.data.metodos_de_pago.nombre else ""
-        self.fechaVencimientoCompra = f"{self.data.fecha_vencimiento.date()}" if self.data.fecha_vencimiento else ""
-        self.direccionProveedor = f"{self.data.proveedor.calles}, {self.data.proveedor.avenidas}, colonia {self.data.proveedor.colonia}, CP {self.data.proveedor.codigo_postal}, {self.data.proveedor.ciudad}, {self.data.proveedor.estado}, {self.data.proveedor.pais}" if self.data.proveedor.calles else ""
-        self.telefonoProveedor = self.data.proveedor.telefono if self.data.proveedor.telefono else ""
-        self.correoProveedor = self.data.proveedor.correo if self.data.proveedor.correo else ""
-        self.puestoSolicitante = f"{self.data.empleado.puesto.nombre}" if self.data.empleado.puesto.nombre else ""
+        empleado = self.data.empleado
+        sucursal = getattr(empleado, "sucursal", None)
+        proveedor = self.data.proveedor
+        self.nombreEmpresa = texto_pdf(sucursal, "nombre_sucursal")
+        self.razonSocialEmpresa = texto_pdf(sucursal, "razon_social")
+        self.sucursalRFC = texto_pdf(sucursal, "rfc")
+        self.direccionEmpresa = ", ".join(texto_pdf(sucursal, campo) for campo in ("direccion", "codigo_postal", "ciudad", "estado", "pais")) if getattr(sucursal, "direccion", None) else ""
+        self.telefonoEmpresa = texto_pdf(sucursal, "num_telefono")
+        self.correoEmpresa = texto_pdf(empleado, "correo_electronico")
+        self.departamentoRealizo = texto_pdf(getattr(empleado, "departamento", None), "nombre")
+        self.usuarioRealizo = " ".join(texto_pdf(empleado, campo) for campo in ("nombre", "apellido_paterno", "apellido_materno"))
+        self.fechaOrden = fecha_pdf(self.data.fecha_creacion)
+        self.proveedor = texto_pdf(proveedor, "nombre")
+        self.plazoPago = texto_pdf(self.data, "plazo_pago")
+        self.metodoPago = texto_pdf(self.data.metodos_de_pago, "nombre")
+        self.fechaVencimientoCompra = fecha_pdf(self.data.fecha_vencimiento)
+        self.direccionProveedor = ", ".join(texto_pdf(proveedor, campo) for campo in ("calles", "avenidas", "colonia", "codigo_postal", "ciudad", "estado", "pais")) if getattr(proveedor, "calles", None) else ""
+        self.telefonoProveedor = texto_pdf(proveedor, "telefono")
+        self.correoProveedor = texto_pdf(proveedor, "correo")
+        self.puestoSolicitante = texto_pdf(getattr(empleado, "puesto", None), "nombre")
         
         datos_tabla_dos_columnas = [
             [Paragraph("<b>INFORMACIÓN DE EMPRESA</b>", estilo_compacto),
@@ -281,19 +294,18 @@ class PurchaseOrderPDF:
                 
                 # Agregar fila de datos
                 datos_longtable.append([
-                    Paragraph(codigo, estilo_compacto),
-                    Paragraph(nombre, estilo_compacto),
-                    Paragraph(descripcion, estilo_compacto),
-                    Paragraph(presentacion, estilo_compacto),
-                    Paragraph(unidad_nombre, estilo_compacto),
+                    Paragraph(escape(codigo), estilo_compacto),
+                    Paragraph(escape(nombre), estilo_compacto),
+                    Paragraph(escape(descripcion), estilo_compacto),
+                    Paragraph(escape(presentacion), estilo_compacto),
+                    Paragraph(escape(unidad_nombre), estilo_compacto),
                     Paragraph(cantidad, estilo_compacto),
                     Paragraph(precio, estilo_compacto),
                     Paragraph(subtotal_str, estilo_compacto)
                 ])
                 
             except Exception as e:
-                print(f"Error al procesar producto: {e}")
-                continue
+                raise ValueError("No se pudo generar el PDF: detalle de compra invalido.") from e
         
         # 3. FILA DE TOTAL (se agrega como última fila)
         estilo_total = ParagraphStyle(

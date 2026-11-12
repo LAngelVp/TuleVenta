@@ -5,6 +5,542 @@ from unittest.mock import Mock
 import pytest
 
 
+@pytest.fixture
+def purchase_window(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_proveedores", lambda self: None)
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_metodos_pagos", lambda self: None)
+    window = module.Orden_compra(usuario={"id_empleado": 2})
+    qtbot.addWidget(window)
+    window.proveedor = SimpleNamespace(id=1, nombre="SUPPLIER")
+    return window
+
+
+def purchase_pair(number=1, supplier=1):
+    from app.Model.Proveedores_ProductosModel import AsociacionProveedorDTO, ProductoProveedorDTO
+
+    product = ProductoProveedorDTO(number, f"000{number}", "PRODUCT", "DESCRIPTION", 99, None, None)
+    return AsociacionProveedorDTO(number, supplier, 12.5, product)
+
+
+def receipt_session(order):
+    from app.Model.BaseDatosModel import Compras
+
+    session = Mock()
+    order_query = Mock()
+    product_query = Mock()
+    for query in (order_query, product_query):
+        for method in ("options", "filter", "with_for_update", "populate_existing", "order_by"):
+            getattr(query, method).return_value = query
+    order_query.first.return_value = order
+    product_query.all.return_value = list({detail.producto.id: detail.producto for detail in order.detalles if detail.producto}.values())
+    session.query.side_effect = lambda entity: order_query if entity is Compras else product_query
+    return session
+
+
+@pytest.mark.qt
+def test_purchase_editor_loads_snapshot_and_routes_update(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_proveedores", lambda self: None)
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_metodos_pagos", lambda self: None)
+    pair = purchase_pair()
+    order = SimpleNamespace(id=7, proveedor_id=1, proveedor=SimpleNamespace(id=1, nombre="SUPPLIER"),
+        estado="PENDIENTE", empleado_id=2, fecha_creacion=date(2026, 11, 12), fecha_compra=None,
+        total_compra=1.5625, metodos_pago_id=3, plazo_pago=0, fecha_vencimiento=None,
+        detalles=(SimpleNamespace(producto=pair.producto, producto_id=pair.producto.codigo_upc,
+                                   cantidad=0.125, precio_unitario=12.5, subtotal=1.5625),))
+    window = module.WindowEditarOrdenCompra(orden=order, usuario={"id_empleado": 2})
+    qtbot.addWidget(window)
+    assert window.modeloTablaProductosOrden.rowCount() == 1
+    assert window.modeloTablaProductosOrden.data(window.modeloTablaProductosOrden.index(0, 6)) == "0.125"
+    assert window.ordenCompraUI.txt_buscarproveedor.isReadOnly()
+    query = module.capturar_consulta(window, window._Orden_compra__createOrder_query)
+    assert query.keywords["operacion"] == "actualizar_orden_compra_query"
+
+
+@pytest.mark.unit
+def test_purchase_update_adapter_commits_once(monkeypatch):
+    import app.Model.OrdenesDeCompraModel as module
+
+    model = Mock()
+    model.update_purchase_order.return_value = True
+    monkeypatch.setattr(module, "OrdenesDeCompraModel", Mock(return_value=model))
+    session = Mock()
+    result = module.consulta_compras(session, "actualizar_orden_compra_query", None,
+                                     contentData={"id": 7}, orden_items=[], permisos=("MODIFICARCOMPRA",))
+    assert result.exito
+    assert result.datos["resultado"] == 7
+    session.commit.assert_called_once_with()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("conflict", [False, True])
+def test_purchase_update_replaces_lines_preserves_price_and_checks_version(conflict):
+    from app.Model.BaseDatosModel import Compras, Productos, Detalles_compras
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel, version_orden
+
+    product = Productos(id=1, codigo_upc="0001", existencia=5)
+    line = Detalles_compras(producto_id="0001", producto=product, cantidad=1, precio_unitario=12.5, subtotal=12.5)
+    order = Compras(id=7, estado="PENDIENTE", proveedor_id=1, empleado_id=2, metodos_pago_id=3,
+                   total_compra=12.5, plazo_pago=0, detalles=[line])
+    version = version_orden(order)
+    if conflict:
+        order.total_compra = 25
+    session = Mock()
+    session.query.return_value.filter.return_value.with_for_update.return_value.populate_existing.return_value.first.return_value = order
+    header = dict(id=7, proveedor=SimpleNamespace(id=1), empleado=2, metodo_pago=3,
+                  fecha_compra=None, total_compra=25, plazo_pago=0, fecha_vencimiento=None,
+                  version_orden=version, detalles=[dict(producto=SimpleNamespace(codigo_upc="0001"),
+                                                     cantidad=2, precio_unitario=12.5, subtotal=25)])
+    result = OrdenesDeCompraModel(session).update_purchase_order(header)
+    assert result is not conflict
+    assert order.detalles[0].cantidad == (1 if conflict else 2)
+    assert product.existencia == 5
+    session.commit.assert_not_called()
+
+
+@pytest.mark.qt
+def test_purchase_editor_consumes_real_order_snapshot(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+    from app.Model.BaseDatosModel import Compras, Productos, Proveedores, Detalles_compras
+    from app.Model.OrdenesDeCompraModel import orden_snapshot
+
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_proveedores", lambda self: None)
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_metodos_pagos", lambda self: None)
+    product = Productos(id=1, codigo_upc="0001", precio=99)
+    order = Compras(id=7, estado="PENDIENTE", proveedor_id=1, proveedor=Proveedores(id=1, nombre="SUPPLIER"),
+                    empleado_id=2, metodos_pago_id=3, plazo_pago=0, total_compra=12.5,
+                    detalles=[Detalles_compras(producto_id="0001", producto=product, cantidad=1,
+                                               precio_unitario=12.5, subtotal=12.5)])
+    window = module.WindowEditarOrdenCompra(orden=orden_snapshot(order), usuario={"id_empleado": 2})
+    qtbot.addWidget(window)
+    assert window.modeloTablaProductosOrden.rowCount() == 1
+
+
+@pytest.mark.qt
+def test_purchase_cart_remove_clear_buttons_and_subtotal(purchase_window):
+    window = purchase_window
+    window.btn_quitar_producto.click()
+    assert window.modeloTablaProductosOrden.rowCount() == 0
+    for number in (1, 2):
+        window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair(number)})
+    window.modeloTablaProductosOrden.actualizarCelda(1, 6, 2)
+    assert window.modeloTablaProductosOrden.data(window.modeloTablaProductosOrden.index(1, 7)) == "25.0"
+    window.ordenCompraUI.tabla_ordencompra.setCurrentIndex(window.modeloTablaProductosOrden.index(0, 0))
+    window.btn_quitar_producto.click()
+    assert window.modeloTablaProductosOrden.rowCount() == 1
+    assert window.modeloTablaProductosOrden.data(window.modeloTablaProductosOrden.index(0, 6)) == "2"
+    window.btn_limpiar_orden.click()
+    assert not window.codigos_agregados
+    assert window.modeloTablaProductosOrden.rowCount() == 0
+
+
+@pytest.mark.qt
+def test_purchase_save_double_click_starts_once(monkeypatch, purchase_window):
+    import app.Controller.ComprasController as module
+
+    create = Mock(return_value="create-test")
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", create)
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=Mock()))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    purchase_window.manejadorModal = Mock()
+    purchase_window.createOrder({}, [])
+    purchase_window.createOrder({}, [])
+    create.assert_called_once()
+
+
+@pytest.mark.unit
+def test_purchase_update_coordinator_requires_permission(monkeypatch):
+    import app.Model.OrdenesDeCompraModel as module
+
+    model = Mock()
+    monkeypatch.setattr(module, "OrdenesDeCompraModel", Mock(return_value=model))
+    result = module.consulta_compras(Mock(), "actualizar_orden_compra_query", None, contentData={"id": 7}, orden_items=[])
+    assert not result.exito
+    model.update_purchase_order.assert_not_called()
+
+
+@pytest.mark.qt
+def test_purchase_details_button_without_selection(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    factory = Mock()
+    monkeypatch.setattr(module, "WindowDetallesOrdenCompra", factory)
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window.btn_ver_detalles.click()
+    factory.assert_not_called()
+
+
+@pytest.mark.qt
+def test_purchase_details_renders_snapshot(qtbot):
+    import app.Controller.ComprasController as module
+
+    pair = purchase_pair()
+    order = SimpleNamespace(id=7, proveedor=SimpleNamespace(nombre="SUPPLIER"), estado="PENDIENTE",
+                            detalles=(SimpleNamespace(producto=pair.producto, cantidad=0.125,
+                                                      precio_unitario=12.5, subtotal=1.5625),))
+    window = module.WindowDetallesOrdenCompra(orden=order)
+    qtbot.addWidget(window)
+    assert window.modelo.rowCount() == 1
+    assert window.modelo.data(window.modelo.index(0, 0)) == "0001"
+    assert window.modelo.data(window.modelo.index(0, 7)) == "1.5625"
+
+
+@pytest.mark.qt
+def test_purchase_completed_date_columns_render(qtbot):
+    import app.Controller.ComprasController as module
+
+    window = module.Compras()
+    qtbot.addWidget(window)
+    order = SimpleNamespace(id=7, proveedor=None, empleado=None, fecha_creacion="2026-11-12",
+                            fecha_compra="2026-11-13", total_compra=12.5, estado="COMPLETADA")
+    window.modeloTablaOrdenesDeCompraRealizadas.update_data([order])
+    for column, expected in ((2, "2026-11-12"), (3, "2026-11-13")):
+        assert window.modeloTablaOrdenesDeCompraRealizadas.data(window.modeloTablaOrdenesDeCompraRealizadas.index(0, column)) == expected
+
+
+@pytest.mark.qt
+def test_purchase_late_filter_result_is_ignored(qtbot):
+    import app.Controller.ComprasController as module
+
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window._generaciones_compras["PENDIENTE"] = 2
+    window.modeloTablaOrdenesDeCompraPendientes = Mock()
+    window.compras_tabla_compras({"exito": True, "data": [SimpleNamespace(id=7)],
+                                 "state": "PENDIENTE", "generacion": 1, "offset": 0, "limit": 100})
+    window.modeloTablaOrdenesDeCompraPendientes.update_data.assert_not_called()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("exact", [False, True])
+def test_purchase_selector_exact_mode_is_preserved(monkeypatch, qtbot, exact):
+    import app.Controller.ComprasController as module
+
+    worker = Mock()
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(return_value="selector-test"))
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=worker))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    window = module.SeleccionProductosProveedor(proveedor=SimpleNamespace(id=1))
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    window.modo_busqueda_nombre.setCurrentIndex(int(exact))
+    window.ui.txt_nombredelproducto.setText("PRODUCT")
+    window.aplicarFiltro()
+    assert worker.ejecutar.call_args.kwargs["busqueda_exacta"] is exact
+    worker.reset_mock()
+    window.consulta_paginacion_productos_del_proveedor()
+    worker.ejecutar.assert_called_once()
+    assert worker.ejecutar.call_args.kwargs["busqueda_exacta"] is exact
+
+
+@pytest.mark.qt
+def test_purchase_pdf_failure_message_is_safe(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+
+    message = Mock()
+    monkeypatch.setattr(module, "Mensaje", Mock(return_value=message))
+    monkeypatch.setattr(module, "PurchaseOrderPDF", Mock(side_effect=RuntimeError("synthetic private detail")))
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window.orderSelected = SimpleNamespace(id=7)
+    window.generar_orden_compra_pdf()
+    assert "private" not in str(message.mensaje_alerta.call_args)
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("action", ["recibirOrdenCompra", "orderDelete"])
+@pytest.mark.parametrize("confirm", [False, True])
+def test_purchase_confirmation_captures_original_selection(monkeypatch, qtbot, action, confirm):
+    import app.Controller.ComprasController as module
+
+    message = Mock()
+    monkeypatch.setattr(module, "Mensaje", Mock(return_value=message))
+    worker = Mock()
+    create = Mock(return_value="action-test")
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", create)
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=worker))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    window = module.Compras(usuario={"id_usuario": 1})
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    window.orderSelected = SimpleNamespace(id=7, estado="PENDIENTE")
+
+    def question(*args):
+        window.orderSelected = SimpleNamespace(id=8, estado="PENDIENTE")
+        return module.QMessageBox.Yes if confirm else module.QMessageBox.No
+
+    message.mensaje_pregunta.side_effect = question
+    getattr(window, action)()
+    assert create.call_count == int(confirm)
+    if confirm:
+        values = worker.ejecutar.call_args.kwargs
+        assert (values["order_id"] if action == "recibirOrdenCompra" else values["order"].id) == 7
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("state", ["pendientes", "realizadas"])
+def test_purchase_order_filters_page_once_with_same_criteria(monkeypatch, qtbot, state):
+    import app.Controller.ComprasController as module
+
+    worker = Mock()
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(return_value="filter-test"))
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=worker))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    suffix = "Pendiente" if state == "pendientes" else "Realizada"
+    getattr(window.controlOrdenesDeCompra, f"txt_idCompra{suffix}").setText("7")
+    getattr(window, "buscarOrdenCompraPendiente" if state == "pendientes" else "buscarOrdenCompraRealizada")()
+    worker.ejecutar.assert_called_once()
+    query = worker.ejecutar.call_args.args[0]
+    status = "PENDIENTE" if state == "pendientes" else "COMPLETADA"
+    criteria = query.keywords["snapshot"][status][2]
+    assert criteria["id_orden_compra"] == 7
+    setattr(window, f"cantidad_inicial_consulta_compras_{state}", 100)
+    worker.reset_mock()
+    getattr(window, "paginarOrdenesDeCompraPendientes" if state == "pendientes" else "paginarOrdenesDeCompraRealizadas")()
+    worker.ejecutar.assert_called_once()
+    next_query = worker.ejecutar.call_args.args[0]
+    assert next_query.keywords["snapshot"][status] == (100, 100, criteria)
+
+
+@pytest.mark.qt
+def test_purchase_selector_show_loads_once(monkeypatch, qtbot):
+    from PySide6.QtGui import QShowEvent
+    import app.Controller.ComprasController as module
+
+    window = module.SeleccionProductosProveedor(proveedor=SimpleNamespace(id=1))
+    qtbot.addWidget(window)
+    load = Mock()
+    monkeypatch.setattr(window, "consultarProductosProveedor_funcion", load)
+    window.showEvent(QShowEvent())
+    window.showEvent(QShowEvent())
+    load.assert_called_once_with()
+
+
+@pytest.mark.qt
+def test_purchase_quantity_invalid_selection_does_not_open(monkeypatch, purchase_window):
+    from PySide6.QtCore import QModelIndex
+    import app.Controller.ComprasController as module
+
+    factory = Mock()
+    monkeypatch.setattr(module, "CantidadProductosComprasController", factory)
+    purchase_window.escojer_cantidad_productos(QModelIndex())
+    factory.assert_not_called()
+
+
+@pytest.mark.qt
+def test_purchase_cart_add_preserves_quantity_and_clear_resets(purchase_window):
+    from PySide6.QtCore import Qt
+
+    window = purchase_window
+    window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair()})
+    window.modeloTablaProductosOrden.actualizarCelda(0, 6, 0.125)
+    window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair(2)})
+    assert window.modeloTablaProductosOrden.data(window.modeloTablaProductosOrden.index(0, 6), Qt.DisplayRole) == "0.125"
+    window.limpiar_productos_seleccionados()
+    window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair(3)})
+    assert window.modeloTablaProductosOrden.data(window.modeloTablaProductosOrden.index(0, 6)) == "1"
+
+
+@pytest.mark.qt
+def test_purchase_supplier_change_clears_cart_and_rejects_old_callback(purchase_window):
+    window = purchase_window
+    window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair()})
+    window.proveedores_generales_del_sistema_dict = {2: SimpleNamespace(id=2, nombre="OTHER")}
+    window._Orden_compra__proveedor_seleccionado("OTHER")
+    assert not window.codigos_agregados
+    assert window.agregarProductoALConjuntoTabla({"exito": True, "data": purchase_pair()}) is False
+    assert window.modeloTablaProductosOrden.rowCount() == 0
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("action", ["editOrder", "orderDelete", "recibirOrdenCompra", "generar_orden_compra_pdf"])
+def test_purchase_actions_without_selection(monkeypatch, qtbot, action):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    create = Mock()
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", create)
+    window = module.Compras()
+    qtbot.addWidget(window)
+    getattr(window, action)()
+    create.assert_not_called()
+
+
+@pytest.mark.qt
+def test_purchase_receive_double_click_starts_one_worker(monkeypatch, qtbot):
+    from PySide6.QtWidgets import QMessageBox
+    import app.Controller.ComprasController as module
+
+    message = Mock()
+    message.mensaje_pregunta.return_value = QMessageBox.Yes
+    monkeypatch.setattr(module, "Mensaje", Mock(return_value=message))
+    create = Mock(return_value="receipt-test")
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", create)
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=Mock()))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    window = module.Compras(usuario={"id_usuario": 1})
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    window.orderSelected = SimpleNamespace(id=7, estado="PENDIENTE")
+    window.recibirOrdenCompra()
+    window.recibirOrdenCompra()
+    create.assert_called_once()
+    window.mostrar_estado_hilo({"exito": False, "mensaje": "Error"})
+    assert not window._recepcion_en_curso
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("state", ["pendientes", "realizadas"])
+def test_purchase_refresh_clears_search_mode(monkeypatch, qtbot, state):
+    import app.Controller.ComprasController as module
+
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window.controlOrdenesDeCompra.contenedortabglobal.setCurrentIndex(1 if state == "pendientes" else 0)
+    setattr(window, f"nueva_busqueda_compras_{state}", True)
+    monkeypatch.setattr(window, f"obtener_compras_{state}_hilo", Mock())
+    window.refrescar_tabla_orden_compra()
+    assert getattr(window, f"nueva_busqueda_compras_{state}") is False
+
+
+@pytest.mark.unit
+def test_purchase_delete_completed_is_rejected():
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel
+
+    session = Mock()
+    session.query.return_value.filter.return_value.with_for_update.return_value.populate_existing.return_value.first.return_value = SimpleNamespace(id=7, estado="COMPLETADA")
+    assert OrdenesDeCompraModel(session).delete_purchase_order(7) is False
+    session.delete.assert_not_called()
+
+
+@pytest.mark.unit
+def test_purchase_update_has_no_internal_commit():
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel
+
+    session = Mock()
+    order = SimpleNamespace(id=7, estado="PENDIENTE")
+    session.query.return_value.filter.return_value.with_for_update.return_value.populate_existing.return_value.first.return_value = order
+    assert OrdenesDeCompraModel(session).update_purchase_order({
+        "id": 7, "proveedor": SimpleNamespace(id=1), "fecha_compra": None, "empleado": 2})
+    assert order.proveedor_id == 1
+    session.commit.assert_not_called()
+
+
+@pytest.mark.unit
+def test_purchase_receipt_locks_order_and_products_and_rejects_second():
+    from app.Model.BaseDatosModel import Compras, Productos
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel
+
+    product = SimpleNamespace(id=1, existencia=10)
+    order = SimpleNamespace(id=7, estado="PENDIENTE", detalles=[
+        SimpleNamespace(producto=product, producto_id="0001", cantidad=0.125)])
+    session = Mock()
+    order_query = Mock()
+    product_query = Mock()
+    for query in (order_query, product_query):
+        for method in ("options", "filter", "with_for_update", "populate_existing", "order_by"):
+            getattr(query, method).return_value = query
+    order_query.first.return_value = order
+    product_query.all.return_value = [product]
+    session.query.side_effect = lambda entity: order_query if entity is Compras else product_query
+    model = OrdenesDeCompraModel(session)
+    assert model.receive_purchase_order(7, 1, propagar=True)[1] is True
+    assert product.existencia == 10.125
+    assert model.receive_purchase_order(7, 1, propagar=True)[1] is False
+    order_query.with_for_update.assert_called_with(of=Compras)
+    product_query.with_for_update.assert_called_once_with(of=Productos)
+    session.add.assert_called_once()
+    session.commit.assert_not_called()
+
+
+@pytest.mark.unit
+def test_purchase_pdf_optional_relations_and_date_are_supported():
+    from app.Model.BaseDatosModel import Compras
+    from app.Model.OrdenesDeCompraModel import orden_snapshot
+    from app.Controller.PurchaseOrderPDF import PurchaseOrderPDF
+
+    order = Compras(id=7, total_compra=0, estado="PENDIENTE", fecha_creacion=date(2026, 11, 12))
+    generator = PurchaseOrderPDF(orden_snapshot(order))
+    generator.generar_pdf()
+    assert generator.get_pdf_bytes().startswith(b"%PDF-")
+
+
+@pytest.mark.unit
+def test_purchase_pdf_does_not_silently_omit_broken_line():
+    from app.Controller.PurchaseOrderPDF import PurchaseOrderPDF
+
+    generator = PurchaseOrderPDF(SimpleNamespace(detalles=[SimpleNamespace(subtotal=12, producto=None)]))
+    generator.ancho_util = 550
+    with pytest.raises(ValueError):
+        generator._generar_tabla_productos()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("kind", ["nombre", "codigo"])
+def test_purchase_selector_filter_and_pagination_launch_once(monkeypatch, qtbot, kind):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    worker = Mock()
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(return_value="selector-test"))
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=worker))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    window = module.SeleccionProductosProveedor(proveedor=SimpleNamespace(id=1))
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    getattr(window.ui, "txt_nombredelproducto" if kind == "nombre" else "txt_codigodelproducto").setText("PRODUCT" if kind == "nombre" else "0001")
+    window.ui.btn_btn_aplicarFiltro.click()
+    worker.ejecutar.assert_called_once()
+    snapshot = worker.ejecutar.call_args.kwargs["funcion"].keywords["snapshot"]
+    window.productos_proveedores_tabla_compras({"exito": True, "data": [purchase_pair()], "offset": 0, "limit": 1})
+    window.no_hay_mas_registros_productos_proveedor_compras = False
+    worker.reset_mock()
+    window.ui.btn_btn_paginarProductosProveedor.click()
+    worker.ejecutar.assert_called_once()
+    next_snapshot = worker.ejecutar.call_args.kwargs["funcion"].keywords["snapshot"]
+    assert next_snapshot[0] == snapshot[0]
+    assert next_snapshot[1] == 1
+    assert next_snapshot[3:] == snapshot[3:]
+
+
+@pytest.mark.qt
+def test_purchase_create_button_opens_dialog(monkeypatch, qtbot):
+    import app.Controller.ComprasController as module
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    dialog = Mock()
+    factory = Mock(return_value=dialog)
+    monkeypatch.setattr(module, "Orden_compra", factory)
+    window = module.Compras(usuario={"id_empleado": 2})
+    qtbot.addWidget(window)
+    window.controlOrdenesDeCompra.btn_btn_agregar.click()
+    factory.assert_called_once_with(parent=window, usuario=window.usuario)
+    dialog.exec_.assert_called_once_with()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("kind", ["pendiente", "realizada"])
+def test_purchase_invalid_selection_clears_old_order(qtbot, kind):
+    from PySide6.QtCore import QModelIndex
+    import app.Controller.ComprasController as module
+
+    window = module.Compras()
+    qtbot.addWidget(window)
+    window.orderSelected = SimpleNamespace(id=7)
+    getattr(window, f"seleccionar_orden_compra_{kind}")(QModelIndex())
+    assert window.orderSelected is None
+
+
 @pytest.mark.qt
 @pytest.mark.parametrize("failure", [False, True])
 def test_purchase_commit_does_not_touch_ticket(monkeypatch, failure):
@@ -47,8 +583,7 @@ def test_receipt_invalid_line_does_not_mutate_stock(quantity):
         SimpleNamespace(producto=product, producto_id="001", cantidad=0.125),
         SimpleNamespace(producto=product, producto_id="001", cantidad=quantity),
     ])
-    session = Mock()
-    session.query.return_value.options.return_value.filter.return_value.first.return_value = order
+    session = receipt_session(order)
     result = OrdenesDeCompraModel(session).receive_purchase_order(7, 1)
     assert result[1] is False
     assert product.existencia == 10
@@ -304,7 +839,7 @@ def test_all_purchase_launch_failures_close_wait(monkeypatch, qtbot, kind):
     cargar_proveedores = module.Orden_compra._Orden_compra__obtener_proveedores
     monkeypatch.setattr(module, "Mensaje", Mock())
     module.Mensaje().mensaje_pregunta.return_value = module.QMessageBox.Yes
-    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(side_effect=RuntimeError("test")))
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(side_effect=RuntimeError("synthetic private detail")))
     monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_proveedores", lambda self: None)
     monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_metodos_pagos", lambda self: None)
     if kind in ("pending", "completed", "receive", "delete"):
@@ -330,6 +865,7 @@ def test_all_purchase_launch_failures_close_wait(monkeypatch, qtbot, kind):
     window.manejadorModal = Mock()
     launch()
     window.manejadorModal.cerrar_modal.assert_called_once_with()
+    assert "private" not in str(module.Mensaje().mensaje_alerta.call_args_list)
 
 
 @pytest.mark.qt
@@ -425,8 +961,7 @@ def test_receipt_fractional_success_changes_only_stock_and_state():
     order = SimpleNamespace(id=7, estado="PENDIENTE", detalles=[
         SimpleNamespace(producto=product, producto_id="001", cantidad=0.125),
     ])
-    session = Mock()
-    session.query.return_value.options.return_value.filter.return_value.first.return_value = order
+    session = receipt_session(order)
     model = OrdenesDeCompraModel(session)
     assert model.receive_purchase_order(7, 2, propagar=True)[1] is True
     assert product.existencia == 10.125

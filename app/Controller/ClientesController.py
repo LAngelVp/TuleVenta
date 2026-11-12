@@ -1,3 +1,4 @@
+from .ImagenEstatica import mostrar_imagen_estatica
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
@@ -628,10 +629,7 @@ class Clientes(QWidget):
         self.foto_cliente, _ = QFileDialog.getOpenFileName(self, 'SELECCIONA UNA IMAGEN', ' ', 'Archivo de Imagen (*.png *.jpg *.jpeg);; Todos los archivos (*)', options=options)
         if self.foto_cliente:
             self.WindowClient.label_wpc_fotocliente.setText(self.foto_cliente)
-            pixmap = QPixmap(self.foto_cliente)
-            self.WindowClient.label_wpc_fotocliente.setPixmap(pixmap)
-            self.WindowClient.label_wpc_fotocliente.setScaledContents(True)
-            self.WindowClient.label_wpc_fotocliente.adjustSize()
+            mostrar_imagen_estatica(self.WindowClient.label_wpc_fotocliente, self.foto_cliente)
 
     def agregar_cliente(self):
         if self.WindowClient.btnRadio_wpc_clienteFisico.isChecked():
@@ -1598,8 +1596,7 @@ class Clientes(QWidget):
                     datos["numero de identificacion"].setText(campo.num_identificacion)
                     datos["ocupacion"].setText(campo.ocupacion)
                     datos["ingresos"].setValue(campo.ingresos)
-                    if campo.foto is not None and campo.foto != "":
-                        datos["foto"].setPixmap(QPixmap(campo.foto).scaled(datos["foto"].size()))
+                    if mostrar_imagen_estatica(datos["foto"], campo.foto):
                         self.foto_cliente = campo.foto
                     else:
                         self.WindowClient.label_wpc_fotocliente.setText(QCoreApplication.translate("Control_Clientes", u"<html><head/><body><p align=\"center\"><img src=\":/Icons/IconosSVG/subir_imagen.png\" width=\"90\" height=\"80\"/></p><p align=\"center\"><span style=\" font-size:16pt; font-weight:bold;font-family:Arial;\">Cargar Imagen</span></p></body></html>", None))

@@ -6,6 +6,45 @@ import pytest
 
 
 @pytest.mark.qt
+def test_history_invalid_selection_forgets_previous_sale():
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from app.Controller.VentasController import Ventas
+
+    controller = SimpleNamespace(saleSelected=object(), modeloTablaVentasRealizadas=Mock())
+    Ventas.seleccionar_venta_realizada(controller, Mock(isValid=lambda: False))
+    assert controller.saleSelected is None
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("failure", ["launch", "error", "payload", "hide"])
+def test_payment_failure_is_safe_and_closes_loading(monkeypatch, qtbot, failure):
+    from unittest.mock import Mock
+    import app.Controller.MetodosPagoController as module
+
+    messages = Mock()
+    monkeypatch.setattr(module, "Mensaje", Mock(return_value=messages))
+    window = module.MetodosPagoController()
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    secret = "synthetic-private-error"
+    if failure == "launch":
+        window.metodo_pago_ui.txt_nombre.setText("EFECTIVO")
+        monkeypatch.setattr(module.WorkerDB, "cleanup_owner_workers", Mock())
+        monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(side_effect=RuntimeError(secret)))
+        window.agregar_metodo_pago()
+    elif failure == "error":
+        window.mostrar_error_hilo(secret)
+    elif failure == "payload":
+        window.resultado_del_hilo(secret)
+    else:
+        from PySide6.QtGui import QHideEvent
+        window.hideEvent(QHideEvent())
+    window.manejadorModal.cerrar_modal.assert_called()
+    assert secret not in str(messages.mock_calls)
+
+
+@pytest.mark.qt
 def test_history_hide_closes_startup_loading(monkeypatch, qtbot):
     import app.Controller.VentasController as module
     from PySide6.QtGui import QHideEvent

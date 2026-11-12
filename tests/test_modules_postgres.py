@@ -217,6 +217,112 @@ def test_ref25_purchase_receipt_stock_sql(sql_context, failure):
         assert model.receive_purchase_order(order.id, details["usuario_id"], propagar=True)[1] is False
 
 
+@pytest.mark.concurrency
+@pytest.mark.parametrize("same_order", [False, True])
+def test_purchase_concurrent_receipts_lock_order_and_stock(sql_context, postgres_sandbox, same_order):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    from sqlalchemy.orm import Session
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel
+
+    writer, reader = sql_context
+    details, _, product_id, _, _ = sale_seed(writer)
+    supplier = insert(writer, bd.Proveedores)
+    product = writer.get(bd.Productos, product_id)
+    header = dict(proveedor=supplier, empleado=details["empleado_id"], metodo_pago=details["metodo_pago_id"],
+                  fecha_creacion=datetime(2026, 11, 12), fecha_compra=None, total_compra=1.25,
+                  plazo_pago=0, fecha_vencimiento=None)
+    model = OrdenesDeCompraModel(writer)
+    items = [dict(producto=product, cantidad=0.125, precio_unitario=10, subtotal=1.25)]
+    first, _ = model.create_purchase_order(header, items, propagar=True)
+    second = first if same_order else model.create_purchase_order(header, items, propagar=True)[0]
+    first_id, second_id, user_id = first.id, second.id, details["usuario_id"]
+    writer.commit()
+    locked = Event()
+    attempted = Event()
+
+    def receive(identificador, hold):
+        with Session(postgres_sandbox.engine) as session:
+            session.execute(text("SET LOCAL statement_timeout = '8s'"))
+            session.execute(text("SET LOCAL lock_timeout = '8s'"))
+            backend = session.execute(text("SELECT pg_backend_pid()")).scalar_one()
+            connection = session.connection()
+
+            def after_lock(connection, cursor, statement, parameters, context, executemany):
+                if hold and 'FOR UPDATE OF "Compras"' in statement:
+                    locked.set()
+                    if not attempted.wait(5):
+                        raise TimeoutError("Second receipt did not attempt the lock")
+
+            def before_lock(connection, cursor, statement, parameters, context, executemany):
+                if not hold and 'FOR UPDATE OF "Compras"' in statement:
+                    attempted.set()
+
+            event.listen(connection, "after_cursor_execute", after_lock)
+            event.listen(connection, "before_cursor_execute", before_lock)
+            _, success, _ = OrdenesDeCompraModel(session).receive_purchase_order(identificador, user_id, propagar=True)
+            session.commit() if success else session.rollback()
+            return success, backend
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first_result = executor.submit(receive, first_id, True)
+        assert locked.wait(5)
+        second_result = executor.submit(receive, second_id, False)
+        outcomes = [first_result.result(timeout=12), second_result.result(timeout=12)]
+    assert outcomes[0][1] != outcomes[1][1]
+    expected = 1 if same_order else 2
+    assert sum(success for success, _ in outcomes) == expected
+    reader.expire_all()
+    assert reader.get(bd.Productos, product_id).existencia == 5 + 0.125 * expected
+    assert reader.query(bd.Movimientos_Inventario).count() == expected
+    assert reader.query(bd.Compras).filter(bd.Compras.estado == "COMPLETADA").count() == expected
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_purchase_editor_update_sql_preserves_header_prices_and_rollback(sql_context, failure):
+    from app.Model.OrdenesDeCompraModel import OrdenesDeCompraModel, version_orden
+
+    writer, reader = sql_context
+    details, _, product_id, _, _ = sale_seed(writer)
+    supplier = insert(writer, bd.Proveedores)
+    product = writer.get(bd.Productos, product_id)
+    extra = insert(writer, bd.Productos, **{key: value for key, value in product_values("0002").items()
+                                         if key not in {"proveedores", "sucursales"}})
+    insert(writer, bd.ProductoProveedor, proveedor_id=supplier.id, producto_id=extra.id, precio_venta=2)
+    model = OrdenesDeCompraModel(writer)
+    header = dict(proveedor=supplier, empleado=details["empleado_id"], metodo_pago=details["metodo_pago_id"],
+                  fecha_creacion=datetime(2026, 11, 12), fecha_compra=None, total_compra=1.25,
+                  plazo_pago=0, fecha_vencimiento=None)
+    items = [dict(producto=product, cantidad=0.125, precio_unitario=10, subtotal=1.25)]
+    order, _ = model.create_purchase_order(header, items, propagar=True)
+    writer.commit()
+    order_id = order.id
+    version = version_orden(order)
+    changes = dict(header, id=order_id, total_compra=4.5, version_orden=version,
+                   detalles=[dict(producto=product, cantidad=0.25, precio_unitario=10, subtotal=2.5),
+                             dict(producto=extra, cantidad=1, precio_unitario=2, subtotal=2)])
+    if failure:
+        changes["metodo_pago"] = 999999
+        with pytest.raises(IntegrityError):
+            model.update_purchase_order(changes)
+        writer.rollback()
+    else:
+        assert model.update_purchase_order(changes)
+        writer.commit()
+        assert not model.update_purchase_order(changes)
+        writer.rollback()
+    reader.expire_all()
+    persisted = reader.get(bd.Compras, order_id)
+    assert persisted.total_compra == (1.25 if failure else 4.5)
+    assert len(persisted.detalles) == (1 if failure else 2)
+    assert persisted.detalles[0].cantidad == (0.125 if failure else 0.25)
+    assert persisted.detalles[0].precio_unitario == 10
+    assert persisted.proveedor_id == supplier.id
+    assert persisted.empleado_id == details["empleado_id"]
+    assert reader.get(bd.Productos, product_id).existencia == 5
+    assert reader.query(bd.Movimientos_Inventario).count() == 0
+
+
 def report(rows):
     return dict(filas=[dict(fila=number + 2, valores=row) for number, row in enumerate(rows)], errores=[], advertencias=[])
 

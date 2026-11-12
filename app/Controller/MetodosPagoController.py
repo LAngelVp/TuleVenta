@@ -48,7 +48,11 @@ class MetodosPagoController(QWidget):
                        nombre = nombre
                        )
            except Exception as e:
-               Mensaje().mensaje_alerta(f"Ocurrio un error en el hilo: {e}")
+               self.manejadorModal.cerrar_modal()
+               identificador = getattr(self, "id_hilo_agregar_metodo_pago", None)
+               if identificador is not None:
+                   WorkerDB.cleanup_managed_worker(identificador)
+               Mensaje().mensaje_alerta("No se pudo iniciar el registro del metodo de pago.")
 
     def agregar_metodo_pago_query(self, session, nombre):
         try:
@@ -77,18 +81,21 @@ class MetodosPagoController(QWidget):
         }
 
     def resultado_del_hilo(self, resultado):
+        self.manejadorModal.cerrar_modal()
         if isinstance(resultado, dict) and resultado.get('exito'):
             Mensaje().mensaje_informativo(resultado.get('mensaje', 'Metodo de pago agregado.'))
         else:
-            Mensaje().mensaje_alerta(resultado.get('mensaje', 'No se pudo agregar el metodo de pago.') if isinstance(resultado, dict) else str(resultado))
+            Mensaje().mensaje_alerta(resultado.get('mensaje', 'No se pudo agregar el metodo de pago.') if isinstance(resultado, dict) else 'No se pudo agregar el metodo de pago.')
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f"Ocurrio un error en el hilo: {error}")
+        self.manejadorModal.cerrar_modal()
+        Mensaje().mensaje_alerta("No se pudo registrar el metodo de pago.")
 
     def hideEvent(self, event):
         identificador = getattr(self, "id_hilo_agregar_metodo_pago", None)
         if identificador is not None:
             WorkerDB.cleanup_managed_worker(identificador)
+        self.manejadorModal.cerrar_modal()
         super().hideEvent(event)
 
     def eliminar_metodo_pago(self):

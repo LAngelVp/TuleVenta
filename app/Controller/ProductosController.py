@@ -4,6 +4,7 @@ from PySide6 import QtCore
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import  QStandardItem, QPixmap, QIcon, QCursor
+from .ImagenEstatica import mostrar_imagen_estatica
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from ..DataBase.conexionBD import Conexion_base_datos
@@ -554,9 +555,7 @@ class Admin_productosController(QWidget):
             return
         self.imagenProducto = imagen_seleccionada
         self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(self.imagenProducto)
-        pixmap = QPixmap(self.imagenProducto)
-        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap)
-        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setScaledContents(True)
+        mostrar_imagen_estatica(self.WindowsAddProduct_Dialog.etiqueta_fotoProducto, self.imagenProducto)
         self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.adjustSize()
         return
 
@@ -1026,17 +1025,10 @@ class Admin_productosController(QWidget):
 
     def _cargar_imagen_producto(self):
         try:
-            if hasattr(self.producto, 'imagen') and self.producto.imagen:
-                pixmap = QPixmap(self.producto.imagen)
-                if not pixmap.isNull():
-                    self.imagenProducto = self.producto.imagen
-                    pixmap_scaled = pixmap.scaled(
-                        self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.size(),
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation
-                    )
-                    self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setPixmap(pixmap_scaled)
-                    return
+            ruta = getattr(self.producto, 'imagen', None)
+            if mostrar_imagen_estatica(self.WindowsAddProduct_Dialog.etiqueta_fotoProducto, ruta):
+                self.imagenProducto = ruta
+                return
             _translate = QtCore.QCoreApplication.translate
             default_html = """<html><head/><body><p align="center">
                             <img src=":/Icons/IconosSVG/subir_imagen.png" width="80" height="70"/>
@@ -1045,7 +1037,7 @@ class Admin_productosController(QWidget):
             self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", default_html))
             self.imagenProducto = None
         except Exception as e:
-            Mensaje().mensaje_alerta(f"Error cargando imagen: {str(e)}")
+            Mensaje().mensaje_alerta("No se pudo cargar la imagen del producto.")
 
     def _cargar_fechas_producto(self):
         try:

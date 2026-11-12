@@ -216,6 +216,38 @@ def test_supplier_snapshot_is_not_orm_and_keeps_nested_fields():
     assert result.nombre == "Proveedor"
 
 
+@pytest.mark.qt
+@pytest.mark.parametrize("selected", [False, True])
+def test_manage_price_opens_from_association_dto(monkeypatch, qtbot, selected):
+    import app.Controller.Productos_del_Proveedor as module
+    from app.Model.Proveedores_ProductosModel import AsociacionProveedorDTO, ProductoProveedorDTO
+
+    messages = Mock()
+    monkeypatch.setattr(module, "Mensaje", Mock(return_value=messages))
+    monkeypatch.setattr(module, "bring_window_to_front", lambda window: window.show())
+    supplier = SimpleNamespace(id=2, nombre="Proveedor sintetico")
+    window = module.Productos_de_proveedorController(proveedor=supplier)
+    qtbot.addWidget(window)
+    if selected:
+        product = ProductoProveedorDTO(4, "TEST", "Producto sintetico", "Descripcion", 10, None, None)
+        association = AsociacionProveedorDTO(4, 2, 12.5, product)
+        window.modelo_productos_del_proveedor_vproveedor.update_data([association], reset=True)
+        window.obtener_elemento_seleccionado_productosdelproveedor(
+            window.modelo_productos_del_proveedor_vproveedor.index(0, 0)
+        )
+    window.editar_precio_producto()
+    if selected:
+        modal = window.ventana_precio_producto
+        qtbot.addWidget(modal)
+        assert modal.isVisible()
+        assert modal.proveedor is supplier
+        assert modal.producto is product
+        assert modal.ui.decimal_costo_venta_proveedor.value() == 12.5
+    else:
+        assert window.ventana_precio_producto is None
+        messages.mensaje_informativo.assert_called_once()
+
+
 @pytest.mark.unit
 def test_supplier_product_snapshot_is_hashable_and_preserves_price():
     from sqlalchemy import inspect
@@ -229,6 +261,82 @@ def test_supplier_product_snapshot_is_hashable_and_preserves_price():
     assert result.precio_venta == 12.5
     assert result.producto.codigo_upc == "TEST"
     assert len({result.producto}) == 1
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("exact", [False, True])
+def test_supplier_pagination_starts_exactly_one_query(monkeypatch, qtbot, exact):
+    import app.Controller.Productos_del_Proveedor as module
+
+    worker = Mock()
+    monkeypatch.setattr(module.WorkerDB, "create_managed_worker", Mock(return_value="synthetic-worker"))
+    monkeypatch.setattr(module.WorkerDB, "cleanup_owner_workers", Mock())
+    monkeypatch.setattr(module.WorkerDB, "get_managed_worker", Mock(return_value=worker))
+    monkeypatch.setattr(module.WorkerDB, "connect_managed_signals", Mock())
+    monkeypatch.setattr(module.WorkerDB, "cleanup_managed_worker", Mock())
+    window = module.Productos_de_proveedorController(proveedor=SimpleNamespace(id=2, nombre="Proveedor"))
+    qtbot.addWidget(window)
+    window.manejadorModal = Mock()
+    window.nombre_producto_proveedor = "Producto"
+    window.ui.cajaOpciones_filtro_nombre.clear()
+    window.ui.cajaOpciones_filtro_nombre.addItem("es igual" if exact else "contiene")
+    window.consulta_paginacion_productos_del_proveedor()
+    worker.ejecutar.assert_called_once()
+    assert worker.ejecutar.call_args.kwargs["busqueda_exacta"] is exact
+
+
+@pytest.mark.qt
+def test_manage_price_switches_to_new_selected_product(monkeypatch, qtbot):
+    import app.Controller.Productos_del_Proveedor as module
+    from app.Model.Proveedores_ProductosModel import AsociacionProveedorDTO, ProductoProveedorDTO
+
+    monkeypatch.setattr(module, "bring_window_to_front", lambda window: window.show())
+    supplier = SimpleNamespace(id=2, nombre="Proveedor")
+    window = module.Productos_de_proveedorController(proveedor=supplier)
+    qtbot.addWidget(window)
+    for product_id in (4, 5):
+        product = ProductoProveedorDTO(product_id, f"TEST-{product_id}", "Producto", "Descripcion", 10, None, None)
+        window.objetoCompletoProveedorProductos = AsociacionProveedorDTO(product_id, 2, 12.5, product)
+        window.editar_precio_producto()
+        assert window.ventana_precio_producto.producto.id == product_id
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("success", [False, True])
+def test_manage_price_refreshes_only_after_confirmed_success(monkeypatch, qtbot, success):
+    import app.Controller.Productos_del_Proveedor as module
+    from app.Model.Proveedores_ProductosModel import AsociacionProveedorDTO, ProductoProveedorDTO
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    monkeypatch.setattr(module, "bring_window_to_front", lambda window: window.show())
+    window = module.Productos_de_proveedorController(proveedor=SimpleNamespace(id=2, nombre="Proveedor"))
+    qtbot.addWidget(window)
+    refresh = Mock()
+    monkeypatch.setattr(window, "obtener_productos_del_proveedor_funcion", refresh)
+    product = ProductoProveedorDTO(4, "TEST", "Producto", "Descripcion", 10, None, None)
+    window.objetoCompletoProveedorProductos = AsociacionProveedorDTO(4, 2, 12.5, product)
+    window.editar_precio_producto()
+    modal = window.ventana_precio_producto
+    modal.mostrar_estado({"exito": success, "mensaje": "Resultado sintetico"})
+    assert refresh.call_count == int(success)
+    assert modal.isVisible() is not success
+
+
+@pytest.mark.qt
+def test_manage_price_commit_failure_has_safe_message(monkeypatch):
+    import app.Controller.Productos_del_Proveedor as module
+
+    model = Mock()
+    model.establecer_precio_producto_del_proveedor.return_value = True
+    monkeypatch.setattr(module, "Proveedores_productoModel", Mock(return_value=model))
+    session = Mock()
+    session.commit.side_effect = RuntimeError("synthetic private detail")
+    result = module.CambioPreciosProductosProveedores.cambiar_precio_producto_query(
+        None, session, SimpleNamespace(id=2), SimpleNamespace(id=4, nombre_producto="Producto"), 12.5
+    )
+    assert result["exito"] is False
+    assert "private" not in result["mensaje"]
+    session.rollback.assert_called_once_with()
 
 
 @pytest.mark.unit
@@ -481,3 +589,30 @@ def test_supplier_import_flush_failure_is_safe_and_unconfirmed(tmp_path):
     assert "private" not in str(result)
     session.commit.assert_not_called()
     session.rollback.assert_called_once_with()
+
+
+@pytest.mark.qt
+def test_purchase_scan_dto_is_consumed_by_real_order_table(monkeypatch, qtbot):
+    from sqlalchemy import inspect
+    import app.Controller.ComprasController as module
+    from app.Model.BaseDatosModel import Productos, ProductoProveedor
+    from app.Model.OrdenesDeCompraModel import consulta_compras
+
+    monkeypatch.setattr(module, "Mensaje", Mock())
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_proveedores", Mock())
+    monkeypatch.setattr(module.Orden_compra, "_Orden_compra__obtener_metodos_pagos", Mock())
+    product = Productos(id=4, codigo_upc="TEST-UPC", nombre_producto="Producto", descripcion_producto="Descripcion", precio=10)
+    association = ProductoProveedor(producto_id=4, proveedor_id=2, precio_venta=12.5, producto=product)
+    session = Mock()
+    session.query.return_value.options.return_value.filter.return_value.offset.return_value.limit.return_value.first.return_value = association
+    result = consulta_compras(session, "consultar_productos_del_proveedor_query", (2, 0, 100, None, None), codigo_upc="TEST-UPC")
+    assert result.exito
+    assert inspect(result.datos["data"], raiseerr=False) is None
+    window = module.Orden_compra()
+    window.proveedor = SimpleNamespace(id=2)
+    qtbot.addWidget(window)
+    assert window.agregarProductoALConjuntoTabla(result.datos) is True
+    assert window.modeloTablaProductosOrden.rowCount() == 1
+    assert window.codigos_agregados == {"TEST-UPC"}
+    assert window.agregarProductoALConjuntoTabla(result.datos) is False
+    assert window.modeloTablaProductosOrden.rowCount() == 1

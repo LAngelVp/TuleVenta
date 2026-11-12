@@ -142,4 +142,17 @@
 2026-11-12 02:21:21.669 CST [11020] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
 2026-11-12 02:21:21.669 CST [11020] LOG:  terminating any other active server processes
 2026-11-12 02:21:21.731 CST [11020] LOG:  all server processes terminated; reinitializing
-^C
+^C2026-11-12 08:19:30.792 CST [29372] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-11-12 08:19:30.793 CST [29372] LOG:  listening on IPv4 address "127.0.0.1", port 58432
+2026-11-12 08:19:30.935 CST [21840] LOG:  database system was shut down at 2026-11-12 08:19:20 CST
+2026-11-12 08:19:30.946 CST [29372] LOG:  database system is ready to accept connections
+2026-11-12 08:24:31.029 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 08:26:43.161 CST [11920] LOG:  checkpoint complete: wrote 1199 buffers (7.3%), wrote 3 SLRU buffers; 1 WAL file(s) added, 0 removed, 0 recycled; write=131.653 s, sync=0.349 s, total=132.134 s; sync files=477, longest=0.029 s, average=0.001 s; distance=6288 kB, estimate=6288 kB; lsn=0/1E4F7B8, redo lsn=0/1E15658
+2026-11-12 08:29:31.386 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 08:29:41.050 CST [11920] LOG:  checkpoint complete: wrote 87 buffers (0.5%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=9.632 s, sync=0.020 s, total=9.665 s; sync files=42, longest=0.002 s, average=0.001 s; distance=403 kB, estimate=5700 kB; lsn=0/1E7A470, redo lsn=0/1E7A3E0
+2026-11-12 09:38:09.500 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 09:38:09.695 CST [11920] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.108 s, sync=0.010 s, total=0.195 s; sync files=1, longest=0.010 s, average=0.010 s; distance=0 kB, estimate=5130 kB; lsn=0/1E7A648, redo lsn=0/1E7A5F0
+2026-11-12 09:58:09.730 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 09:58:09.913 CST [11920] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.116 s, sync=0.026 s, total=0.183 s; sync files=2, longest=0.025 s, average=0.013 s; distance=0 kB, estimate=4617 kB; lsn=0/1E7A978, redo lsn=0/1E7A920
+2026-11-12 10:53:09.975 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 10:53:11.586 CST [11920] LOG:  checkpoint complete: wrote 14 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.536 s, sync=0.033 s, total=1.612 s; sync files=11, longest=0.024 s, average=0.003 s; distance=34 kB, estimate=4158 kB; lsn=0/1E83198, redo lsn=0/1E83140

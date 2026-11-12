@@ -1,6 +1,18 @@
 # Spec 01: productos, catalogos e importacion
 
+## Imagenes Y Catalogos: Correccion 2026-11-12
+
+P-02/P-03/P-04/P-06, REF-10/25/36: [ImagenEstatica](../../app/Controller/ImagenEstatica.py) fija dimensiones antes de asignar pixmap, centra, conserva proporcion y suaviza; ruta nula/inexistente limpia sin escalar pixmap nulo. Alta/edicion y seleccion de imagen usan el mismo helper; recursos QLabel existentes se estabilizan mediante UiTheme sin regenerar vistas. Se preservan rutas, limite de archivo, placeholders, precios y tipos Float.
+
+Presentacion/unidad de medida usan owners por instancia y cierre_seguro; ocultar/fallar cierra espera y limpia workers. Callbacks solo emiten alta/baja ante exito explicito, sin cerrar por fallo ni mostrar errores tecnicos crudos. No se migran aqui sus retornos ORM ni transacciones legacy. [Pruebas de imagen](../../tests/test_static_images.py) y [regresion de catalogos](../../tests/test_phase2_products_qt.py). [Dictamen transversal y pendientes](../04-plan-de-refactorizacion.md#auditoria-transversal-ui-2026-11-12).
+
 ## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+### Auditoria de integracion Proveedor y Compras 2026-11-12
+
+P-02/P-03/C-09, REF-24/32/34: escritor ProductoProveedor por diferencias y precios conservados; no se agregan relaciones ORM al DTO para ocultar consumidores desfasados. Manejar Precio usa proveedor del editor/ID del par, controla seleccion vacia y modal de producto anterior, muestra precio del par y refresca solo tras confirmacion. Paginacion exacta ya no lanza consulta parcial adicional. Integracion escaneo de Compras->DTO->tabla Qt con UPC intacto, sin convertirlo a PK ni cambiar Float/costos/stock.
+
+[Auditoria, pruebas y gates abiertos](spec-03-compras-proveedores-e-inventario.md#auditoria-dto-y-manejar-precio-2026-11-12): no cierre100% ni retiro global de legacy. Evidencia SQL siguiente conserva alcance focalizado; carreras stock/recepcion, REF-37, PDF/empaquetado y migraciones siguen fuera de esta correccion.
 
 Gate SQL focalizado posterior a los lotes historicos: [test_modules_postgres.py](../../tests/test_modules_postgres.py) verifica P-02/P-03/P-08/P-09, REF-21/24/25: alta/edicion n-1/n/n+1 de UPC20/nombre60/marca100/modelo100/color255/material255; exceso rechazado sin persistir/truncar, UPC de edicion permanece inmutable. Relectura independiente confirma producto_proveedor por diferencias y precio37.5 conservado, rollback de desvinculacion; lote modal exitoso y FK invalida en segunda fila revierte productos y categoria lateral.
 

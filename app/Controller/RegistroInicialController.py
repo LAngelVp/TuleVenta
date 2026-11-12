@@ -2,6 +2,7 @@ from datetime import datetime
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QPixmap
+from .ImagenEstatica import mostrar_imagen_estatica
 from PySide6.QtGui import QRegularExpressionValidator
 from ..Source.iconos_rc import *
 from ..Source.ibootstrap_rc import *
@@ -472,8 +473,7 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.txt_nexterior.setText(empleado_seleccionado.num_exterior)
         self.WindowRegistroEmpleado.txtlargo_direccion_completa.setPlainText(empleado_seleccionado.direccion_adicional)
         if empleado_seleccionado.foto_empleado is not None and empleado_seleccionado.foto_empleado != "":
-            pixmap = QPixmap(empleado_seleccionado.foto_empleado).scaled(self.WindowRegistroEmpleado.foto_usuario.size())
-            self.WindowRegistroEmpleado.foto_usuario.setPixmap(pixmap)
+            mostrar_imagen_estatica(self.WindowRegistroEmpleado.foto_usuario, empleado_seleccionado.foto_empleado)
         else:
             self.WindowRegistroEmpleado.foto_usuario.clear()
 
@@ -887,9 +887,7 @@ class Registro_personal_inicial(QDialog):
         if self.file_name:
             if image_accept:
                 self.WindowRegistroEmpleado.foto_usuario.setText(self.file_name)
-                pixmap = QPixmap(self.file_name)
-                self.WindowRegistroEmpleado.foto_usuario.setPixmap(pixmap)
-                self.WindowRegistroEmpleado.foto_usuario.setScaledContents(True)
+                mostrar_imagen_estatica(self.WindowRegistroEmpleado.foto_usuario, self.file_name)
                 self.WindowRegistroEmpleado.foto_usuario.adjustSize()
             else:
                 Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")

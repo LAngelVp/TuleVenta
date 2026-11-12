@@ -1,5 +1,11 @@
 # Spec 04: clientes, personal, organizacion y seguridad
 
+## Fotografias: Correccion UI 2026-11-12
+
+S-03/S-07/S-08/S-14: clientes, registro/edicion de empleado y perfil usan [ImagenEstatica](../../app/Controller/ImagenEstatica.py). Imagen grande no aumenta contenedor; entrada vacia/invalida limpia sin QPixmap::scaled nulo. Cliente deja de llamar adjustSize al cargar. La vista cliente declara minimum202x202 y maximum52x52 contradictorios: el helper conserva el minimo efectivo202x202 y normaliza ambos limites, sin editar codigo generado. Perfil conserva220x180. Sin cambio de rutas persistidas, columnas, credito ni usuarios.
+
+[Pruebas de dimensiones y vistas reales](../../tests/test_static_images.py); [dictamen transversal](../04-plan-de-refactorizacion.md#auditoria-transversal-ui-2026-11-12). No certifica todos los callbacks de estos modulos ni licencia/hardware.
+
 ## Evidencia PostgreSQL 18.4 (2026-11-12)
 
 Gate SQL focalizado S-03/S-05/S-06/S-07/S-08/S-10, REF-25/30/31, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): clientes fisicos y morales importados con herencia ORM real. Una segunda conexion confirma un duplicado despues del snapshot inicial; el escritor real lo detecta, el savepoint elimina categoria/area y representante de esa fila, conserva primera/tercera fila y solo publica caches exitosas. CHECK tecnico en segunda fila seguido de rollback exterior elimina todo el lote y sus catalogos/representantes.

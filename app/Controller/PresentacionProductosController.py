@@ -30,8 +30,8 @@ class PresentacionProductos(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_presentacion_thread")
-            self.id_hilo_agregar_presentacion = WorkerDB.create_managed_worker(owner_id="agregar_presentacion_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:agregar_presentacion_thread")
+            self.id_hilo_agregar_presentacion = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:agregar_presentacion_thread", cierre_seguro=True)
             self.consultor_agregar_presentacion = WorkerDB.get_managed_worker(self.id_hilo_agregar_presentacion)
             if not self.consultor_agregar_presentacion:
                 raise Exception("No se pudo obtener el resultado.")
@@ -49,7 +49,8 @@ class PresentacionProductos(QWidget):
             # ✅ Limpiar en caso de error
             if hasattr(self, 'id_hilo_agregar_presentacion'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_presentacion)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
+            self.manejadorModal.cerrar_modal()
+            Mensaje().mensaje_alerta("No se pudo iniciar el registro de la presentacion.")
 
     def agregar_presentacion_query(self, session, nombre):
         try:
@@ -65,7 +66,7 @@ class PresentacionProductos(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema en el proceso: {e}',
+                "mensaje": 'No se pudo registrar la presentacion.',
                 "data": None
             }
         session.commit()
@@ -78,8 +79,8 @@ class PresentacionProductos(QWidget):
     def eliminar(self, objeto):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("eliminar_presentacion_producto_thread")
-            self.id_hilo_eliminar_preentacion_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id="eliminar_presentacion_producto_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}:eliminar_presentacion_producto_thread")
+            self.id_hilo_eliminar_preentacion_producto_vagregarproducto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}:eliminar_presentacion_producto_thread", cierre_seguro=True)
             self.consultor_eliminar_presentacion_producto_vagregarproducto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_preentacion_producto_vagregarproducto)
             if not self.consultor_eliminar_presentacion_producto_vagregarproducto:
                 raise Exception("No se logro obtener el worker gestionado")
@@ -96,7 +97,8 @@ class PresentacionProductos(QWidget):
         except Exception as e:
             if hasattr(self, 'id_hilo_eliminar_preentacion_producto_vagregarproducto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_preentacion_producto_vagregarproducto)
-            Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
+            self.manejadorModal.cerrar_modal()
+            Mensaje().mensaje_alerta("No se pudo iniciar la baja de la presentacion.")
 
     def eliminar_presentacion_query(self, session, objeto):
         try:
@@ -120,16 +122,33 @@ class PresentacionProductos(QWidget):
         }
 
     def resultado_preentacion_eliminada(self, objetoMensaje):
-        self.eliminacion_producto_completada.emit(objetoMensaje)
+        self.manejadorModal.cerrar_modal()
+        if isinstance(objetoMensaje, dict) and objetoMensaje.get("exito"):
+            self.eliminacion_producto_completada.emit(objetoMensaje)
+        else:
+            Mensaje().mensaje_alerta("No se confirmo la baja de la presentacion.")
 
     def resultado_del_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(f"{objetoMensaje['mensaje']}")
-        self.presentacion_producto_agregada_signal.emit()
-        self.close()
+        self.mostrar_estado_hilo(objetoMensaje)
+        if isinstance(objetoMensaje, dict) and objetoMensaje.get("exito"):
+            self.close()
 
     def mostrar_estado_hilo(self, objetoMensaje):
-        Mensaje().mensaje_informativo(objetoMensaje['mensaje'])
-        self.presentacion_producto_agregada_signal.emit()
+        self.manejadorModal.cerrar_modal()
+        if isinstance(objetoMensaje, dict) and objetoMensaje.get("exito"):
+            Mensaje().mensaje_informativo(objetoMensaje['mensaje'])
+            self.presentacion_producto_agregada_signal.emit()
+        else:
+            Mensaje().mensaje_alerta("No se confirmo el registro de la presentacion.")
 
     def mostrar_error_hilo(self, error):
-        Mensaje().mensaje_alerta(f'Ocurrio un problema en el proceso: {error}')
+        self.manejadorModal.cerrar_modal()
+        Mensaje().mensaje_alerta("No se pudo completar la operacion de presentacion.")
+
+    def hideEvent(self, event):
+        for atributo in ("id_hilo_agregar_presentacion", "id_hilo_eliminar_preentacion_producto_vagregarproducto"):
+            identificador = getattr(self, atributo, None)
+            if identificador is not None:
+                WorkerDB.cleanup_managed_worker(identificador)
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)

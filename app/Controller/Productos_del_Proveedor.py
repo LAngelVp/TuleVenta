@@ -67,6 +67,8 @@ class Productos_de_proveedorController(QWidget):
         self.cargando =  None
         self.seleccion_conectada_productos = False
         self.producto_seleccionado = None
+        self.objetoCompletoProveedorProductos = None
+        self.relacion_producto_proveedor_seleccionado = None
         self.seleccion_conectada_productos_sistema=False
         self.producto_seleccionado_sistema=None
         self.producto_seleccionado_a_vincular = None
@@ -195,17 +197,22 @@ class Productos_de_proveedorController(QWidget):
                 self.PRODUCTO_DE_SISTEMA_SELECCIONADO_SIGNAL.emit(self.producto_seleccionado_sistema)
 
     def editar_precio_producto(self):
-        proveedor = self.objetoCompletoProveedorProductos.proveedor
-        producto = self.objetoCompletoProveedorProductos.producto
-        if self.objetoCompletoProveedorProductos is not None:
-            if self.ventana_precio_producto is None or not self.ventana_precio_producto.isVisible():
-                self.ventana_precio_producto = CambioPreciosProductosProveedores(parent = self, producto = producto, proveedor = proveedor)
-                self.ventana_precio_producto.VENTANA_CERRADA_PRECIO_PRODUCTO.connect(self.cerrar_precio_productos)
-                bring_window_to_front(self.ventana_precio_producto)
-            else:
-                bring_window_to_front(self.ventana_precio_producto)
-        else:
+        asociacion = self.objetoCompletoProveedorProductos
+        if asociacion is None:
             Mensaje().mensaje_informativo("Selecciona un producto de la tabla.")
+            return
+        proveedor = self.proveedor
+        if proveedor is None or asociacion.proveedor_id != proveedor.id:
+            Mensaje().mensaje_alerta("La seleccion no corresponde al proveedor actual.")
+            return
+        if self.ventana_precio_producto is not None and self.ventana_precio_producto.producto.id != asociacion.producto_id:
+            self.ventana_precio_producto.close()
+        if self.ventana_precio_producto is None or not self.ventana_precio_producto.isVisible():
+            self.ventana_precio_producto = CambioPreciosProductosProveedores(parent=self, producto=asociacion.producto, proveedor=proveedor)
+            self.ventana_precio_producto.ui.decimal_costo_venta_proveedor.setValue(asociacion.precio_venta)
+            self.ventana_precio_producto.VENTANA_CERRADA_PRECIO_PRODUCTO.connect(self.cerrar_precio_productos)
+            self.ventana_precio_producto.PRECIO_ACTUALIZADO.connect(self.obtener_productos_del_proveedor_funcion)
+        bring_window_to_front(self.ventana_precio_producto)
 
     def cerrar_precio_productos(self):
         self.ventana_precio_producto = None
@@ -432,17 +439,11 @@ class Productos_de_proveedorController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             if self.nombre_producto_proveedor:
-                if self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual":
-                    self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
-                        funcion=capturar_consulta_proveedor(self, self.paginar_busqueda_por_filtros_productos_del_proveedor_query),
-                        proveedor = self.proveedor,
-                        nombre = self.nombre_producto_proveedor,
-                        busqueda_exacta = True
-                        )
                 self.consultor_obtener_productos_del_proveedor_paginados.ejecutar(
                     funcion=capturar_consulta_proveedor(self, self.paginar_busqueda_por_filtros_productos_del_proveedor_query),
                     proveedor = self.proveedor,
                     nombre = self.nombre_producto_proveedor,
+                    busqueda_exacta = self.ui.cajaOpciones_filtro_nombre.currentText().lower() == "es igual"
                     )
         except Exception as e:
             self.manejadorModal.cerrar_modal()
@@ -959,6 +960,7 @@ class Productos_de_proveedorController(QWidget):
 
 class CambioPreciosProductosProveedores(QDialog):
     VENTANA_CERRADA_PRECIO_PRODUCTO = Signal()
+    PRECIO_ACTUALIZADO = Signal()
     def __init__(self, parent = None, producto = None, proveedor = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -1032,7 +1034,7 @@ class CambioPreciosProductosProveedores(QDialog):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema en el proceso {e}.',
+                "mensaje": "No se pudo confirmar el cambio de precio.",
                 "data": []
             }
     def closeEvent(self, event):
@@ -1057,7 +1059,12 @@ class CambioPreciosProductosProveedores(QDialog):
         self.move(pantalla.topLeft())
 
     def mostrar_estado(self, objetoMensaje):
+        if not objetoMensaje.get("exito"):
+            Mensaje().mensaje_alerta(objetoMensaje.get("mensaje", "No se pudo actualizar el precio."))
+            return
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
+        self.PRECIO_ACTUALIZADO.emit()
+        self.close()
 
     def mostrar_error(self, mensaje):
         self.manejadorModal.cerrar_modal()

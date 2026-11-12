@@ -1,6 +1,7 @@
 from PySide6.QtCore import QEvent, QObject, QTimer, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QAbstractButton, QAbstractItemView, QFrame, QGroupBox, QLabel, QSizePolicy, QTableWidget, QWidget
+from .ImagenEstatica import mostrar_imagen_estatica
 
 
 PRIMARY_BUTTON_HINTS = (
@@ -562,6 +563,7 @@ def apply_access_theme(root_widget):
     if root_widget is None:
         return
 
+    _estabilizar_pixmaps(root_widget)
     root_widget.setStyleSheet(ACCESS_STYLESHEET + TITLE_SCALE_STYLESHEET)
 
 
@@ -618,6 +620,7 @@ def _decorate_buttons(root_widget):
 
 
 def _decorate_labels(root_widget):
+    _estabilizar_pixmaps(root_widget)
     for label in root_widget.findChildren(QLabel):
         if label.property("role"):
             continue
@@ -636,6 +639,13 @@ def _decorate_labels(root_widget):
             label.setProperty("role", "title")
         elif object_name.startswith("etiqueta") or object_name.startswith("label"):
             label.setProperty("role", "caption")
+
+
+def _estabilizar_pixmaps(root_widget):
+    for label in root_widget.findChildren(QLabel):
+        pixmap = label.pixmap()
+        if not pixmap.isNull():
+            mostrar_imagen_estatica(label, pixmap)
 
 
 def _decorate_views(root_widget):

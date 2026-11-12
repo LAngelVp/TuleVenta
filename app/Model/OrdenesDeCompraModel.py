@@ -24,6 +24,12 @@ def orden_snapshot(orden):
     })
 
 
+def version_orden(orden):
+    return (orden.proveedor_id, orden.metodos_pago_id, orden.total_compra, orden.plazo_pago,
+            tuple(sorted((detalle.producto_id, detalle.cantidad, detalle.precio_unitario, detalle.subtotal)
+                         for detalle in orden.detalles)))
+
+
 def validar_orden(cabecera, items):
     if not items or not getattr(cabecera.get("proveedor"), "id", None):
         raise ValueError("Debe seleccionar proveedor y productos.")
@@ -57,7 +63,8 @@ def consulta_compras(session, operacion, snapshot, state=None, **valores):
             offset, limit, criterios = snapshot[state]
             rows, _ = modelo.ordenes_dto(state, offset, limit, **criterios)
             return ResultadoProductos({"exito": True, "data": rows, "state": state,
-                                      "offset": offset, "limit": limit, "mensaje": "Consulta completada."})
+                                      "offset": offset, "limit": limit,
+                                      "generacion": snapshot.get("_generaciones", {}).get(state, 0), "mensaje": "Consulta completada."})
         if operacion == "__obtener_proveedores_query":
             rows = session.query(Proveedores).order_by(Proveedores.nombre.asc()).all()
             return [campos_snapshot(row) for row in rows], True
@@ -79,6 +86,15 @@ def consulta_compras(session, operacion, snapshot, state=None, **valores):
             identificador = order.id
             session.commit()
             return ResultadoProductos({"exito": True, "resultado": identificador, "mensaje": mensaje})
+        if operacion == "actualizar_orden_compra_query":
+            if not set(valores.get("permisos", ())).intersection({"MODIFICARCOMPRA", "ADMINISTRADOR"}):
+                return ResultadoProductos({"exito": False, "resultado": None, "mensaje": "No tiene permiso para modificar compras."})
+            cabecera = dict(valores["contentData"], detalles=valores["orden_items"])
+            if not modelo.update_purchase_order(cabecera):
+                session.rollback()
+                return ResultadoProductos({"exito": False, "resultado": None, "mensaje": "La orden ya no esta pendiente o cambio; refresque antes de editar."})
+            session.commit()
+            return ResultadoProductos({"exito": True, "resultado": cabecera["id"], "mensaje": "Orden de compra actualizada."})
         if operacion == "eliminar_orden_compra_query":
             identificador = valores["order"].id
             exito = modelo.delete_purchase_order(identificador)
@@ -213,8 +229,9 @@ class OrdenesDeCompraModel:
 
     def delete_purchase_order(self, order_id):
         try:
-            purchaseOrder = self.session.query(Compras).get(order_id)
-            if purchaseOrder:
+            purchaseOrder = (self.session.query(Compras).filter(Compras.id == order_id)
+                             .with_for_update(of=Compras).populate_existing().first())
+            if purchaseOrder and purchaseOrder.estado == "PENDIENTE":
                 self.session.delete(purchaseOrder)
                 return True
             return False
@@ -223,12 +240,48 @@ class OrdenesDeCompraModel:
 
     def update_purchase_order(self, orderDatails):
         try:
-            order = self.session.query(Compras).filter(Compras.id == orderDatails['id']).first()
-            if order:
+            order = (self.session.query(Compras).filter(Compras.id == orderDatails['id'])
+                     .with_for_update(of=Compras).populate_existing().first())
+            if order and order.estado == "PENDIENTE":
+                if "detalles" in orderDatails:
+                    items = orderDatails["detalles"]
+                    validar_orden(orderDatails, items)
+                    if orderDatails["proveedor"].id != order.proveedor_id or orderDatails.get("version_orden") != version_orden(order):
+                        return False
+                    existentes = {detalle.producto_id: detalle for detalle in order.detalles}
+                    for item in items:
+                        codigo = item["producto"].codigo_upc
+                        if codigo in existentes:
+                            if item["precio_unitario"] != existentes[codigo].precio_unitario:
+                                raise ValueError("El precio registrado de una linea existente no se puede modificar.")
+                        else:
+                            asociacion = (self.session.query(ProductoProveedor)
+                                          .filter(ProductoProveedor.proveedor_id == order.proveedor_id,
+                                                  ProductoProveedor.producto.has(Productos.codigo_upc == codigo))
+                                          .first())
+                            if not asociacion or item["precio_unitario"] != asociacion.precio_venta:
+                                raise ValueError("Producto o precio del proveedor ya no disponible.")
+                    detalles = []
+                    for item in items:
+                        codigo = item["producto"].codigo_upc
+                        detalle = existentes.get(codigo)
+                        if detalle is None:
+                            detalle = Detalles_compras(producto_id=codigo)
+                        detalle.cantidad = item["cantidad"]
+                        detalle.precio_unitario = item["precio_unitario"]
+                        detalle.subtotal = item["subtotal"]
+                        detalles.append(detalle)
+                    order.detalles = detalles
+                    order.total_compra = orderDatails["total_compra"]
+                    order.metodos_pago_id = orderDatails["metodo_pago"]
+                    order.plazo_pago = orderDatails["plazo_pago"]
+                    order.fecha_vencimiento = orderDatails["fecha_vencimiento"]
+                    self.session.flush()
+                    return True
                 order.proveedor_id = orderDatails['proveedor'].id
                 order.fecha_compra = orderDatails['fecha_compra']
                 order.empleado_id = orderDatails['empleado']
-                self.session.commit()
+                self.session.flush()
                 return True
             return False
         except Exception as e:
@@ -243,6 +296,8 @@ class OrdenesDeCompraModel:
                     joinedload(Compras.proveedor),
                 )
                 .filter(Compras.id == order_id)
+                .with_for_update(of=Compras)
+                .populate_existing()
                 .first()
             )
 
@@ -258,16 +313,25 @@ class OrdenesDeCompraModel:
             fecha_movimiento = fecha_compra or datetime.now()
             notas_movimiento = notas or f"Recepción de orden de compra #{order.id}"
 
+            producto_ids = sorted({detalle.producto.id for detalle in order.detalles if detalle.producto})
+            productos = (self.session.query(Productos).filter(Productos.id.in_(producto_ids))
+                         .order_by(Productos.id).with_for_update(of=Productos).populate_existing().all())
+            productos_por_id = {producto.id: producto for producto in productos}
+            if len(productos_por_id) != len(producto_ids):
+                return None, False, "La orden contiene productos que ya no existen."
+            cantidades = {}
             for detalle in order.detalles:
                 cantidad = float(detalle.cantidad or 0)
                 if not detalle.producto or not isfinite(cantidad) or cantidad <= 0:
                     return None, False, "La orden contiene productos o cantidades invalidas."
-                stock = float(detalle.producto.existencia or 0)
-                if not isfinite(stock) or not isfinite(stock + cantidad):
+                producto = productos_por_id[detalle.producto.id]
+                stock = float(producto.existencia or 0)
+                cantidades[producto.id] = cantidades.get(producto.id, 0) + cantidad
+                if not isfinite(stock) or not isfinite(stock + cantidades[producto.id]):
                     return None, False, "La existencia del producto no es valida."
 
             for detalle in order.detalles:
-                producto = detalle.producto
+                producto = productos_por_id[detalle.producto.id]
                 cantidad = float(detalle.cantidad or 0)
 
                 if not producto:
