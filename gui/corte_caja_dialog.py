@@ -1,28 +1,39 @@
 import sys
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QDoubleSpinBox, QPushButton, QMessageBox, QGroupBox, QGridLayout
+    QDoubleSpinBox, QPushButton, QMessageBox, QGroupBox, QGridLayout,
+    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QScrollArea, QWidget
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from sesion_caja import GestorSesionCaja
+from app.Controller.UiTheme import apply_module_theme, official_window_icon, render_qss
 
 class CorteCajaDialog(QDialog):
     def __init__(self, sesion_id: int, parent=None):
         super().__init__(parent)
         self.sesion_id = sesion_id
         self.setWindowTitle("Arqueo y Corte de Caja - TuleVenta")
-        self.resize(500, 480)
-        self.setMinimumSize(450, 430)
+        self.resize(850, 740)
+        self.setMinimumSize(680, 540)
+        self.setWindowIcon(official_window_icon())
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.datos_sesion = None
         self.setup_ui()
+        apply_module_theme(self)
         self.cargar_datos_turno()
 
     def setup_ui(self):
         # Layout principal de la ventana
-        layout_parent = QVBoxLayout(self)
+        layout_root = QVBoxLayout(self)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        body = QWidget()
+        scroll.setWidget(body)
+        layout_root.addWidget(scroll, 1)
+        layout_parent = QVBoxLayout(body)
         layout_parent.setContentsMargins(20, 20, 20, 20)
         layout_parent.setSpacing(15)
 
@@ -34,9 +45,12 @@ class CorteCajaDialog(QDialog):
         self.lbl_titulo.setFont(font_titulo)
         self.lbl_titulo.setStyleSheet("color: #1B305B;")
         layout_parent.addWidget(self.lbl_titulo)
+        self.lbl_turno = QLabel()
+        self.lbl_turno.setWordWrap(True)
+        layout_parent.addWidget(self.lbl_turno)
 
         # Sección de Resumen (Lectura)
-        group_resumen = QGroupBox("Balance Acumulado del Turno (Sin Efectivo de Ventas)")
+        group_resumen = QGroupBox("Balance acumulado del turno")
         font_group = QFont()
         font_group.setBold(True)
         group_resumen.setFont(font_group)
@@ -82,14 +96,38 @@ class CorteCajaDialog(QDialog):
         self.lbl_entradas_val = QLabel("$0.00")
         self.lbl_entradas_val.setStyleSheet("font-weight: bold; color: green;")
         layout_grid.addWidget(self.lbl_entradas_val, 3, 1)
+        self.btn_entrada_efectivo = QPushButton("Entrada en efectivo")
+        self.btn_entrada_efectivo.setProperty("variant", "primary")
+        self.btn_entrada_efectivo.clicked.connect(lambda checked=False: self.registrar_efectivo(True))
+        layout_grid.addWidget(self.btn_entrada_efectivo, 3, 2)
 
         # Retiros de Efectivo
         layout_grid.addWidget(QLabel("Retiros / Salidas de Efectivo (-):"), 4, 0)
         self.lbl_retiros_val = QLabel("$0.00")
         self.lbl_retiros_val.setStyleSheet("font-weight: bold; color: red;")
         layout_grid.addWidget(self.lbl_retiros_val, 4, 1)
+        self.btn_retiro_efectivo = QPushButton("Retiro / salida")
+        self.btn_retiro_efectivo.setProperty("variant", "secondary")
+        self.btn_retiro_efectivo.clicked.connect(lambda checked=False: self.registrar_efectivo(False))
+        layout_grid.addWidget(self.btn_retiro_efectivo, 4, 2)
+        layout_grid.addWidget(QLabel("Ventas en Efectivo (+):"), 5, 0)
+        self.lbl_ventas_efectivo_val = QLabel("$0.00")
+        layout_grid.addWidget(self.lbl_ventas_efectivo_val, 5, 1)
 
         layout_parent.addWidget(group_resumen)
+        layout_parent.addWidget(QLabel("Ventas registradas en esta caja"))
+        self.tabla_movimientos = QTableWidget(0, 6)
+        self.tabla_movimientos.setHorizontalHeaderLabels(
+            ["Fecha", "Folio", "Vendedor (ID)", "Pago", "Estado", "Importe"]
+        )
+        self.tabla_movimientos.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabla_movimientos.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tabla_movimientos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabla_movimientos.setMinimumHeight(160)
+        layout_parent.addWidget(self.tabla_movimientos)
+        self.btn_actualizar = QPushButton("Actualizar movimientos")
+        self.btn_actualizar.clicked.connect(self.cargar_datos_turno)
+        layout_parent.addWidget(self.btn_actualizar)
 
         # Sección Arqueo a Ciegas
         group_arqueo = QGroupBox("Arqueo Físico (Contar Dinero)")
@@ -112,11 +150,11 @@ class CorteCajaDialog(QDialog):
 
         layout_arqueo = QVBoxLayout(group_arqueo)
         layout_arqueo.setSpacing(8)
-
-        lbl_instruccion = QLabel("Sume todo el dinero en EFECTIVO en el cajón (Fondo inicial + Ventas + Entradas - Retiros) e ingrese la suma total:")
-        lbl_instruccion.setWordWrap(True)
-        lbl_instruccion.setStyleSheet("color: #333333; font-size: 9.5pt;")
-        layout_arqueo.addWidget(lbl_instruccion)
+        layout_esperado = QHBoxLayout()
+        layout_esperado.addWidget(QLabel("Efectivo esperado:"))
+        self.lbl_efectivo_esperado_val = QLabel("$0.00")
+        layout_esperado.addWidget(self.lbl_efectivo_esperado_val)
+        layout_arqueo.addLayout(layout_esperado)
 
         layout_row_input = QHBoxLayout()
         layout_row_input.setSpacing(10)
@@ -146,8 +184,12 @@ class CorteCajaDialog(QDialog):
         """)
         layout_row_input.addWidget(self.num_conteo_usuario, 1)
         layout_arqueo.addLayout(layout_row_input)
+        self.lbl_resultado_arqueo = QLabel("Conteo pendiente")
+        self.lbl_resultado_arqueo.setWordWrap(True)
+        layout_arqueo.addWidget(self.lbl_resultado_arqueo)
+        self.num_conteo_usuario.valueChanged.connect(self.actualizar_arqueo)
 
-        layout_parent.addWidget(group_arqueo)
+        layout_root.addWidget(group_arqueo)
 
         layout_parent.addStretch()
 
@@ -196,7 +238,7 @@ class CorteCajaDialog(QDialog):
         self.btn_procesar.clicked.connect(self.procesar_corte)
         layout_botones.addWidget(self.btn_procesar)
 
-        layout_parent.addLayout(layout_botones)
+        layout_root.addLayout(layout_botones)
 
         # Estilo del QDialog con soporte de alto contraste para QMessageBoxes internos
         self.setStyleSheet("""
@@ -232,9 +274,22 @@ class CorteCajaDialog(QDialog):
         """)
 
     def cargar_datos_turno(self):
-        # Cargamos los datos actuales de la sesión de caja abierta
-        exito, mensaje, sesion = GestorSesionCaja.obtener_sesion_activa()
-        if exito and sesion:
+        self.datos_sesion = None
+        self.btn_procesar.setEnabled(False)
+        self.btn_entrada_efectivo.setEnabled(False)
+        self.btn_retiro_efectivo.setEnabled(False)
+        self.tabla_movimientos.setRowCount(0)
+        for label in (self.lbl_turno, self.lbl_monto_inicial_val, self.lbl_ventas_tarjeta_val,
+                      self.lbl_ventas_trans_val, self.lbl_entradas_val, self.lbl_retiros_val,
+                      self.lbl_ventas_efectivo_val, self.lbl_efectivo_esperado_val):
+            label.setText("No disponible")
+        exito, mensaje, sesion = GestorSesionCaja.obtener_resumen_turno(self.sesion_id)
+        if exito and sesion and sesion["id"] == self.sesion_id:
+            try:
+                GestorSesionCaja.analizar_arqueo(sesion, self.num_conteo_usuario.value())
+            except ValueError:
+                self.lbl_resultado_arqueo.setText("Balance invalido; requiere conciliacion.")
+                return False
             self.datos_sesion = sesion
             # Mostramos en las etiquetas correspondientes
             self.lbl_monto_inicial_val.setText(f"${sesion['monto_inicial']:,.2f}")
@@ -242,7 +297,30 @@ class CorteCajaDialog(QDialog):
             self.lbl_ventas_trans_val.setText(f"${sesion['ventas_transferencia']:,.2f}")
             self.lbl_entradas_val.setText(f"${sesion['entradas_efectivo']:,.2f}")
             self.lbl_retiros_val.setText(f"${sesion['retiros_efectivo']:,.2f}")
+            self.lbl_ventas_efectivo_val.setText(f"${sesion['ventas_efectivo']:,.2f}")
+            self.lbl_turno.setText(
+                f"Caja #{sesion['id']} | Usuario de apertura #{sesion['usuario_id']} | {sesion['fecha_apertura']}"
+            )
+            movimientos = sesion["movimientos_ventas"]
+            self.tabla_movimientos.setRowCount(len(movimientos))
+            for fila, venta in enumerate(movimientos):
+                estado = venta["estado"] if venta["activo"] else f"{venta['estado']} (inactiva)"
+                valores = (str(venta["fecha"]), venta["folio"], str(venta["empleado_id"]),
+                           venta["forma_pago"] or "Sin clasificar", estado, f"${venta['total']:,.2f}")
+                for columna, valor in enumerate(valores):
+                    item = QTableWidgetItem(valor)
+                    item.setToolTip(valor)
+                    self.tabla_movimientos.setItem(fila, columna, item)
+            self.actualizar_arqueo()
+            parent = self.parentWidget()
+            incierto = getattr(parent, "_movimiento_efectivo_incierto", False)
+            operativo = callable(getattr(parent, "registrar_movimiento_efectivo", None)) and not incierto
+            self.btn_entrada_efectivo.setEnabled(operativo)
+            self.btn_retiro_efectivo.setEnabled(operativo)
+            self.btn_procesar.setEnabled(not incierto)
+            return True
         else:
+            self.lbl_resultado_arqueo.setText("No hay balance disponible.")
             QMessageBox.critical(
                 self,
                 "Error de Carga",
@@ -251,15 +329,59 @@ class CorteCajaDialog(QDialog):
             )
             # Deshabilitamos el botón de procesar
             self.btn_procesar.setEnabled(False)
+            return False
+
+    def registrar_efectivo(self, es_entrada: bool):
+        parent = self.parentWidget()
+        registrar = getattr(parent, "registrar_movimiento_efectivo", None)
+        if not callable(registrar):
+            QMessageBox.warning(self, "Movimiento de efectivo", "No hay contexto autorizado de ventas.")
+            return
+        confirmado = registrar(es_entrada, sesion_id=self.sesion_id, parent_dialog=self)
+        if confirmado:
+            self.cargar_datos_turno()
+        elif getattr(parent, "_movimiento_efectivo_incierto", False):
+            self.btn_entrada_efectivo.setEnabled(False)
+            self.btn_retiro_efectivo.setEnabled(False)
+            self.btn_procesar.setEnabled(False)
+
+    def actualizar_arqueo(self):
+        if self.datos_sesion is None:
+            return
+        try:
+            analisis = GestorSesionCaja.analizar_arqueo(self.datos_sesion, self.num_conteo_usuario.value())
+        except ValueError:
+            self.btn_procesar.setEnabled(False)
+            self.lbl_resultado_arqueo.setText("Balance invalido; requiere conciliacion.")
+            return
+        esperado = analisis["efectivo_esperado"]
+        self.lbl_efectivo_esperado_val.setText(f"${esperado:,.2f}")
+        estado = analisis["estado"]
+        texto = "CAJA CUADRADA" if estado == "CUADRADA" else f"{estado}: ${abs(analisis['diferencia']):,.2f}"
+        if esperado < 0:
+            texto += " | Balance esperado negativo; requiere conciliacion."
+        self.lbl_resultado_arqueo.setText(texto)
+        color = "semantic.success" if estado == "CUADRADA" else ("semantic.warning" if estado == "SOBRANTE" else "semantic.danger")
+        self.lbl_resultado_arqueo.setStyleSheet(render_qss("QLabel { color: ${" + color + "}; font-weight: bold; }"))
 
     def procesar_corte(self):
+        if getattr(self.parentWidget(), "_movimiento_efectivo_incierto", False):
+            QMessageBox.warning(self, "Corte de caja", "El movimiento de efectivo requiere conciliacion antes del corte.")
+            return
         conteo_usuario = self.num_conteo_usuario.value()
+        if not self.cargar_datos_turno():
+            return
+        analisis = GestorSesionCaja.analizar_arqueo(self.datos_sesion, conteo_usuario)
 
         # Confirmación de la operación irreversible
         resp = QMessageBox.question(
             self,
             "Confirmar Corte de Caja",
-            "¿Está seguro de que desea realizar el cierre definitivo del turno?\n\nEsta acción registrará las diferencias y bloqueará ventas futuras hasta que se inicie un nuevo turno.",
+            "¿Está seguro de que desea realizar el cierre definitivo del turno?\n\n"
+            f"Efectivo esperado: ${analisis['efectivo_esperado']:,.2f}\n"
+            f"Efectivo contado: ${conteo_usuario:,.2f}\n"
+            f"{self.lbl_resultado_arqueo.text()}\n\n"
+            "Esta acción registrará las diferencias y bloqueará ventas futuras hasta que se inicie un nuevo turno.",
             QMessageBox.Yes | QMessageBox.No
         )
         if resp != QMessageBox.Yes:
@@ -279,15 +401,12 @@ class CorteCajaDialog(QDialog):
             diferencia = sesion_cierre["diferencia"]
 
             # Decidimos estado de la caja de cara al usuario
-            if diferencia == 0:
-                conclusion = "🟢 CAJA CUADRADA - El saldo físico coincide perfectamente con el balance esperado."
-                msg_style = "color: green; font-weight: bold; font-size: 11pt;"
+            if round(diferencia, 2) == 0:
+                conclusion = "CAJA CUADRADA - El saldo físico coincide con el balance esperado."
             elif diferencia > 0:
-                conclusion = f"🔵 SOBRANTE EN CAJA de: ${diferencia:,.2f} pesos."
-                msg_style = "color: blue; font-weight: bold; font-size: 11pt;"
+                conclusion = f"SOBRANTE EN CAJA de: ${diferencia:,.2f} pesos."
             else:
-                conclusion = f"🔴 FALTANTE EN CAJA de: ${abs(diferencia):,.2f} pesos."
-                msg_style = "color: red; font-weight: bold; font-size: 11pt;"
+                conclusion = f"FALTANTE EN CAJA de: ${abs(diferencia):,.2f} pesos."
 
             # Mostramos un resumen formal de arqueo al cajero
             resumen_completo = (
@@ -310,7 +429,7 @@ class CorteCajaDialog(QDialog):
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Information)
             msg_box.setWindowTitle("Arqueo Finalizado")
-            msg_box.setText("El corte de caja se ha registrado exitosamente.")
+            msg_box.setText(f"El corte de caja se ha registrado exitosamente.\n\n{conclusion}")
             msg_box.setDetailedText(resumen_completo)
             msg_box.setStandardButtons(QMessageBox.Ok)
             msg_box.exec()

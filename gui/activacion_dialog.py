@@ -8,6 +8,7 @@ from PySide6.QtGui import QIcon, QFont, QPalette, QColor
 
 from hardware import get_hardware_id
 from licencia import validar_licencia, guardar_licencia
+from app.Controller.UiTheme import apply_module_theme, configure_window_chrome
 
 class VentanaActivacion(QDialog):
     def __init__(self, parent=None):
@@ -19,6 +20,13 @@ class VentanaActivacion(QDialog):
 
         # Opciones estéticas
         self.setup_ui()
+        configure_window_chrome(self, minimum_size=(500, 420))
+        self.lbl_titulo.setProperty("role", "title")
+        self.lbl_info.setProperty("role", "caption")
+        self.btn_copiar.setProperty("variant", "secondary")
+        self.btn_cancelar.setProperty("variant", "neutral")
+        self.btn_activar.setProperty("variant", "primary")
+        apply_module_theme(self)
 
     def setup_ui(self):
         # Layout principal
@@ -32,7 +40,6 @@ class VentanaActivacion(QDialog):
         font_titulo.setPointSize(16)
         font_titulo.setBold(True)
         self.lbl_titulo.setFont(font_titulo)
-        self.lbl_titulo.setStyleSheet("color: #1B305B;")
         layout_parent.addWidget(self.lbl_titulo)
 
         self.lbl_info = QLabel(
@@ -43,7 +50,6 @@ class VentanaActivacion(QDialog):
         font_info = QFont()
         font_info.setPointSize(10)
         self.lbl_info.setFont(font_info)
-        self.lbl_info.setStyleSheet("color: #555555;")
         layout_parent.addWidget(self.lbl_info)
 
         # Sección Hardware ID
@@ -62,37 +68,11 @@ class VentanaActivacion(QDialog):
         self.txt_hardware_id = QLineEdit()
         self.txt_hardware_id.setReadOnly(True)
         self.txt_hardware_id.setText(get_hardware_id())
-        self.txt_hardware_id.setStyleSheet("""
-            QLineEdit {
-                background-color: #e9e9e9;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 8px;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 11pt;
-                color: #333333;
-            }
-        """)
+        self.txt_hardware_id.setFont(QFont("Consolas", 11))
         layout_hw_row.addWidget(self.txt_hardware_id, 4)
 
         self.btn_copiar = QPushButton("Copiar ID")
         self.btn_copiar.setCursor(Qt.PointingHandCursor)
-        self.btn_copiar.setStyleSheet("""
-            QPushButton {
-                background-color: #d6e4f0;
-                border: 1px solid #b0c9e0;
-                border-radius: 4px;
-                padding: 8px 14px;
-                font-weight: bold;
-                color: #1B305B;
-            }
-            QPushButton:hover {
-                background-color: #c0d8ed;
-            }
-            QPushButton:pressed {
-                background-color: #a9c6de;
-            }
-        """)
         self.btn_copiar.clicked.connect(self.copiar_id_al_portapapeles)
         layout_hw_row.addWidget(self.btn_copiar, 1)
 
@@ -109,19 +89,7 @@ class VentanaActivacion(QDialog):
 
         self.txt_licencia = QPlainTextEdit()
         self.txt_licencia.setPlaceholderText("Pegue aquí el bloque de texto de su licencia...")
-        self.txt_licencia.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #ffffff;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 8px;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
-            }
-            QPlainTextEdit:focus {
-                border: 1.5px solid #4791F5;
-            }
-        """)
+        self.txt_licencia.setFont(QFont("Consolas", 10))
         layout_lic.addWidget(self.txt_licencia)
         layout_parent.addLayout(layout_lic)
 
@@ -132,53 +100,16 @@ class VentanaActivacion(QDialog):
 
         self.btn_cancelar = QPushButton("Salir")
         self.btn_cancelar.setCursor(Qt.PointingHandCursor)
-        self.btn_cancelar.setStyleSheet("""
-            QPushButton {
-                background-color: #f5f5f5;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 9px 18px;
-                font-size: 10pt;
-                color: #555555;
-            }
-            QPushButton:hover {
-                background-color: #e2e2e2;
-            }
-        """)
         self.btn_cancelar.clicked.connect(self.reject)
         layout_botones.addWidget(self.btn_cancelar)
 
         self.btn_activar = QPushButton("Activar Licencia")
         self.btn_activar.setObjectName("btnActivar")
         self.btn_activar.setCursor(Qt.PointingHandCursor)
-        self.btn_activar.setStyleSheet("""
-            QPushButton#btnActivar {
-                background-color: #4791F5;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 10px 24px;
-                font-size: 10pt;
-                font-weight: bold;
-            }
-            QPushButton#btnActivar:hover {
-                background-color: #3b7ed9;
-            }
-            QPushButton#btnActivar:pressed {
-                background-color: #2b6ebe;
-            }
-        """)
         self.btn_activar.clicked.connect(self.intentar_activacion)
         layout_botones.addWidget(self.btn_activar)
 
         layout_parent.addLayout(layout_botones)
-
-        # Aplicar el estilo general al diálogo
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #fcfcfc;
-            }
-        """)
 
     def copiar_id_al_portapapeles(self):
         clipboard = QApplication.clipboard()

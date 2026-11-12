@@ -1,5 +1,17 @@
 # Spec 04: clientes, personal, organizacion y seguridad
 
+## Ajustes visuales de Roles, Perfil y personal (2026-11-12)
+
+S-07/S-08/S-13/S-14: Cancelar neutral en Roles cierra sin guardar; Perfil tiene entrada identificable en sidebar y conserva su acceso existente. Foto del formulario de empleado fija180x180 desde creacion, carga y limpieza, sin modificar rutas/datos ni el helper de imagenes. [Detalle y evidencia](../05-guia-ui-ux-y-paleta.md#10-ajustes-de-roles-perfil-y-foto-de-empleado):65 Qt focales aprobadas, sin suite completa ni render Windows real. No se cambian permisos, transacciones, credenciales o generados.
+
+## Incremento UI/UX 1B: acceso y shell (2026-11-12)
+
+Correccion posterior autorizada: Login/Saludo/bienvenida/registro vuelven a frameless+translucidez y botones propios; shell vuelve a frameless sin translucidez nueva. Activacion permanece estandar. Helpers conservan los flags preexistentes y paleta/icono. La migracion nativa descrita abajo es evidencia historica, no contrato vigente; [regla y evidencia de correccion](../05-guia-ui-ux-y-paleta.md#9-correccion-visual-1b-disenos-flotantes). Sin cambios funcionales, SQL o seguridad.
+
+Delta de presentacion autorizado para S-01/S-02/S-07/S-08/S-14/S-15: bienvenida, Login/Saludo, formulario de personal, activacion y shell pasan a marco/icono nativo mediante configure_window_chrome, tema/tokens de UiTheme y minimos por ventana. El shell inicia maximizado en lugar de fullscreen y su StackedWidget usa expansion de layouts; roles de cancelar/salir son neutrales. No cambia autenticacion, hash/politica de claves, licencia, permisos, semillas, SQL ni workers. RegistroInicialController sigue siendo formulario de personal, no se transforma en configurador BD.
+
+Evidencia: [guia UI/UX, incremento1B](../05-guia-ui-ux-y-paleta.md#8-incremento-1b-acceso-y-shell), [test_phase1_access.py](../../tests/test_phase1_access.py), [test_static_images.py](../../tests/test_static_images.py). Baseline7 unit/49 Qt; final44 access y418 Qt completas, sin tests de cierre fallidos. Close/reject, senal unica de registro y bloqueo de actualizador del closeEvent se conservan; la X del shell no se redirige al cierre custom con sys.exit. Pruebas con datos sinteticos/dobles y Qt offscreen: barra/DPI Windows reales, SQL/login/licencia y geometria de todos los modulos de negocio siguen sin certificacion. Vistas generadas intactas; sin cierre global de otros REFs ni commit/despliegue.
+
 ## Fotografias: Correccion UI 2026-11-12
 
 S-03/S-07/S-08/S-14: clientes, registro/edicion de empleado y perfil usan [ImagenEstatica](../../app/Controller/ImagenEstatica.py). Imagen grande no aumenta contenedor; entrada vacia/invalida limpia sin QPixmap::scaled nulo. Cliente deja de llamar adjustSize al cargar. La vista cliente declara minimum202x202 y maximum52x52 contradictorios: el helper conserva el minimo efectivo202x202 y normaliza ambos limites, sin editar codigo generado. Perfil conserva220x180. Sin cambio de rutas persistidas, columnas, credito ni usuarios.

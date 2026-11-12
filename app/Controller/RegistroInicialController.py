@@ -24,7 +24,7 @@ from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .ControlSucursalesController import SucursalesController
 from .DepartamentosController import DepartamentosController
 from .PuestosController import PuestosController
-from .UiTheme import apply_title_text_scale
+from .UiTheme import apply_module_theme, configure_window_chrome
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import *
 import traceback
@@ -65,8 +65,24 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado = Ui_RegistroAdministrador()
         self.WindowRegistroEmpleado.setupUi(self)
         self.setWindowTitle("Formulario del personal")
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        configure_window_chrome(self, minimum_size=(900, 600), maximizable=True, frameless=True)
+        self.WindowRegistroEmpleado.btc_cerrar.show()
+        self.WindowRegistroEmpleado.btc_maximizar.show()
+        self.WindowRegistroEmpleado.btc_cerrar.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
+        self.WindowRegistroEmpleado.btc_maximizar.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
+        self.WindowRegistroEmpleado.Button_cancelar.setProperty("variant", "neutral")
+        self.WindowRegistroEmpleado.Button_aceptar.setProperty("variant", "primary")
+        self.WindowRegistroEmpleado.btn_btn_bajapersona.setProperty("variant", "danger")
+        self.WindowRegistroEmpleado.foto_usuario.setFixedSize(180, 180)
+        self.WindowRegistroEmpleado.foto_usuario.setProperty("imagen_estatica_dimension", QSize(180, 180))
+        mostrar_imagen_estatica(self.WindowRegistroEmpleado.foto_usuario)
+        apply_module_theme(self)
+        self.WindowRegistroEmpleado.foto_usuario.setStyleSheet(
+            "QLabel#foto_usuario { min-width: 180px; max-width: 180px; "
+            "min-height: 180px; max-height: 180px; }"
+        )
+        self._mostrar_indicador_foto()
         self.WindowRegistroEmpleado.contenedor_credencialesusuario.hide()
         self.WindowRegistroEmpleado.btn_btn_bajapersona.hide()
         self.WindowRegistroEmpleado.btn_btn_recontratar.hide()
@@ -111,7 +127,6 @@ class Registro_personal_inicial(QDialog):
         AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_parentesco)
         self.WindowRegistroEmpleado.cajaOpciones_genero.addItems(self.generos)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.WindowRegistroEmpleado.cajaOpciones_genero)
-        apply_title_text_scale(self)
         self._configurar_botones_catalogos_dependencias()
 
         # ====================== INICIALIZACION DE FUNCIONES ========================
@@ -475,7 +490,7 @@ class Registro_personal_inicial(QDialog):
         if empleado_seleccionado.foto_empleado is not None and empleado_seleccionado.foto_empleado != "":
             mostrar_imagen_estatica(self.WindowRegistroEmpleado.foto_usuario, empleado_seleccionado.foto_empleado)
         else:
-            self.WindowRegistroEmpleado.foto_usuario.clear()
+            self._mostrar_indicador_foto()
 
         self.file_name = empleado_seleccionado.foto_empleado
 
@@ -893,8 +908,19 @@ class Registro_personal_inicial(QDialog):
                 Mensaje().mensaje_alerta("El tamaño de la imagen sobre pasa los 5Mb")
         return
 
+    def _mostrar_indicador_foto(self):
+        foto = self.WindowRegistroEmpleado.foto_usuario
+        mostrar_imagen_estatica(foto)
+        foto.setText(
+            '<html><body><p align="center">'
+            '<img src=":/Icons/IconosSVG/subir_imagen.png" width="72" height="64"/>'
+            '</p><p align="center"><b>Cargar Imagen</b></p></body></html>'
+        )
+        foto.setToolTip("Cargar imagen del empleado")
+        foto.setAccessibleName("Cargar imagen del empleado")
+
     def eliminar_foto(self):
-        self.WindowRegistroEmpleado.foto_usuario.clear()
+        self._mostrar_indicador_foto()
         self.file_name = None
 
     def ingresar_validaciones(self):

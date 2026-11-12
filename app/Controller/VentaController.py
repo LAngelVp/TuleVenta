@@ -31,6 +31,47 @@ import math
 from ..View.UserInterfacePy.UI_CONTROL_VENTA import Ui_Venta
 from .MensajesAlertasController import Mensaje
 from .VentaTicketPrinter import TicketVentaPrinter
+from .UiTheme import apply_module_theme, official_window_icon, render_qss
+
+
+class DialogoImporteEfectivo(QInputDialog):
+    def __init__(self, parent, titulo):
+        super().__init__(parent)
+        self.setObjectName("dialogo_importe_efectivo")
+        self.setWindowTitle(titulo)
+        self.setWindowIcon(official_window_icon())
+        self.setInputMode(QInputDialog.DoubleInput)
+        self.setLabelText("Importe ($):")
+        self.setDoubleRange(0.01, 999999.99)
+        self.setDoubleDecimals(2)
+        self.setDoubleValue(0.01)
+        self.setOkButtonText("Registrar")
+        self.setCancelButtonText("Cancelar")
+        self.setMinimumWidth(360)
+        apply_module_theme(self)
+        self.setStyleSheet(self.styleSheet() + render_qss("""
+            QInputDialog#dialogo_importe_efectivo { background: ${surface.main}; }
+            QLabel { color: ${text.main}; background: transparent; }
+            QDoubleSpinBox { background: ${surface.panel}; color: ${text.main};
+                border: 1px solid ${border.control}; padding: 6px; }
+            QPushButton { background: ${brand.primary}; color: ${text.onAccent};
+                border: 1px solid ${brand.primary}; border-radius: 4px; padding: 6px 12px; }
+            QPushButton:enabled:hover { background: ${brand.primary.hover}; }
+            QPushButton:enabled:pressed { background: ${brand.primary.pressed}; }
+            QPushButton:disabled { background: ${surface.disabled}; color: ${text.disabled}; }
+            QPushButton[variant="neutral"] { background: ${surface.table.alternate}; color: ${text.main};
+                border: 1px solid ${border.control}; }
+            QPushButton[variant="neutral"]:enabled:hover { background: ${surface.disabled}; }
+        """))
+
+
+def capturar_importe_efectivo(parent, titulo):
+    dialogo = DialogoImporteEfectivo(parent, titulo)
+    try:
+        aceptado = dialogo.exec() == QDialog.Accepted
+        return dialogo.doubleValue(), aceptado
+    finally:
+        dialogo.deleteLater()
 
 
 class Venta(QWidget):
@@ -982,6 +1023,43 @@ class Venta(QWidget):
 
         # Add both buttons to the new layout horizontal
         self.layout_botones_derecha.addWidget(self.ui.btn_btn_cancelarticket)
+        self.btn_abrir_caja = QPushButton("Abrir Caja", self.ui.contenedor_controlcentral)
+        self.btn_abrir_caja.setObjectName("btn_abrir_caja")
+        self.btn_abrir_caja.setProperty("variant", "primary")
+        self.btn_abrir_caja.setStyleSheet(render_qss("""
+            QPushButton { background: ${brand.primary}; color: ${text.onAccent};
+                border: 1px solid ${brand.primary}; border-radius: 5px; padding: 6px 10px; }
+            QPushButton:enabled:hover { background: ${brand.primary.hover}; }
+            QPushButton:enabled:pressed { background: ${brand.primary.pressed}; }
+        """))
+        self.btn_abrir_caja.clicked.connect(self.abrir_caja_manualmente)
+        self.btn_abrir_caja.hide()
+        self.layout_botones_derecha.addWidget(self.btn_abrir_caja)
+        self.btn_movimientos_efectivo = QPushButton("Efectivo", self.ui.contenedor_controlcentral)
+        self.btn_movimientos_efectivo.setObjectName("btn_movimientos_efectivo")
+        self.btn_movimientos_efectivo.setProperty("variant", "secondary")
+        self.btn_movimientos_efectivo.setStyleSheet(render_qss("""
+            QPushButton#btn_movimientos_efectivo { background: ${brand.secondary}; color: ${text.onAccent};
+                border: 1px solid ${brand.secondary}; border-radius: 5px; padding: 6px 10px; }
+            QPushButton#btn_movimientos_efectivo:enabled:hover { background: ${brand.secondary.hover}; }
+            QPushButton#btn_movimientos_efectivo:enabled:pressed { background: ${brand.secondary.pressed}; }
+            QPushButton#btn_movimientos_efectivo:focus { border: 2px solid ${focus.ring}; }
+            QPushButton#btn_movimientos_efectivo:disabled { background: ${surface.disabled}; color: ${text.disabled}; }
+        """))
+        menu_efectivo = QMenu(self.btn_movimientos_efectivo)
+        menu_efectivo.setStyleSheet(render_qss("""
+            QMenu { background: ${surface.panel}; color: ${text.main}; border: 1px solid ${border.subtle}; padding: 4px; }
+            QMenu::item { background: transparent; color: ${text.main}; padding: 8px 12px; }
+            QMenu::item:selected { background: ${brand.secondary}; color: ${text.onAccent}; }
+            QMenu::item:disabled { color: ${text.disabled}; }
+        """))
+        self.accion_entrada_efectivo = menu_efectivo.addAction("Entrada en efectivo")
+        self.accion_retiro_efectivo = menu_efectivo.addAction("Retiro / salida de efectivo")
+        self.accion_entrada_efectivo.triggered.connect(lambda checked=False: self.registrar_movimiento_efectivo(True))
+        self.accion_retiro_efectivo.triggered.connect(lambda checked=False: self.registrar_movimiento_efectivo(False))
+        self.btn_movimientos_efectivo.setMenu(menu_efectivo)
+        self.btn_movimientos_efectivo.hide()
+        self.layout_botones_derecha.addWidget(self.btn_movimientos_efectivo)
         self.layout_botones_derecha.addWidget(self.btn_btn_cortecaja)
 
         # Create a vertical layout on the right side to hold both the buttons layout and the details card
@@ -1040,6 +1118,90 @@ class Venta(QWidget):
         self._set_controles_habilitados(False)
         return False
 
+    def abrir_caja_manualmente(self):
+        datos = self.datos_usuario or {}
+        usuario_id = datos.get("id_usuario")
+        if not isinstance(usuario_id, int) or isinstance(usuario_id, bool) or usuario_id <= 0:
+            Mensaje().mensaje_alerta("No hay un usuario valido para abrir la caja.")
+            return
+        parent = self.window()
+        if parent is not None and hasattr(parent, "_tiene_algun_permiso"):
+            autorizado = parent._tiene_algun_permiso({"CREARVENTA"})
+        else:
+            permisos = {str(permiso).strip().upper() for permiso in datos.get("permisos", [])}
+            autorizado = bool(permisos.intersection({"ADMINISTRADOR", "CREARVENTA"}))
+        if not autorizado:
+            Mensaje().mensaje_informativo("No cuentas con permisos para abrir la caja desde ventas.")
+            return
+        self._verificar_y_asegurar_caja()
+
+    def registrar_movimiento_efectivo(self, es_entrada: bool, sesion_id=None, parent_dialog=None):
+        from sesion_caja import GestorSesionCaja
+        dialog_parent = parent_dialog or self
+        estilo_mensajes = render_qss("""
+            QMessageBox { background: ${surface.panel}; color: ${text.main}; }
+            QMessageBox QLabel { color: ${text.main}; background: transparent; }
+            QMessageBox QPushButton { background: ${brand.primary}; color: ${text.onAccent};
+                border: 1px solid ${brand.primary}; border-radius: 4px; padding: 6px 12px; }
+            QMessageBox QPushButton:enabled:hover { background: ${brand.primary.hover}; }
+            QMessageBox QPushButton:enabled:pressed { background: ${brand.primary.pressed}; }
+            QMessageBox QPushButton:disabled { background: ${surface.disabled}; color: ${text.disabled}; }
+        """)
+        if estilo_mensajes not in dialog_parent.styleSheet():
+            dialog_parent.setStyleSheet(dialog_parent.styleSheet() + estilo_mensajes)
+        titulo = "Entrada en efectivo" if es_entrada else "Retiro / salida de efectivo"
+        datos = self.datos_usuario or {}
+        usuario_id = datos.get("id_usuario")
+        if not isinstance(usuario_id, int) or isinstance(usuario_id, bool) or usuario_id <= 0:
+            QMessageBox.warning(dialog_parent, titulo, "No hay un usuario valido para operar la caja.")
+            return False
+        principal = self.window()
+        if hasattr(principal, "_tiene_algun_permiso"):
+            autorizado = principal._tiene_algun_permiso({"CREARVENTA"})
+        else:
+            permisos = {str(permiso).strip().upper() for permiso in datos.get("permisos", [])}
+            autorizado = bool(permisos.intersection({"ADMINISTRADOR", "CREARVENTA"}))
+        if not autorizado:
+            QMessageBox.warning(dialog_parent, titulo, "No cuentas con permisos para operar efectivo desde ventas.")
+            return False
+        if getattr(self, "_movimiento_efectivo_incierto", False):
+            QMessageBox.warning(dialog_parent, titulo, "El movimiento anterior requiere conciliacion antes de continuar.")
+            return False
+        caja_id = self.sesion_caja_id if sesion_id is None else sesion_id
+        if not self.caja_abierta or caja_id != self.sesion_caja_id:
+            QMessageBox.warning(dialog_parent, titulo, "Se requiere la caja abierta del turno actual.")
+            return False
+        exito, mensaje, resumen = GestorSesionCaja.obtener_resumen_turno(caja_id)
+        if not exito or not resumen or resumen["id"] != caja_id:
+            QMessageBox.warning(dialog_parent, titulo, "No se pudo verificar la caja seleccionada.")
+            return False
+        try:
+            esperado = GestorSesionCaja.analizar_arqueo(resumen, 0)["efectivo_esperado"]
+        except ValueError:
+            QMessageBox.warning(dialog_parent, titulo, "El balance requiere conciliacion antes de operar.")
+            return False
+        monto, aceptado = capturar_importe_efectivo(dialog_parent, titulo)
+        if not aceptado:
+            return False
+        if isinstance(monto, bool) or not math.isfinite(monto) or monto <= 0:
+            QMessageBox.warning(dialog_parent, titulo, "El importe debe ser positivo y finito.")
+            return False
+        saldo_previsto = esperado + monto if es_entrada else esperado - monto
+        detalle = f"Caja #{caja_id}\nImporte: ${monto:,.2f}\nEfectivo esperado tras el movimiento: ${saldo_previsto:,.2f}"
+        if saldo_previsto < 0:
+            detalle += "\nEl balance previsto es negativo y requiere conciliacion."
+        if QMessageBox.question(dialog_parent, titulo, detalle, QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+            return False
+        exito, mensaje, incierto = GestorSesionCaja.procesar_movimiento_efectivo(caja_id, monto, es_entrada)
+        if not exito:
+            if incierto:
+                self._movimiento_efectivo_incierto = True
+                self.btn_movimientos_efectivo.setEnabled(False)
+            QMessageBox.warning(dialog_parent, titulo, mensaje)
+            return False
+        QMessageBox.information(dialog_parent, titulo, f"Movimiento registrado por ${monto:,.2f}.")
+        return True
+
     def _set_controles_habilitados(self, enabled: bool):
         """
         Enables or disables widgets in the Sales Manager to enforce the mandatory active shift rule.
@@ -1052,6 +1214,9 @@ class Venta(QWidget):
         self.ui.btn_btn_buscarclientedescuento.setEnabled(enabled)
         self.ui.btn_btn_buscarcreditocliente.setEnabled(enabled)
         self.ui.btn_btn_cobrarconcredito.setEnabled(enabled)
+        self.btn_abrir_caja.setVisible(not enabled)
+        self.btn_movimientos_efectivo.setVisible(enabled)
+        self.btn_movimientos_efectivo.setEnabled(enabled and not getattr(self, "_movimiento_efectivo_incierto", False))
 
         # Modify the placeholder so the user is informed
         if not enabled:
@@ -1065,6 +1230,9 @@ class Venta(QWidget):
         Blocks the sales screen upon clean closure and shifts user back to opening state.
         """
         from sesion_caja import GestorSesionCaja
+        if getattr(self, "_movimiento_efectivo_incierto", False):
+            Mensaje().mensaje_alerta("El movimiento de efectivo requiere conciliacion antes de cortar la caja.")
+            return
         if not self.sesion_caja_id:
             exito, mensaje, sesion = GestorSesionCaja.obtener_sesion_activa()
             if exito and sesion:

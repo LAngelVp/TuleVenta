@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from types import SimpleNamespace
 import inspect
 
 import pytest
@@ -148,6 +149,140 @@ def sale_seed(writer, credit=False):
                    usuario_id=user.id, sesion_caja_id=cash.id, fecha=datetime(2026, 11, 12),
                    subtotal=20, total=20, iva_total=0, descuento_total=0, iva_tasa=0, es_credito=credit)
     return details, [dict(producto_id=product.id, cantidad=2, precio_unitario=10)], product.id, cash.id, customer.id
+
+
+@pytest.fixture
+def cash_sql_backend(sql_context, postgres_sandbox, monkeypatch):
+    import sesion_caja as module
+    writer, reader = sql_context
+    user = insert(writer, bd.Usuarios)
+    cash = insert(writer, bd.SesionCaja, usuario_id=user.id, monto_inicial=100, efectivo_esperado=100)
+    writer.flush()
+    identifier = cash.id
+    writer.commit()
+    state = SimpleNamespace(module=module, writer=writer, reader=reader, identifier=identifier,
+                            on_open=lambda session: None)
+
+    class TestConnection:
+        def __enter__(self):
+            self.session = postgres_sandbox.new_session()
+            return self
+
+        def abrir_sesion(self):
+            state.on_open(self.session)
+            return self.session
+
+        def __exit__(self, *args):
+            self.session.close()
+
+    monkeypatch.setattr(module, "Conexion_base_datos", TestConnection)
+    return state
+
+
+@pytest.mark.parametrize("mode", ["entry", "withdrawal", "closed", "sql_failure"])
+def test_cash_movement_postgres_persistence_and_rollback(cash_sql_backend, mode):
+    state = cash_sql_backend
+    if mode == "closed":
+        state.writer.get(bd.SesionCaja, state.identifier).estado = "CERRADA"
+        state.writer.commit()
+    elif mode == "sql_failure":
+        state.writer.execute(text('ALTER TABLE "SesionCaja" ADD CONSTRAINT reject_cash_entry CHECK (entradas_efectivo = 0)'))
+        state.writer.commit()
+    success, message, uncertain = state.module.GestorSesionCaja.procesar_movimiento_efectivo(
+        state.identifier, 25, mode != "withdrawal")
+    assert success == (mode in ("entry", "withdrawal")), message
+    assert uncertain is False
+    state.reader.expire_all()
+    cash = state.reader.get(bd.SesionCaja, state.identifier)
+    assert cash.entradas_efectivo == (25 if mode == "entry" else 0)
+    assert cash.retiros_efectivo == (25 if mode == "withdrawal" else 0)
+    assert cash.efectivo_esperado == (125 if mode == "entry" else 75 if mode == "withdrawal" else 100)
+
+
+@pytest.mark.concurrency
+@pytest.mark.parametrize("first_entry, second_entry", [(True, True), (True, False), (False, False)])
+def test_cash_movement_postgres_two_connections_wait_and_preserve_balance(cash_sql_backend, first_entry, second_entry):
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError
+    from threading import Event
+    from sqlalchemy import select
+
+    state = cash_sql_backend
+    state.writer.execute(select(bd.SesionCaja).where(bd.SesionCaja.id == state.identifier).with_for_update()).scalar_one()
+    first_backend = state.writer.execute(text("SELECT pg_backend_pid()")).scalar_one()
+    started = Event()
+    second_backends = []
+
+    def opened(session):
+        second_backends.append(session.execute(text("SELECT pg_backend_pid()")).scalar_one())
+        started.set()
+
+    state.on_open = opened
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(state.module.GestorSesionCaja.procesar_movimiento_efectivo,
+                                 state.identifier, 10, second_entry)
+        try:
+            assert started.wait(timeout=10)
+            assert second_backends[0] != first_backend
+            with pytest.raises(TimeoutError):
+                future.result(timeout=0.2)
+            success, message = state.module.GestorSesionCaja.registrar_entrada_retiro(
+                state.identifier, 25, first_entry, session=state.writer, confirmar=False)
+            assert success, message
+            state.writer.flush()
+            state.writer.commit()
+        finally:
+            state.writer.rollback()
+        assert future.result(timeout=10)[0]
+    state.reader.expire_all()
+    cash = state.reader.get(bd.SesionCaja, state.identifier)
+    entries = (25 if first_entry else 0) + (10 if second_entry else 0)
+    withdrawals = (0 if first_entry else 25) + (0 if second_entry else 10)
+    assert cash.entradas_efectivo == entries
+    assert cash.retiros_efectivo == withdrawals
+    assert cash.efectivo_esperado == 100 + entries - withdrawals
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("entry", [True, False])
+def test_cash_movement_arqueo_to_real_postgres(cash_sql_backend, monkeypatch, qtbot, entry):
+    import app.Controller.VentaController as controller
+    from gui.corte_caja_dialog import CorteCajaDialog
+    from PySide6.QtWidgets import QWidget
+    state = cash_sql_backend
+
+    class POSHarness(controller.Venta):
+        def __init__(self):
+            QWidget.__init__(self)
+            self.ui = controller.Ui_Venta()
+            self.ui.setupUi(self)
+            self.datos_usuario = {"id_usuario": state.writer.get(bd.SesionCaja, state.identifier).usuario_id,
+                                  "permisos": ["CREARVENTA"]}
+            self.sesion_caja_id = state.identifier
+            self.caja_abierta = True
+            self._crear_boton_corte_caja()
+            self._set_controles_habilitados(True)
+
+    window = POSHarness()
+    qtbot.addWidget(window)
+    monkeypatch.setattr(controller, "capturar_importe_efectivo", lambda *args: (25.0, True))
+    monkeypatch.setattr(controller.QMessageBox, "question", lambda *args: controller.QMessageBox.Yes)
+    monkeypatch.setattr(controller.QMessageBox, "information", lambda *args: None)
+    monkeypatch.setattr(controller.QMessageBox, "warning", lambda *args: None)
+    monkeypatch.setattr(controller.QMessageBox, "critical", lambda *args: None)
+    dialog = CorteCajaDialog(state.identifier, parent=window)
+    dialog.num_conteo_usuario.setValue(100)
+    button = dialog.btn_entrada_efectivo if entry else dialog.btn_retiro_efectivo
+    assert button.isEnabled()
+    button.click()
+    expected = 125 if entry else 75
+    assert dialog.lbl_efectivo_esperado_val.text() == f"${expected:.2f}"
+    assert dialog.lbl_resultado_arqueo.text() == ("FALTANTE: $25.00" if entry else "SOBRANTE: $25.00")
+    state.reader.expire_all()
+    cash = state.reader.get(bd.SesionCaja, state.identifier)
+    assert cash.entradas_efectivo == (25 if entry else 0)
+    assert cash.retiros_efectivo == (0 if entry else 25)
+    assert cash.efectivo_esperado == expected
+    assert cash.estado == "ABIERTA"
 
 
 @pytest.mark.parametrize("credit", [False, True])

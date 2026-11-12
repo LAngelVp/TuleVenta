@@ -972,6 +972,524 @@ def test_ref33_pos_product_and_customer_reads_return_snapshots(sale_context):
     assert customer.credito_disponible == 100
 
 
+@pytest.fixture
+def cash_review_data():
+    return {
+        "id": 5, "usuario_id": 7, "fecha_apertura": datetime(2026, 1, 1, 8), "estado": "ABIERTA",
+        "monto_inicial": 100.0, "ventas_efectivo": 200.0, "ventas_tarjeta": 400.0,
+        "ventas_transferencia": 500.0, "entradas_efectivo": 50.0, "retiros_efectivo": 20.0,
+        "movimientos_ventas": [
+            {"id": identifier, "folio": f"TEST-{identifier}", "fecha": datetime(2026, 1, 1, 9),
+             "empleado_id": 8, "forma_pago": method, "estado": status, "activo": active,
+             "total": total, "cancelada_por_usuario_id": None, "fecha_cancelacion": None}
+            for identifier, method, status, active, total in (
+                (1, "Contado", "COMPLETADA", True, 200.0),
+                (2, "Tarjeta", "COMPLETADA", True, 400.0),
+                (3, "Credito", "COMPLETADA", True, 99.0),
+                (4, "Contado", "CANCELADA", False, 25.0))
+        ],
+    }
+
+
+@pytest.fixture
+def cash_movement_backend(monkeypatch, cash_review_data):
+    import sesion_caja as module
+    session = Mock()
+    caja = SimpleNamespace(**cash_review_data)
+    session.execute.return_value.scalar_one_or_none.return_value = caja
+    session.get.return_value = caja
+    database = Mock()
+    database.__enter__ = Mock(return_value=database)
+    database.__exit__ = Mock(return_value=False)
+    database.abrir_sesion.return_value = session
+    monkeypatch.setattr(module, "Conexion_base_datos", lambda: database)
+    return SimpleNamespace(module=module, session=session, caja=caja)
+
+
+@pytest.mark.parametrize("entry, expected", [(True, 355), (False, 305)])
+def test_cash_movement_single_commit_with_lock(cash_movement_backend, entry, expected):
+    state = cash_movement_backend
+    result = state.module.GestorSesionCaja.procesar_movimiento_efectivo(5, 25, entry)
+    assert result == (True, "Movimiento de efectivo registrado.", False)
+    assert state.caja.efectivo_esperado == expected
+    assert "FOR UPDATE" in str(state.session.execute.call_args.args[0].compile())
+    state.session.flush.assert_called_once()
+    state.session.commit.assert_called_once()
+    state.session.rollback.assert_not_called()
+
+
+@pytest.mark.parametrize("amount", [0, -1, float("nan"), float("inf"), None, True, "invalido"])
+def test_cash_movement_invalid_amount_never_opens_session(cash_movement_backend, amount):
+    state = cash_movement_backend
+    result = state.module.GestorSesionCaja.procesar_movimiento_efectivo(5, amount, True)
+    assert not result[0] and not result[2]
+    state.session.execute.assert_not_called()
+    state.session.commit.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", ["closed", "missing", "flush", "commit"])
+def test_cash_movement_rollback_and_uncertain_commit(cash_movement_backend, failure):
+    state = cash_movement_backend
+    if failure == "closed":
+        state.caja.estado = "CERRADA"
+    elif failure == "missing":
+        state.session.execute.return_value.scalar_one_or_none.return_value = None
+    else:
+        getattr(state.session, failure).side_effect = RuntimeError("synthetic technical detail")
+    success, message, uncertain = state.module.GestorSesionCaja.procesar_movimiento_efectivo(5, 25, True)
+    assert not success and uncertain == (failure == "commit")
+    assert "synthetic technical detail" not in message
+    state.session.rollback.assert_called_once()
+    if failure != "commit":
+        state.session.commit.assert_not_called()
+
+
+def test_cash_movement_nonfinite_balance_rolls_back(cash_movement_backend):
+    state = cash_movement_backend
+    state.caja.monto_inicial = 1e308
+    state.caja.ventas_efectivo = 1e308
+    success, message, uncertain = state.module.GestorSesionCaja.procesar_movimiento_efectivo(5, 25, True)
+    assert not success and not uncertain
+    state.session.commit.assert_not_called()
+    state.session.rollback.assert_called_once()
+
+
+@pytest.fixture
+def cash_pos(monkeypatch, qtbot, cash_review_data):
+    import app.Controller.VentaController as module
+    from PySide6.QtWidgets import QWidget
+    from sesion_caja import GestorSesionCaja
+
+    class POSHarness(module.Venta):
+        def __init__(self):
+            QWidget.__init__(self)
+            self.ui = module.Ui_Venta()
+            self.ui.setupUi(self)
+            self.datos_usuario = {"id_usuario": 7, "permisos": ["CREARVENTA"]}
+            self.sesion_caja_id = 5
+            self.caja_abierta = True
+            self._crear_boton_corte_caja()
+            self._set_controles_habilitados(True)
+
+    window = POSHarness()
+    qtbot.addWidget(window)
+    window.show()
+    query = Mock(return_value=(True, "ok", cash_review_data))
+    monkeypatch.setattr(GestorSesionCaja, "obtener_resumen_turno", query)
+
+    def persist(identifier, amount, entry):
+        field = "entradas_efectivo" if entry else "retiros_efectivo"
+        cash_review_data[field] += amount
+        return True, "ok", False
+
+    write = Mock(side_effect=persist)
+    monkeypatch.setattr(GestorSesionCaja, "procesar_movimiento_efectivo", write)
+    amount = Mock(return_value=(25.0, True))
+    confirmation = Mock(return_value=module.QMessageBox.Yes)
+    warning = Mock()
+    information = Mock()
+    capture = module.capturar_importe_efectivo
+    monkeypatch.setattr(module, "capturar_importe_efectivo", amount)
+    monkeypatch.setattr(module.QMessageBox, "question", confirmation)
+    monkeypatch.setattr(module.QMessageBox, "warning", warning)
+    monkeypatch.setattr(module.QMessageBox, "information", information)
+    return SimpleNamespace(window=window, module=module, query=query, write=write, amount=amount,
+                           confirmation=confirmation, warning=warning, information=information, capture=capture)
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("entry, expected, conclusion", [(True, "$355.00", "FALTANTE: $25.00"),
+                                                        (False, "$305.00", "SOBRANTE: $25.00")])
+def test_cash_movement_from_arqueo_updates_confirmed_balance(cash_pos, entry, expected, conclusion):
+    from gui.corte_caja_dialog import CorteCajaDialog
+    state = cash_pos
+    dialog = CorteCajaDialog(5, parent=state.window)
+    dialog.show()
+    dialog.num_conteo_usuario.setValue(330)
+    button = dialog.btn_entrada_efectivo if entry else dialog.btn_retiro_efectivo
+    assert button.isEnabled()
+    button.click()
+    state.write.assert_called_once_with(5, 25.0, entry)
+    assert state.amount.call_args.args[0] is dialog
+    assert dialog.lbl_efectivo_esperado_val.text() == expected
+    assert dialog.lbl_resultado_arqueo.text() == conclusion
+    assert dialog.result() != state.module.QDialog.Accepted
+    assert state.query.call_count == 3
+    state.information.assert_called_once()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("entry", [True, False])
+def test_cash_movement_pos_menu_routes_both_actions(cash_pos, entry):
+    state = cash_pos
+    action = state.window.accion_entrada_efectivo if entry else state.window.accion_retiro_efectivo
+    action.trigger()
+    state.write.assert_called_once_with(5, 25.0, entry)
+    state.window._set_controles_habilitados(False)
+    assert not state.window.btn_movimientos_efectivo.isVisible()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("title, accepted", [("Entrada en efectivo", True), ("Retiro / salida de efectivo", False)])
+def test_cash_movement_theme_and_real_amount_dialog(cash_pos, qtbot, qapp, monkeypatch, title, accepted):
+    from PySide6.QtCore import QTimer
+    from PySide6.QtGui import QPalette
+    from PySide6.QtWidgets import QDoubleSpinBox, QLabel, QPushButton
+    from app.Controller.UiTheme import COLOR_TOKENS
+    state = cash_pos
+    button = state.window.btn_movimientos_efectivo
+    qapp.processEvents()
+    assert button.palette().color(QPalette.Button).name().upper() == COLOR_TOKENS["brand.secondary"].upper()
+    assert button.palette().color(QPalette.ButtonText).name().upper() == COLOR_TOKENS["text.onAccent"].upper()
+    assert COLOR_TOKENS["text.main"] in button.menu().styleSheet()
+    original_exec = state.module.DialogoImporteEfectivo.exec
+
+    def inspect_dialog(dialog):
+        dialog.show()
+        qapp.processEvents()
+        assert dialog.windowTitle() == title
+        assert not dialog.windowIcon().isNull()
+        assert dialog.doubleMinimum() == 0.01
+        assert dialog.doubleMaximum() == 999999.99
+        assert dialog.doubleDecimals() == 2
+        assert dialog.palette().color(QPalette.Window).name().upper() == COLOR_TOKENS["surface.main"].upper()
+        label = dialog.findChild(QLabel)
+        assert label.palette().color(QPalette.WindowText).name().upper() == COLOR_TOKENS["text.main"].upper()
+        spin = dialog.findChild(QDoubleSpinBox)
+        assert spin.palette().color(QPalette.Text).name().upper() == COLOR_TOKENS["text.main"].upper()
+        for control in dialog.findChildren(QPushButton):
+            assert control.palette().color(QPalette.Button) != control.palette().color(QPalette.ButtonText)
+        assert not dialog.grab().isNull()
+        dialog.setDoubleValue(25)
+        QTimer.singleShot(0, dialog.accept if accepted else dialog.reject)
+        return original_exec(dialog)
+
+    monkeypatch.setattr(state.module.DialogoImporteEfectivo, "exec", inspect_dialog)
+    amount, confirmed = state.capture(state.window, title)
+    assert amount == 25 and confirmed is accepted
+    state.write.assert_not_called()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("from_arqueo", [False, True])
+def test_cash_movement_information_message_contrast(cash_pos, qapp, from_arqueo):
+    from PySide6.QtGui import QPalette
+    from PySide6.QtWidgets import QLabel, QPushButton, QMessageBox
+    from gui.corte_caja_dialog import CorteCajaDialog
+    from app.Controller.UiTheme import COLOR_TOKENS
+    state = cash_pos
+    parent = CorteCajaDialog(5, parent=state.window) if from_arqueo else state.window
+    parent.show()
+    qapp.processEvents()
+    state.amount.return_value = (25, False)
+    state.window.registrar_movimiento_efectivo(True, parent_dialog=parent)
+    style = parent.styleSheet()
+    state.window.registrar_movimiento_efectivo(False, parent_dialog=parent)
+    assert parent.styleSheet() == style
+    message = QMessageBox(parent)
+    message.setIcon(QMessageBox.Information)
+    message.setText("Movimiento registrado.")
+    message.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    message.show()
+    qapp.processEvents()
+    image = message.grab().toImage()
+    assert image.pixelColor(8, 8).name().upper() == COLOR_TOKENS["surface.panel"].upper()
+    label = message.findChild(QLabel, "qt_msgbox_label")
+    assert label.palette().color(QPalette.WindowText).name().upper() == COLOR_TOKENS["text.main"].upper()
+    for button in message.findChildren(QPushButton):
+        assert button.palette().color(QPalette.Button) != button.palette().color(QPalette.ButtonText)
+    assert not message.grab().isNull()
+    message.close()
+    state.write.assert_not_called()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("failure", ["cancel", "decline", "invalid", "user", "permission", "closed", "different"])
+def test_cash_movement_rejected_requests_never_write(cash_pos, failure):
+    state = cash_pos
+    identifier = None
+    if failure == "cancel":
+        state.amount.return_value = (25, False)
+    elif failure == "decline":
+        state.confirmation.return_value = state.module.QMessageBox.No
+    elif failure == "invalid":
+        state.amount.return_value = (float("nan"), True)
+    elif failure == "user":
+        state.window.datos_usuario["id_usuario"] = None
+    elif failure == "permission":
+        state.window.datos_usuario["permisos"] = []
+    elif failure == "closed":
+        state.window.caja_abierta = False
+    else:
+        identifier = 99
+    assert state.window.registrar_movimiento_efectivo(True, sesion_id=identifier) is False
+    state.write.assert_not_called()
+    state.information.assert_not_called()
+
+
+@pytest.mark.qt
+def test_cash_movement_uncertain_commit_blocks_retry_and_cut(cash_pos, monkeypatch):
+    from gui.corte_caja_dialog import CorteCajaDialog
+    state = cash_pos
+    state.write.side_effect = None
+    state.write.return_value = (False, "Confirmacion incierta", True)
+    dialog = CorteCajaDialog(5, parent=state.window)
+    dialog.btn_entrada_efectivo.click()
+    assert state.window._movimiento_efectivo_incierto
+    assert not state.window.btn_movimientos_efectivo.isEnabled()
+    assert not dialog.btn_entrada_efectivo.isEnabled()
+    assert not dialog.btn_retiro_efectivo.isEnabled()
+    assert not dialog.btn_procesar.isEnabled()
+    state.window.registrar_movimiento_efectivo(True)
+    assert state.write.call_count == 1
+    close = Mock()
+    monkeypatch.setattr(state.module.Mensaje, "mensaje_alerta", Mock())
+    from sesion_caja import GestorSesionCaja
+    monkeypatch.setattr(GestorSesionCaja, "cerrar_sesion_caja", close)
+    dialog.procesar_corte()
+    state.window.realizar_corte_caja()
+    close.assert_not_called()
+
+
+@pytest.mark.parametrize("count, status, delta", [(0, "FALTANTE", -330), (320, "FALTANTE", -10),
+                                                 (330, "CUADRADA", 0), (345, "SOBRANTE", 15)])
+def test_cash_review_analysis(cash_review_data, count, status, delta):
+    from sesion_caja import GestorSesionCaja
+    result = GestorSesionCaja.analizar_arqueo(cash_review_data, count)
+    assert result["efectivo_esperado"] == 330
+    assert result["diferencia"] == delta
+    assert result["estado"] == status
+    assert cash_review_data["estado"] == "ABIERTA"
+
+
+@pytest.mark.parametrize("field", ["conteo", "monto_inicial", "ventas_efectivo", "entradas_efectivo", "retiros_efectivo"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -1, None, "invalido"])
+def test_cash_review_invalid_amounts(cash_review_data, field, value):
+    from sesion_caja import GestorSesionCaja
+    count = value if field == "conteo" else 330
+    if field != "conteo":
+        cash_review_data[field] = value
+    with pytest.raises(ValueError):
+        GestorSesionCaja.analizar_arqueo(cash_review_data, count)
+
+
+def test_cash_review_float_presentation(cash_review_data):
+    from sesion_caja import GestorSesionCaja
+    cash_review_data.update(monto_inicial=0.1, ventas_efectivo=0.2, entradas_efectivo=0, retiros_efectivo=0)
+    result = GestorSesionCaja.analizar_arqueo(cash_review_data, 0.3)
+    assert result["estado"] == "CUADRADA"
+    assert result["diferencia"] == 0.3 - (0.1 + 0.2)
+
+
+def test_cash_review_reads_selected_session_only(cash_review_data):
+    from sesion_caja import GestorSesionCaja, SesionCaja
+    database = Mock()
+    database.get.return_value = SimpleNamespace(**cash_review_data)
+    database.execute.return_value.scalars.return_value.all.return_value = [
+        SimpleNamespace(**sale) for sale in cash_review_data["movimientos_ventas"]]
+    success, message, result = GestorSesionCaja.obtener_resumen_turno(5, session=database)
+    assert success, message
+    assert result["id"] == 5
+    assert result["movimientos_ventas"] == cash_review_data["movimientos_ventas"]
+    database.get.assert_called_once_with(SesionCaja, 5)
+    statement = database.execute.call_args.args[0]
+    assert statement.compile().params["sesion_caja_id_1"] == 5
+    database.commit.assert_not_called()
+    database.rollback.assert_not_called()
+
+
+@pytest.mark.parametrize("found", [False, True])
+def test_cash_review_does_not_substitute_another_open_session(cash_review_data, found):
+    from sesion_caja import GestorSesionCaja
+    database = Mock()
+    cash_review_data["estado"] = "CERRADA"
+    database.get.return_value = SimpleNamespace(**cash_review_data) if found else None
+    assert GestorSesionCaja.obtener_resumen_turno(5, session=database)[0] is False
+    database.execute.assert_not_called()
+    database.commit.assert_not_called()
+
+
+@pytest.mark.qt
+def test_cash_review_live_preview_and_movements(monkeypatch, qtbot, qapp, cash_review_data):
+    import gui.corte_caja_dialog as module
+    query = Mock(return_value=(True, "ok", cash_review_data))
+    monkeypatch.setattr(module.GestorSesionCaja, "obtener_resumen_turno", query)
+    close = Mock()
+    monkeypatch.setattr(module.GestorSesionCaja, "cerrar_sesion_caja", close)
+    dialog = module.CorteCajaDialog(5)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    query.assert_called_once_with(5)
+    assert dialog.lbl_ventas_efectivo_val.text() == "$200.00"
+    assert dialog.lbl_efectivo_esperado_val.text() == "$330.00"
+    assert dialog.tabla_movimientos.rowCount() == 4
+    assert dialog.tabla_movimientos.item(3, 4).text() == "CANCELADA (inactiva)"
+    assert dialog.tabla_movimientos.item(2, 3).text() == "Credito"
+    assert dialog.tabla_movimientos.editTriggers() == module.QAbstractItemView.NoEditTriggers
+    for width, height in ((850, 740), (680, 540)):
+        dialog.resize(width, height)
+        qapp.processEvents()
+        assert dialog.width() == width and dialog.height() == height
+        for widget in (dialog.num_conteo_usuario, dialog.lbl_resultado_arqueo, dialog.btn_procesar):
+            position = widget.mapTo(dialog, widget.rect().topLeft())
+            assert dialog.rect().contains(position)
+            assert dialog.rect().contains(position + widget.rect().bottomRight())
+        assert dialog.btn_cancelar.geometry().right() < dialog.btn_procesar.geometry().left()
+        assert not dialog.grab().isNull()
+    for count, text in ((320, "FALTANTE: $10.00"), (330, "CAJA CUADRADA"), (345, "SOBRANTE: $15.00")):
+        dialog.num_conteo_usuario.setValue(count)
+        assert dialog.lbl_resultado_arqueo.text() == text
+    dialog.btn_actualizar.click()
+    assert query.call_count == 2
+    close.assert_not_called()
+    dialog.btn_cancelar.click()
+    assert dialog.result() == module.QDialog.Rejected
+    close.assert_not_called()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("failure", ["missing", "different", "invalid"])
+def test_cash_review_load_failure_blocks_closing(monkeypatch, qtbot, cash_review_data, failure):
+    import gui.corte_caja_dialog as module
+    if failure == "different":
+        cash_review_data["id"] = 99
+    elif failure == "invalid":
+        cash_review_data["ventas_efectivo"] = float("nan")
+    payload = (False, "sin caja", None) if failure == "missing" else (True, "ok", cash_review_data)
+    monkeypatch.setattr(module.GestorSesionCaja, "obtener_resumen_turno", Mock(return_value=payload))
+    monkeypatch.setattr(module.QMessageBox, "critical", Mock())
+    close = Mock()
+    monkeypatch.setattr(module.GestorSesionCaja, "cerrar_sesion_caja", close)
+    dialog = module.CorteCajaDialog(5)
+    qtbot.addWidget(dialog)
+    assert not dialog.btn_procesar.isEnabled()
+    assert dialog.datos_sesion is None
+    assert dialog.tabla_movimientos.rowCount() == 0
+    dialog.procesar_corte()
+    close.assert_not_called()
+
+
+@pytest.mark.qt
+def test_cash_review_refreshes_before_confirmation(monkeypatch, qtbot, cash_review_data):
+    import gui.corte_caja_dialog as module
+    query = Mock(return_value=(True, "ok", cash_review_data))
+    monkeypatch.setattr(module.GestorSesionCaja, "obtener_resumen_turno", query)
+    close = Mock()
+    monkeypatch.setattr(module.GestorSesionCaja, "cerrar_sesion_caja", close)
+    confirmation = Mock(return_value=module.QMessageBox.No)
+    monkeypatch.setattr(module.QMessageBox, "question", confirmation)
+    dialog = module.CorteCajaDialog(5)
+    qtbot.addWidget(dialog)
+    dialog.num_conteo_usuario.setValue(330)
+    cash_review_data["ventas_efectivo"] = 230
+    dialog.procesar_corte()
+    assert query.call_count == 2
+    assert dialog.lbl_efectivo_esperado_val.text() == "$360.00"
+    assert dialog.lbl_resultado_arqueo.text() == "FALTANTE: $30.00"
+    assert "Efectivo esperado: $360.00" in confirmation.call_args.args[2]
+    assert "FALTANTE: $30.00" in confirmation.call_args.args[2]
+    close.assert_not_called()
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("count, conclusion", [(320, "FALTANTE EN CAJA de: $30.00"),
+                                               (350, "CAJA CUADRADA"), (360, "SOBRANTE EN CAJA de: $10.00")])
+def test_cash_review_report_uses_confirmed_closing_result(monkeypatch, qtbot, cash_review_data, count, conclusion):
+    import gui.corte_caja_dialog as module
+    monkeypatch.setattr(module.GestorSesionCaja, "obtener_resumen_turno", Mock(return_value=(True, "ok", cash_review_data)))
+    confirmed = {**cash_review_data, "ventas_efectivo": 220, "efectivo_esperado": 350,
+                 "conteo_usuario": count, "diferencia": count - 350, "estado": "CERRADA"}
+    close = Mock(return_value=(True, "ok", confirmed))
+    monkeypatch.setattr(module.GestorSesionCaja, "cerrar_sesion_caja", close)
+    monkeypatch.setattr(module.QMessageBox, "question", Mock(return_value=module.QMessageBox.Yes))
+    reports = []
+
+    def capture_report(report):
+        reports.append((report.text(), report.detailedText()))
+        return module.QMessageBox.Ok
+
+    monkeypatch.setattr(module.QMessageBox, "exec", capture_report)
+    dialog = module.CorteCajaDialog(5)
+    qtbot.addWidget(dialog)
+    dialog.num_conteo_usuario.setValue(count)
+    dialog.procesar_corte()
+    close.assert_called_once_with(5, count)
+    assert dialog.result() == module.QDialog.Accepted
+    assert conclusion in reports[0][0]
+    assert "$350.00" in reports[0][1]
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("outcome", ["success", "cancel", "unconfirmed", "already", "forbidden", "invalid", "shell_allowed", "shell_forbidden"])
+def test_pos_manual_cash_open_button(monkeypatch, qtbot, outcome):
+    import app.Controller.VentaController as module
+    import gui.apertura_caja_dialog as opening
+    from sesion_caja import GestorSesionCaja
+    from PySide6.QtWidgets import QWidget, QDialog, QStackedWidget, QVBoxLayout
+
+    class POSHarness(module.Venta):
+        def __init__(self):
+            QWidget.__init__(self)
+            self.ui = module.Ui_Venta()
+            self.ui.setupUi(self)
+            self.datos_usuario = {"id_usuario": 7, "permisos": ["CREARVENTA"]}
+            self.sesion_caja_id = None
+            self.caja_abierta = False
+            self._crear_boton_corte_caja()
+            self._set_controles_habilitados(False)
+
+    window = POSHarness()
+    if outcome.startswith("shell_"):
+        shell = QWidget()
+        qtbot.addWidget(shell)
+        shell._tiene_algun_permiso = Mock(return_value=outcome == "shell_allowed")
+        stack = QStackedWidget(shell)
+        QVBoxLayout(shell).addWidget(stack)
+        stack.addWidget(window)
+        window.datos_usuario["permisos"] = []
+        shell.show()
+    else:
+        qtbot.addWidget(window)
+        window.show()
+    active = {"value": outcome == "already"}
+    query = Mock(side_effect=lambda: (True, "ok", {"id": 9}) if active["value"] else (False, "sin caja", None))
+    monkeypatch.setattr(GestorSesionCaja, "obtener_sesion_activa", query)
+    messages = Mock()
+    monkeypatch.setattr(module, "Mensaje", lambda: messages)
+
+    def execute():
+        active["value"] = outcome in ("success", "shell_allowed")
+        return QDialog.Rejected if outcome == "cancel" else QDialog.Accepted
+
+    dialog = Mock()
+    dialog.exec.side_effect = execute
+    factory = Mock(return_value=dialog)
+    monkeypatch.setattr(opening, "AperturaCajaDialog", factory)
+    if outcome == "forbidden":
+        window.datos_usuario["permisos"] = []
+    elif outcome == "invalid":
+        window.datos_usuario["id_usuario"] = None
+    assert window.btn_abrir_caja.isVisible()
+    assert not window.ui.btn_btn_cobrar.isEnabled()
+    window.btn_abrir_caja.click()
+    opened = outcome in ("success", "already", "shell_allowed")
+    assert window.btn_abrir_caja.isVisible() == (not opened)
+    assert window.ui.btn_btn_cobrar.isEnabled() == opened
+    assert window.caja_abierta == opened
+    assert window.sesion_caja_id == (9 if opened else None)
+    if outcome in ("already", "forbidden", "invalid", "shell_forbidden"):
+        factory.assert_not_called()
+    else:
+        factory.assert_called_once_with(usuario_id=7, parent=window)
+    if outcome in ("forbidden", "invalid", "shell_forbidden"):
+        query.assert_not_called()
+    if outcome.startswith("shell_"):
+        shell._tiene_algun_permiso.assert_called_once_with({"CREARVENTA"})
+    if opened:
+        window._set_controles_habilitados(False)
+        assert window.btn_abrir_caja.isVisible()
+
+
 @pytest.mark.qt
 @pytest.mark.parametrize("criterion", ["0007", "Taladro"])
 def test_pos_product_description_selector_and_ticket(monkeypatch, qtbot, criterion):

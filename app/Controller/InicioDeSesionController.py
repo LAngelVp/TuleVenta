@@ -16,7 +16,7 @@ from ..Source.ibootstrap_rc import *
 from .CreadencialesUsuarioController import *
 from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
-from .UiTheme import apply_access_theme
+from .UiTheme import apply_access_theme, configure_window_chrome, render_qss
 
 class Login(QWidget):
     def __init__(self, parent = None):
@@ -27,6 +27,10 @@ class Login(QWidget):
         self.ventana_saludo = None
         self.ui = Ui_Inicio_Sesion()
         self.ui.setupUi(self)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        configure_window_chrome(self, minimum_size=(760, 500), frameless=True)
+        self.ui.widget.show()
+        self.ui.btnCerrar.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
         apply_access_theme(self)
         self._configurar_iconos_credenciales()
 
@@ -35,7 +39,6 @@ class Login(QWidget):
         self.ui.imgLinkedin.mousePressEvent = self.linkedin()
         self.ui.imgWhatsapp.mousePressEvent = self.whatsapp()
 
-        self.setWindowIcon(QIcon(":Icons/logos/tuleVenta.png"))
         self.setWindowTitle("TuleVenta POS - Inicio de sesión")
 
         self.sombra = QGraphicsDropShadowEffect()
@@ -50,9 +53,6 @@ class Login(QWidget):
         self.sombra_ilustracion.setOffset(0, 10)
         self.sombra_ilustracion.setColor(QColor(15, 76, 129, 70))
         self.ui.Conteneror_imgLogin.setGraphicsEffect(self.sombra_ilustracion)
-
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
@@ -71,7 +71,7 @@ class Login(QWidget):
 
     def _configurar_iconos_credenciales(self):
         estilo_icono_usuario = (
-            "background-color: #15803D;"
+            "background-color: ${brand.primary};"
             "image: url(:/iconosBlancos/Icons/iconos/Blanco/datos_usuario.svg);"
             "border-radius: 12px;"
             "min-width: 20px;"
@@ -79,15 +79,15 @@ class Login(QWidget):
             "padding: 2px;"
         )
         estilo_icono_password = (
-            "background-color: #15803D;"
+            "background-color: ${brand.primary};"
             "image: url(:/iconosBlancos/Icons/iconos/Blanco/password_blanco.svg);"
             "border-radius: 12px;"
             "min-width: 20px;"
             "min-height: 20px;"
             "padding: 2px;"
         )
-        self.ui.img_User.setStyleSheet(estilo_icono_usuario)
-        self.ui.img_Password.setStyleSheet(estilo_icono_password)
+        self.ui.img_User.setStyleSheet(render_qss(estilo_icono_usuario))
+        self.ui.img_Password.setStyleSheet(render_qss(estilo_icono_password))
         self.ui.img_User.setMinimumSize(24, 24)
         self.ui.img_Password.setMinimumSize(24, 24)
         self.ui.img_User.setMaximumSize(24, 24)
@@ -184,12 +184,12 @@ class SaludoIngreso(QWidget):
         self.usuario = usuario
         self.ui = Ui_Saludo_bienvenida()
         self.ui.setupUi(self)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        configure_window_chrome(self, minimum_size=(412, 416), frameless=True)
         apply_access_theme(self)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.ui.etiquetaBuendia.setEnabled(True)
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25)

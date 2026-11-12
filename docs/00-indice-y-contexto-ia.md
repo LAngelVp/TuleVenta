@@ -16,6 +16,7 @@ El codigo es la evidencia primaria del comportamiento implementado. Estos docume
 | [specs/spec-03-compras-proveedores-e-inventario.md](specs/spec-03-compras-proveedores-e-inventario.md) | Completado | 12 casos de compras, recepcion, proveedores, inventario y reportes |
 | [specs/spec-04-clientes-personal-sucursales-y-seguridad.md](specs/spec-04-clientes-personal-sucursales-y-seguridad.md) | Completado | 17 casos de clientes, personal, organizacion, acceso, licencia y configuracion |
 | [04-plan-de-refactorizacion.md](04-plan-de-refactorizacion.md) | Completado | 44 tareas REF, Fases de ejecucion 0 a 4, dependencias, gates y workflow Copilot |
+| [05-guia-ui-ux-y-paleta.md](05-guia-ui-ux-y-paleta.md) | Incrementos1A/1B y correccion flotante aplicados | Paleta/icono conservados; chrome respeta diseno original, 422 Qt aprobadas, Windows interactivo pendiente |
 
 La estructura documental acordada esta entregada. Las capacidades ausentes se delimitan sin inventar implementaciones. Los parches locales de Fase 1 y pruebas de infraestructura estan aplicados con evidencia de unit/Qt; no equivale a certificar todos los escenarios SQL de los51 casos. REF-01 conserva gate DB pendiente, REF-02 no se da por completada globalmente y REF-03/REF-04 (Alembic) no ejecutadas. Las tareas siguientes requieren autorizacion por incremento.
 

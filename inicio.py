@@ -10,6 +10,7 @@ from app.Controller.InicioDeSesionController import Login
 from app.Controller.VentanaInicialController import *
 from app.Model.BaseDatosModel import Usuarios
 from app.Controller.MensajesAlertasController import Mensaje
+from app.Controller.UiTheme import application_palette, official_window_icon
 
 class Inicio_sistema(QObject):
     def __init__(self):
@@ -20,21 +21,8 @@ class Inicio_sistema(QObject):
         self.lista_hilos_inicio = []
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
-        palette = QPalette()
-
-        palette.setColor(QPalette.Window, QColor("#f5f5f5"))
-        palette.setColor(QPalette.Base, QColor("#ffffff"))
-        palette.setColor(QPalette.AlternateBase, QColor("#f0f0f0"))
-        palette.setColor(QPalette.Text, Qt.black)
-        palette.setColor(QPalette.WindowText, Qt.black)
-        palette.setColor(QPalette.Button, QColor("#d6e4f0"))
-        palette.setColor(QPalette.ButtonText, Qt.black)
-        palette.setColor(QPalette.Highlight, QColor("#4791F5"))
-        palette.setColor(QPalette.HighlightedText, Qt.black)
-        palette.setColor(QPalette.Mid, QColor("#cccccc"))
-        palette.setColor(QPalette.ToolTipBase, QColor("#1B305B"))
-        palette.setColor(QPalette.ToolTipText, QColor("#ECEFF4"))
-        self.app.setPalette(palette)
+        self.app.setWindowIcon(official_window_icon())
+        self.app.setPalette(application_palette())
 
     def preparar_postgresql_portable(self):
         try:

@@ -19,7 +19,7 @@ from ..Model.ProductosModel import ProductosModel
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.ClientesFisicosAndMoralesModel import ClientesFisicosAndMorales
 from ..Model.MetodoPagoModel import MetodoPagoModel
-from .UiTheme import apply_access_theme
+from .UiTheme import apply_access_theme, configure_window_chrome
 
 class Inicio_principal(QWidget):
     def __init__(self, parent = None):
@@ -27,6 +27,13 @@ class Inicio_principal(QWidget):
         self.registro = None
         self.ui = Ui_Bienvenida()
         self.ui.setupUi(self)
+        self.setMaximumSize(16777215, 16777215)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        configure_window_chrome(self, minimum_size=(600, 450), frameless=True)
+        self.ui.contenedor.setMinimumSize(self.ui.contenedor.size())
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.addWidget(self.ui.contenedor, 0, Qt.AlignCenter)
         apply_access_theme(self)
         self.ui.btn_btn_registrar.clicked.connect(self.abrir_registro)
 
@@ -34,9 +41,6 @@ class Inicio_principal(QWidget):
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
         self.setWindowTitle("Inicio")
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
         self.sombra = QGraphicsDropShadowEffect()
         self.sombra.setBlurRadius(25)
         self.sombra.setOffset(0, 0)

@@ -13,6 +13,12 @@ class ControlRolesController(QWidget):
         super().__init__(parent)
         self.ui = Ui_Control_Roles_Permisos()
         self.ui.setupUi(self)
+        self.btn_cancelar = QPushButton("Cancelar", self.ui.contenedor)
+        self.btn_cancelar.setObjectName("btn_cancelar_roles")
+        self.btn_cancelar.setProperty("variant", "neutral")
+        self.btn_cancelar.setIcon(self.style().standardIcon(QStyle.SP_DialogCancelButton))
+        self.btn_cancelar.clicked.connect(self.close)
+        self.ui.gridLayout_4.addWidget(self.btn_cancelar, 2, 0, Qt.AlignRight)
         configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
         apply_module_theme(self)
         #// MOSTRAR VENTANA EN EL CENTRO DE LA PANTALLA

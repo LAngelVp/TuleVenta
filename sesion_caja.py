@@ -8,6 +8,63 @@ from app.Model.FormaPago import clasificar_forma_pago
 
 class GestorSesionCaja:
     @staticmethod
+    def analizar_arqueo(sesion: dict, conteo_usuario: float) -> dict:
+        valores = {}
+        for campo in ("monto_inicial", "ventas_efectivo", "entradas_efectivo", "retiros_efectivo"):
+            try:
+                valor = float(sesion[campo])
+            except (KeyError, TypeError, ValueError, OverflowError) as error:
+                raise ValueError(f"{campo}: importe invalido.") from error
+            if not math.isfinite(valor) or valor < 0:
+                raise ValueError(f"{campo}: importe invalido.")
+            valores[campo] = valor
+        try:
+            conteo = float(conteo_usuario)
+        except (TypeError, ValueError, OverflowError) as error:
+            raise ValueError("Conteo invalido.") from error
+        if not math.isfinite(conteo) or conteo < 0:
+            raise ValueError("Conteo invalido.")
+        esperado = valores["monto_inicial"] + valores["ventas_efectivo"] + valores["entradas_efectivo"] - valores["retiros_efectivo"]
+        diferencia = conteo - esperado
+        if not math.isfinite(esperado) or not math.isfinite(diferencia):
+            raise ValueError("Balance no finito.")
+        visible = round(diferencia, 2)
+        estado = "CUADRADA" if visible == 0 else ("SOBRANTE" if visible > 0 else "FALTANTE")
+        return {"efectivo_esperado": esperado, "conteo_usuario": conteo,
+                "diferencia": diferencia, "estado": estado}
+
+    @staticmethod
+    def obtener_resumen_turno(sesion_id: int, session=None) -> tuple[bool, str, dict | None]:
+        if not isinstance(sesion_id, int) or isinstance(sesion_id, bool) or sesion_id <= 0:
+            return False, "Identificador de caja invalido.", None
+
+        def _consultar(session_actual):
+            caja = session_actual.get(SesionCaja, sesion_id)
+            if caja is None or caja.estado != "ABIERTA":
+                return False, "La caja indicada no esta abierta.", None
+            campos = ("id", "usuario_id", "fecha_apertura", "estado", "monto_inicial",
+                      "ventas_efectivo", "ventas_tarjeta", "ventas_transferencia",
+                      "entradas_efectivo", "retiros_efectivo")
+            resumen = {campo: getattr(caja, campo) for campo in campos}
+            ventas = session_actual.execute(
+                select(Ventas).where(Ventas.sesion_caja_id == sesion_id).order_by(Ventas.fecha, Ventas.id)
+            ).scalars().all()
+            campos_venta = ("id", "folio", "fecha", "empleado_id", "forma_pago", "estado",
+                            "activo", "total", "cancelada_por_usuario_id", "fecha_cancelacion")
+            resumen["movimientos_ventas"] = [
+                {campo: getattr(venta, campo) for campo in campos_venta} for venta in ventas
+            ]
+            return True, "Resumen del turno cargado.", resumen
+
+        if session is not None:
+            return _consultar(session)
+        try:
+            with Conexion_base_datos() as database:
+                return _consultar(database.abrir_sesion())
+        except Exception:
+            return False, "No se pudo consultar el turno de caja.", None
+
+    @staticmethod
     def obtener_sesion_activa(session=None) -> tuple[bool, str, dict | None]:
         """
         Consults if there is a box session currently OPEN ('ABIERTA').
@@ -191,6 +248,52 @@ class GestorSesionCaja:
                     return res
             except Exception as e:
                 return False, f"Error al registrar entrada/retiro en caja: {str(e)}"
+
+    @staticmethod
+    def procesar_movimiento_efectivo(sesion_id: int, monto: float, es_entrada: bool) -> tuple[bool, str, bool]:
+        if not isinstance(sesion_id, int) or isinstance(sesion_id, bool) or sesion_id <= 0:
+            return False, "Identificador de caja invalido.", False
+        try:
+            importe = float(monto)
+        except (TypeError, ValueError, OverflowError):
+            return False, "Importe invalido.", False
+        if isinstance(monto, bool) or not math.isfinite(importe) or importe <= 0 or not isinstance(es_entrada, bool):
+            return False, "El importe debe ser positivo y el tipo de movimiento valido.", False
+        en_commit = False
+        try:
+            with Conexion_base_datos() as database:
+                session = database.abrir_sesion()
+                try:
+                    caja = session.execute(
+                        select(SesionCaja).where(SesionCaja.id == sesion_id).with_for_update()
+                    ).scalar_one_or_none()
+                    if caja is None or caja.estado != "ABIERTA":
+                        session.rollback()
+                        return False, "La caja seleccionada ya no esta abierta.", False
+                    exito, mensaje = GestorSesionCaja.registrar_entrada_retiro(
+                        sesion_id, importe, es_entrada, session=session, confirmar=False
+                    )
+                    if not exito:
+                        session.rollback()
+                        return False, mensaje, False
+                    GestorSesionCaja.analizar_arqueo({
+                        campo: getattr(caja, campo) for campo in
+                        ("monto_inicial", "ventas_efectivo", "entradas_efectivo", "retiros_efectivo")
+                    }, 0)
+                    session.flush()
+                    en_commit = True
+                    session.commit()
+                    return True, "Movimiento de efectivo registrado.", False
+                except Exception:
+                    try:
+                        session.rollback()
+                    except Exception:
+                        pass
+                    raise
+        except Exception:
+            mensaje = ("Confirmacion incierta: verifica el balance antes de volver a registrar."
+                       if en_commit else "No se pudo registrar el movimiento de efectivo.")
+            return False, mensaje, en_commit
 
     @staticmethod
     def cerrar_sesion_caja(sesion_id: int, conteo_usuario: float, session=None, confirmar=True) -> tuple[bool, str, dict | None]:

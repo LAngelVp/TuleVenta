@@ -1,9 +1,9 @@
 import sys
 from datetime import datetime
-from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation, QEvent
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSpinBox, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation, QEvent, QSize
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QSpinBox, QStyle, QToolButton, QVBoxLayout, QWidget
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QColor, QIcon, QPainter
 from PySide6.QtPrintSupport import QPrinterInfo
 from ..Source.ibootstrap_rc import *
 
@@ -26,6 +26,7 @@ from ..Model.ConfiguracionSistemaModel import ConfiguracionSistemaModel
 from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.GruposyPermisosModel import RolesModel
 from .MensajesAlertasController import Mensaje
+from .UiTheme import COLOR_TOKENS, apply_shell_theme, configure_window_chrome
 
 class SistemaPrincipal(QWidget):
     LISTAR_PROVEEDORES_VPROVEEDORES = Signal()
@@ -41,6 +42,18 @@ class SistemaPrincipal(QWidget):
         self.ventana_saludo = None
         self.ui = Ui_Principal_sistema()
         self.ui.setupUi(self)
+        configure_window_chrome(self, minimum_size=(1000, 650), maximizable=True, frameless=True)
+        apply_shell_theme(self)
+        self.ui.btc_cerrar_2.show()
+        self.ui.btc_minimizar_2.show()
+        self.ui.btc_cerrar_2.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
+        self.ui.btc_minimizar_2.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMinButton))
+        for layout in (self.ui.gridLayout_4, self.ui.gridLayout_2):
+            layout.setRowStretch(0, 1)
+            layout.setColumnStretch(0, 1)
+        self.ui.gridLayout_3.setRowStretch(1, 1)
+        self.ui.gridLayout_3.setColumnStretch(1, 1)
+        self.ui.w_cuerpo_contenido.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.ui.w_cuerpo_menu.hide()
         self.datos_usuario = dict(datos_usuario or {})
         self.permisos_usuario = set()
@@ -51,7 +64,33 @@ class SistemaPrincipal(QWidget):
         self.menu_expandido_ancho = 220
         self.menu_expandido = False
         self.animacion_menu = None
+        self.btn_perfil = QPushButton(self.ui.w_cuerpo_menu)
+        self.btn_perfil.setObjectName("btn_laterales_perfil")
+        self.btn_perfil.setText("Perfil")
+        self.btn_perfil.setToolTip("Perfil")
+        self.btn_perfil.setAccessibleName("Perfil")
+        self.btn_perfil.setIcon(QIcon(":/Icons/Bootstrap/person-circle.svg"))
+        self.btn_perfil.clicked.connect(lambda: self.mostrar_perfil(None))
+        self.ui.label_fotousuario.hide()
+        self.ui.gridLayout_6.addWidget(self.btn_perfil, 0, 0)
+        for name in (
+            "btn_laterales_btn_dashboard", "btn_laterales_proceso_venta", "btn_laterales_ventas",
+            "btn_laterales_compras", "btn_laterales_empleados", "btn_laterales_proveedores",
+            "btn_laterales_clientes", "btn_laterales_productos", "btn_laterales_btn_sucursales",
+            "btn_laterales_btn_opciones",
+        ):
+            original = getattr(self.ui, name)
+            button = QPushButton(original.text(), self.ui.w_cuerpo_menu)
+            button.setObjectName(original.objectName())
+            button.setIcon(original.icon())
+            self.ui.gridLayout_6.replaceWidget(original, button)
+            original.hide()
+            original.deleteLater()
+            setattr(self.ui, name, button)
+        self.ui.gridLayout_6.setContentsMargins(4, 8, 4, 8)
+        self.ui.gridLayout_6.setVerticalSpacing(4)
         self.botones_laterales = [
+            self.btn_perfil,
             self.ui.btn_laterales_btn_dashboard,
             self.ui.btn_laterales_proceso_venta,
             self.ui.btn_laterales_ventas,
@@ -64,9 +103,23 @@ class SistemaPrincipal(QWidget):
             self.ui.btn_laterales_btn_opciones,
         ]
         self.textos_botones_laterales = {
-            boton.objectName(): boton.text()
+            boton.objectName(): boton.text().strip()
             for boton in self.botones_laterales
         }
+        for boton in self.botones_laterales:
+            boton.setIconSize(QSize(24, 24))
+            pixmap = boton.icon().pixmap(QSize(24, 24))
+            if not pixmap.isNull():
+                painter = QPainter(pixmap)
+                painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+                painter.fillRect(pixmap.rect(), QColor(COLOR_TOKENS["text.onAccent"]))
+                painter.end()
+                boton.setIcon(QIcon(pixmap))
+            boton.setFixedHeight(40)
+            boton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            boton.setToolTip(boton.text().strip())
+            boton.setAccessibleName(boton.text().strip())
+            boton.setProperty("navigationExpanded", True)
         self.permisos_por_modulo = {
             "dashboard": {
                 "CREARPRODUCTO", "MODIFICARPRODUCTO", "ELIMINARPRODUCTO",
@@ -102,9 +155,7 @@ class SistemaPrincipal(QWidget):
         }
 
 
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        # self.showFullScreen()
-        QTimer.singleShot(0, self.showFullScreen)
+        QTimer.singleShot(0, self.showMaximized)
         self.setWindowTitle("TuleVenta POS")
 
         self.ui.btn_laterales_btn_burger.clicked.connect(self.mostrar_menu)
@@ -325,27 +376,6 @@ class SistemaPrincipal(QWidget):
         return False
 
     def resizeEvent(self, event):
-        # 1. Obtener las dimensiones actuales de la ventana
-        ancho_ventana = self.width()
-
-        # 2. Calcular el 75% del ancho
-        ancho_label = int(ancho_ventana * 0.75)
-
-        # 3. Mantener la altura actual del label (o la que definiste en Qt Designer)
-        alto_label = self.ui.label.height()
-
-        # 4. Calcular la coordenada X para que quede perfectamente centrado
-        posicion_x = int((ancho_ventana - ancho_label) / 2)
-
-        # 5. Mantener su coordenada Y actual (su posición vertical)
-        posicion_y = self.ui.label.y()
-
-        # 6. Aplicar la nueva geometría (x, y, ancho, alto)
-        self.ui.label.setGeometry(
-            posicion_x, posicion_y, ancho_label, alto_label
-        )
-
-        # Asegurar que la implementación base del evento se ejecute
         super().resizeEvent(event)
 
     def mostrar_opciones(self):
@@ -518,6 +548,7 @@ class SistemaPrincipal(QWidget):
 
     def _contraer_menu(self):
         self.menu_expandido = False
+        self._actualizar_estilo_botones_laterales(False)
         self._animar_menu(self.ui.w_cuerpo_menu.width(), self.menu_colapsado_ancho, ocultar_al_final=True)
 
     def _animar_menu(self, ancho_inicial, ancho_final, ocultar_al_final=False):
@@ -543,8 +574,10 @@ class SistemaPrincipal(QWidget):
     def _actualizar_estilo_botones_laterales(self, expandido):
         for boton in self.botones_laterales:
             texto_original = self.textos_botones_laterales.get(boton.objectName(), boton.text().strip())
-            boton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon if expandido else Qt.ToolButtonIconOnly)
-            boton.setText(f"   {texto_original}" if expandido else texto_original)
+            boton.setProperty("navigationExpanded", expandido)
+            boton.setText(texto_original if expandido else "")
+            boton.style().unpolish(boton)
+            boton.style().polish(boton)
 
 
 class OpcionesSistemaController(QDialog):

@@ -1,6 +1,99 @@
 import pytest
 
 
+@pytest.mark.qt
+def test_official_theme_roles_and_contrast(qtbot):
+    from PySide6.QtGui import QPalette
+    from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
+    from app.Controller.UiTheme import apply_module_theme
+
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    layout = QVBoxLayout(parent)
+    cases = [
+        ("Guardar", "primary", "#206338"),
+        ("Buscar", "secondary", "#0c445a"),
+        ("Eliminar", "danger", "#b91c1c"),
+        ("Quitar", "danger", "#b91c1c"),
+        ("Dar de baja", "danger", "#b91c1c"),
+        ("Cerrar", "neutral", "#ffffff"),
+        ("Salir", "neutral", "#ffffff"),
+        ("Cancelar", "neutral", "#ffffff"),
+        ("Volver", "neutral", "#ffffff"),
+    ]
+    buttons = []
+    for text, variant, background in cases:
+        button = QPushButton(text)
+        layout.addWidget(button)
+        buttons.append((button, variant, background))
+    explicit = QPushButton("Cancelar venta")
+    explicit.setProperty("variant", "danger")
+    layout.addWidget(explicit)
+    apply_module_theme(parent)
+    apply_module_theme(parent)
+    for button, variant, background in buttons:
+        button.ensurePolished()
+        assert button.property("variant") == variant
+        assert button.palette().color(QPalette.Button).name() == background
+        if variant != "neutral":
+            assert button.palette().color(QPalette.ButtonText).name() == "#ffffff"
+    assert explicit.property("variant") == "danger"
+    explicit.setEnabled(False)
+    explicit.ensurePolished()
+    assert explicit.palette().color(QPalette.Disabled, QPalette.Button).name() == "#dce4e1"
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("frameless,existing_frame,existing_translucent", [
+    (False, False, False), (True, False, False),
+    (False, True, False), (False, False, True), (False, True, True),
+])
+def test_modal_helper_respects_window_design(qtbot, frameless, existing_frame, existing_translucent):
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QDialog, QLabel
+    from app.Controller.UiTheme import configure_child_modal
+
+    dialog = QDialog()
+    qtbot.addWidget(dialog)
+    dialog.resize(225, 135)
+    dialog.setWindowFlag(Qt.FramelessWindowHint, existing_frame)
+    dialog.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
+    dialog.setAttribute(Qt.WA_TranslucentBackground, existing_translucent)
+    handle = QLabel("Titulo", dialog)
+    for unused in range(2):
+        configure_child_modal(dialog, drag_widget=handle, frameless=frameless)
+    assert bool(dialog.windowFlags() & Qt.FramelessWindowHint) == (frameless or existing_frame)
+    assert dialog.windowFlags() & Qt.WindowMaximizeButtonHint
+    if not (frameless or existing_frame or existing_translucent):
+        for flag in (Qt.WindowTitleHint, Qt.WindowSystemMenuHint,
+                     Qt.WindowCloseButtonHint, Qt.WindowMinimizeButtonHint):
+            assert dialog.windowFlags() & flag
+    assert dialog.testAttribute(Qt.WA_TranslucentBackground) == existing_translucent
+    assert not dialog.windowIcon().isNull()
+    assert dialog.minimumWidth() >= 320
+    assert dialog.minimumHeight() >= 180
+    assert dialog.windowModality() == Qt.ApplicationModal
+    assert bool(getattr(dialog, "_copilot_drag_filters", [])) == (frameless or existing_frame)
+
+
+@pytest.mark.qt
+def test_wait_dialog_keeps_floating_background(qtbot):
+    from PySide6.QtCore import Qt
+    from app.Controller.Ventana_espera import Modal_de_espera
+    from app.Controller.UiTheme import configure_window_chrome
+
+    dialog = Modal_de_espera()
+    qtbot.addWidget(dialog)
+    original_size = dialog.size()
+    original_style = dialog.styleSheet()
+    configure_window_chrome(dialog)
+    assert dialog.windowFlags() & Qt.FramelessWindowHint
+    assert dialog.testAttribute(Qt.WA_TranslucentBackground)
+    assert dialog.windowModality() == Qt.ApplicationModal
+    assert dialog.size() == original_size
+    assert dialog.styleSheet() == original_style
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize("actual,maximum,expected", [
     ((640, 480), (120, 80), (120, 80)),
