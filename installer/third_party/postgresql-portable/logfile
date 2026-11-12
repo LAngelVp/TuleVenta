@@ -166,3 +166,12 @@
 2026-11-12 13:19:08.043 CST [11920] LOG:  checkpoint complete: wrote 25 buffers (0.2%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=2.740 s, sync=0.016 s, total=2.768 s; sync files=22, longest=0.004 s, average=0.001 s; distance=77 kB, estimate=2743 kB; lsn=0/1EAA490, redo lsn=0/1EAA438
 2026-11-12 13:49:05.082 CST [11920] LOG:  checkpoint starting: time
 2026-11-12 13:49:05.216 CST [11920] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.107 s, sync=0.005 s, total=0.135 s; sync files=2, longest=0.003 s, average=0.003 s; distance=1 kB, estimate=2469 kB; lsn=0/1EAA8F0, redo lsn=0/1EAA898
+2026-11-12 13:54:05.229 CST [11920] LOG:  checkpoint starting: time
+2026-11-12 13:54:06.776 CST [11920] LOG:  checkpoint complete: wrote 14 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.519 s, sync=0.010 s, total=1.548 s; sync files=12, longest=0.004 s, average=0.001 s; distance=65 kB, estimate=2228 kB; lsn=0/1EBAD38, redo lsn=0/1EBACE0
+2026-11-12 14:03:02.724 CST [29372] LOG:  received fast shutdown request
+2026-11-12 14:03:02.726 CST [29372] LOG:  aborting any active transactions
+2026-11-12 14:03:02.735 CST [29372] LOG:  background worker "logical replication launcher" (PID 29484) exited with exit code 1
+2026-11-12 14:03:02.735 CST [11920] LOG:  shutting down
+2026-11-12 14:03:02.736 CST [11920] LOG:  checkpoint starting: shutdown immediate
+2026-11-12 14:03:02.749 CST [11920] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.002 s, total=0.014 s; sync files=2, longest=0.001 s, average=0.001 s; distance=1 kB, estimate=2006 kB; lsn=0/1EBB1C0, redo lsn=0/1EBB1C0
+2026-11-12 14:03:02.782 CST [29372] LOG:  database system is shut down
