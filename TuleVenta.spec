@@ -2,14 +2,13 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files
 
 
 PROJECT_ROOT = Path.cwd().resolve()
 ICON_PATH = PROJECT_ROOT / "app" / "Source" / "Icons" / "logos" / "TuleVentaIcon.ico"
 
 datas = []
-datas += collect_data_files("plotly")
 datas += collect_data_files("reportlab")
 datas += [
     (str(PROJECT_ROOT / "app" / "Source"), "app/Source"),
@@ -17,11 +16,10 @@ datas += [
     (str(PROJECT_ROOT / "installer" / "scripts" / "aplicar_actualizacion.ps1"), "installer/scripts"),
 ]
 
-hiddenimports = collect_submodules("plotly") + [
+hiddenimports = [
+    "PySide6.QtCharts",
     "PySide6.QtPdf",
     "PySide6.QtPrintSupport",
-    "PySide6.QtWebEngineCore",
-    "PySide6.QtWebEngineWidgets",
 ]
 
 

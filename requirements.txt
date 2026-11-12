@@ -1,7 +1,6 @@
 pyside6
 Pandas
 sqlalchemy
-plotly
 bcrypt
 psycopg2-binary
 SQLAlchemy-Utils

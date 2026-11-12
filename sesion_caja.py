@@ -1,23 +1,9 @@
 from datetime import datetime
 import math
-import unicodedata
 from sqlalchemy import select, update
 from app.DataBase.conexionBD import Conexion_base_datos
 from app.Model.BaseDatosModel import SesionCaja, Ventas
-
-
-def clasificar_forma_pago(nombre):
-    etiqueta = " ".join("".join(caracter for caracter in unicodedata.normalize("NFKD", nombre or "")
-                               if not unicodedata.combining(caracter)).upper().split())
-    categorias = {
-        "CONTADO": "efectivo", "EFECTIVO": "efectivo",
-        "TARJETA DE CREDITO": "tarjeta", "TARJETA DE DEBITO": "tarjeta", "TARJETA": "tarjeta",
-        "TRANSFERENCIA": "transferencia", "CHEQUE": "transferencia",
-        "CREDITO": "credito", "CREDITO AL CLIENTE": "credito",
-    }
-    if etiqueta not in categorias:
-        raise ValueError("Metodo de pago sin clasificacion aprobada.")
-    return categorias[etiqueta]
+from app.Model.FormaPago import clasificar_forma_pago
 
 
 class GestorSesionCaja:

@@ -1,11 +1,6 @@
 from datetime import datetime
 import csv
-from pathlib import Path
-import shutil
-import tempfile
-
-import plotly.graph_objects as go
-from PySide6.QtCore import QDate, Qt, QUrl
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QApplication,
@@ -25,7 +20,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from ..View.UserInterfacePy.DashboardResumen import Ui_DashboardResumen, crear_chart_view, renderizar
+from .UiTheme import MODULE_STYLESHEET
 
 from ..Model.DashboardModel import consultar_dashboard, validar_reporte_finito
 from .Hilo_consultas import WorkerDB
@@ -36,7 +32,6 @@ class DashboardController(QWidget):
     def __init__(self, parent=None, permisos_usuario=None):
         super().__init__(parent)
         self.setObjectName("DashboardWidget")
-        self._dashboard_temp_dir = Path(tempfile.mkdtemp(prefix="tuleventa_dashboard_"))
         self.permisos_usuario = {
             str(permiso).strip().upper()
             for permiso in (permisos_usuario or [])
@@ -44,6 +39,7 @@ class DashboardController(QWidget):
         }
         self.es_administrador = "ADMINISTRADOR" in self.permisos_usuario
         self.permisos_tab_dashboard = {
+            "resumen": {"CREARPRODUCTO", "MODIFICARPRODUCTO", "ELIMINARPRODUCTO", "CREARVENTA", "MODIFICARVENTA", "ELIMINARVENTA", "CREARCOMPRA", "MODIFICARCOMPRA", "ELIMINARCOMPRA"},
             "inventario": {"CREARPRODUCTO", "MODIFICARPRODUCTO", "ELIMINARPRODUCTO"},
             "ventas": {"CREARVENTA", "MODIFICARVENTA", "ELIMINARVENTA"},
             "compras": {"CREARCOMPRA", "MODIFICARCOMPRA", "ELIMINARCOMPRA"},
@@ -75,7 +71,6 @@ class DashboardController(QWidget):
     def closeEvent(self, event):
         try:
             self._cerrar_workers_dashboard()
-            shutil.rmtree(self._dashboard_temp_dir, ignore_errors=True)
         finally:
             super().closeEvent(event)
 
@@ -115,6 +110,8 @@ class DashboardController(QWidget):
                 if self._dashboard_generaciones.get(seccion) != generacion:
                     return
                 if not resultado.get("exito"):
+                    if seccion == "resumen":
+                        self.resumen_estado.setText("No se pudo cargar el resumen.")
                     Mensaje().mensaje_alerta(resultado["mensaje"])
                     return
                 datos = resultado["data"]
@@ -236,10 +233,7 @@ class DashboardController(QWidget):
 
         titulo = QLabel("Panel Dashboard", self)
         titulo.setObjectName("dashboardHeader")
-        subtitulo = QLabel(
-            "Monitorea inventario, ventas y compras con filtros por fechas y exportación de reportes.",
-            self,
-        )
+        subtitulo = QLabel("Inicio", self)
         subtitulo.setObjectName("dashboardSubtitle")
 
         self.tabs_dashboard = QTabWidget(self)
@@ -252,6 +246,13 @@ class DashboardController(QWidget):
         self.indices_tabs_dashboard["inventario"] = self.tabs_dashboard.addTab(self.tab_inventario, "Inventario")
         self.indices_tabs_dashboard["ventas"] = self.tabs_dashboard.addTab(self.tab_ventas, "Ventas")
         self.indices_tabs_dashboard["compras"] = self.tabs_dashboard.addTab(self.tab_compras, "Compras")
+
+        self.tab_resumen = QWidget(self)
+        Ui_DashboardResumen().setupUi(self, self.tab_resumen)
+        self.indices_tabs_dashboard["resumen"] = self.tabs_dashboard.addTab(self.tab_resumen, "Resumen")
+        self.tabs_dashboard.setCurrentWidget(self.tab_resumen)
+        self.setProperty("themedModule", True)
+        self.setStyleSheet(MODULE_STYLESHEET)
 
         layout_principal.addWidget(titulo)
         layout_principal.addWidget(subtitulo)
@@ -324,9 +325,8 @@ class DashboardController(QWidget):
         grupo = QGroupBox(titulo, self)
         layout = QVBoxLayout(grupo)
         layout.setContentsMargins(12, 18, 12, 12)
-        grafica = QWebEngineView(grupo)
+        grafica = crear_chart_view(grupo)
         grafica.setMinimumHeight(320)
-        grafica.page().setBackgroundColor(QColor("#fffdf8"))
         layout.addWidget(grafica)
         return grupo, grafica
 
@@ -571,6 +571,65 @@ class DashboardController(QWidget):
             self.cargar_dashboard_ventas(force=force)
         elif indice == 2:
             self.cargar_dashboard_compras(force=force)
+        elif indice == self.indices_tabs_dashboard.get("resumen"):
+            self.cargar_dashboard_resumen()
+
+    def cargar_dashboard_resumen(self, force=False, resultado=None):
+        for indice, seccion in self.resumen_paginas.items():
+            self.resumen_tabs.setTabVisible(indice, self._tiene_algun_permiso(self.permisos_tab_dashboard[seccion]))
+        if resultado is None:
+            self.resumen_estado.setText("Actualizando...")
+            for label in self.resumen_kpis.values():
+                label.setText("...")
+            self._solicitar_dashboard("resumen", {
+                "fecha_inicio": self.resumen_inicio.date().toPython(),
+                "fecha_fin": self.resumen_fin.date().toPython(),
+                "sucursal_id": self.resumen_sucursal.currentData(),
+                "agrupacion": self.resumen_agrupacion.currentData(),
+                "secciones": [seccion for seccion in ("ventas", "compras", "inventario")
+                              if self._tiene_algun_permiso(self.permisos_tab_dashboard[seccion])],
+            })
+            return
+        kpis = resultado.get("kpis", {})
+        for titulo, campo in (("Ventas totales", "ventas"), ("Ticket promedio", "ticket"),
+                              ("Ordenes de compra", "ordenes"), ("Margen bruto estimado", "ganancia")):
+            valor = kpis.get(campo)
+            self.resumen_kpis[titulo].setText("Sin acceso" if valor is None else
+                                            self._formatear_numero(valor) if campo == "ordenes" else self._formatear_moneda(valor))
+        sucursal = self.resumen_sucursal.currentData()
+        self.resumen_sucursal.blockSignals(True)
+        self.resumen_sucursal.clear()
+        self.resumen_sucursal.addItem("Todas las sucursales", None)
+        for item in resultado.get("sucursales", []):
+            self.resumen_sucursal.addItem(item["nombre"], item["id"])
+        indice = self.resumen_sucursal.findData(sucursal)
+        self.resumen_sucursal.setCurrentIndex(max(indice, 0))
+        self.resumen_sucursal.blockSignals(False)
+        renderizar(self.resumen_graficas[0], "Ingresos y margen bruto estimado", resultado.get("tiempo", []),
+                   [("Ingresos", "ingresos", "#2563EB"), ("Margen estimado", "ganancia", "#16A34A")], "lineas")
+        renderizar(self.resumen_graficas[1], "Top 5 productos", resultado.get("productos", []),
+                   [("Cantidad", "value", "#2563EB")], "horizontal", [("Monto total", "monto", "currency")])
+        renderizar(self.resumen_graficas[2], "Ingresos por metodo de pago", resultado.get("pagos", []), tipo="pastel")
+        renderizar(self.resumen_graficas[3], "Inventario global actual", resultado.get("inventario", []),
+                   [("Productos", "value", "#D97706")])
+        ejecutivo = resultado.get("ejecutivo", {})
+        for clave, titulo, serie, tipo, extras in (
+            ("utilidad_categorias", "Utilidad estimada por categoria", "Utilidad", "horizontal", [("Ingreso sin IVA", "ingresos", "currency")]),
+            ("utilidad_productos", "Top 5 por utilidad estimada", "Utilidad", "horizontal", [("Ingreso sin IVA", "ingresos", "currency")]),
+            ("salud", "Salud de inventario global actual", "Productos", "barras", [("Unidades", "unidades", "number")]),
+            ("caducidad", "Caducidad de stock actual", "Productos", "barras", [("Unidades", "unidades", "number")]),
+            ("horas", "Ventas por hora", "Ventas", "barras", [("Ingresos", "ingresos", "currency")]),
+            ("semana", "Ventas por dia de semana", "Ventas", "barras", [("Ingresos", "ingresos", "currency")]),
+            ("liquidez", "Ventas contado frente a credito (no abonos)", "Importe", "barras", []),
+            ("cartera", "Top 5 cartera global actual", "Credito utilizado", "horizontal", [("Limite", "limite", "currency")]),
+            ("proveedores", "Top 5 importe registrado por proveedor", "Importe", "horizontal", [("Ordenes", "ordenes", "number")]),
+        ):
+            renderizar(self.resumen_ejecutivas[clave], titulo, ejecutivo.get(clave, []),
+                       [(serie, "value", "#2563EB")], tipo, extras)
+        renderizar(self.resumen_ejecutivas["cortes"], "Diferencias de cortes globales por dia", ejecutivo.get("cortes", []),
+                   [("Sobrantes", "sobrante", "#16A34A"), ("Faltantes", "faltante", "#DC2626")],
+                   extras=[("Cortes", "cortes", "number")])
+        self.resumen_estado.setText("Inventario y cartera globales actuales; caja global por cierre. Utilidad estimada con costo actual, no neta. Sucursal del empleado actual.")
 
     def cargar_dashboard_inventario(self, force=False, resultado=None):
         if resultado is None:
@@ -730,174 +789,14 @@ class DashboardController(QWidget):
         for titulo, label in labels_dict.items():
             label.setText(valores.get(titulo, "0"))
 
-    def _set_plotly_html(self, web_view, figure, nombre_archivo="dashboard"):
-        config = {
-            "responsive": True,
-            "displaylogo": False,
-            "scrollZoom": True,
-            "toImageButtonOptions": {
-                "format": "png",
-                "filename": nombre_archivo,
-                "scale": 2,
-            },
-        }
-        archivo_html = self._dashboard_temp_dir / f"{self._slugify_filename(nombre_archivo)}.html"
-        figure.write_html(
-            str(archivo_html),
-            full_html=True,
-            include_plotlyjs="directory",
-            config=config,
-            auto_open=False,
-        )
-        web_view.load(QUrl.fromLocalFile(str(archivo_html.resolve())))
-
-    def _slugify_filename(self, texto):
-        base = "".join(char.lower() if char.isalnum() else "_" for char in str(texto or "dashboard"))
-        while "__" in base:
-            base = base.replace("__", "_")
-        return base.strip("_") or "dashboard"
-
-    def _crear_figura_vacia(self, titulo, mensaje):
-        figura = go.Figure()
-        figura.add_annotation(
-            text=mensaje,
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            font={"size": 14, "color": "#61707d"},
-        )
-        figura.update_xaxes(visible=False)
-        figura.update_yaxes(visible=False)
-        return self._aplicar_estilo_plotly(figura, titulo)
-
-    def _aplicar_estilo_plotly(self, figura, titulo):
-        figura.update_layout(
-            title={"text": titulo, "x": 0.02, "xanchor": "left"},
-            template="plotly_white",
-            paper_bgcolor="#fffdf8",
-            plot_bgcolor="#fffdf8",
-            font={"family": "Segoe UI", "color": "#21313f", "size": 12},
-            hoverlabel={"bgcolor": "#fffdf8", "font": {"color": "#21313f"}},
-            margin={"l": 32, "r": 18, "t": 56, "b": 48},
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1.0},
-        )
-        return figura
-
-    def _valor_color(self, color):
-        if isinstance(color, QColor):
-            return color.name()
-        return str(color)
-
-    def _hover_extra_html(self, extra_hover_fields):
-        if not extra_hover_fields:
-            return ""
-
-        lineas = []
-        for indice, (etiqueta, _, formato) in enumerate(extra_hover_fields, start=1):
-            if formato == "currency":
-                lineas.append(f"<br>{etiqueta}: $%{{customdata[{indice}]:,.2f}}")
-            else:
-                lineas.append(f"<br>{etiqueta}: %{{customdata[{indice}]:,.2f}}")
-        return "".join(lineas)
-
-    def _build_customdata(self, data, extra_hover_fields=None):
-        extra_hover_fields = extra_hover_fields or []
-        customdata = []
-        for item in data:
-            fila = [item.get("label", "")]
-            for _, key, _ in extra_hover_fields:
-                fila.append(float(item.get(key, 0.0) or 0.0))
-            customdata.append(fila)
-        return customdata
-
     def _renderizar_barra_simple(self, chart_view, titulo, data, nombre_serie, color, extra_hover_fields=None):
-        if not data:
-            self._set_plotly_html(chart_view, self._crear_figura_vacia(titulo, "Sin información para el periodo seleccionado"))
-            return
-
-        figuras = go.Figure()
-        etiquetas_completas = [str(item.get("label", "")) for item in data]
-        etiquetas_eje = [self._acortar_texto(item.get("label", ""), max_chars=14) for item in data]
-        valores = [float(item.get("value", 0.0) or 0.0) for item in data]
-        customdata = self._build_customdata(data, extra_hover_fields)
-        hover_extra = self._hover_extra_html(extra_hover_fields)
-
-        figuras.add_bar(
-            x=etiquetas_eje,
-            y=valores,
-            name=nombre_serie,
-            marker_color=self._valor_color(color),
-            customdata=customdata,
-            hovertemplate=(
-                "<b>%{customdata[0]}</b>"
-                f"<br>{nombre_serie}: %{{y:,.2f}}"
-                f"{hover_extra}<extra></extra>"
-            ),
-        )
-        figuras.update_xaxes(tickmode="array", tickvals=etiquetas_eje, ticktext=etiquetas_eje)
-        figuras.update_yaxes(rangemode="tozero")
-        self._set_plotly_html(chart_view, self._aplicar_estilo_plotly(figuras, titulo), nombre_archivo=titulo.lower().replace(" ", "_"))
+        renderizar(chart_view, titulo, data, [(nombre_serie, "value", color)], extras=extra_hover_fields)
 
     def _renderizar_barras_multiples(self, chart_view, titulo, data, series_config, extra_hover_fields=None):
-        if not data:
-            self._set_plotly_html(chart_view, self._crear_figura_vacia(titulo, "Sin información para el periodo seleccionado"))
-            return
-
-        figura = go.Figure()
-        etiquetas_eje = [self._acortar_texto(item.get("label", ""), max_chars=14) for item in data]
-        customdata = self._build_customdata(data, extra_hover_fields)
-        hover_extra = self._hover_extra_html(extra_hover_fields)
-
-        for nombre, llave, color in series_config:
-            figura.add_bar(
-                x=etiquetas_eje,
-                y=[float(item.get(llave, 0.0) or 0.0) for item in data],
-                name=nombre,
-                marker_color=self._valor_color(color),
-                customdata=customdata,
-                hovertemplate=(
-                    "<b>%{customdata[0]}</b>"
-                    f"<br>{nombre}: %{{y:,.2f}}"
-                    f"{hover_extra}<extra></extra>"
-                ),
-            )
-
-        figura.update_layout(barmode="group")
-        figura.update_yaxes(rangemode="tozero")
-        self._set_plotly_html(chart_view, self._aplicar_estilo_plotly(figura, titulo), nombre_archivo=titulo.lower().replace(" ", "_"))
+        renderizar(chart_view, titulo, data, series_config, extras=extra_hover_fields)
 
     def _renderizar_pastel(self, chart_view, titulo, data):
-        if not data:
-            self._set_plotly_html(chart_view, self._crear_figura_vacia(titulo, "Sin segmentos para mostrar"))
-            return
-
-        etiquetas = []
-        valores = []
-        for item in data:
-            valor = float(item.get("value", 0.0) or 0.0)
-            if valor <= 0:
-                continue
-            etiquetas.append(str(item.get("label", "")))
-            valores.append(valor)
-
-        if not valores:
-            self._set_plotly_html(chart_view, self._crear_figura_vacia(titulo, "Sin segmentos para mostrar"))
-            return
-
-        figura = go.Figure(
-            data=[
-                go.Pie(
-                    labels=etiquetas,
-                    values=valores,
-                    hole=0.35,
-                    textinfo="label+percent",
-                    hovertemplate="<b>%{label}</b><br>Valor: %{value:,.2f}<br>Participación: %{percent}<extra></extra>",
-                )
-            ]
-        )
-        self._set_plotly_html(chart_view, self._aplicar_estilo_plotly(figura, titulo), nombre_archivo=titulo.lower().replace(" ", "_"))
+        renderizar(chart_view, titulo, data, tipo="pastel")
 
     def _exportar_csv(self, nombre_seccion, filas):
         if not filas:

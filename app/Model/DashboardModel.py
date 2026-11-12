@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 from math import isfinite
 from .ProductoEntrada import ResultadoProductos
+from .FormaPago import clasificar_forma_pago
 
 from sqlalchemy import case, desc, func
 from sqlalchemy.orm import joinedload
@@ -13,8 +14,11 @@ from .BaseDatosModel import (
     Detalles_ventas,
     Empleados,
     Movimientos_Inventario,
+    Metodos_pagos,
     Productos,
     Proveedores,
+    Sucursales,
+    SesionCaja,
     Ventas,
 )
 
@@ -38,7 +42,7 @@ def consultar_dashboard(session, seccion, filtros):
             return ResultadoProductos({"exito": exito_ventas and exito_compras, "data": {"ventas": ventas, "compras": compras},
                                       "mensaje": "No se pudieron cargar los estados del dashboard."})
         metodo = {"inventario": modelo.get_inventory_dashboard, "ventas": modelo.get_sales_dashboard,
-                  "compras": modelo.get_purchases_dashboard}[seccion]
+                  "compras": modelo.get_purchases_dashboard, "resumen": modelo.get_summary_dashboard}[seccion]
         datos, exito, _ = metodo(**filtros)
         if exito:
             validar_reporte_finito(datos)
@@ -52,6 +56,211 @@ def consultar_dashboard(session, seccion, filtros):
 class DashboardModel:
     def __init__(self, session):
         self.session = session
+
+    def _filtrar_resumen(self, query, entidad, fecha_inicio, fecha_fin, sucursal_id=None):
+        inicio, fin = self._normalize_date_range(fecha_inicio, fecha_fin)
+        fecha = Ventas.fecha if entidad is Ventas else func.coalesce(Compras.fecha_compra, Compras.fecha_creacion)
+        query = query.filter(fecha >= self._start_datetime(inicio), fecha <= self._end_datetime(fin))
+        if sucursal_id is not None:
+            query = query.join(Empleados, entidad.empleado_id == Empleados.id).filter(Empleados.sucursal_id == sucursal_id)
+        if entidad is Ventas:
+            query = query.filter(Ventas.activo.is_(True), Ventas.estado != "CANCELADA")
+        return query
+
+    def obtener_ventas_tiempo(self, fecha_inicio, fecha_fin, sucursal_id=None, agrupacion="dia"):
+        if agrupacion not in {"dia", "mes"}:
+            raise ValueError("Agrupacion no valida.")
+        costos = self.session.query(
+            Detalles_ventas.venta_id.label("venta_id"),
+            func.sum(Detalles_ventas.cantidad * func.coalesce(Productos.costo_final, Productos.costo_inicial, 0)).label("costo"),
+        ).join(Productos, Productos.id == Detalles_ventas.producto_id).filter(
+            Detalles_ventas.activo.is_(True)).group_by(Detalles_ventas.venta_id).subquery()
+        fecha = func.date(Ventas.fecha) if agrupacion == "dia" else func.date_trunc("month", Ventas.fecha)
+        query = self.session.query(fecha, func.sum(Ventas.total),
+                                   func.sum(Ventas.subtotal - func.coalesce(costos.c.costo, 0))).outerjoin(
+                                       costos, costos.c.venta_id == Ventas.id)
+        rows = self._filtrar_resumen(query, Ventas, fecha_inicio, fecha_fin, sucursal_id).group_by(fecha).order_by(fecha).all()
+        return [dict(label=str(fecha), ingresos=float(ingreso or 0), ganancia=float(ganancia or 0))
+                for fecha, ingreso, ganancia in rows]
+
+    def obtener_top_productos(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        cantidad = func.sum(Detalles_ventas.cantidad)
+        query = self.session.query(Detalles_ventas.producto_id, func.max(Detalles_ventas.nombre_producto),
+                                   cantidad, func.sum(Detalles_ventas.total_con_iva)).join(
+                                       Ventas, Ventas.id == Detalles_ventas.venta_id).filter(Detalles_ventas.activo.is_(True))
+        rows = self._filtrar_resumen(query, Ventas, fecha_inicio, fecha_fin, sucursal_id).group_by(
+            Detalles_ventas.producto_id).order_by(
+                cantidad.desc(), Detalles_ventas.producto_id).limit(5).all()
+        return [dict(label=nombre, value=float(cantidad or 0), monto=float(monto or 0))
+                for _, nombre, cantidad, monto in rows]
+
+    def obtener_ingresos_pago(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        nombre = func.coalesce(Metodos_pagos.nombre, "Sin metodo")
+        query = self.session.query(nombre, func.sum(Ventas.total)).outerjoin(
+            Metodos_pagos, Ventas.metodos_pagos_id == Metodos_pagos.id)
+        rows = self._filtrar_resumen(query, Ventas, fecha_inicio, fecha_fin, sucursal_id).group_by(nombre).order_by(nombre).all()
+        return [dict(label=nombre, value=float(total or 0)) for nombre, total in rows]
+
+    def obtener_resumen_inventario(self):
+        agotado = Productos.existencia <= 0
+        bajo = (Productos.existencia > 0) & (Productos.existencia <= func.coalesce(Productos.existencia_minima, 0))
+        rows = self.session.query(func.sum(case((agotado, 1), else_=0)),
+                                  func.sum(case((bajo, 1), else_=0))).one()
+        return [dict(label="Agotados", value=int(rows[0] or 0)), dict(label="Stock bajo", value=int(rows[1] or 0))]
+
+    def obtener_kpis(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        query = self._filtrar_resumen(self.session.query(func.sum(Ventas.total), func.avg(Ventas.total)),
+                                     Ventas, fecha_inicio, fecha_fin, sucursal_id)
+        total, promedio = query.one()
+        ordenes = self._filtrar_resumen(self.session.query(func.count(Compras.id)), Compras,
+                                       fecha_inicio, fecha_fin, sucursal_id).scalar()
+        return dict(ventas=float(total or 0), ticket=float(promedio or 0), ordenes=int(ordenes or 0))
+
+    def _consulta_utilidad(self, etiqueta, fecha_inicio, fecha_fin, sucursal_id, por_categoria):
+        costo = func.coalesce(Productos.costo_final, Productos.costo_inicial, 0)
+        ingreso = Detalles_ventas.subtotal - func.coalesce(Detalles_ventas.descuento, 0)
+        utilidad = func.sum(ingreso - Detalles_ventas.cantidad * costo)
+        clave = Productos.categoria_id if por_categoria else Productos.id
+        query = self.session.query(clave, etiqueta, utilidad, func.sum(ingreso)).select_from(
+            Detalles_ventas).join(Ventas, Ventas.id == Detalles_ventas.venta_id).join(
+                Productos, Productos.id == Detalles_ventas.producto_id)
+        if por_categoria:
+            query = query.outerjoin(Categorias_productos, Categorias_productos.id == Productos.categoria_id)
+        query = self._filtrar_resumen(query.filter(Detalles_ventas.activo.is_(True)), Ventas,
+                                     fecha_inicio, fecha_fin, sucursal_id).group_by(clave, etiqueta).order_by(
+                                         utilidad.desc(), clave.asc())
+        if not por_categoria:
+            query = query.limit(5)
+        return [dict(label=nombre, value=float(margen or 0), ingresos=float(total or 0))
+                for _, nombre, margen, total in query.all()]
+
+    def obtener_utilidad_categorias(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        return self._consulta_utilidad(func.coalesce(Categorias_productos.nombre, "Sin categoria"),
+                                      fecha_inicio, fecha_fin, sucursal_id, True)
+
+    def obtener_utilidad_productos(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        return self._consulta_utilidad(Productos.nombre_producto, fecha_inicio, fecha_fin, sucursal_id, False)
+
+    def obtener_salud_inventario(self):
+        etiqueta = case(
+            (Productos.existencia <= 0, "Agotados"),
+            (Productos.existencia <= func.coalesce(Productos.existencia_minima, 0), "Stock bajo"),
+            ((Productos.existencia_maxima > 0) & (Productos.existencia > Productos.existencia_maxima), "Sobre-stock"),
+            else_="Normal")
+        rows = self.session.query(etiqueta, func.count(Productos.id), func.sum(Productos.existencia)).group_by(etiqueta).all()
+        valores = {nombre: (int(cantidad), float(unidades or 0)) for nombre, cantidad, unidades in rows}
+        return [dict(label=nombre, value=valores.get(nombre, (0, 0))[0], unidades=valores.get(nombre, (0, 0))[1])
+                for nombre in ("Agotados", "Stock bajo", "Normal", "Sobre-stock")]
+
+    def obtener_riesgo_caducidad(self, referencia=None):
+        hoy = referencia or datetime.now().date()
+        etiqueta = case(
+            (Productos.fecha_vencimiento.is_(None), "Sin caducidad"),
+            (Productos.fecha_vencimiento < hoy, "Vencidos"),
+            (Productos.fecha_vencimiento <= hoy + timedelta(days=7), "0-7 dias"),
+            (Productos.fecha_vencimiento <= hoy + timedelta(days=15), "8-15 dias"),
+            (Productos.fecha_vencimiento <= hoy + timedelta(days=30), "16-30 dias"),
+            else_="Mas de 30 dias")
+        rows = self.session.query(etiqueta, func.count(Productos.id), func.sum(Productos.existencia)).filter(
+            Productos.existencia > 0).group_by(etiqueta).all()
+        valores = {nombre: (int(cantidad), float(unidades or 0)) for nombre, cantidad, unidades in rows}
+        return [dict(label=nombre, value=valores.get(nombre, (0, 0))[0], unidades=valores.get(nombre, (0, 0))[1])
+                for nombre in ("Vencidos", "0-7 dias", "8-15 dias", "16-30 dias", "Mas de 30 dias", "Sin caducidad")]
+
+    def _patron_ventas(self, componente, fecha_inicio, fecha_fin, sucursal_id):
+        clave = func.extract(componente, Ventas.fecha)
+        query = self.session.query(clave, func.count(Ventas.id), func.sum(Ventas.total))
+        rows = self._filtrar_resumen(query, Ventas, fecha_inicio, fecha_fin, sucursal_id).group_by(clave).order_by(clave).all()
+        valores = {int(clave): (int(cantidad), float(total or 0)) for clave, cantidad, total in rows}
+        etiquetas = [f"{hora:02}:00" for hora in range(24)] if componente == "hour" else [
+            "Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"]
+        return [dict(label=nombre, value=valores.get(indice, (0, 0))[0], ingresos=valores.get(indice, (0, 0))[1])
+                for indice, nombre in enumerate(etiquetas)]
+
+    def obtener_patron_horario(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        return self._patron_ventas("hour", fecha_inicio, fecha_fin, sucursal_id)
+
+    def obtener_patron_semanal(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        return self._patron_ventas("dow", fecha_inicio, fecha_fin, sucursal_id)
+
+    def obtener_liquidez(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        nombre = func.coalesce(Ventas.forma_pago, Metodos_pagos.nombre, "")
+        query = self.session.query(nombre, func.sum(Ventas.total)).select_from(Ventas).outerjoin(
+            Metodos_pagos, Ventas.metodos_pagos_id == Metodos_pagos.id)
+        rows = self._filtrar_resumen(query, Ventas, fecha_inicio, fecha_fin, sucursal_id).group_by(nombre).all()
+        totales = {"Contado": 0.0, "Credito": 0.0, "Sin clasificar": 0.0}
+        for nombre, monto in rows:
+            try:
+                etiqueta = "Credito" if clasificar_forma_pago(nombre) == "credito" else "Contado"
+            except ValueError:
+                etiqueta = "Sin clasificar"
+            totales[etiqueta] += float(monto or 0)
+        return [dict(label=nombre, value=monto) for nombre, monto in totales.items()]
+
+    def obtener_cartera_clientes(self):
+        rows = self.session.query(Clientes.id, Clientes.nombre, Clientes.credito_utilizado,
+                                  Clientes.limite_credito).filter(Clientes.credito_utilizado > 0).order_by(
+                                      Clientes.credito_utilizado.desc(), Clientes.id).limit(5).all()
+        return [dict(label=f"{nombre} (#{identificador})", value=float(saldo), limite=float(limite or 0))
+                for identificador, nombre, saldo, limite in rows]
+
+    def obtener_inversion_proveedores(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        total = func.sum(Compras.total_compra)
+        query = self.session.query(Compras.proveedor_id, func.coalesce(Proveedores.nombre, "Sin proveedor"),
+                                   total, func.count(Compras.id)).select_from(Compras).outerjoin(
+                                       Proveedores, Proveedores.id == Compras.proveedor_id)
+        rows = self._filtrar_resumen(query, Compras, fecha_inicio, fecha_fin, sucursal_id).group_by(
+            Compras.proveedor_id, Proveedores.nombre).order_by(total.desc(), Compras.proveedor_id).limit(5).all()
+        return [dict(label=nombre, value=float(monto or 0), ordenes=int(cantidad))
+                for _, nombre, monto, cantidad in rows]
+
+    def obtener_cortes_caja(self, fecha_inicio, fecha_fin, sucursal_id=None):
+        inicio, fin = self._normalize_date_range(fecha_inicio, fecha_fin)
+        fecha = func.date(SesionCaja.fecha_cierre)
+        query = self.session.query(fecha,
+            func.sum(case((SesionCaja.diferencia > 0, SesionCaja.diferencia), else_=0)),
+            func.sum(case((SesionCaja.diferencia < 0, SesionCaja.diferencia), else_=0)),
+            func.count(SesionCaja.id)).filter(SesionCaja.estado == "CERRADA",
+                SesionCaja.fecha_cierre >= self._start_datetime(inicio),
+                SesionCaja.fecha_cierre <= self._end_datetime(fin)).group_by(fecha).order_by(fecha)
+        return [dict(label=str(fecha), sobrante=float(sobrante or 0), faltante=float(faltante or 0), cortes=int(cantidad))
+                for fecha, sobrante, faltante, cantidad in query.all()]
+
+    def get_summary_dashboard(self, fecha_inicio=None, fecha_fin=None, sucursal_id=None, agrupacion="dia", secciones=None):
+        inicio, fin = self._normalize_date_range(fecha_inicio, fecha_fin)
+        permitidas = set(secciones if secciones is not None else ("ventas", "compras", "inventario"))
+        data = dict(kpis={}, tiempo=[], productos=[], pagos=[], inventario=[], sucursales=[])
+        data["ejecutivo"] = {}
+        if "ventas" in permitidas:
+            data["ejecutivo"].update(
+                utilidad_categorias=self.obtener_utilidad_categorias(inicio, fin, sucursal_id),
+                utilidad_productos=self.obtener_utilidad_productos(inicio, fin, sucursal_id),
+                horas=self.obtener_patron_horario(inicio, fin, sucursal_id),
+                semana=self.obtener_patron_semanal(inicio, fin, sucursal_id),
+                liquidez=self.obtener_liquidez(inicio, fin, sucursal_id),
+                cartera=self.obtener_cartera_clientes(),
+                cortes=self.obtener_cortes_caja(inicio, fin, sucursal_id))
+            data["tiempo"] = self.obtener_ventas_tiempo(inicio, fin, sucursal_id, agrupacion)
+            data["productos"] = self.obtener_top_productos(inicio, fin, sucursal_id)
+            data["pagos"] = self.obtener_ingresos_pago(inicio, fin, sucursal_id)
+            data["kpis"] = self.obtener_kpis(inicio, fin, sucursal_id) if "compras" in permitidas else dict(
+                ventas=sum(item["ingresos"] for item in data["tiempo"]))
+            if "ticket" not in data["kpis"]:
+                query = self._filtrar_resumen(self.session.query(func.avg(Ventas.total)), Ventas, inicio, fin, sucursal_id)
+                data["kpis"]["ticket"] = float(query.scalar() or 0)
+            data["kpis"]["ganancia"] = sum(item["ganancia"] for item in data["tiempo"])
+        elif "compras" in permitidas:
+            query = self._filtrar_resumen(self.session.query(func.count(Compras.id)), Compras, inicio, fin, sucursal_id)
+            data["kpis"]["ordenes"] = int(query.scalar() or 0)
+        if "inventario" in permitidas:
+            data["ejecutivo"].update(salud=self.obtener_salud_inventario(), caducidad=self.obtener_riesgo_caducidad())
+            data["inventario"] = self.obtener_resumen_inventario()
+        if "compras" in permitidas:
+            data["ejecutivo"]["proveedores"] = self.obtener_inversion_proveedores(inicio, fin, sucursal_id)
+        data["sucursales"] = [dict(id=identificador, nombre=nombre) for identificador, nombre in
+                              self.session.query(Sucursales.id, Sucursales.nombre_sucursal).order_by(Sucursales.nombre_sucursal).all()]
+        validar_reporte_finito(data)
+        return data, True, "Resumen obtenido."
 
     def _purchase_amount_expressions(self):
         cantidad_expr = func.coalesce(Detalles_compras.cantidad, 0.0)
