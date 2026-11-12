@@ -6,6 +6,11 @@ class CategoriasModel:
         self.session = session
         
     def agregar(self, tipo_categoria, nombre, descripcion = None):
+        if tipo_categoria == "proveedores":
+            if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 150:
+                raise ValueError("nombre: categoria de proveedor requiere entre 1 y 150 caracteres")
+            if not isinstance(descripcion, str) or not descripcion.strip():
+                raise ValueError("descripcion: es obligatoria")
         if tipo_categoria == "productos":
             if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
                 raise ValueError("nombre: categoria de producto requiere entre 1 y 100 caracteres")
@@ -46,12 +51,18 @@ class CategoriasModel:
         except Exception as e:
             Mensaje().mensaje_critico(f'Error al obtener categoría por id: {e}')
     
-    def eliminar(self, categoria_obj):
+    def eliminar(self, categoria_obj, estricto=False):
         # modelo = self.__tipo_categoria(tipo_categoria)
         try:
+            if getattr(categoria_obj, "tipo", None) == "categoria_proveedor":
+                categoria_obj = self.session.get(Categorias_proveedores, categoria_obj.id)
+                if categoria_obj is None:
+                    return False
             self.session.delete(categoria_obj)
             return True
         except Exception as e:
+            if estricto:
+                raise
             return False
 
     def __tipo_categoria(self, tipo_categoria):

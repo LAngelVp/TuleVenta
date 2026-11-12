@@ -282,7 +282,7 @@ def test_ref16_login_validates_context_without_changing_normalization(monkeypatc
         assert credentials.password not in messages.mensaje_alerta.call_args.args[0]
     if case != "connection_error":
         verifier.verificar_credenciales.assert_called_once_with(
-            usuario="OperadorDePrueba", contraseña=credentials.password
+            usuario="OperadorDePrueba", contraseña=credentials.password, snapshots=True
         )
     assert credentials.password not in caplog.text
 

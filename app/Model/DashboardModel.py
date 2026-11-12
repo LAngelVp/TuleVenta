@@ -1,4 +1,6 @@
 from datetime import datetime, time, timedelta
+from math import isfinite
+from .ProductoEntrada import ResultadoProductos
 
 from sqlalchemy import case, desc, func
 from sqlalchemy.orm import joinedload
@@ -15,6 +17,36 @@ from .BaseDatosModel import (
     Proveedores,
     Ventas,
 )
+
+def validar_reporte_finito(valor):
+    if isinstance(valor, float) and not isfinite(valor):
+        raise ValueError("El reporte contiene importes no finitos.")
+    if isinstance(valor, dict):
+        for item in valor.values():
+            validar_reporte_finito(item)
+    elif isinstance(valor, (list, tuple)):
+        for item in valor:
+            validar_reporte_finito(item)
+
+
+def consultar_dashboard(session, seccion, filtros):
+    try:
+        modelo = DashboardModel(session)
+        if seccion == "estados":
+            ventas, exito_ventas, _ = modelo.obtener_estados_ventas()
+            compras, exito_compras, _ = modelo.obtener_estados_compras()
+            return ResultadoProductos({"exito": exito_ventas and exito_compras, "data": {"ventas": ventas, "compras": compras},
+                                      "mensaje": "No se pudieron cargar los estados del dashboard."})
+        metodo = {"inventario": modelo.get_inventory_dashboard, "ventas": modelo.get_sales_dashboard,
+                  "compras": modelo.get_purchases_dashboard}[seccion]
+        datos, exito, _ = metodo(**filtros)
+        if exito:
+            validar_reporte_finito(datos)
+        return ResultadoProductos({"exito": exito, "data": datos if exito else {},
+                                  "mensaje": "No se pudo cargar el dashboard."})
+    except Exception:
+        session.rollback()
+        return ResultadoProductos({"exito": False, "data": {}, "mensaje": "No se pudo cargar el dashboard."})
 
 
 class DashboardModel:
@@ -46,6 +78,8 @@ class DashboardModel:
         cantidad = float(getattr(detalle, "cantidad", 0.0) or 0.0)
         subtotal = float(getattr(detalle, "subtotal", 0.0) or 0.0)
         precio_unitario = float(getattr(detalle, "precio_unitario", 0.0) or 0.0)
+        if not all(isfinite(valor) for valor in (cantidad, subtotal, precio_unitario)):
+            raise ValueError("La linea contiene importes no finitos.")
         if subtotal > 0:
             return subtotal, subtotal
         if precio_unitario > 0:
@@ -58,6 +92,8 @@ class DashboardModel:
             costo_estimado = float(getattr(producto, "costo_final", 0.0) or 0.0) or float(
                 getattr(producto, "costo_inicial", 0.0) or 0.0
             )
+        if not isfinite(costo_estimado) or not isfinite(cantidad * costo_estimado):
+            raise ValueError("El costo estimado no es finito.")
         return 0.0, cantidad * costo_estimado
 
     def _normalize_date_range(self, start_date=None, end_date=None, default_days=30):
@@ -575,6 +611,7 @@ class DashboardModel:
                 },
                 "data_quality": {
                     "monto_registrado_en_cero": monto_registrado_total == 0.0 and unidades_total > 0.0,
+                    "usa_estimaciones": any(fila["monto_registrado"] != fila["monto_estimado"] for fila in filas_reporte),
                 },
                 "charts": {
                     "compras_por_dia": [

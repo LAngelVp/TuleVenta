@@ -3,6 +3,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import select
 from .BaseDatosModel import Usuarios, Roles, Empleados
+from .UsuarioEntrada import validar_password_nuevo
+from .AdministracionEntrada import snapshot_usuario
 from ..Controller.CodificarPasswordController import *
 from datetime import datetime
 class UsuarioModel:
@@ -10,6 +12,9 @@ class UsuarioModel:
         self.session = session
 
     def crear_usuario(self, usuario, password, fecha_creacion, fecha_actualizacion = None, rol_id=None):
+        if not isinstance(usuario, str) or not usuario.strip() or len(usuario) > 60:
+            raise ValueError("El usuario es obligatorio y admite hasta 60 caracteres.")
+        validar_password_nuevo(password)
         usuario_existente = self.session.query(Usuarios).filter_by(usuario=usuario).first()
         if usuario_existente:
             return usuario_existente, False
@@ -20,7 +25,7 @@ class UsuarioModel:
             self.session.flush()
             return nuevo_usuario, True
         except Exception as e:
-            return None, False
+            raise
     
     def consultar_usuario(self, nombre):
         usuario = self.session.query(Usuarios).filter_by(usuario=nombre).first()
@@ -29,6 +34,10 @@ class UsuarioModel:
         return None, False
     
     def actualizar_usuario(self, id, nuevo_usuario, nuevo_password, fecha_actualizacion, nuevo_rol_id = None):
+        if nuevo_usuario and (not isinstance(nuevo_usuario, str) or not nuevo_usuario.strip() or len(nuevo_usuario) > 60):
+            raise ValueError("El usuario admite hasta 60 caracteres.")
+        if nuevo_password:
+            validar_password_nuevo(nuevo_password)
         if not id:
             return False
         usuario = self.session.get(Usuarios, id)
@@ -45,7 +54,7 @@ class UsuarioModel:
             self.session.flush()
             return True
         except Exception as e:
-            return False
+            raise
 
     def eliminar(self, usuario):
         if usuario:
@@ -53,13 +62,13 @@ class UsuarioModel:
             return True
         return False
 
-    def obtenerDatosGeneralesUsuario(self, idUsuario):
+    def obtenerDatosGeneralesUsuario(self, idUsuario, snapshots=False):
         data = self.session.query(Usuarios).options(
             joinedload(Usuarios.empleado).joinedload(Empleados.puesto),
             joinedload(Usuarios.rol)
         ).where(Usuarios.id == idUsuario).first()
         if data:
-            return data, True
+            return snapshot_usuario(data) if snapshots else data, True
         return None, False
 
     def asignar_usuario_empleado(self, empleado, usuario):
@@ -71,8 +80,10 @@ class UsuarioModel:
                 .where(Empleados.id == empleado.id)
                 .values(usuario_id=usuario.id)
             )
-            self.session.execute(stmt)
+            resultado = self.session.execute(stmt)
+            if resultado.rowcount != 1:
+                return False
             self.session.flush()
             return True
         except Exception as e:
-            return False
+            raise

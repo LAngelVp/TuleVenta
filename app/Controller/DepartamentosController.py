@@ -11,6 +11,7 @@ from .Validaciones import Validaciones
 from ..View.UserInterfacePy.UI_CONTROL_DEPARTAMENTOS import Ui_Control_departamentos
 from ..Model.SucursalesModel import SucursalesModel
 from ..Model.DepartamentosModel import DepartamentosModel
+from ..Model.AdministracionEntrada import serializar_resultado
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .UiTheme import apply_module_theme
 class DepartamentosController(QDialog):
@@ -121,6 +122,13 @@ class DepartamentosController(QDialog):
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaDepartamentos = True
 
+    def hideEvent(self, event):
+        for hilo in self.listaHilosDepartamentos:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.listaHilosDepartamentos.clear()
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)
+
     def closeEvent(self, event):
         for hilos in self.listaHilosDepartamentos:
             WorkerDB.cleanup_managed_worker(hilos)
@@ -136,8 +144,8 @@ class DepartamentosController(QDialog):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_departamento")
-            self.id_hilo_buscar_departamento = WorkerDB.create_managed_worker(owner_id="buscar_departamento")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_departamento")
+            self.id_hilo_buscar_departamento = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_departamento", cierre_seguro=True)
             self.consultor_buscar_departamento = WorkerDB.get_managed_worker(self.id_hilo_buscar_departamento)
             if not self.consultor_buscar_departamento:
                 raise Exception("No se logro obtener el worker gestionado al buscar el departamento")
@@ -159,7 +167,7 @@ class DepartamentosController(QDialog):
 
     def buscar_departamento_query(self, session, nombre):
         try:
-            departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre)
+            departamentos, estado = DepartamentosModel(session).filtrar_nombre(texto=nombre, snapshots=True)
             if not estado:
                 return {
                     'exito': estado,
@@ -221,8 +229,8 @@ class DepartamentosController(QDialog):
             return
         self.manejadorModal.mostrar_modal(self)
         try:
-            WorkerDB.cleanup_owner_workers("agregar_departamento_thread")
-            self.id_hilo_agregar_departamento = WorkerDB.create_managed_worker(owner_id="agregar_departamento_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_departamento_thread")
+            self.id_hilo_agregar_departamento = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_departamento_thread", cierre_seguro=True)
             self.consultor_agregar_departamento = WorkerDB.get_managed_worker(self.id_hilo_agregar_departamento)
             if not self.consultor_agregar_departamento:
                 raise Exception("No se logro obtener el worker gestionado al agregar el departamento")
@@ -235,27 +243,21 @@ class DepartamentosController(QDialog):
             )
             self.consultor_agregar_departamento.ejecutar(
                     funcion=self.agregar_departamento_query,
-                    datos = datos
+                    datos = datos,
+                    sucursales_ids=list(self.sucursales_seleccionadas),
                     )
         except Exception as e:
             if hasattr(self, 'id_hilo_agregar_departamento'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_departamento)
             Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
-    def agregar_departamento_query(self, session, datos):
+    def agregar_departamento_query(self, session, datos, sucursales_ids=()):
         try:
             departamento, estado = DepartamentosModel(session).agregar_departamento(**datos)
             if not estado:
-                if departamento:
-                    if departamento.nombre == datos['nombre']:
-                        session.rollback()
-                        return {
-                            'exito': estado,
-                            'mensaje': "El registro que intentas agregar ya existe"
-                            }
-            for sucursal_id, sucursal in self.sucursales_seleccionadas.items():
-                if sucursal not in departamento.sucursales:
-                    departamento.sucursales.append(sucursal)
+                session.rollback()
+                return {'exito': False, 'mensaje': 'El registro no se pudo agregar o ya existe.'}
+            DepartamentosModel(session).sincronizar_sucursales(departamento, sucursales_ids)
             session.commit()
             return {
                     'exito': estado,
@@ -264,8 +266,8 @@ class DepartamentosController(QDialog):
         except Exception as e:
             session.rollback()
             return {
-                'exito': estado,
-                'mensaje': f"Error al realizar la operacion {str(e)}"
+                'exito': False,
+                'mensaje': "No se pudo confirmar el departamento."
                 }
 
     def eliminar(self):
@@ -274,8 +276,8 @@ class DepartamentosController(QDialog):
                 respuesta = Mensaje(self).mensaje_pregunta('Estas seguro de eliminar el departamento?')
                 if respuesta == QMessageBox.Yes:
                             self.manejadorModal.mostrar_modal(self)
-                            WorkerDB.cleanup_owner_workers("eliminar_departamento_thread")
-                            self.id_hilo_eliminar_departamento = WorkerDB.create_managed_worker(owner_id="eliminar_departamento_thread")
+                            WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_departamento_thread")
+                            self.id_hilo_eliminar_departamento = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_departamento_thread", cierre_seguro=True)
                             self.consultor_eliminar_departamento = WorkerDB.get_managed_worker(self.id_hilo_eliminar_departamento)
                             if not self.consultor_eliminar_departamento:
                                 raise Exception("No se logro realizar la operaciòn para eliminar el registro")
@@ -298,20 +300,24 @@ class DepartamentosController(QDialog):
                 Mensaje(self).mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def eliminar_departamento_query(self, session, departamento):
-        estado = DepartamentosModel(session).eliminar_departamento(departamento.id)
-        if estado:
+        try:
+            estado = DepartamentosModel(session).eliminar_departamento(departamento.id)
+            if not estado:
+                session.rollback()
+                return {'exito': False, 'mensaje': 'No se logro eliminar el departamento.'}
             session.commit()
             return {
                 'exito': estado,
                 'mensaje': f'Operaciòn exitosa, el registro {departamento.nombre} fue eliminado'
             }
-        return {
-            'exito' : estado,
-            'mensaje': f'No se logro la operaciòn'
-        }
+        except Exception:
+            session.rollback()
+            return {'exito': False, 'mensaje': 'No se pudo confirmar la baja del departamento.'}
 
     def mensaje_estado_eliminado(self, objetoMensaje):
         Mensaje(self).mensaje_informativo(objetoMensaje["mensaje"])
+        if not objetoMensaje["exito"]:
+            return
         self.objetoDepartamento = None
         self.signal_departamento_agregado.emit()
         self.limpiar()
@@ -327,8 +333,8 @@ class DepartamentosController(QDialog):
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("actualizar_departamento_thread")
-                    self.id_hilo_actualizar_departamento = WorkerDB.create_managed_worker(owner_id="actualizar_departamento_thread")
+                    WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_departamento_thread")
+                    self.id_hilo_actualizar_departamento = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_departamento_thread", cierre_seguro=True)
                     self.consultor_actualizar_departamento = WorkerDB.get_managed_worker(self.id_hilo_actualizar_departamento)
                     if not self.consultor_actualizar_departamento:
                         raise Exception("No se pudo obtener el worker gestionado al actualizar")
@@ -361,23 +367,10 @@ class DepartamentosController(QDialog):
                     "resultado" : departamentoActualizado
                 }
                 return objeto, estado
-            sucursales_actuales = {sucursal.id: sucursal for sucursal in departamentoActualizado.sucursales}
-            sucursales_deseadas = sucursales_seleccionadas
-            ids_para_agregar = sucursales_deseadas.keys() - sucursales_actuales.keys()
-            ids_para_eliminar = sucursales_actuales.keys() - sucursales_deseadas.keys()
-            agregadas = 0
-            eliminadas = 0
-            for sucursal_id in ids_para_agregar:
-                sucursal = sucursales_deseadas.get(sucursal_id)
-                if sucursal and sucursal not in departamentoActualizado.sucursales:
-                    departamentoActualizado.sucursales.append(sucursal)
-                    agregadas += 1
-
-            for sucursal_id in ids_para_eliminar:
-                sucursal = sucursales_actuales.get(sucursal_id)
-                if sucursal and sucursal in departamentoActualizado.sucursales:
-                    departamentoActualizado.sucursales.remove(sucursal)
-                    eliminadas += 1
+            agregadas, eliminadas = DepartamentosModel(session).sincronizar_sucursales(
+                departamentoActualizado, sucursales_seleccionadas.keys()
+            )
+            departamentoActualizado = serializar_resultado(departamentoActualizado)
             session.commit()
             mensaje = f'Operación realizada con éxito, {departamentoActualizado.nombre} fue actualizado'
             if agregadas > 0 or eliminadas > 0:
@@ -458,8 +451,8 @@ class DepartamentosController(QDialog):
     def listar_sucursales_existentes(self):
         self.WindowRegistroDepartamentos.lista_sucursalesexistentes.clear()
         try:
-            WorkerDB.cleanup_owner_workers("listar_sucursales_del_sistema_thread")
-            self.id_hilo_listar_sucursales_del_sistema = WorkerDB.create_managed_worker(owner_id="listar_sucursales_del_sistema_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_sucursales_del_sistema_thread")
+            self.id_hilo_listar_sucursales_del_sistema = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_sucursales_del_sistema_thread", cierre_seguro=True)
             self.consultor_listar_sucursales_del_sistema = WorkerDB.get_managed_worker(self.id_hilo_listar_sucursales_del_sistema)
             if not self.consultor_listar_sucursales_del_sistema:
                 raise Exception("No se logro hacer la operación")
@@ -480,7 +473,7 @@ class DepartamentosController(QDialog):
 
     def listar_sucursales_del_sistema_query(self, session):
         try:
-            sucursales, estado = SucursalesModel(session).obtener_todo()
+            sucursales, estado = SucursalesModel(session).obtener_todo(snapshots=True)
             if not estado:
                 return {
                     "exito":estado,
@@ -515,8 +508,8 @@ class DepartamentosController(QDialog):
         self.WindowRegistroDepartamentos.lista_departamentosexistentes.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
-            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_departamentos_thread")
+            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_departamentos_thread", cierre_seguro=True)
             self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
             if not self.consultor_listar_departamentos:
                 raise Exception("No se logro hacer la operación")
@@ -537,7 +530,7 @@ class DepartamentosController(QDialog):
 
     def obtener_departamentos_query(self, session):
         try:
-            departamentos, estado = DepartamentosModel(session).obtener_todos()
+            departamentos, estado = DepartamentosModel(session).obtener_todos(snapshots=True)
             if estado:
                 return {
                     'exito': estado,

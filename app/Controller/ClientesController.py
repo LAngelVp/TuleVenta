@@ -19,6 +19,9 @@ from .UiTheme import apply_module_theme, bring_window_to_front, stabilize_item_v
 from ..Model.ClientesFisicosAndMoralesModel import *
 from ..Model.BaseDatosModel import Areas_negocios, Categorias_de_clientes, Clientes_fisicos as ClienteFisicoModel, Clientes_morales as ClienteMoralModel
 from .MensajesAlertasController import Mensaje
+from ..Model.AdministracionEntrada import CAMPOS_CLIENTES
+from ..Model.ClientesImportacion import ClientesImportacion
+from ..Model.AdministracionEntrada import serializar_resultado
 
 class Clientes(QWidget):
 # =========== PERSONALIZED SIGNALS ==============
@@ -27,6 +30,7 @@ class Clientes(QWidget):
         super().__init__(parent)
         self.WindowClient = Ui_Control_Clientes()
         self.WindowClient.setupUi(self)
+        self.configurar_limites()
         apply_module_theme(self)
         self._ajustar_vistas_clientes()
         self.clienteFisico = True
@@ -129,6 +133,10 @@ class Clientes(QWidget):
         self.listar_areas()
         self.listar_categorias()
 
+    def configurar_limites(self):
+        for nombre, (modelo, campo) in CAMPOS_CLIENTES.items():
+            getattr(self.WindowClient, nombre).setMaxLength(modelo.__mapper__.columns[campo].type.length)
+
     def _ajustar_vistas_clientes(self):
         stabilize_item_view(self.WindowClient.tabla_clientesFisicos, min_height=260)
         stabilize_item_view(self.WindowClient.tabla_clientesMorales, min_height=260)
@@ -139,6 +147,7 @@ class Clientes(QWidget):
         for hilo in self.lista_hilos_clientes:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_clientes.clear()
+        self.manejadorModal.cerrar_modal()
         super().hideEvent(event)
 
     def _reset_busqueda_clientes_fisicos(self, clear_input=False):
@@ -229,18 +238,11 @@ class Clientes(QWidget):
             upper=True
         )
         if categoria_nombre:
-            categoria_existente_id = categorias_por_nombre.get(categoria_nombre)
-            if categoria_existente_id:
-                return categoria_existente_id
-            categoria_nueva = Categorias_de_clientes(
-                nombre=categoria_nombre,
-                descripcion=f"Categoría creada automáticamente durante importación de clientes: {categoria_nombre}"
+            return ClientesImportacion(session).resolver_catalogo(
+                row, Categorias_de_clientes, categorias_por_id, categorias_por_nombre,
+                ("categoria_cliente_id", "categoria_id"),
+                ("categoria_cliente", "clasificacion_cliente", "clasificacion cliente", "clasificacion de cliente"),
             )
-            session.add(categoria_nueva)
-            session.flush()
-            categorias_por_id[categoria_nueva.id] = categoria_nueva
-            categorias_por_nombre[categoria_nombre] = categoria_nueva.id
-            return categoria_nueva.id
         return None
 
     def _resolver_area_negocio_importacion(self, session, row, areas_por_id, areas_por_nombre):
@@ -255,18 +257,11 @@ class Clientes(QWidget):
             upper=True
         )
         if area_nombre:
-            area_existente_id = areas_por_nombre.get(area_nombre)
-            if area_existente_id:
-                return area_existente_id
-            area_nueva = Areas_negocios(
-                nombre=area_nombre,
-                descripcion=f"Área de negocio creada automáticamente durante importación de clientes: {area_nombre}"
+            return ClientesImportacion(session).resolver_catalogo(
+                row, Areas_negocios, areas_por_id, areas_por_nombre,
+                ("areas_de_negocios_id", "area_de_negocio_id", "area_id"),
+                ("area_de_negocio", "area de negocio", "areas_de_negocios"),
             )
-            session.add(area_nueva)
-            session.flush()
-            areas_por_id[area_nueva.id] = area_nueva
-            areas_por_nombre[area_nombre] = area_nueva.id
-            return area_nueva.id
         return None
 
     def actualizar_clientes(self):
@@ -297,8 +292,8 @@ class Clientes(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("actualizar_cliente_thread")
-                self.id_hilo_actualizar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id="actualizar_cliente_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_cliente_thread")
+                self.id_hilo_actualizar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_cliente_thread", cierre_seguro=True)
                 self.consultor_actualizar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_actualizar_cliente_vclientes)
 
                 if not self.consultor_actualizar_clientes_vclientes:
@@ -409,13 +404,13 @@ class Clientes(QWidget):
                     "exito": estado,
                     "mensaje": f'No se logro realizar la actualización de {cliente.nombre}.'
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un problema en el proceso: {e}'
+                "mensaje": 'No se pudo confirmar la actualizacion del cliente.'
             }
-        session.commit()
         return {
             "exito": estado,
             "mensaje" : f'Se realizo la actualización de {cliente.nombre}'
@@ -429,8 +424,8 @@ class Clientes(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_cliente_thread")
-                self.id_hilo_eliminar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id="eliminar_cliente_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_cliente_thread")
+                self.id_hilo_eliminar_cliente_vclientes = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_cliente_thread", cierre_seguro=True)
                 self.consultor_eliminar_cliente_vclientes = WorkerDB.get_managed_worker(self.id_hilo_eliminar_cliente_vclientes)
                 if not self.consultor_eliminar_cliente_vclientes:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
@@ -512,8 +507,8 @@ class Clientes(QWidget):
         else:
             self.WindowClient.cajaOpciones_areasnegocio_moral.clear()
         try:
-            WorkerDB.cleanup_owner_workers("obtener_areas_negocio_thread")
-            self.id_hilo_obtener_areas_negocio = WorkerDB.create_managed_worker(owner_id="obtener_areas_negocio_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_areas_negocio_thread")
+            self.id_hilo_obtener_areas_negocio = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_areas_negocio_thread", cierre_seguro=True)
             self.consultor_obtener_areas_negocio = WorkerDB.get_managed_worker(self.id_hilo_obtener_areas_negocio)
             if not self.consultor_obtener_areas_negocio:
                 raise Exception("No se logro hacer la operación para listar")
@@ -530,8 +525,10 @@ class Clientes(QWidget):
             Mensaje().mensaje_critico(f'No se logro listar las areas por lo siguiente: {e}')
 
     def obtener_areas_negocio_query(self, session):
+        estado = False
         try:
             areas, estado = AreaNegocioClientesModel(session).obtener_areas()
+            areas = serializar_resultado(areas)
             if not estado:
                 session.rollback()
                 return {
@@ -573,8 +570,8 @@ class Clientes(QWidget):
         else:
             self.WindowClient.cajaOpciones_categoriaMoral.clear()
         try:
-            WorkerDB.cleanup_owner_workers("obtener_categorias_thread")
-            self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id="obtener_categorias_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_categorias_thread")
+            self.id_hilo_obtener_categorias_cliente = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_categorias_thread", cierre_seguro=True)
             self.consultor_obtener_categorias_cliente = WorkerDB.get_managed_worker(self.id_hilo_obtener_categorias_cliente)
             if not self.consultor_obtener_categorias_cliente:
                 raise Exception("No se logro hacer la operación para listar")
@@ -592,8 +589,10 @@ class Clientes(QWidget):
             Mensaje().mensaje_critico(f"No se logro listar las areas por lo siguiente: {e}")
 
     def obtener_categorias_clientes(self, session, tipo_categoria = "clientes"):
+        estado = False
         try:
             categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria = tipo_categoria)
+            categorias = serializar_resultado(categorias)
             if not estado:
                 session.rollback()
                 return {
@@ -732,8 +731,8 @@ class Clientes(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_cliente_thread")
-            self.id_hilo_agregar_cliente = WorkerDB.create_managed_worker(owner_id="agregar_cliente_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_cliente_thread")
+            self.id_hilo_agregar_cliente = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_cliente_thread", cierre_seguro=True)
             self.consultor_agregar_cliente = WorkerDB.get_managed_worker(self.id_hilo_agregar_cliente)
             if not self.consultor_agregar_cliente:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -860,8 +859,8 @@ class Clientes(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("importar_clientes_fisicos_thread")
-            self.id_hilo_importar_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="importar_clientes_fisicos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_importar_clientes_fisicos_thread")
+            self.id_hilo_importar_clientes_fisicos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_importar_clientes_fisicos_thread", cierre_seguro=True)
             self.consultor_importar_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_importar_clientes_fisicos)
             if not self.consultor_importar_clientes_fisicos:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -882,124 +881,25 @@ class Clientes(QWidget):
             Mensaje().mensaje_alerta(f"Error al iniciar la importación: {e}")
 
     def importar_clientes_fisicos_query(self, session, documento):
-        columnas_validas = {
-            "id", "nombre", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas", "calles",
-            "codigo_postal", "direccion_adicional", "entidad_legalizada", "categoria_cliente_id", "categoria_cliente",
-            "categoria_id", "credito", "estado_credito", "limite_credito", "porcentaje_interes", "fecha_ultimo_reporte",
-            "credito_disponible", "credito_utilizado", "aplica_descuento", "porcentaje_descuento", "comentarios",
-            "areas_de_negocios_id", "area_de_negocio_id", "area_de_negocio", "areas_de_negocios", "apellido_paterno",
-            "apellido_materno", "curp", "fecha_nacimiento", "num_identificacion", "ocupacion", "ingresos",
-            "estado_civil", "foto", "clasificacion cliente", "clasificacion_cliente", "area de negocio", "area_id"
-        }
-        columnas_requeridas = [
-            "nombre", "apellido_paterno", "apellido_materno", "curp", "rfc", "correo", "telefono", "pais", "estado",
-            "ciudad", "avenidas", "calles", "codigo_postal", "direccion_adicional", "fecha_nacimiento",
-            "num_identificacion", "ocupacion", "ingresos", "estado_civil"
-        ]
+        return Clientes._importar_clientes_query(self, session, documento, "FISICO")
 
-        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
-            documento=documento,
-            columnas_requeridas=columnas_requeridas,
-            columnas_validas=columnas_validas
+    def _importar_clientes_query(self, session, documento, tipo):
+        validas, requeridas = ClientesImportacion.columnas(tipo)
+        reporte = OperacionMasivaCsvController.leer_con_reporte(
+            documento=documento, columnas_requeridas=requeridas, columnas_validas=validas,
         )
-
-        categorias = session.query(Categorias_de_clientes).all()
-        areas = session.query(Areas_negocios).all()
-        categorias_por_id = {categoria.id: categoria for categoria in categorias}
-        categorias_por_nombre = {str(categoria.nombre).strip().upper(): categoria.id for categoria in categorias}
-        areas_por_id = {area.id: area for area in areas}
-        areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
-
-        clientes_existentes = (
-            session.query(ClienteFisicoModel.curp, ClienteFisicoModel.rfc)
-            .all()
-        )
-        curps_existentes = {str(curp).strip().upper() for curp, _ in clientes_existentes if curp}
-        rfcs_existentes = {str(rfc).strip().upper() for _, rfc in clientes_existentes if rfc}
-
-        agregados = 0
-        duplicados = 0
-        omitidos = 0
-
-        for row in registros:
-            nombre = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nombre"), upper=True)
-            apellido_paterno = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "apellido_paterno"), upper=True)
-            apellido_materno = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "apellido_materno"), upper=True)
-            curp = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "curp"), upper=True)
-            rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
-
-            categoria_id = self._resolver_categoria_cliente_importacion(session, row, categorias_por_id, categorias_por_nombre)
-            area_id = self._resolver_area_negocio_importacion(session, row, areas_por_id, areas_por_nombre)
-            fecha_nacimiento = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_nacimiento"))
-            fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
-            codigo_postal = self._normalizar_codigo_postal_importacion(self._obtener_valor_importacion(row, "codigo_postal"))
-
-            if not all([nombre, apellido_paterno, apellido_materno, curp, rfc, categoria_id, area_id, fecha_nacimiento]):
-                omitidos += 1
-                continue
-            if curp in curps_existentes or rfc in rfcs_existentes:
-                duplicados += 1
-                continue
-
-            limite_credito = OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "limite_credito"), default=0.0)
-            credito = self._parse_bool_importacion(self._obtener_valor_importacion(row, "credito"), default=False)
-            cliente, estado = ClientesFisicosAndMorales(session).agregar_cliente_fisico(
-                nombre=nombre,
-                correo=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "correo")),
-                rfc=rfc,
-                telefono=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "telefono"), upper=True),
-                pais=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "pais"), upper=True),
-                estado=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado"), upper=True),
-                ciudad=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
-                avenidas=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
-                calles=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
-                codigo_postal=codigo_postal,
-                direccion_adicional=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
-                entidad_legalizada=self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
-                categoria_cliente_id=categoria_id,
-                credito=credito,
-                estado_credito=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_credito"), upper=True) or ("AUTORIZADO" if credito else "SIN AUTORIZAR"),
-                limite_credito=limite_credito,
-                porcentaje_interes=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_interes"), default=0.0),
-                fecha_ultimo_reporte=datetime.combine(fecha_ultimo_reporte, datetime.min.time()),
-                credito_disponible=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_disponible"), default=limite_credito),
-                credito_utilizado=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_utilizado"), default=0.0),
-                tipo_cliente="FISICO",
-                aplica_descuento=self._parse_bool_importacion(self._obtener_valor_importacion(row, "aplica_descuento"), default=False),
-                porcentaje_descuento=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_descuento"), default=0.0),
-                comentarios=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "comentarios"), upper=True),
-                areas_de_negocios_id=area_id,
-                apellido_paterno=apellido_paterno,
-                apellido_materno=apellido_materno,
-                curp=curp,
-                fecha_nacimiento=fecha_nacimiento,
-                num_identificacion=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "num_identificacion"), upper=True),
-                ocupacion=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ocupacion"), upper=True),
-                ingresos=OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "ingresos"), default=0.0),
-                estado_civil=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_civil"), upper=True),
-                foto=self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "foto"))
-            )
-            if estado:
-                agregados += 1
-                curps_existentes.add(curp)
-                rfcs_existentes.add(rfc)
-            elif estado is None:
-                duplicados += 1
+        try:
+            resultado = ClientesImportacion(session).importar_con_reporte(reporte, tipo)
+            if resultado["exito"] and resultado["agregados"]:
+                session.commit()
             else:
-                omitidos += 1
-
-        if agregados:
-            session.commit()
-        else:
+                session.rollback()
+            return resultado
+        except Exception:
             session.rollback()
-
-        return {
-            "exito": True,
-            "tipo_cliente": "FISICO",
-            "agregados": agregados,
-            "duplicados": duplicados,
-            "omitidos": omitidos
-        }
+            reporte["errores"].append(dict(fila=None, campo=None, codigo="persistencia", mensaje="No se pudo confirmar el lote; no se guardaron clientes."))
+            return dict(exito=False, tipo_cliente=tipo, agregados=0, duplicados=0, omitidos=0,
+                        reporte=reporte, mensaje="No se pudo confirmar el lote de clientes.")
 
     def resultado_importacion_clientes_fisicos(self, resultado):
         if resultado.get("exito"):
@@ -1022,8 +922,8 @@ class Clientes(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("importar_clientes_morales_thread")
-            self.id_hilo_importar_clientes_morales = WorkerDB.create_managed_worker(owner_id="importar_clientes_morales_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_importar_clientes_morales_thread")
+            self.id_hilo_importar_clientes_morales = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_importar_clientes_morales_thread", cierre_seguro=True)
             self.consultor_importar_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_importar_clientes_morales)
             if not self.consultor_importar_clientes_morales:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -1044,128 +944,7 @@ class Clientes(QWidget):
             Mensaje().mensaje_alerta(f"Error al iniciar la importación: {e}")
 
     def importar_clientes_morales_query(self, session, documento):
-        columnas_validas = {
-            "id", "nombre", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas", "calles",
-            "codigo_postal", "direccion_adicional", "entidad_legalizada", "categoria_cliente_id", "categoria_cliente",
-            "categoria_id", "credito", "estado_credito", "limite_credito", "porcentaje_interes", "fecha_ultimo_reporte",
-            "credito_disponible", "credito_utilizado", "aplica_descuento", "descuento_autorizado", "porcentaje_descuento", "comentarios",
-            "areas_de_negocios_id", "area_de_negocio_id", "area_de_negocio", "areas_de_negocios", "razon_social",
-            "fecha_constitucion", "web", "sector", "nif", "NIF", "representante_nombre", "representante_telefono",
-            "representante_correo", "representante_puesto", "clasificacion de cliente", "clasificacion_cliente",
-            "area de negocio", "area_id"
-        }
-        columnas_requeridas = [
-            "nombre", "razon_social", "correo", "rfc", "telefono", "pais", "estado", "ciudad", "avenidas",
-            "calles", "codigo_postal", "direccion_adicional", "fecha_constitucion", "web", "sector", "nif",
-            "representante_nombre", "representante_telefono", "representante_correo", "representante_puesto"
-        ]
-
-        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
-            documento=documento,
-            columnas_requeridas=columnas_requeridas,
-            columnas_validas=columnas_validas
-        )
-
-        categorias = session.query(Categorias_de_clientes).all()
-        areas = session.query(Areas_negocios).all()
-        categorias_por_id = {categoria.id: categoria for categoria in categorias}
-        categorias_por_nombre = {str(categoria.nombre).strip().upper(): categoria.id for categoria in categorias}
-        areas_por_id = {area.id: area for area in areas}
-        areas_por_nombre = {str(area.nombre).strip().upper(): area.id for area in areas}
-
-        clientes_existentes = (
-            session.query(ClienteMoralModel.razon_social, ClienteMoralModel.rfc, ClienteMoralModel.NIF)
-            .all()
-        )
-        razones_existentes = {str(razon).strip().upper() for razon, _, _ in clientes_existentes if razon}
-        rfcs_existentes = {str(rfc).strip().upper() for _, rfc, _ in clientes_existentes if rfc}
-        nifs_existentes = {str(nif).strip().upper() for _, _, nif in clientes_existentes if nif}
-
-        agregados = 0
-        duplicados = 0
-        omitidos = 0
-
-        for row in registros:
-            nombre = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nombre"), upper=True)
-            razon_social = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "razon_social"), upper=True)
-            rfc = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "rfc"), upper=True)
-            nif = self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "nif", "NIF"), upper=True)
-            categoria_id = self._resolver_categoria_cliente_importacion(session, row, categorias_por_id, categorias_por_nombre)
-            area_id = self._resolver_area_negocio_importacion(session, row, areas_por_id, areas_por_nombre)
-            fecha_constitucion = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_constitucion"))
-            fecha_ultimo_reporte = OperacionMasivaCsvController.parse_date(self._obtener_valor_importacion(row, "fecha_ultimo_reporte"), default=datetime.now().date())
-            codigo_postal = self._normalizar_codigo_postal_importacion(self._obtener_valor_importacion(row, "codigo_postal"))
-
-            if not all([nombre, razon_social, rfc, nif, categoria_id, area_id, fecha_constitucion]):
-                omitidos += 1
-                continue
-            if razon_social in razones_existentes or rfc in rfcs_existentes or nif in nifs_existentes:
-                duplicados += 1
-                continue
-
-            limite_credito = OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "limite_credito"), default=0.0)
-            credito = self._parse_bool_importacion(self._obtener_valor_importacion(row, "credito"), default=False)
-            datos_cliente = {
-                'nombre': nombre,
-                'correo': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "correo")),
-                'rfc': rfc,
-                'telefono': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "telefono"), upper=True),
-                'pais': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "pais"), upper=True),
-                'estado': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado"), upper=True),
-                'ciudad': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "ciudad"), upper=True),
-                'avenidas': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "avenidas"), upper=True),
-                'calles': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "calles"), upper=True),
-                'codigo_postal': codigo_postal,
-                'direccion_adicional': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "direccion_adicional"), upper=True),
-                'entidad_legalizada': self._parse_bool_importacion(self._obtener_valor_importacion(row, "entidad_legalizada"), default=False),
-                'categoria_cliente_id': categoria_id,
-                'credito': credito,
-                'estado_credito': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "estado_credito"), upper=True) or ("AUTORIZADO" if credito else "SIN AUTORIZAR"),
-                'limite_credito': limite_credito,
-                'porcentaje_interes': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_interes"), default=0.0),
-                'fecha_ultimo_reporte': datetime.combine(fecha_ultimo_reporte, datetime.min.time()),
-                'credito_disponible': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_disponible"), default=limite_credito),
-                'credito_utilizado': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "credito_utilizado"), default=0.0),
-                'tipo_cliente': 'MORAL',
-                'aplica_descuento': self._parse_bool_importacion(self._obtener_valor_importacion(row, "aplica_descuento", "descuento_autorizado"), default=False),
-                'porcentaje_descuento': OperacionMasivaCsvController.parse_float(self._obtener_valor_importacion(row, "porcentaje_descuento"), default=0.0),
-                'comentarios': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "comentarios"), upper=True),
-                'areas_de_negocios_id': area_id,
-                'razon_social': razon_social,
-                'fecha_constitucion': fecha_constitucion,
-                'web': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "web")),
-                'sector': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "sector"), upper=True),
-                'nif': nif,
-                'datos_representante': {
-                    'nombre': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_nombre"), upper=True),
-                    'telefono': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_telefono"), upper=True),
-                    'correo': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_correo")),
-                    'puesto': self._normalizar_texto_importacion(self._obtener_valor_importacion(row, "representante_puesto"), upper=True)
-                }
-            }
-            resultado = self.agregar_cliente_moral_query(session, datos_cliente.copy())
-            if resultado.get('exito'):
-                agregados += 1
-                razones_existentes.add(razon_social)
-                rfcs_existentes.add(rfc)
-                nifs_existentes.add(nif)
-            elif 'ya existe' in resultado.get('mensaje', '').lower():
-                duplicados += 1
-            else:
-                omitidos += 1
-
-        if agregados:
-            session.commit()
-        else:
-            session.rollback()
-
-        return {
-            "exito": True,
-            "tipo_cliente": "MORAL",
-            "agregados": agregados,
-            "duplicados": duplicados,
-            "omitidos": omitidos
-        }
+        return Clientes._importar_clientes_query(self, session, documento, "MORAL")
 
     def resultado_importacion_clientes_morales(self, resultado):
         if resultado.get("exito"):
@@ -1385,8 +1164,8 @@ class Clientes(QWidget):
             try:
                 self._append_mode_clientes_fisicos = True
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_fisicos_thread")
-                self.id_hilo_obtener_clientes_paginados_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_paginados_fisicos_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_clientes_paginados_fisicos_thread")
+                self.id_hilo_obtener_clientes_paginados_fisicos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_clientes_paginados_fisicos_thread", cierre_seguro=True)
                 self.consultor_obtener_clientes_paginados_fisicos = WorkerDB.get_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 if not self.consultor_obtener_clientes_paginados_fisicos:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -1400,14 +1179,16 @@ class Clientes(QWidget):
                 self.consultor_obtener_clientes_paginados_fisicos.ejecutar(
                     funcion=self.paginar_busqueda_por_filtros_clientes_fisicos_query,
                     texto=self.nombre_cliente_fisico,
-                    es_fisico=True
+                    es_fisico=True,
+                    cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
+                    cantidad_final=self.cantidad_final_clientes_fisicos,
                     )
             except Exception as e:
                 if hasattr(self, 'id_hilo_obtener_clientes_paginados_fisicos'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_fisicos)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
-    def paginar_busqueda_por_filtros_clientes_fisicos_query(self, session, texto, es_fisico = None):
+    def paginar_busqueda_por_filtros_clientes_fisicos_query(self, session, texto, es_fisico = None, cantidad_inicial=0, cantidad_final=100):
         datos = []
         estado = False
         if texto:
@@ -1415,8 +1196,9 @@ class Clientes(QWidget):
                 if es_fisico:
                     clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
                         texto = texto,
-                        cantidad_inicial = self.cantidad_inicial_clientes_fisicos,
-                        cantidad_final = self.cantidad_final_clientes_fisicos
+                        cantidad_inicial = cantidad_inicial,
+                        cantidad_final = cantidad_final,
+                        snapshots=True,
                         )
                     if not estado:
                         session.rollback()
@@ -1456,8 +1238,8 @@ class Clientes(QWidget):
                 self._actualizar_estado_paginacion_clientes_fisicos()
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_clientes_fisicos_thread")
-                self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id="obtener_clientes_fisicos_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_clientes_fisicos_thread")
+                self.id_hilo_clientes_fisicos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_clientes_fisicos_thread", cierre_seguro=True)
                 self.consultor_clientes_fisicos = WorkerDB.get_managed_worker(self.id_hilo_clientes_fisicos)
                 if not self.consultor_clientes_fisicos:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -1469,7 +1251,9 @@ class Clientes(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_clientes_fisicos.ejecutar(
-                    funcion=self.clientes_fisicos_query
+                    funcion=self.clientes_fisicos_query,
+                    cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
+                    cantidad_final=self.cantidad_final_clientes_fisicos,
                 )
 
             except Exception as e:
@@ -1480,11 +1264,12 @@ class Clientes(QWidget):
             Mensaje().mensaje_alerta(f"Error clientico para obtener los clientes fisicos: {str(e)}")
             return
 
-    def clientes_fisicos_query(self, session):
+    def clientes_fisicos_query(self, session, cantidad_inicial=0, cantidad_final=100):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_fisicos(
-                cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
-                cantidad_final=self.cantidad_final_clientes_fisicos
+                cantidad_inicial=cantidad_inicial,
+                cantidad_final=cantidad_final,
+                snapshots=True,
             )
 
             if not estado:
@@ -1571,8 +1356,8 @@ class Clientes(QWidget):
             self.modelo_tabla_clientes_fisicos.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_clientes_thread_vclientes")
-            self.id_hilo_buscar_clientes_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_thread_vclientes")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_clientes_thread_vclientes")
+            self.id_hilo_buscar_clientes_vclientes = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_clientes_thread_vclientes", cierre_seguro=True)
             self.consultor_buscar_clientes_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             if not self.consultor_buscar_clientes_vclientes:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -1586,18 +1371,21 @@ class Clientes(QWidget):
             self.consultor_buscar_clientes_vclientes.ejecutar(
                 funcion = self.buscar_clientes_fisicos_query,
                 texto = self.nombre_cliente_fisico,
+                cantidad_inicial=self.cantidad_inicial_clientes_fisicos,
+                cantidad_final=self.cantidad_final_clientes_fisicos,
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_clientes_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
 
-    def buscar_clientes_fisicos_query(self, session, texto):
+    def buscar_clientes_fisicos_query(self, session, texto, cantidad_inicial=0, cantidad_final=100):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_fisicos_por_nombre(
                 texto = texto,
-                cantidad_inicial = self.cantidad_inicial_clientes_fisicos,
-                cantidad_final = self.cantidad_final_clientes_fisicos
+                cantidad_inicial = cantidad_inicial,
+                cantidad_final = cantidad_final,
+                snapshots=True,
                 )
             if not estado:
                 session.rollback()
@@ -1612,7 +1400,6 @@ class Clientes(QWidget):
                 "exito": False,
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
-        self.busqueda_clientes_fisicos = True
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1640,8 +1427,8 @@ class Clientes(QWidget):
             self.modelo_tabla_clientes_morales.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_clientes_morales_thread_vclientes")
-            self.id_hilo_buscar_clientes_morales_vclientes = WorkerDB.create_managed_worker(owner_id="buscar_clientes_morales_thread_vclientes")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_clientes_morales_thread_vclientes")
+            self.id_hilo_buscar_clientes_morales_vclientes = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_clientes_morales_thread_vclientes", cierre_seguro=True)
             self.consultor_buscar_clientes_morales_vclientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
             if not self.consultor_buscar_clientes_morales_vclientes:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -1655,18 +1442,21 @@ class Clientes(QWidget):
             self.consultor_buscar_clientes_morales_vclientes.ejecutar(
                 funcion = self.buscar_clientes_morales_query,
                 texto = self.nombre_cliente_moral,
+                cantidad_inicial=self.cantidad_inicial_clientes_morales,
+                cantidad_final=self.cantidad_final_clientes_morales,
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_clientes_morales_vclientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_clientes_morales_vclientes)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
 
-    def buscar_clientes_morales_query(self, session, texto):
+    def buscar_clientes_morales_query(self, session, texto, cantidad_inicial=0, cantidad_final=100):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
                 texto = texto,
-                cantidad_inicial = self.cantidad_inicial_clientes_morales,
-                cantidad_final = self.cantidad_final_clientes_morales
+                cantidad_inicial = cantidad_inicial,
+                cantidad_final = cantidad_final,
+                snapshots=True,
             )
             if not estado:
                 session.rollback()
@@ -1681,7 +1471,6 @@ class Clientes(QWidget):
                 "exito": False,
                 "mensaje": f'Ocurrio un problema en el proceso: {e}'
             }
-        self.busqueda_clientes_morales = True
         return {
             "exito": estado,
             "mensaje" : f'Se encontraron {len(clientes)} registros',
@@ -1933,8 +1722,8 @@ class Clientes(QWidget):
                 self._actualizar_estado_paginacion_clientes_morales()
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_clientes_morales_thread")
-                self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_morales_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_clientes_morales_thread")
+                self.id_hilo_clientes_morales = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_clientes_morales_thread", cierre_seguro=True)
                 self.consultor_clientes_morales = WorkerDB.get_managed_worker(self.id_hilo_clientes_morales)
                 if not self.consultor_clientes_morales:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -1946,7 +1735,9 @@ class Clientes(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_clientes_morales.ejecutar(
-                    funcion=self.clientes_morales_query
+                    funcion=self.clientes_morales_query,
+                    cantidad_inicial=self.cantidad_inicial_clientes_morales,
+                    cantidad_final=self.cantidad_final_clientes_morales,
                 )
             except Exception as e:
                 if hasattr(self, 'id_hilo_clientes_morales'):
@@ -1956,11 +1747,12 @@ class Clientes(QWidget):
             Mensaje().mensaje_alerta(f"Error critico para obtener los clientes morales: {str(e)}")
             return
 
-    def clientes_morales_query(self, session):
+    def clientes_morales_query(self, session, cantidad_inicial=0, cantidad_final=100):
         try:
             clientes, estado = ClientesFisicosAndMorales(session).mostrar_clientes_morales(
-                cantidad_inicial=self.cantidad_inicial_clientes_morales,
-                cantidad_final=self.cantidad_final_clientes_morales
+                cantidad_inicial=cantidad_inicial,
+                cantidad_final=cantidad_final,
+                snapshots=True,
             )
 
             if not estado:
@@ -2042,8 +1834,8 @@ class Clientes(QWidget):
             try:
                 self._append_mode_clientes_morales = True
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("obtener_clientes_paginados_morales_thread")
-                self.id_hilo_obtener_clientes_paginados_morales = WorkerDB.create_managed_worker(owner_id="obtener_clientes_paginados_morales_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_clientes_paginados_morales_thread")
+                self.id_hilo_obtener_clientes_paginados_morales = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_clientes_paginados_morales_thread", cierre_seguro=True)
                 self.consultor_obtener_clientes_paginados_morales = WorkerDB.get_managed_worker(self.id_hilo_obtener_clientes_paginados_morales)
                 if not self.consultor_obtener_clientes_paginados_morales:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -2057,14 +1849,16 @@ class Clientes(QWidget):
                 self.consultor_obtener_clientes_paginados_morales.ejecutar(
                     funcion=self.paginar_busqueda_por_filtros_clientes_morales_query,
                     texto=self.nombre_cliente_moral,
-                    es_fisico=False
+                    es_fisico=False,
+                    cantidad_inicial=self.cantidad_inicial_clientes_morales,
+                    cantidad_final=self.cantidad_final_clientes_morales,
                     )
             except Exception as e:
                 if hasattr(self, 'id_hilo_obtener_clientes_paginados_morales'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_clientes_paginados_morales)
                 Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
-    def paginar_busqueda_por_filtros_clientes_morales_query(self, session, texto, es_fisico = None):
+    def paginar_busqueda_por_filtros_clientes_morales_query(self, session, texto, es_fisico = None, cantidad_inicial=0, cantidad_final=100):
         datos = []
         estado = False
         if texto:
@@ -2072,8 +1866,9 @@ class Clientes(QWidget):
                 if not es_fisico:
                     clientes, estado = ClientesFisicosAndMorales(session).filtrar_clientes_morales_por_nombre(
                         texto,
-                        cantidad_inicial = self.cantidad_inicial_clientes_morales,
-                        cantidad_final = self.cantidad_final_clientes_morales
+                        cantidad_inicial = cantidad_inicial,
+                        cantidad_final = cantidad_final,
+                        snapshots=True,
                         )
                     if not estado:
                         session.rollback()

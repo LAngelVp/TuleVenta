@@ -1,11 +1,13 @@
 from .BaseDatosModel import Sucursales, Departamentos
 from sqlalchemy.orm import joinedload
+from .AdministracionEntrada import validar_longitudes, snapshot_sucursal
 
 class SucursalesModel:
     def __init__(self, session):
         self.session = session
 
     def agregar_sucursal(self, **kwargs):
+        validar_longitudes(Sucursales, kwargs)
         try:
             sucursal = self.session.query(Sucursales).filter_by(
                 nombre_sucursal=kwargs['nombre_sucursal']
@@ -18,14 +20,14 @@ class SucursalesModel:
             self.session.flush()
             return sucursal, True
         except Exception:
-            return None, False
+            raise
 
     def obtener_sucursal_id(self, nombre):
         try:
             sucursal = self.session.query(Sucursales).filter_by(nombre_sucursal = nombre).first()
-            return sucursal.id
+            return sucursal.id if sucursal is not None else (None, False)
         except Exception as e:
-            return None, False
+            raise
         
     def obtener_sucursal_por_id(self, id):
         try:
@@ -35,9 +37,9 @@ class SucursalesModel:
             else:
                 return None, False
         except Exception as e:
-            return None, False
+            raise
 
-    def obtener_todo(self):
+    def obtener_todo(self, snapshots=False):
         try:
             sucursales = (
                     self.session.query(Sucursales).options(
@@ -46,9 +48,9 @@ class SucursalesModel:
                     .order_by(Sucursales.nombre_sucursal.asc())
                     .all()
                 )
-            return sucursales, True
+            return [snapshot_sucursal(sucursal) for sucursal in sucursales] if snapshots else sucursales, True
         except Exception as e:
-            return [], False
+            raise
 
     def eliminar(self, id):
         try:
@@ -58,7 +60,7 @@ class SucursalesModel:
                 return True, None
             return False, None
         except Exception as e:
-            return False, e
+            raise
     
     def actualizar(self, 
                 id,
@@ -71,6 +73,7 @@ class SucursalesModel:
                 razon_social,
                 rfc,
                 direccion):
+        validar_longitudes(Sucursales, locals())
         try:
             sucursal = self.session.query(Sucursales).filter_by(id = id).first()
             if sucursal:
@@ -87,16 +90,16 @@ class SucursalesModel:
             else:
                 return None, False
         except Exception as e:
-            return None, e
+            raise
     
-    def filtrar_nombre(self, texto):
+    def filtrar_nombre(self, texto, snapshots=False):
         try:
             texto_busqueda = f"%{texto}%"
             sucursales = self.session.query(Sucursales).options(
                 joinedload(Sucursales.departamentos)
             ).filter(Sucursales.nombre_sucursal.ilike(texto_busqueda)).all()
             if sucursales:
-                return sucursales, True
+                return [snapshot_sucursal(sucursal) for sucursal in sucursales] if snapshots else sucursales, True
             return None, False
         except Exception as e:
-            return None, e
+            raise

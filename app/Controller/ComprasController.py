@@ -20,6 +20,29 @@ from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
 from .CantidadProductosComprasController import CantidadProductosComprasController
+from sesion_caja import clasificar_forma_pago
+from functools import partial
+from types import SimpleNamespace
+from ..Model.OrdenesDeCompraModel import consulta_compras, validar_orden
+
+
+def capturar_consulta(ventana, metodo):
+    operacion = metodo.__name__.split("_Orden_compra")[-1]
+    snapshot = None
+    if operacion in ("obtener_compras_query", "buscar_ordenes_de_compra_query"):
+        snapshot = {}
+        for state, sufijo in (("PENDIENTE", "pendientes"), ("COMPLETADA", "realizadas")):
+            criterios = getattr(ventana, f"busqueda_realizada_compras_{sufijo}", None) if operacion.startswith("buscar") else None
+            snapshot[state] = (getattr(ventana, f"cantidad_inicial_consulta_compras_{sufijo}"),
+                               getattr(ventana, f"cantidad_final_consulta_compras_{sufijo}"), dict(criterios or {}))
+    elif operacion in ("consultar_productos_del_proveedor_query", "filtrar_productos_del_proveedor_codigo_query",
+                       "filtrar_productos_del_proveedor_nombre_query", "obtener_productos_proveedor_compras_query"):
+        snapshot = (ventana.proveedor.id,
+                    getattr(ventana, "cantidad_inicial_consulta_productos_proveedor_compras", 0),
+                    getattr(ventana, "cantidad_final_consulta_productos_proveedor_compras", 100),
+                    getattr(ventana, "nombre_producto_proveedor_compras", None),
+                    getattr(ventana, "codigo_upc_producto_proveedor_compras", None))
+    return partial(consulta_compras, operacion=operacion, snapshot=snapshot)
 
 class Compras(QWidget):
     ENVIAR_ORDEN_COMPRA = Signal(object)
@@ -27,6 +50,14 @@ class Compras(QWidget):
         super().__init__(parent)
         self.controlOrdenesDeCompra = Ui_control_compras()
         self.controlOrdenesDeCompra.setupUi(self)
+        for nombre in ("txt_nombreProveedorOComprasPendientes", "txt_nombreProveedorOCompraRealizada"):
+            getattr(self.controlOrdenesDeCompra, nombre).setMaxLength(150)
+        for nombre in ("txt_quienRealizoOCpendiente", "txt_quienRealizoCompraRealizada"):
+            getattr(self.controlOrdenesDeCompra, nombre).setMaxLength(100)
+        for nombre in ("txt_idCompraPendiente", "txt_idCompraRealizada"):
+            campo = getattr(self.controlOrdenesDeCompra, nombre)
+            campo.setMaxLength(19)
+            campo.setValidator(QRegularExpressionValidator(QRegularExpression("[0-9]{1,19}"), campo))
         apply_module_theme(self)
         self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setDateTime(QDateTime.currentDateTime())
         self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.setEnabled(False)
@@ -78,6 +109,7 @@ class Compras(QWidget):
 
     # ====================== FUNCIONALIDADES ========================
     def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
         print(self.lista_hilos_compras)
         for hilo in self.lista_hilos_compras:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -125,6 +157,9 @@ class Compras(QWidget):
     # ==================== FUNCIONALIDADES PARA ORDENES DE COMPRA PENDIENTES =====================
     def buscarOrdenCompraPendiente(self):
         id_orden_compra = self.controlOrdenesDeCompra.txt_idCompraPendiente.text().strip()
+        if id_orden_compra and (not id_orden_compra.isascii() or not id_orden_compra.isdigit() or not 0 < int(id_orden_compra) <= 9223372036854775807):
+            Mensaje().mensaje_alerta("ID de orden de compra invalido.")
+            return
         quien_realizo_compra = self.controlOrdenesDeCompra.txt_quienRealizoOCpendiente.text().strip()
         fecha_creacion_orden_compra = self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.date().toString("yyyy-MM-dd") if self.controlOrdenesDeCompra.fecha_fechaCreacionOCPendiente.isEnabled() else None
         nombre_proveedor = self.controlOrdenesDeCompra.txt_nombreProveedorOComprasPendientes.text().strip()
@@ -152,8 +187,7 @@ class Compras(QWidget):
     def obtener_compras_pendientes_busqueda_hilo(self, paginacion = False):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_ordenes_de_compra_pendientes")
-            self.id_hilo_buscar_ordenes_de_compra_pendientes = WorkerDB.create_managed_worker(owner_id="buscar_ordenes_de_compra_pendientes")
+            self.id_hilo_buscar_ordenes_de_compra_pendientes = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-pendientes", cierre_seguro=True)
             self.consultor_buscar_ordenes_de_compra_pendientes = WorkerDB.get_managed_worker(self.id_hilo_buscar_ordenes_de_compra_pendientes)
             if not self.consultor_buscar_ordenes_de_compra_pendientes:
                 raise Exception("No se pudo obtener el resultado.")
@@ -173,19 +207,19 @@ class Compras(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
             self.consultor_buscar_ordenes_de_compra_pendientes.ejecutar(
-                self.buscar_ordenes_de_compra_query,
+                capturar_consulta(self, self.buscar_ordenes_de_compra_query),
                 state="PENDIENTE"
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_ordenes_de_compra_pendientes'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_ordenes_de_compra_pendientes)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def obtener_compras_realizadas_busqueda_hilo(self, paginacion = False):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_ordenes_de_compra_realizadas")
-            self.id_hilo_buscar_ordenes_de_compra_realizadas = WorkerDB.create_managed_worker(owner_id="buscar_ordenes_de_compra_realizadas")
+            self.id_hilo_buscar_ordenes_de_compra_realizadas = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-realizadas", cierre_seguro=True)
             self.consultor_buscar_ordenes_de_compra_realizadas = WorkerDB.get_managed_worker(self.id_hilo_buscar_ordenes_de_compra_realizadas)
             if not self.consultor_buscar_ordenes_de_compra_realizadas:
                 raise Exception("No se pudo obtener el resultado.")
@@ -205,12 +239,13 @@ class Compras(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
             self.consultor_buscar_ordenes_de_compra_realizadas.ejecutar(
-                self.buscar_ordenes_de_compra_query,
+                capturar_consulta(self, self.buscar_ordenes_de_compra_query),
                 state="COMPLETADA"
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_buscar_ordenes_de_compra_realizadas'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_ordenes_de_compra_realizadas)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def buscar_ordenes_de_compra_query(self, session, state = None):
@@ -275,6 +310,9 @@ class Compras(QWidget):
     # ====================== FUNCIONALIDADES PARA ORDENES DE COMPRA REALIZADAS =====================
     def buscarOrdenCompraRealizada(self):
         id_orden_compra = self.controlOrdenesDeCompra.txt_idCompraRealizada.text().strip()
+        if id_orden_compra and (not id_orden_compra.isascii() or not id_orden_compra.isdigit() or not 0 < int(id_orden_compra) <= 9223372036854775807):
+            Mensaje().mensaje_alerta("ID de orden de compra invalido.")
+            return
         quien_realizo_compra = self.controlOrdenesDeCompra.txt_quienRealizoCompraRealizada.text().strip()
         fecha_creacion_orden_compra = self.controlOrdenesDeCompra.fecha_fechaCreacionOCRealizada.date().toString("yyyy-MM-dd") if self.controlOrdenesDeCompra.fecha_fechaCreacionOCRealizada.isEnabled() else None
         fecha_compra_realizada = self.controlOrdenesDeCompra.fecha_fechaCompraRealizada.date().toString("yyyy-MM-dd") if self.controlOrdenesDeCompra.fecha_fechaCompraRealizada.isEnabled() else None
@@ -357,8 +395,7 @@ class Compras(QWidget):
     def consulta_hilo_compras_realizadas(self, paginacion = False):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_compras_realizadas_thread")
-            self.id_obtener_compras_realizadas = WorkerDB.create_managed_worker(owner_id="obtener_compras_realizadas_thread")
+            self.id_obtener_compras_realizadas = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-realizadas", cierre_seguro=True)
             self.consultor_obtener_compras_realizadas = WorkerDB.get_managed_worker(self.id_obtener_compras_realizadas)
             if not self.consultor_obtener_compras_realizadas:
                 raise Exception("No se logro hacer la operación")
@@ -379,19 +416,19 @@ class Compras(QWidget):
                 )
 
             self.consultor_obtener_compras_realizadas.ejecutar(
-                funcion=self.obtener_compras_query,
+                funcion=capturar_consulta(self, self.obtener_compras_query),
                 state = 'COMPLETADA'
             )
         except Exception as e:
             if hasattr(self, 'id_obtener_compras_realizadas'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_compras_realizadas)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def consulta_hilo_compras_pendientes(self, paginacion = False):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_compras_pendientes_thread")
-            self.id_obtener_compras_pendientes = WorkerDB.create_managed_worker(owner_id="obtener_compras_pendientes_thread")
+            self.id_obtener_compras_pendientes = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-pendientes", cierre_seguro=True)
             self.consultor_obtener_compras_pendientes = WorkerDB.get_managed_worker(self.id_obtener_compras_pendientes)
             if not self.consultor_obtener_compras_pendientes:
                 raise Exception("No se logro hacer la operación")
@@ -411,12 +448,13 @@ class Compras(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_compras_pendientes.ejecutar(
-                funcion=self.obtener_compras_query,
+                funcion=capturar_consulta(self, self.obtener_compras_query),
                 state = 'PENDIENTE'
             )
         except Exception as e:
             if hasattr(self, 'id_obtener_compras_pendientes'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_compras_pendientes)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def obtener_compras_query(self, session, state = None):
@@ -462,7 +500,7 @@ class Compras(QWidget):
 
     def compras_tabla_compras(self, result):
         try:
-            indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
+            indicePestañaActual = self._aplicar_paginacion_resultado(result)
             if indicePestañaActual == 0:
                 self._cargando_mas_compras_realizadas = False
             elif indicePestañaActual == 1:
@@ -489,7 +527,7 @@ class Compras(QWidget):
 
     def compras_tabla_compras_paginadas(self, result):
         try:
-            indicePestañaActual = self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
+            indicePestañaActual = self._aplicar_paginacion_resultado(result)
             if indicePestañaActual == 0:
                 self._cargando_mas_compras_realizadas = False
             elif indicePestañaActual == 1:
@@ -514,6 +552,14 @@ class Compras(QWidget):
         scrollbar = self.controlOrdenesDeCompra.tabla_comprasrealizadas.verticalScrollBar()
         if value >= scrollbar.maximum() - 5:
             self.paginarOrdenesDeCompraRealizadas()
+
+    def _aplicar_paginacion_resultado(self, result):
+        state = result.get("state")
+        indice = (1 if state == "PENDIENTE" else 0) if state else self.controlOrdenesDeCompra.contenedortabglobal.currentIndex()
+        if state and result.get("exito") and result.get("data"):
+            sufijo = "pendientes" if state == "PENDIENTE" else "realizadas"
+            setattr(self, f"cantidad_inicial_consulta_compras_{sufijo}", result["offset"] + result["limit"])
+        return indice
 
     def _manejar_scroll_compras_pendientes(self, value):
         scrollbar = self.controlOrdenesDeCompra.tabla_compraspendientes.verticalScrollBar()
@@ -620,8 +666,7 @@ class Compras(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("eliminar_orden_compra_thread")
-            self.id_eliminar_orden_compra = WorkerDB.create_managed_worker(owner_id="eliminar_orden_compra_thread")
+            self.id_eliminar_orden_compra = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-eliminar", cierre_seguro=True)
             self.consultor_eliminar_orden_compra = WorkerDB.get_managed_worker(self.id_eliminar_orden_compra)
             if not self.consultor_eliminar_orden_compra:
                 raise Exception("No se logro hacer la operación")
@@ -633,12 +678,13 @@ class Compras(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_eliminar_orden_compra.ejecutar(
-                funcion=self.eliminar_orden_compra_query,
-                order=self.orderSelected
+                funcion=capturar_consulta(self, self.eliminar_orden_compra_query),
+                order=SimpleNamespace(id=self.orderSelected.id)
             )
         except Exception as e:
             if hasattr(self, 'id_eliminar_orden_compra'):
                 WorkerDB.cleanup_managed_worker(self.id_eliminar_orden_compra)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error al eliminar orden de compra: {e}")
 
     def recibirOrdenCompra(self):
@@ -660,8 +706,7 @@ class Compras(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("recibir_orden_compra_thread")
-            self.id_recibir_orden_compra = WorkerDB.create_managed_worker(owner_id="recibir_orden_compra_thread")
+            self.id_recibir_orden_compra = WorkerDB.create_managed_worker(owner_id=f"compras-{id(self)}-recibir", cierre_seguro=True)
             self.consultor_recibir_orden_compra = WorkerDB.get_managed_worker(self.id_recibir_orden_compra)
             if not self.consultor_recibir_orden_compra:
                 raise Exception("No se logró inicializar el proceso de recepción de la orden de compra")
@@ -673,13 +718,14 @@ class Compras(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_recibir_orden_compra.ejecutar(
-                funcion=self.recibir_orden_compra_query,
+                funcion=capturar_consulta(self, self.recibir_orden_compra_query),
                 order_id=self.orderSelected.id,
                 usuario_id=self.usuario["id_usuario"]
             )
         except Exception as e:
             if hasattr(self, 'id_recibir_orden_compra'):
                 WorkerDB.cleanup_managed_worker(self.id_recibir_orden_compra)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrió un error al recibir la orden de compra: {e}")
 
     def recibir_orden_compra_query(self, session, order_id, usuario_id):
@@ -724,11 +770,16 @@ class Compras(QWidget):
             return {"mensaje": str(e)}
 
     def mostrar_estado_hilo(self, objetoMensaje):
+        self.manejadorModal.cerrar_modal()
+        if not objetoMensaje.get("exito", True):
+            Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
+            return
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
         self.orderSelected = None
         self.refrescar_tabla_orden_compra()
 
     def mostrar_error_hilo(self, objetoMensaje):
+        self.manejadorModal.cerrar_modal()
         Mensaje().mensaje_alerta(objetoMensaje)
         self.orderSelected = None
 
@@ -761,6 +812,8 @@ class Orden_compra(QDialog):
         self.comprobar_modelos_tablas = ComprobarModelosTablas(self)
         # ================ CONFIGURACION DE LA VENTANA ===================
         self.ordenCompraUI.setupUi(self)
+        self.ordenCompraUI.txt_buscarproducto.setMaxLength(20)
+        self.ordenCompraUI.txt_buscarproveedor.setMaxLength(150)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
         self.ordenCompraUI.btn_btn_agregar.hide()
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
@@ -788,7 +841,11 @@ class Orden_compra(QDialog):
 
     def __obtenerDatosMetodoPago(self):
         self.metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
-        if self.ordenCompraUI.cajaOpciones_metodosPago.currentText() == "Crédito":
+        try:
+            categoria = clasificar_forma_pago(self.ordenCompraUI.cajaOpciones_metodosPago.currentText())
+        except ValueError:
+            categoria = None
+        if categoria == "credito":
             self.ordenCompraUI.etiqueta_periodoMensualNuevaOrdenCompra.show()
             self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.show()
         else:
@@ -799,8 +856,7 @@ class Orden_compra(QDialog):
     def __obtener_metodos_pagos(self):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_metodos_pagos_thread")
-            self.id_obtener_metodos_pagos = WorkerDB.create_managed_worker(owner_id="obtener_metodos_pagos_thread")
+            self.id_obtener_metodos_pagos = WorkerDB.create_managed_worker(owner_id=f"orden-{id(self)}-pagos", cierre_seguro=True)
             self.consultor_obtener_metodos_pagos = WorkerDB.get_managed_worker(self.id_obtener_metodos_pagos)
             if not self.consultor_obtener_metodos_pagos:
                 raise Exception("No se logro hacer la operación")
@@ -812,11 +868,12 @@ class Orden_compra(QDialog):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_metodos_pagos.ejecutar(
-                funcion=self.obtener_metodos_pagos_query
+                funcion=capturar_consulta(self, self.obtener_metodos_pagos_query)
             )
         except Exception as e:
             if hasattr(self, 'id_obtener_metodos_pagos'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_metodos_pagos)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar metodos de pago: {e}")
 
     def obtener_metodos_pagos_query(self, session):
@@ -845,7 +902,11 @@ class Orden_compra(QDialog):
         if self.proveedor is None:
             Mensaje().mensaje_informativo("Debe seleccionar un proveedor y al menos un producto.")
             return
-        contentData, orden_items = self.__obtenerDetallesProductosParaComprar()
+        try:
+            contentData, orden_items = self.__obtenerDetallesProductosParaComprar()
+        except (ValueError, TypeError):
+            Mensaje().mensaje_alerta("Verifique proveedor, metodo de pago y cantidades de la orden.")
+            return
         self.createOrder(
             contentData,
             orden_items
@@ -853,8 +914,7 @@ class Orden_compra(QDialog):
 
     def __obtenerDetallesProductosParaComprar(self):
         if len(self.setConjuntoProductosDelProveedor) == 0:
-            Mensaje().mensaje_informativo("Debe seleccionar al menos un producto.")
-            return
+            raise ValueError("Debe seleccionar al menos un producto.")
         orden_items = []
         modelo = self.modeloTablaProductosOrden
 
@@ -868,24 +928,26 @@ class Orden_compra(QDialog):
             index_cantidad = modelo.index(i, 6)
             cantidad_str = modelo.data(index_cantidad, Qt.DisplayRole)
 
-            try:
-                cantidad = float(cantidad_str) if cantidad_str else 1.0
-            except:
-                cantidad = 1.0
+            cantidad = float(cantidad_str)
 
             producto = producto_proveedor.producto
 
             orden_items.append({
-                'producto': producto,
+                'producto': SimpleNamespace(codigo_upc=producto.codigo_upc),
                 'cantidad': cantidad,
                 'precio_unitario': producto_proveedor.precio_venta if hasattr(producto_proveedor, 'precio_venta') else 0.0,
                 'subtotal': producto_proveedor.precio_venta * cantidad if hasattr(producto_proveedor, 'precio_venta') else 0.0
             })
 
         metodoPago = self.ordenCompraUI.cajaOpciones_metodosPago.currentData()
+        categoria_pago = clasificar_forma_pago(getattr(metodoPago, "nombre", None))
+        if metodoPago is None or categoria_pago is None:
+            raise ValueError("Metodo de pago no reconocido.")
         plazoPago = self.ordenCompraUI.decimal_mensualidadesPagoNuevaOrdenCompra.value()
+        if categoria_pago != "credito":
+            plazoPago = 0
         contentData = {
-            'proveedor': self.proveedor,
+            'proveedor': SimpleNamespace(id=self.proveedor.id),
             'empleado': self.usuario["id_empleado"],
             'fecha_creacion': datetime.now().date(),
             'fecha_compra': None,
@@ -895,6 +957,7 @@ class Orden_compra(QDialog):
             'fecha_vencimiento': datetime.now().date() + timedelta(days=plazoPago*30),
             'detalles':orden_items
         }
+        validar_orden(contentData, orden_items)
         return contentData, orden_items
 
     def __mostrarTotalCompraUI(self):
@@ -910,8 +973,7 @@ class Orden_compra(QDialog):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("createOrderThread")
-            self.id_hilo_createOrderThread = WorkerDB.create_managed_worker(owner_id="createOrderThread")
+            self.id_hilo_createOrderThread = WorkerDB.create_managed_worker(owner_id=f"orden-{id(self)}-crear", cierre_seguro=True)
             self.consultor_createOrderThread = WorkerDB.get_managed_worker(self.id_hilo_createOrderThread)
             if not self.consultor_createOrderThread:
                 raise Exception("No se pudo obtener el resultado de la creación de la orden de compra.")
@@ -923,27 +985,30 @@ class Orden_compra(QDialog):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_createOrderThread.ejecutar(
-                self.__createOrder_query,
+                capturar_consulta(self, self.__createOrder_query),
                 contentData=contentData,
                 orden_items=orden_items
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_createOrderThread'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_createOrderThread)
+            self.manejadorModal.cerrar_modal()
+            Mensaje().mensaje_alerta("No se pudo iniciar la creacion de la orden.")
 
     def __createOrder_query(self, session, contentData, orden_items):
         try:
             resultData, estate = OrdenesDeCompraModel(session).create_purchase_order(
                 orderDatails=contentData,
-                orden_items=orden_items
+                orden_items=orden_items,
+                propagar=True,
             )
             if estate:
-                self.limpiar_productos_seleccionados()
+                order_id = resultData.id
                 session.commit()
                 return {
                     "exito": estate,
                     "mensaje": "Orden de compra creada exitosamente.",
-                    "resultado": resultData
+                    "resultado": order_id
                 }
             session.rollback()
             return {
@@ -955,7 +1020,7 @@ class Orden_compra(QDialog):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f"Error al iniciar el proceso: {e}",
+                "mensaje": "No se pudo confirmar la orden de compra.",
                 "resultado": None
             }
 
@@ -971,10 +1036,12 @@ class Orden_compra(QDialog):
 
     def __buscar_producto_del_proveedor(self):
         codigo_upc = self.ordenCompraUI.txt_buscarproducto.text().strip()
-        if codigo_upc:
-            self.manejadorModal.mostrar_modal(None)
-            WorkerDB.cleanup_owner_workers("consultar_productos_del_proveedor_thread")
-            self.id_hilo_consultar_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id="consultar_productos_del_proveedor_thread")
+        if not codigo_upc or self.proveedor is None:
+            Mensaje().mensaje_alerta("Seleccione un proveedor y un codigo de producto.")
+            return
+        try:
+            self.manejadorModal.mostrar_modal(self)
+            self.id_hilo_consultar_productos_del_proveedor = WorkerDB.create_managed_worker(owner_id=f"orden-{id(self)}-producto", cierre_seguro=True)
             self.consultor_productos_del_proveedor = WorkerDB.get_managed_worker(self.id_hilo_consultar_productos_del_proveedor)
             if not self.consultor_productos_del_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -982,13 +1049,18 @@ class Orden_compra(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_consultar_productos_del_proveedor,
                 resultado_callback=self.agregarProductoALConjuntoTabla,
-                error_callback=self.mostrar_estado_hilo,
+                error_callback=self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_productos_del_proveedor.ejecutar(
-                funcion=self.consultar_productos_del_proveedor_query,
+                funcion=capturar_consulta(self, self.consultar_productos_del_proveedor_query),
                 codigo_upc=codigo_upc
             )
+        except Exception:
+            self.manejadorModal.cerrar_modal()
+            if hasattr(self, "id_hilo_consultar_productos_del_proveedor"):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_consultar_productos_del_proveedor)
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta del producto.")
 
     def agregarProductoALConjuntoTabla(self, resultado):
         if not resultado["exito"]:
@@ -1129,8 +1201,7 @@ class Orden_compra(QDialog):
     def __obtener_proveedores(self):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_proveedores_thread_vcompras")
-            self.id_hilo_obtener_proveedores_vcompras = WorkerDB.create_managed_worker(owner_id="obtener_proveedores_thread_vcompras")
+            self.id_hilo_obtener_proveedores_vcompras = WorkerDB.create_managed_worker(owner_id=f"orden-{id(self)}-proveedores", cierre_seguro=True)
             self.consultor_obtener_proveedores_vcompras = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores_vcompras)
             if not self.consultor_obtener_proveedores_vcompras:
                 raise Exception("No se pudo obtener el resultado de la consulta de proveedores.")
@@ -1138,15 +1209,16 @@ class Orden_compra(QDialog):
             WorkerDB.connect_managed_signals(
                 worker_id=self.id_hilo_obtener_proveedores_vcompras,
                 resultado_callback=self.__almacenar_proveedores_del_sistema,
-                error_callback= self.mostrar_estado_hilo,
+                error_callback= self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_proveedores_vcompras.ejecutar(
-                self.__obtener_proveedores_query
+                capturar_consulta(self, self.__obtener_proveedores_query)
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_obtener_proveedores_vcompras'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_proveedores_vcompras)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
     def __obtener_proveedores_query(self, session):
@@ -1172,12 +1244,15 @@ class Orden_compra(QDialog):
 
     def mostrar_estado_hilo(self, objetoMensaje):
         if objetoMensaje.get("exito"):
+            self.manejadorModal.cerrar_modal()
+            self.limpiar_productos_seleccionados()
             Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
             self.close()
         else:
             Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
 
     def mostrar_error_hilo(self, error):
+        self.manejadorModal.cerrar_modal()
         Mensaje().mensaje_alerta(error)
 
     def limpiarVentanaSeleccionProductosProveedor(self):
@@ -1190,6 +1265,7 @@ class Orden_compra(QDialog):
             self._ventanaCentradaNuevaCompra = True
 
     def closeEvent(self, event):
+        self.manejadorModal.cerrar_modal()
         print(self.lista_hilos_crearOrdenCompra)
         for hilo in self.lista_hilos_crearOrdenCompra:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -1197,6 +1273,13 @@ class Orden_compra(QDialog):
         print(self.lista_hilos_crearOrdenCompra)
         self.VENTANA_CERRADA_NUEVA_COMPRA.emit()
         super().closeEvent(event)
+
+    def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
+        for hilo in self.lista_hilos_crearOrdenCompra:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_crearOrdenCompra.clear()
+        super().hideEvent(event)
 
     def keyPressEvent(self, event):
         # Si la tecla presionada es Enter o Return, la ignoramos
@@ -1214,6 +1297,8 @@ class SeleccionProductosProveedor(QDialog):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.ui = Ui_Seleccion_Productos_Proveedor()
         self.ui.setupUi(self)
+        self.ui.txt_codigodelproducto.setMaxLength(20)
+        self.ui.txt_nombredelproducto.setMaxLength(60)
         self.proveedor = proveedor
         self.cantidad_inicial_consulta_productos_proveedor_compras = 0
         self.cantidad_final_consulta_productos_proveedor_compras = 100
@@ -1379,8 +1464,7 @@ class SeleccionProductosProveedor(QDialog):
             self.modeloTablaProductosDelProveedor.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("filtrar_productos_del_proveedor_compras")
-            self.id_filtrar_productos_del_proveedor_compras = WorkerDB.create_managed_worker(owner_id="filtrar_productos_del_proveedor_compras")
+            self.id_filtrar_productos_del_proveedor_compras = WorkerDB.create_managed_worker(owner_id=f"selector-{id(self)}-productos", cierre_seguro=True)
             self.consultar_productos_del_proveedor_compras = WorkerDB.get_managed_worker(self.id_filtrar_productos_del_proveedor_compras)
             if not self.consultar_productos_del_proveedor_compras:
                 raise Exception("No se logro hacer la operación")
@@ -1394,21 +1478,20 @@ class SeleccionProductosProveedor(QDialog):
             if self.nombre_producto_proveedor_compras and not self.codigo_upc_producto_proveedor_compras:
                 print(f"Consultando por nombre del producto: {self.nombre_producto_proveedor_compras}")
                 self.consultar_productos_del_proveedor_compras.ejecutar(
-                    funcion=self.filtrar_productos_del_proveedor_nombre_query,
-                    proveedor = self.proveedor,
+                    funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_nombre_query),
                     nombre=self.nombre_producto_proveedor_compras,
                     busqueda_exacta=False
                 )
             else:
                 print(f"Consultando por codigo del producto: {self.codigo_upc_producto_proveedor_compras}")
                 self.consultar_productos_del_proveedor_compras.ejecutar(
-                    funcion=self.filtrar_productos_del_proveedor_codigo_query,
-                    proveedor = self.proveedor,
+                    funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_codigo_query),
                     codigoProducto=self.codigo_upc_producto_proveedor_compras,
                 )
         except Exception as e:
             if hasattr(self, 'id_filtrar_productos_del_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_filtrar_productos_del_proveedor_compras)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f'Ocurrio un error en la operacion: {e}')
 
     def filtrar_productos_del_proveedor_codigo_query(self, session, proveedor, codigoProducto):
@@ -1483,8 +1566,7 @@ class SeleccionProductosProveedor(QDialog):
                 print("DEBUG - Paginación reiniciada")
 
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_productos_proveedor_compras_thread")
-            self.id_obtener_productos_proveedor_compras = WorkerDB.create_managed_worker(owner_id="obtener_productos_proveedor_compras_thread")
+            self.id_obtener_productos_proveedor_compras = WorkerDB.create_managed_worker(owner_id=f"selector-{id(self)}-productos", cierre_seguro=True)
             self.consultor_obtener_productos_proveedor_compras = WorkerDB.get_managed_worker(self.id_obtener_productos_proveedor_compras)
             if not self.consultor_obtener_productos_proveedor_compras:
                 raise Exception("No se logro hacer la operación")
@@ -1496,11 +1578,12 @@ class SeleccionProductosProveedor(QDialog):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_productos_proveedor_compras.ejecutar(
-                funcion=self.obtener_productos_proveedor_compras_query
+                funcion=capturar_consulta(self, self.obtener_productos_proveedor_compras_query)
             )
         except Exception as e:
             if hasattr(self, 'id_obtener_productos_proveedor_compras'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_compras)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error al consultar productos del proveedor: {e}")
 
     def obtener_productos_proveedor_compras_query(self, session):
@@ -1535,6 +1618,8 @@ class SeleccionProductosProveedor(QDialog):
         }
 
     def productos_proveedores_tabla_compras(self, resultado):
+        if resultado.get("exito") and resultado.get("data") and "offset" in resultado:
+            self.cantidad_inicial_consulta_productos_proveedor_compras = resultado["offset"] + resultado["limit"]
         self._cargando_mas_productos_proveedor_compras = False
         if not resultado["exito"]:
             self.no_hay_mas_registros_productos_proveedor_compras = True
@@ -1562,8 +1647,7 @@ class SeleccionProductosProveedor(QDialog):
     def obtener_productos_proveedor_hilo_paginacion(self):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_productos_proveedor_compras_thread")
-            self.id_obtener_productos_proveedor_comprasPaginacion = WorkerDB.create_managed_worker(owner_id="obtener_productos_proveedor_compras_thread")
+            self.id_obtener_productos_proveedor_comprasPaginacion = WorkerDB.create_managed_worker(owner_id=f"selector-{id(self)}-productos", cierre_seguro=True)
             self.consultor_obtener_productos_proveedor_comprasPaginacion = WorkerDB.get_managed_worker(self.id_obtener_productos_proveedor_comprasPaginacion)
             if not self.consultor_obtener_productos_proveedor_comprasPaginacion:
                 raise Exception("No se logro hacer la operación")
@@ -1575,14 +1659,17 @@ class SeleccionProductosProveedor(QDialog):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_productos_proveedor_comprasPaginacion.ejecutar(
-                funcion=self.obtener_productos_proveedor_compras_query
+                funcion=capturar_consulta(self, self.obtener_productos_proveedor_compras_query)
             )
         except Exception as e:
             if hasattr(self, 'id_obtener_productos_proveedor_comprasPaginacion'):
                 WorkerDB.cleanup_managed_worker(self.id_obtener_productos_proveedor_comprasPaginacion)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion: {e}")
 
     def agregar_productos_proveedor_tabla(self, resultado):
+        if resultado.get("exito") and resultado.get("data") and "offset" in resultado:
+            self.cantidad_inicial_consulta_productos_proveedor_compras = resultado["offset"] + resultado["limit"]
         self._cargando_mas_productos_proveedor_compras = False
         if not resultado["exito"]:
             self.no_hay_mas_registros_productos_proveedor_compras = True
@@ -1596,8 +1683,7 @@ class SeleccionProductosProveedor(QDialog):
     def consulta_paginacion_productos_del_proveedor(self):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_productos_paginados_productos_proveedor_compras_thread")
-            self.id_hilo_obtener_productos_proveedor_paginados = WorkerDB.create_managed_worker(owner_id="obtener_productos_paginados_productos_proveedor_compras_thread")
+            self.id_hilo_obtener_productos_proveedor_paginados = WorkerDB.create_managed_worker(owner_id=f"selector-{id(self)}-productos", cierre_seguro=True)
             self.consultor_obtener_productos_proveedor_paginados = WorkerDB.get_managed_worker(self.id_hilo_obtener_productos_proveedor_paginados)
             if not self.consultor_obtener_productos_proveedor_paginados:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -1610,25 +1696,26 @@ class SeleccionProductosProveedor(QDialog):
             )
             if self.nombre_producto_proveedor_compras and not self.codigo_upc_producto_proveedor_compras:
                 self.consultor_obtener_productos_proveedor_paginados.ejecutar(
-                    funcion=self.filtrar_productos_del_proveedor_nombre_query,
-                    proveedor = self.proveedor,
+                    funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_nombre_query),
                     nombre = self.nombre_producto_proveedor_compras,
                     busqueda_exacta = False
                     )
             else:
                 print(f"Consultando por codigo del producto: {self.codigo_upc_producto_proveedor_compras}")
-                self.consultar_productos_del_proveedor_compras.ejecutar(
-                    funcion=self.filtrar_productos_del_proveedor_codigo_query,
-                    proveedor = self.proveedor,
+                self.consultor_obtener_productos_proveedor_paginados.ejecutar(
+                    funcion=capturar_consulta(self, self.filtrar_productos_del_proveedor_codigo_query),
                     codigoProducto=self.codigo_upc_producto_proveedor_compras,
                 )
         except Exception as e:
             if hasattr(self, 'id_hilo_obtener_productos_proveedor_paginados'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_productos_proveedor_paginados)
+            self.manejadorModal.cerrar_modal()
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
     def agregar_productos_del_proveedor_en_tabla(self, resultado):
         """Agrega nuevos productos al modelo existente"""
+        if resultado.get("exito") and resultado.get("data") and "offset" in resultado:
+            self.cantidad_inicial_consulta_productos_proveedor_compras = resultado["offset"] + resultado["limit"]
         self._cargando_mas_productos_proveedor_compras = False
         if not resultado["exito"]:
             self.no_hay_mas_registros_productos_proveedor_compras = True
@@ -1646,14 +1733,23 @@ class SeleccionProductosProveedor(QDialog):
         Mensaje().mensaje_informativo(objetoMensaje["mensaje"])
 
     def mostrar_error_hilo(self, objetoMensaje):
+        self.manejadorModal.cerrar_modal()
         Mensaje().mensaje_alerta(objetoMensaje)
 
     def closeEvent(self, event):
+        self.manejadorModal.cerrar_modal()
         for hilo in self.lista_hilos_seleccion_productos_proveedor:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_seleccion_productos_proveedor.clear()
         self.VENTANA_CERRADA_SELECCION_PRODUCTOS_PROVEEDOR.emit()
         event.accept()
+
+    def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
+        for hilo in self.lista_hilos_seleccion_productos_proveedor:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_seleccion_productos_proveedor.clear()
+        super().hideEvent(event)
 
     def pasarProductoSeleccionado(self, producto):
         self.conjuntoProductosDelProveedor.add(producto)

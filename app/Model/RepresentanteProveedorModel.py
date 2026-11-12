@@ -1,11 +1,16 @@
 from .BaseDatosModel import Representantes_proveedores
 import logging
+from .ProveedoresModel import validar_textos_proveedor
 
 class RepresentanteProveedorModel:
     def __init__(self, session):
         self.session = session
 
-    def agregar_representante(self, nombre, apellido_paterno, apellido_materno, correo, telefono, puesto):
+    def agregar_representante(self, nombre, apellido_paterno, apellido_materno, correo, telefono, puesto, estricto=False):
+        if estricto:
+            validar_textos_proveedor(Representantes_proveedores, locals())
+            if any(not valor.strip() for valor in (nombre, apellido_paterno, apellido_materno, correo, telefono, puesto)):
+                raise ValueError("representante: campos obligatorios")
         try:
             representante = self.session.query(Representantes_proveedores).filter(
                 Representantes_proveedores.nombre == nombre,
@@ -27,11 +32,17 @@ class RepresentanteProveedorModel:
                 self.session.flush()
                 return nuevo_representante, True
         except Exception as e:
+            if estricto:
+                raise
             logging.error(f"Error al agregar representante: {e}")
             return None, False  # En caso de error, devolver None y False
 
     
-    def actualizar_representante(self, id_representante, **kwargs):
+    def actualizar_representante(self, id_representante, estricto=False, **kwargs):
+        if estricto:
+            validar_textos_proveedor(Representantes_proveedores, kwargs)
+            if any(not isinstance(valor, str) or not valor.strip() for valor in kwargs.values()):
+                raise ValueError("representante: campos obligatorios")
         # Busca el representante en la base de datos usando su ID
         representante = self.session.query(Representantes_proveedores).filter(Representantes_proveedores.id == id_representante).first()
         
@@ -43,6 +54,8 @@ class RepresentanteProveedorModel:
                         setattr(representante, key, value)
                 return representante.id
             except Exception as e:
+                if estricto:
+                    raise
                 # Manejo de excepciones para problemas durante la actualización
                 self.session.rollback()
                 return None
@@ -50,12 +63,15 @@ class RepresentanteProveedorModel:
             return None
 
         
-    def eliminar_representante(self, id):
+    def eliminar_representante(self, id, estricto=False):
         try:
-            representante = self.session(RepresentanteProveedorModel).filter(id == id).first()
+            representante = self.session.get(Representantes_proveedores, id)
             if representante:
                 self.session.delete(representante)
                 return True
+            return False
         except Exception as e:
+            if estricto:
+                raise
             return False
 

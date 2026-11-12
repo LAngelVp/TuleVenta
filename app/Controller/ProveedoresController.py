@@ -85,6 +85,7 @@ class Control_proveedores(QWidget):
 # ------------------------------------------------------------------------------
 # FUNCIONALIDADES
     def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
         for hilo in self.lista_hilos_proveedores:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_proveedores.clear()
@@ -92,9 +93,9 @@ class Control_proveedores(QWidget):
 
     def validaciones(self):
         self.WindowSupplier.txt_nombre.setMaxLength(150)
-        self.WindowSupplier.txt_pais.setMaxLength(50)
-        self.WindowSupplier.txt_estado.setMaxLength(50)
-        self.WindowSupplier.txt_ciudad.setMaxLength(50)
+        self.WindowSupplier.txt_pais.setMaxLength(30)
+        self.WindowSupplier.txt_estado.setMaxLength(30)
+        self.WindowSupplier.txt_ciudad.setMaxLength(30)
         self.WindowSupplier.txt_codigopostal.setMaxLength(5)
         self.WindowSupplier.txt_calles.setMaxLength(60)
         self.WindowSupplier.txt_avenida.setMaxLength(60)
@@ -141,8 +142,8 @@ class Control_proveedores(QWidget):
 
     def mostrar_categorias_proveedor(self):
         try:
-            WorkerDB.cleanup_owner_workers("listar_categorias_proveedor_thread")
-            self.id_hilo_categorias_proveedores = WorkerDB.create_managed_worker(owner_id="listar_categorias_proveedor_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_categorias_proveedor_thread")
+            self.id_hilo_categorias_proveedores = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_categorias_proveedor_thread", cierre_seguro=True)
             self.consultor_categorias_proveedores = WorkerDB.get_managed_worker(self.id_hilo_categorias_proveedores)
             if not self.consultor_categorias_proveedores:
                 raise Exception("No se logro obtener el worker gestionado al agregar")
@@ -153,17 +154,17 @@ class Control_proveedores(QWidget):
                 error_callback= self.mostrar_error_hilo
             )
             self.consultor_categorias_proveedores.ejecutar(
-                    funcion=self.obtener_categorias_proveedor_query
+                    funcion=capturar_consulta_proveedor(self, self.obtener_categorias_proveedor_query)
                     )
         except Exception as e:
             if hasattr(self, 'id_hilo_categorias_proveedores'):
+                self.manejadorModal.cerrar_modal()
                 WorkerDB.cleanup_managed_worker(self.id_hilo_categorias_proveedores)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def obtener_categorias_proveedor_query(self, session):
         try:
-            categorias, estado = CategoriasModel(session).obtener_todo(tipo_categoria="proveedores")
-            self.categoriasBase = categorias
+            categorias, estado = ProveedoresModel(session).categorias_dto()
             if not estado:
                 session.rollback()
                 return {
@@ -185,6 +186,7 @@ class Control_proveedores(QWidget):
         }
 
     def listar_categorias_proveedores(self, resultado):
+        self.categoriasBase = resultado
         if isinstance(resultado, dict):
             categorias = resultado["data"]
             if resultado["exito"]:
@@ -283,6 +285,9 @@ class Control_proveedores(QWidget):
         datos_representante = self.obtener_datos_representante()
         categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
 
+        if self.WindowSupplier.btnradio_representantetrue.isChecked() and datos_representante is None:
+            Mensaje().mensaje_alerta("Completa los datos del representante")
+            return
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
@@ -293,8 +298,8 @@ class Control_proveedores(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("agregar_proveedor_thread")
-            self.id_hilo_agregar_proveedor = WorkerDB.create_managed_worker(owner_id="agregar_proveedor_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_proveedor_thread")
+            self.id_hilo_agregar_proveedor = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_proveedor_thread", cierre_seguro=True)
             self.consultor_agregar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_agregar_proveedor)
             if not self.consultor_agregar_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -307,69 +312,49 @@ class Control_proveedores(QWidget):
             )
             if self.WindowSupplier.btnradio_representantetrue.isChecked():
                 self.consultor_agregar_proveedor.ejecutar(
-                    funcion=self.agregar_proveedor_query,
+                    funcion=capturar_consulta_proveedor(self, self.agregar_proveedor_query),
                     categoria=categoria,
                     datos_representante=datos_representante,
                     datos_proveedor = datos_proveedor
                     )
             if self.WindowSupplier.btnradio_representantefalse.isChecked():
                 self.consultor_agregar_proveedor.ejecutar(
-                    funcion=self.agregar_proveedor_query,
+                    funcion=capturar_consulta_proveedor(self, self.agregar_proveedor_query),
                     categoria=categoria,
                     datos_representante=None,
                     datos_proveedor = datos_proveedor
                     )
         except Exception as e:
+            self.manejadorModal.cerrar_modal()
             if hasattr(self, 'id_hilo_agregar_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_proveedor)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
     def agregar_proveedor_query(self, session, categoria, datos_representante = None, datos_proveedor = None):
         try:
+            representante_id = None
             if datos_representante:
-                representante, estado = RepresentanteProveedorModel(session).agregar_representante(**datos_representante)
-                if estado:
-                    try:
-                        ProveedoresModel(session).agregar_proveedor(
-                                        categoria_id=categoria.id,
-                                        representante_id=representante.id,
-                                        **datos_proveedor
-                        )
-                    except Exception as e:
-                        return {
-                            "exito": False,
-                            "mensaje": f'Ocurrio un problema al agregar el proveedor con representante'
-                        }
-                    session.commit()
-                    return {
-                        "exito": True,
-                        "mensaje": f'Se realizo el registro con exito'
-                    }
-                else:
-                    session.rollback()
-                    return {
-                        "exito": False,
-                        "mensaje" : f'No se logro hacer el registro'
-                    }
-            else:
-                proveedor, estado = ProveedoresModel(session).agregar_proveedor(
-                            categoria_id=categoria.id,
-                            representante_id=None,
-                            **datos_proveedor
-                        )
+                representante, estado = RepresentanteProveedorModel(session).agregar_representante(estricto=True, **datos_representante)
                 if not estado:
                     session.rollback()
-                    return {
-                        "exito": False,
-                        "mensaje": f'No se logro almacenal al proveedor'
-                    }
+                    return {"exito": False, "mensaje": "No se logro registrar el representante"}
+                representante_id = representante.id
+            proveedor, estado = ProveedoresModel(session).agregar_proveedor(
+                estricto=True,
+                categoria_id=categoria.id,
+                representante_id=representante_id,
+                **datos_proveedor
+            )
+            if not estado:
+                session.rollback()
+                return {"exito": False, "mensaje": "No se logro almacenar al proveedor"}
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema en el proceso'
             }
-        session.commit()
         return {
             "exito": True,
             "mensaje": f'Se realizo el registro con exito'
@@ -383,8 +368,8 @@ class Control_proveedores(QWidget):
                 self.cantidad_inicial_consulta = 0
                 self.no_hay_mas_registros = False
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_proveedores_thread")
-            self.id_hilo_obtener_proveedores = WorkerDB.create_managed_worker(owner_id="obtener_proveedores_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_proveedores_thread")
+            self.id_hilo_obtener_proveedores = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_proveedores_thread", cierre_seguro=True)
             self.consultor_obtener_proveedores = WorkerDB.get_managed_worker(self.id_hilo_obtener_proveedores)
             if not self.consultor_obtener_proveedores:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -396,16 +381,17 @@ class Control_proveedores(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_obtener_proveedores.ejecutar(
-                funcion=self.obtener_proveedores_query
+                funcion=capturar_consulta_proveedor(self, self.obtener_proveedores_query)
                 )
         except Exception as e:
+            self.manejadorModal.cerrar_modal()
             if hasattr(self, 'id_hilo_obtener_proveedores'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_obtener_proveedores)
             Mensaje().mensaje_alerta(f"Ocurrio un error en la operacion.\n{e}")
 
     def obtener_proveedores_query(self, session):
         try:
-            proveedores, estado = ProveedoresModel(session).obtener_proveedores(
+            proveedores, estado = ProveedoresModel(session).listar_dto(
                 offset=self.cantidad_inicial_consulta,
                 limit=self.cantidad_final_consulta
             )
@@ -472,6 +458,7 @@ class Control_proveedores(QWidget):
 
     def llenar_tabla_proveedores(self, resultado):
         try:
+            aplicar_paginacion_proveedor(self, resultado)
             self._cargando_mas_proveedores = False
             if not resultado["exito"]:
                 if self._append_mode:
@@ -507,6 +494,9 @@ class Control_proveedores(QWidget):
         datos_proveedor, campos_vacios = self.obtener_datos_proveedor()
         datos_representante = self.obtener_datos_representante()
         categoria = self.WindowSupplier.cajaOpciones_categorias.currentData()
+        if self.WindowSupplier.btnradio_representantetrue.isChecked() and datos_representante is None:
+            Mensaje().mensaje_alerta("Completa los datos del representante")
+            return
         if not categoria:
             Mensaje().mensaje_alerta(cuerpo="La categoría no puede estar vacía.")
             return
@@ -523,8 +513,8 @@ class Control_proveedores(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("actualizar_proveedor_thread")
-                self.id_hilo_actualizar_proveedor = WorkerDB.create_managed_worker(owner_id="actualizar_proveedor_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_proveedor_thread")
+                self.id_hilo_actualizar_proveedor = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_proveedor_thread", cierre_seguro=True)
                 self.consultor_actualizar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_actualizar_proveedor)
 
                 if not self.consultor_actualizar_proveedor:
@@ -546,11 +536,12 @@ class Control_proveedores(QWidget):
                 }
 
                 self.consultor_actualizar_proveedor.ejecutar(
-                    funcion=self.actualizar_proveedor_query,
+                    funcion=capturar_consulta_proveedor(self, self.actualizar_proveedor_query),
                     **datos_actualizacion
                 )
 
             except Exception as e:
+                self.manejadorModal.cerrar_modal()
                 if hasattr(self, 'id_hilo_actualizar_proveedor'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_actualizar_proveedor)
                 Mensaje().mensaje_alerta(f"Ocurrió un error en la operación.\n{e}")
@@ -577,6 +568,7 @@ class Control_proveedores(QWidget):
 
                 if proveedor_existente.representante_id:
                     representante_id = RepresentanteProveedorModel(session).actualizar_representante(
+                        estricto=True,
                         id_representante=proveedor_existente.representante_id,
                         **datos_representante
                     )
@@ -587,7 +579,7 @@ class Control_proveedores(QWidget):
                             "mensaje": "No se pudo actualizar el representante"
                         }
                 else:
-                    nuevo_representante, estado_nuevo_rep = RepresentanteProveedorModel(session).agregar_representante(**datos_representante)
+                    nuevo_representante, estado_nuevo_rep = RepresentanteProveedorModel(session).agregar_representante(estricto=True, **datos_representante)
                     if not estado_nuevo_rep:
                         session.rollback()
                         return {
@@ -599,6 +591,7 @@ class Control_proveedores(QWidget):
                 representante_id = None
 
             proveedor_actualizado, estado_actualizacion = ProveedoresModel(session).actualizar_proveedor(
+                estricto=True,
                 proveedor_id=proveedor_id,
                 categoria_id=categoria.id,
                 representante_id=representante_id,
@@ -622,7 +615,7 @@ class Control_proveedores(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f"Ocurrió un problema en el proceso: {str(e)}"
+                "mensaje": "No se pudo actualizar el proveedor"
             }
 
     def cargar_datos_proveedor(self, proveedor):
@@ -676,8 +669,8 @@ class Control_proveedores(QWidget):
             self.no_hay_mas_registros = False
         try:
             self.manejadorModal.mostrar_modal()
-            WorkerDB.cleanup_owner_workers("buscar_proveedor_thread")
-            self.id_hilo_buscar_proveedor = WorkerDB.create_managed_worker(owner_id="buscar_proveedor_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_proveedor_thread")
+            self.id_hilo_buscar_proveedor = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_proveedor_thread", cierre_seguro=True)
             self.consultor_buscar_proveedor = WorkerDB.get_managed_worker(self.id_hilo_buscar_proveedor)
             if not self.consultor_buscar_proveedor:
                 raise Exception("No se pudo obtener el worker gestionado")
@@ -689,17 +682,18 @@ class Control_proveedores(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_buscar_proveedor.ejecutar(
-                funcion=self.buscar_proveedor_query,
+                funcion=capturar_consulta_proveedor(self, self.buscar_proveedor_query),
                 texto=texto_busqueda
             )
         except Exception as e:
+            self.manejadorModal.cerrar_modal()
             if hasattr(self, 'id_hilo_buscar_proveedor'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_buscar_proveedor)
             Mensaje().mensaje_alerta(f"Error al iniciar la búsqueda: {str(e)}")
 
     def buscar_proveedor_query(self, session, texto):
         try:
-            proveedores, estado = ProveedoresModel(session).obtener_nombre_proveedor(
+            proveedores, estado = ProveedoresModel(session).listar_dto(
                 texto=texto,
                 offset=self.cantidad_inicial_consulta,
                 limit=self.cantidad_final_consulta
@@ -740,8 +734,8 @@ class Control_proveedores(QWidget):
 
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("importar_proveedores_vprincipal")
-            self.id_hilo_importar_proveedores = WorkerDB.create_managed_worker(owner_id="importar_proveedores_vprincipal")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_importar_proveedores_vprincipal")
+            self.id_hilo_importar_proveedores = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_importar_proveedores_vprincipal", cierre_seguro=True)
             self.consultor_importar_proveedores = WorkerDB.get_managed_worker(self.id_hilo_importar_proveedores)
             if not self.consultor_importar_proveedores:
                 raise Exception("No se pudo obtener el worker de importación.")
@@ -753,10 +747,11 @@ class Control_proveedores(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_importar_proveedores.ejecutar(
-                self.importar_proveedores_query,
+                capturar_consulta_proveedor(self, self.importar_proveedores_query),
                 documento=documento
             )
         except Exception as e:
+            self.manejadorModal.cerrar_modal()
             if hasattr(self, 'id_hilo_importar_proveedores'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso de importación: {e}")
@@ -769,99 +764,49 @@ class Control_proveedores(QWidget):
         }
         columnas_requeridas = ["nombre"]
 
-        registros = OperacionMasivaCsvController.leer_y_validar_archivo(
+        reporte = OperacionMasivaCsvController.leer_con_reporte(
             documento=documento,
             columnas_requeridas=columnas_requeridas,
             columnas_validas=columnas_validas
         )
-
-        categorias_existentes = {c[0] for c in session.query(Categorias_proveedores.id).all()}
-        representantes_existentes = {r[0] for r in session.query(Representantes_proveedores.id).all()}
-
-        nombres_existentes = {
-            str(proveedor[0]).strip().lower()
-            for proveedor in session.query(Proveedores.nombre).all()
-            if proveedor[0]
-        }
-        rfcs_existentes = {
-            str(proveedor[0]).strip().upper()
-            for proveedor in session.query(Proveedores.rfc).all()
-            if proveedor[0]
-        }
-
-        proveedores_nuevos = []
-        duplicados = []
-
-        for row in registros:
-            nombre = str(row.get("nombre", "")).strip()
-            if not nombre:
-                continue
-
-            nombre_normalizado = nombre.lower()
-            rfc = str(row.get("rfc", "")).strip().upper()
-
-            if nombre_normalizado in nombres_existentes or (rfc and rfc in rfcs_existentes):
-                duplicados.append(nombre)
-                continue
-
-            representante_id = OperacionMasivaCsvController.parse_int(row.get("representante_id")) if "representante_id" in row else None
-            if representante_id not in representantes_existentes:
-                representante_id = None
-
-            categoria_id = OperacionMasivaCsvController.parse_int(row.get("categoria_id")) if "categoria_id" in row else None
-            if categoria_id not in categorias_existentes:
-                categoria_id = None
-
-            proveedor_obj = Proveedores(
-                nombre=nombre,
-                pais=str(row.get("pais", "")).strip(),
-                estado=str(row.get("estado", "")).strip(),
-                ciudad=str(row.get("ciudad", "")).strip(),
-                codigo_postal=str(row.get("codigo_postal", "")).strip(),
-                calles=str(row.get("calles", "")).strip(),
-                avenidas=str(row.get("avenidas", "")).strip(),
-                colonia=str(row.get("colonia", "")).strip(),
-                direccion_adicional=str(row.get("direccion_adicional", "")).strip(),
-                rfc=rfc,
-                pagina_web=str(row.get("pagina_web", "")).strip(),
-                correo=str(row.get("correo", "")).strip(),
-                telefono=str(row.get("telefono", "")).strip(),
-                clave_moneda=str(row.get("clave_moneda", "")).strip(),
-                tipo_moneda=str(row.get("tipo_moneda", "")).strip(),
-                representante_id=representante_id,
-                categoria_id=categoria_id
-            )
-            session.add(proveedor_obj)
-            proveedores_nuevos.append(nombre)
-            nombres_existentes.add(nombre_normalizado)
-            if rfc:
-                rfcs_existentes.add(rfc)
-
-        if proveedores_nuevos:
-            session.commit()
-
-        return {
-            "exito": True,
-            "agregados": len(proveedores_nuevos),
-            "duplicados": len(duplicados),
-            "proveedores_duplicados": duplicados
-        }
+        resultado = {"exito": False, "agregados": 0, "duplicados": 0, "invalidos": 0,
+                     "proveedores_duplicados": [], "reporte": reporte}
+        try:
+            resultado = ProveedoresModel(session).importar_con_reporte(reporte, estricto=True)
+            if resultado["exito"] and resultado["agregados"]:
+                session.commit()
+        except Exception:
+            session.rollback()
+            resultado["exito"] = False
+            resultado["codigo"] = "persistencia"
+            resultado["agregados"] = 0
+            reporte["errores"].append({"fila": None, "campo": None, "codigo": "persistencia",
+                                       "mensaje": "No se confirmo la importacion"})
+        return resultado
 
     def resultado_importacion_proveedores(self, resultado):
+        self.manejadorModal.cerrar_modal()
         if hasattr(self, 'id_hilo_importar_proveedores'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
 
+        reporte = resultado.get("reporte", {})
+        diagnosticos = "\n".join(
+            f"Fila {item.get('fila')}, {item.get('campo')}: {item.get('mensaje')}"
+            for item in reporte.get("errores", []) + reporte.get("advertencias", [])
+        )
         if resultado.get("exito"):
             Mensaje().mensaje_informativo(
                 f"Importación completada con éxito.\n"
                 f"Proveedores agregados: {resultado['agregados']}\n"
-                f"Proveedores duplicados omitidos: {resultado['duplicados']}"
+                f"Proveedores duplicados omitidos: {resultado['duplicados']}\n"
+                f"Filas invalidas: {resultado.get('invalidos', 0)}\n{diagnosticos}"
             )
             self.refrescar_tabla()
         else:
-            Mensaje().mensaje_alerta("Ocurrió un problema durante la importación de proveedores.")
+            Mensaje().mensaje_alerta(f"No se confirmo la importacion de proveedores.\n{diagnosticos}")
 
     def error_importacion_proveedores(self, error_msg):
+        self.manejadorModal.cerrar_modal()
         if hasattr(self, 'id_hilo_importar_proveedores'):
             WorkerDB.cleanup_managed_worker(self.id_hilo_importar_proveedores)
         Mensaje().mensaje_alerta(f"Error al importar archivo: {error_msg}")
@@ -875,8 +820,8 @@ class Control_proveedores(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_proveedor_thread")
-                self.id_hilo_eliminar_proveedor_vproveedor = WorkerDB.create_managed_worker(owner_id="eliminar_proveedor_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_proveedor_thread")
+                self.id_hilo_eliminar_proveedor_vproveedor = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_proveedor_thread", cierre_seguro=True)
                 self.consultor_eliminar_proveedor_vproveedor = WorkerDB.get_managed_worker(self.id_hilo_eliminar_proveedor_vproveedor)
                 if not self.consultor_eliminar_proveedor_vproveedor:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
@@ -888,17 +833,18 @@ class Control_proveedores(QWidget):
                     terminado_callback=self.manejadorModal.cerrar_modal
                 )
                 self.consultor_eliminar_proveedor_vproveedor.ejecutar(
-                        funcion=self.eliminar_proveedor_query,
+                        funcion=capturar_consulta_proveedor(self, self.eliminar_proveedor_query),
                         proveedor = self.proveedor_seleccionado
                         )
             except Exception as e:
+                self.manejadorModal.cerrar_modal()
                 if hasattr(self, 'id_hilo_eliminar_proveedor_vproveedor'):
                     WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_proveedor_vproveedor)
                 Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def eliminar_proveedor_query(self, session, proveedor):
         try:
-            _, estado = ProveedoresModel(session).eliminar_proveedor(proveedor.id)
+            _, estado = ProveedoresModel(session).eliminar_proveedor(proveedor.id, estricto=True)
             if not estado:
                 session.rollback()
                 return {
@@ -914,10 +860,11 @@ class Control_proveedores(QWidget):
             session.rollback()
             return {
                 "exito": False,
-                "mensaje": f'Ocurrio un error en el proceso : {e}'
+                "mensaje": "No se pudo eliminar el proveedor"
             }
 
     def mostrar_error_hilo(self, error):
+        self.manejadorModal.cerrar_modal()
         Mensaje().mensaje_alerta(f'Ocurrio un error en el proceso : {error}')
 
     def mostrar_estado_hilo(self, objetoMensaje):

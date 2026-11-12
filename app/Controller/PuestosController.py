@@ -164,6 +164,13 @@ class PuestosController(QDialog):
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaPuestos = True
 
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_puestos:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_puestos.clear()
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)
+
     def closeEvent(self, event):
         for hilo in self.lista_hilos_puestos:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -178,8 +185,8 @@ class PuestosController(QDialog):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("filtrar_puestos_thread")
-            self.id_hilo_filtrar_puestos = WorkerDB.create_managed_worker(owner_id="filtrar_puestos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_filtrar_puestos_thread")
+            self.id_hilo_filtrar_puestos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_filtrar_puestos_thread", cierre_seguro=True)
             self.consultor_filtrar_puestos = WorkerDB.get_managed_worker(self.id_hilo_filtrar_puestos)
             if not self.consultor_filtrar_puestos:
                 raise Exception("No se pudo obtener la lista.")
@@ -203,7 +210,7 @@ class PuestosController(QDialog):
 
     def filtrar_puestos_query(self, session, dato):
         try:
-            puestos, estado = PuestoModel(session).filtrar_por_nombre(dato)
+            puestos, estado = PuestoModel(session).filtrar_por_nombre(dato, snapshots=True)
             if not estado:
                 return {
                     'exito': estado,
@@ -293,8 +300,8 @@ class PuestosController(QDialog):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_puesto_thread")
-            self.id_hilo_agregar_puesto = WorkerDB.create_managed_worker(owner_id="agregar_puesto_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_puesto_thread")
+            self.id_hilo_agregar_puesto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_puesto_thread", cierre_seguro=True)
             self.consultor_agregar_puesto = WorkerDB.get_managed_worker(self.id_hilo_agregar_puesto)
             if not self.consultor_agregar_puesto:
                 raise Exception("No se logro obtener el worker gestionado al agregar")
@@ -308,14 +315,15 @@ class PuestosController(QDialog):
             self.consultor_agregar_puesto.ejecutar(
                     funcion=self.agregar_puestos_query,
                     diasLaborales = diasLaborales,
-                    datos = datos
+                    datos = datos,
+                    id_departamento=self.id_departamento,
                     )
         except Exception as e:
             if hasattr(self, 'id_hilo_agregar_puesto'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_puesto)
             Mensaje(self).mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
-    def agregar_puestos_query(self, session, diasLaborales, datos):
+    def agregar_puestos_query(self, session, diasLaborales, datos, id_departamento=None):
         try:
             puesto, estado = PuestoModel(session).crear_puesto(
                             nombre=datos['nombre'],
@@ -325,7 +333,7 @@ class PuestosController(QDialog):
                             descripcion_puesto=datos['descripcion_puesto'],
                             hora_entrada=datos['hora_entrada'],
                             hora_salida=datos['hora_salida'],
-                            departamento_id=self.id_departamento
+                            departamento_id=id_departamento
                         )
             if not estado:
                 session.rollback()
@@ -333,13 +341,13 @@ class PuestosController(QDialog):
                     'exito': estado,
                     'mensaje': f'No se logro hacer el registro, {datos["nombre"]}'
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 'exito': False,
                 'mensaje': f'Ocurrio un error en el proceso : {e}'
             }
-        session.commit()
         return {
             'exito': estado,
             'mensaje': f'Registro exitoso, {puesto.nombre} agregado'
@@ -353,8 +361,8 @@ class PuestosController(QDialog):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_puesto_thread")
-                self.id_hilo_eliminar_puesto = WorkerDB.create_managed_worker(owner_id="eliminar_puesto_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_puesto_thread")
+                self.id_hilo_eliminar_puesto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_puesto_thread", cierre_seguro=True)
                 self.consultor_eliminar_puesto = WorkerDB.get_managed_worker(self.id_hilo_eliminar_puesto)
                 if not self.consultor_eliminar_puesto:
                     raise Exception("No se logro obtener el worker gestionado al eliminar")
@@ -384,13 +392,13 @@ class PuestosController(QDialog):
                     "exito": respuesta,
                     'mensaje' : f"No se logro realizar la operacion, registro {puesto_seleccionado.nombre} no eliminado"
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                     "exito": False,
                     'mensaje' : f"Ocurrio un error en la operacion"
                 }
-        session.commit()
         return {
             "exito": respuesta,
             'mensaje' : f"Operacion exitosa, registro {puesto_seleccionado.nombre} eliminado"
@@ -421,8 +429,8 @@ class PuestosController(QDialog):
             if respuesta == QMessageBox.Yes:
                 try:
                         self.manejadorModal.mostrar_modal(self)
-                        WorkerDB.cleanup_owner_workers("actualizar_puesto_threar")
-                        self.id_hilo_actualizar_puesto = WorkerDB.create_managed_worker(owner_id="actualizar_puesto_threar")
+                        WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_puesto_threar")
+                        self.id_hilo_actualizar_puesto = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_puesto_threar", cierre_seguro=True)
                         self.consultor_actualizar_puesto = WorkerDB.get_managed_worker(self.id_hilo_actualizar_puesto)
                         if not self.consultor_actualizar_puesto:
                             raise Exception("No se logro hacer la operación para actualizar")
@@ -467,13 +475,13 @@ class PuestosController(QDialog):
                     'exito': estado,
                     "mensaje": f"No se logro hacer la actualizacion de {datos['nombre']}"
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
                 "mensaje" : f"Ocurrio un error en la operacion"
             }
-        session.commit()
         return {
             "exito": estado,
             "mensaje": f"Operacion exitosa, registro {puesto.nombre} actualizado"
@@ -483,8 +491,8 @@ class PuestosController(QDialog):
         try:
             if mostrar_modal:
                 self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("listar_departamentos_thread")
-            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id="listar_departamentos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_departamentos_thread")
+            self.id_hilo_listar_departamentos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_departamentos_thread", cierre_seguro=True)
             self.consultor_listar_departamentos = WorkerDB.get_managed_worker(self.id_hilo_listar_departamentos)
             if not self.consultor_listar_departamentos:
                 raise Exception("No se logro hacer la operación para listar")
@@ -505,7 +513,7 @@ class PuestosController(QDialog):
 
     def obtener_departamentos_query(self, session):
         try:
-            departamentos, estado = DepartamentosModel(session).obtener_todos()
+            departamentos, estado = DepartamentosModel(session).obtener_todos(snapshots=True)
             if not estado:
                 session.rollback()
                 return {
@@ -553,8 +561,8 @@ class PuestosController(QDialog):
         try:
             if mostrar_modal:
                 self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("listar_puestos_thread")
-            self.id_hilo_listar_puestos = WorkerDB.create_managed_worker(owner_id="listar_puestos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_puestos_thread")
+            self.id_hilo_listar_puestos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_puestos_thread", cierre_seguro=True)
             self.consultor_listar_puestos = WorkerDB.get_managed_worker(self.id_hilo_listar_puestos)
             if not self.consultor_listar_puestos:
                 raise Exception("No se pudo obtener la lista.")
@@ -575,7 +583,7 @@ class PuestosController(QDialog):
 
     def obtener_puestos_query(self, session):
         try:
-            puestos, estado = PuestoModel(session).obtener_todos()
+            puestos, estado = PuestoModel(session).obtener_todos(snapshots=True)
             if estado:
                 return {
                     'exito': estado,

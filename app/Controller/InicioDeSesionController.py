@@ -14,6 +14,7 @@ from ..Source.iconos_rc import *
 from ..Source.logos_rc import *
 from ..Source.ibootstrap_rc import *
 from .CreadencialesUsuarioController import *
+from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
 from .UiTheme import apply_access_theme
 
@@ -132,7 +133,7 @@ class Login(QWidget):
         usuario = self.ui.txt_User.text().strip()
         password = self.ui.txt_Password.text().strip()
         try:
-            usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = usuario, contraseña = password)
+            usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = usuario, contraseña = password, snapshots=True)
             empleado = getattr(usuario_existente, "empleado", None)
             contexto_valido = (
                 estatus_consulta and usuario_existente is not None and empleado is not None

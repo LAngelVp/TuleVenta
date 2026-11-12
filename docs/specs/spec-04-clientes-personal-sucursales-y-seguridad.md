@@ -24,6 +24,51 @@ Fecha: 2026-11-10. As-Is por lectura estatica; no se ejecutan login, licencia, m
 
 Actor de clientes: operador con acceso por cualquiera de CREARCLIENTE/MODIFICARCLIENTE/ELIMINARCLIENTE o ADMINISTRADOR. SistemaPrincipal restringe alta/importadores/creacion de categorias y areas a CREARCLIENTE, actualizar a MODIFICARCLIENTE y borrar a ELIMINARCLIENTE. Los modelos y funciones query no implementan esos permisos como servicio independiente. Las fronteras de personal y organizacion se especifican en sus casos, no se presume autorizacion universal por abrir una ventana.
 
+### Lote 2: cierre local del Modulo 4 (2026-11-12)
+
+Remate autorizado de REF-22/23, REF-25, REF-30/31 sobre REF-27 y REF-35/36. **Cierre local del incremento**, no certificacion SQL ni cierre global de esos REFs para otros modulos. La evidencia del Lote 1 mas abajo es historica; los pendientes locales de esta cohorte se sustituyen por la siguiente tabla.
+
+| REF / casos | Resultado local verificado | Estado |
+| --- | --- | --- |
+| REF-22/23: S-02/S-03/S-07 a S-11 | Longitudes de catálogos administrativos antes de SQL; nombre obligatorio, numeros finitos/no negativos, porcentajes de 0 a 100 y FK proporcionadas positivas; placeholder de combo rechazado. Cambio de clave validado antes de confirmacion Qt. Login bcrypt legacy corto conserva compatibilidad; altas/cambios mantienen 12 caracteres, 72 bytes UTF-8 y rechazo de espacios exteriores | Cerrado local |
+| REF-25: S-03/S-07 a S-11 | Seis modelos propagan errores tecnicos sin commit/rollback internos. Ausencias de personal tienen contrato `(None, False)`. Alta/edicion de departamento sincronizan sucursales por IDs en sesion propia; coordinador confirma o revierte. Eliminacion de credenciales recarga empleado/usuario y desasocia en su sesion; asignacion exige una fila actualizada. Callback fallido no emite exito de baja | Cerrado local |
+| REF-30/31: S-05/S-06 | Savepoint por fila para cliente y dependencias; duplicado tardio o ValueError revierte esa fila. Cache de catalogos se publica solo tras exito, sin IDs revertidos. Fallo tecnico se propaga y el coordinador revierte todo el lote. CSV real prueba validas/invalidas/duplicado tardio/fallo tecnico para ambos subtipos | Cerrado local; SQL efectivo pendiente |
+| REF-35/36: S-03/S-07 a S-11/S-14 | Lectores administrativos, combos y perfil usan DTO; payloads de altas y edicion de departamento se materializan antes de commit. Login/perfil piden snapshot dentro de autenticacion, sin hash. Perfil soporta FK opcionales. Departamento de puesto y pagina se capturan antes del worker; helpers legacy de importacion delegan al modelo. Se conserva limpieza/owners por instancia del Lote 1 | Cerrado local; hilos con SQL real/smoke pendientes |
+
+Contratos: [AdministracionEntrada.py](../../app/Model/AdministracionEntrada.py), [UsuarioEntrada.py](../../app/Model/UsuarioEntrada.py) y [ClientesImportacion.py](../../app/Model/ClientesImportacion.py). Los lectores ORM conservan retorno legacy por defecto para consumidores no migrados; los consumidores Qt de esta cohorte activan snapshots o serializan dentro de su sesion. El import de conexion del verificador se difiere al constructor de conexion para que la regresion bcrypt unit no cargue Qt; no se cambia el provisionamiento legacy ni el algoritmo de hash.
+
+Deltas deliberados: entradas numericas proporcionadas invalidas/no finitas/negativas y porcentajes fuera de 0 a 100 se rechazan; no se reemplazan por cero ni se recalculan saldos. Nombre requerido y selecciones proporcionadas deben ser validos. `None` en FK opcionales sigue permitido por el contrato SQL; no se amplian columnas ni se inventan permisos. Los aliases/defaults de archivos y el login legacy conservan su politica. El reporte por fila sigue estructurado; la UI mantiene su resumen agregado, sin introducir una nueva pantalla de reporte.
+
+Comandos ejecutados con `PYTHONDONTWRITEBYTECODE=1`:
+
+- `.venv/Scripts/python.exe -m pytest -q -m unit`: **392 passed**, 322 deselected.
+- `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`: **320 passed**, 394 deselected.
+- `.venv/Scripts/python.exe tests/check_docs_links.py`: **491 enlaces, 0 errores**; verifica estructura/enlaces, no comportamiento SQL ni renderizado.
+- Pruebas reutilizadas/ampliadas en [test_module4_clients.py](../../tests/test_module4_clients.py) y [test_phase1_access.py](../../tests/test_phase1_access.py). Solo advertencia existente `declarative_base`.
+
+Limites de evidencia: los savepoints se verifican con sesiones simuladas, no con PostgreSQL. Persistencia/relectura tras rollback, estado `Session.new/dirty` real, FK/unique efectivas, carreras, migraciones, afinidad bajo SQL real y smoke visual quedan sin verificar. No se inicio PostgreSQL, no hubo DDL, cambios de configuracion local, datos reales, despliegue ni commit. Rollback de este incremento: volver al artefacto previo de codigo, preservando cambios ajenos; no hay esquema/datos que revertir. S-12/S-16 conservan sus capacidades ausentes y S-15/S-17 su alcance existente.
+
+### Incremento vertical de Modulo 4: evidencia y pendientes
+
+Estado historico del **Lote 1**, previo al remate local descrito arriba: Modulo 4 no cerrado en esa entrega. Se verificaron 137 pruebas focalizadas en [test_module4_clients.py](../../tests/test_module4_clients.py), 339 unitarias y 297 Qt en sandbox; no se conecto PostgreSQL ni se ejecuto DDL. Las secciones As-Is siguientes conservan la caracterizacion original, no describen los deltas como deuda aun sin corregir.
+
+| REF | Incremento implementado | Estado y gate restante |
+| --- | --- | --- |
+| REF-22 | Limites String de clientes derivados de metadata; validacion previa de longitudes en clientes, representantes, empleados y sucursales; personal captura hasta 100 donde BD permite 100 | Parcial: completar validadores y consumidores de catalogos/organizacion |
+| REF-23 | Password nuevo/cambiado: minimo 12 caracteres, maximo 72 bytes UTF-8, sin espacios exteriores; rechazo, nunca truncamiento | Parcial: politica aprobada aplicada al modelo y alta; completar regresion explicita de login legacy y captura de cambio |
+| REF-25 | Ediciones de clientes sin commits internos; coordinadores protegen commit y rollback; varias escrituras propagan causa tecnica; asociaciones de actualizacion de departamento recargadas por IDs | Parcial: revisar alta/asociaciones de departamento y restantes retornos absorbidos de empleado/usuario; persistencia real pendiente |
+| REF-30/31 sobre REF-27 | Ambos importadores usan lector comun y [ClientesImportacion.py](../../app/Model/ClientesImportacion.py), errores por fila y un commit del coordinador | Parcial: reporte estructurado disponible, UI muestra agregados; verificar duplicado tardio sin efectos de catalogo y rollback PostgreSQL |
+| REF-35 | Listado/busqueda de clientes y personal transportan snapshots; pagina capturada en GUI; adaptadores opt-in para sucursales, departamentos y puestos; helper de personal excluye hash | Parcial: activar restantes lectores/perfil y eliminar consultas/asociaciones ORM de todos los controladores |
+| REF-36 | Siete controladores usan owners por instancia, cierre_seguro y limpieza/modal al ocultar; registro y perfil rastrean workers | Incremento probado unit/Qt; afinidad/cierre con SQL real y smoke visual pendientes |
+
+Contratos nuevos: [AdministracionEntrada.py](../../app/Model/AdministracionEntrada.py) materializa DTO dentro de la sesion; `snapshots=False` conserva lectores legacy. [UsuarioEntrada.py](../../app/Model/UsuarioEntrada.py) valida password sin cambiar hashes existentes ni el algoritmo de autenticacion. La ampliacion de captura personal y el rechazo de importes proporcionados invalidos/no finitos son deltas deliberados: no convertir un error numerico a cero. Valores vacios siguen defaults del importador. Se preservan aliases, claves de duplicado y normalizacion de cada subtipo.
+
+Importacion: filas invalidas/duplicadas se omiten; fallo tecnico del lote devuelve `exito=False`, `agregados=0` y rollback del coordinador. Las pruebas usan lector CSV real y escritor/sesion simulados: **no prueban atomicidad SQL efectiva**. Un duplicado detectado tardemente por el escritor puede dejar dependencias creadas si otra fila se confirma; ese camino requiere cierre antes de aprobar REF-31.
+
+S-01/S-02, S-04, S-12/S-13 y S-15/S-16/S-17 conservan su alcance existente: no se implementaron asistencia, respaldo, licencia o permisos nuevos. S-03, S-05/S-06 y S-07 a S-11 reciben los incrementos anteriores; S-14 solo limpieza de workers y helper DTO, no migracion completa de su lectura. No afirmar cobertura integral de S-01 a S-17 por el numero de tests.
+
+Verificacion ejecutada con `PYTHONDONTWRITEBYTECODE=1`: `.venv/Scripts/python.exe -m pytest -q -m unit` (339 passed); `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin` (297 passed). Ambos muestran solo la advertencia existente de `declarative_base`. PostgreSQL aislado, concurrencia, relectura tras rollback, restricciones SQL, renderizado y permisos de dominio quedan sin verificar. Sin cambios de esquema/datos, el rollback es volver al artefacto de codigo previo; preservar cambios ajenos y ensayar compatibilidad antes de distribuir.
+
 ## 2. S-01: arranque, seleccion de acceso e inicializacion
 
 **Actor/entrada:** usuario de escritorio aun sin autenticar; inicio.py crea Inicio_sistema y QApplication, estilo/paleta. __main__ lee/valida licencia antes de preparar PostgreSQL; si invalida abre VentanaActivacion y sale con codigo0 si se rechaza. Si falla asegurar_servicio_postgres, muestra error y sale1. Licencia no es un permiso SQL ni reemplaza login.

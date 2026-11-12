@@ -77,6 +77,7 @@ class EmpleadosController(QWidget):
         for hilo in self.lista_hilos_empleados:
             WorkerDB.cleanup_managed_worker(hilo)
         self.lista_hilos_empleados.clear()
+        self.manejadorModal.cerrar_modal()
         print("Lista:", self.lista_hilos_empleados)
         super().hideEvent(event)
 
@@ -197,8 +198,8 @@ class EmpleadosController(QWidget):
         self.busqueda_empleados = True
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_empleado_thread")
-            self.id_hilo_buscar_empleado = WorkerDB.create_managed_worker(owner_id="buscar_empleado_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_empleado_thread")
+            self.id_hilo_buscar_empleado = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_empleado_thread", cierre_seguro=True)
             self.consultor_buscar_empleado = WorkerDB.get_managed_worker(self.id_hilo_buscar_empleado)
             if not self.consultor_buscar_empleado:
                 raise Exception("No se logro realizar la busqueda del empleado")
@@ -213,7 +214,9 @@ class EmpleadosController(QWidget):
                 funcion=self.buscar_empleado_query,
                 id_empleado = id_empleado,
                 nombre_empleado = nombre_empleado,
-                tipo_filtro_nombre = tipo_filtro_nombre
+                tipo_filtro_nombre = tipo_filtro_nombre,
+                offset=self.cantidad_inicial_empleados,
+                limit=self.cantidad_final_empleados,
             )
 
         except Exception as e:
@@ -222,14 +225,15 @@ class EmpleadosController(QWidget):
             self._cargando_mas_empleados = False
             Mensaje().mensaje_alerta(f'Ocurrio un error en el proceso: {e}')
 
-    def buscar_empleado_query(self, session, id_empleado, nombre_empleado, tipo_filtro_nombre):
+    def buscar_empleado_query(self, session, id_empleado, nombre_empleado, tipo_filtro_nombre, offset=0, limit=100):
         try:
             empleados, estado = EmpleadosModel(session).filtrar_empleados(
                 id=id_empleado,
                 nombre=nombre_empleado,
                 tipo_filtro_nombre=tipo_filtro_nombre,
-                offset=self.cantidad_inicial_empleados,
-                limit=self.cantidad_final_empleados
+                offset=offset,
+                limit=limit,
+                snapshots=True,
             )
             if not estado:
                 session.rollback()
@@ -245,7 +249,6 @@ class EmpleadosController(QWidget):
                 "mensaje": f"Ocurrio un error en el proceso: {e}",
                 "data": []
             }
-        self.cantidad_inicial_empleados += len(empleados)
         return {
             "exito": True,
             "mensaje": f"Se encontraron {len(empleados)} empleados",
@@ -260,8 +263,8 @@ class EmpleadosController(QWidget):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_empleado_thread")
-                self.id_hilo_eliminar_empleado = WorkerDB.create_managed_worker(owner_id="eliminar_empleado_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_empleado_thread")
+                self.id_hilo_eliminar_empleado = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_empleado_thread", cierre_seguro=True)
                 self.consultor_eliminar_empleado = WorkerDB.get_managed_worker(self.id_hilo_eliminar_empleado)
                 if not self.consultor_eliminar_empleado:
                     raise Exception("No se logro hacer la operación para eliminar el registro")
@@ -290,13 +293,13 @@ class EmpleadosController(QWidget):
                     "exito" : estado,
                     "mensaje": f'No se logro hacer la operación'
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito" : False,
                 "mensaje" : f'Ocurrio un error en la operacion: {e}'
             }
-        session.commit()
         return {
                 "exito": estado,
                 "mensaje": f'Operación exitosa, registro {empleado.nombre} eliminado'
@@ -328,8 +331,8 @@ class EmpleadosController(QWidget):
                 self.filtro_nombre_empleado = ""
                 self.filtro_tipo_nombre_empleado = self.WindowEmployee.cajaOpciones_filtroNombreEmpleado.currentIndex()
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("listar_empleados_thread")
-            self.id_hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id="listar_empleados_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_listar_empleados_thread")
+            self.id_hilo_listar_empleados = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_listar_empleados_thread", cierre_seguro=True)
             self.consultor_listarEmpleados = WorkerDB.get_managed_worker(self.id_hilo_listar_empleados)
             if not self.consultor_listarEmpleados:
                 raise Exception("No se pudo obtener la lista de empleados.")
@@ -341,7 +344,9 @@ class EmpleadosController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_listarEmpleados.ejecutar(
-                self.obtener_empleados_query
+                self.obtener_empleados_query,
+                offset=self.cantidad_inicial_empleados,
+                limit=self.cantidad_final_empleados,
             )
         except Exception as e:
             if hasattr(self, 'id_hilo_listar_empleados'):
@@ -349,11 +354,12 @@ class EmpleadosController(QWidget):
             self._cargando_mas_empleados = False
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso: {e}")
 
-    def obtener_empleados_query(self, session):
+    def obtener_empleados_query(self, session, offset=0, limit=100):
         try:
             empleados, estado = EmpleadosModel(session).obtener_empleados_detallados(
-                offset=self.cantidad_inicial_empleados,
-                limit=self.cantidad_final_empleados
+                offset=offset,
+                limit=limit,
+                snapshots=True,
             )
             if not estado:
                 session.rollback()
@@ -369,7 +375,6 @@ class EmpleadosController(QWidget):
                 "mensaje": f"Error al obtener empleados: {e}",
                 "data": []
             }
-        self.cantidad_inicial_empleados += len(empleados)
         return {
             "exito": True,
             "mensaje": f"Se obtuvieron {len(empleados)} empleados",
@@ -399,6 +404,10 @@ class EmpleadosController(QWidget):
                 self.empleado_actual = None
             return
         self.empleados = datos
+        if self._append_mode_empleados:
+            self.cantidad_inicial_empleados += len(datos)
+        else:
+            self.cantidad_inicial_empleados = len(datos)
         self.no_hay_mas_registros_empleados = len(datos) < self.cantidad_final_empleados
         self.modelo_empleados_vempleados.update_data(datos, reset=not self._append_mode_empleados)
         if hasattr(self, 'seleccion_conectada_empleados') and self.seleccion_conectada_empleados:

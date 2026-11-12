@@ -1,4 +1,5 @@
 from datetime import datetime
+import csv
 from pathlib import Path
 import shutil
 import tempfile
@@ -26,8 +27,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from ..DataBase.conexionBD import Conexion_base_datos
-from ..Model.DashboardModel import DashboardModel
+from ..Model.DashboardModel import consultar_dashboard, validar_reporte_finito
+from .Hilo_consultas import WorkerDB
 from .MensajesAlertasController import Mensaje
 
 
@@ -51,6 +52,9 @@ class DashboardController(QWidget):
         self.inventory_report_rows = []
         self.sales_report_rows = []
         self.purchases_report_rows = []
+        self._dashboard_workers = {}
+        self._dashboard_generaciones = {}
+        self._dashboard_hilos = []
         self._construir_ui()
         self._aplicar_permisos_ui()
         self._conectar_filtros_dinamicos()
@@ -70,9 +74,67 @@ class DashboardController(QWidget):
 
     def closeEvent(self, event):
         try:
+            self._cerrar_workers_dashboard()
             shutil.rmtree(self._dashboard_temp_dir, ignore_errors=True)
         finally:
             super().closeEvent(event)
+
+    def hideEvent(self, event):
+        self._cerrar_workers_dashboard()
+        super().hideEvent(event)
+
+    def _cerrar_workers_dashboard(self):
+        for seccion in self._dashboard_generaciones:
+            self._dashboard_generaciones[seccion] += 1
+        for identificador in self._dashboard_hilos:
+            WorkerDB.cleanup_managed_worker(identificador)
+        self._dashboard_hilos.clear()
+        self._dashboard_workers.clear()
+
+    def _solicitar_dashboard(self, seccion, filtros):
+        if seccion != "estados" and not self._tiene_algun_permiso(self.permisos_tab_dashboard[seccion]):
+            return
+        filas = {"inventario": "inventory_report_rows", "ventas": "sales_report_rows", "compras": "purchases_report_rows"}
+        if seccion in filas:
+            setattr(self, filas[seccion], [])
+        generacion = self._dashboard_generaciones.get(seccion, 0) + 1
+        self._dashboard_generaciones[seccion] = generacion
+        anterior = self._dashboard_workers.get(seccion)
+        if anterior:
+            WorkerDB.cleanup_managed_worker(anterior)
+        identificador = None
+        try:
+            identificador = WorkerDB.create_managed_worker(owner_id=f"dashboard-{id(self)}-{seccion}-{generacion}", cierre_seguro=True)
+            self._dashboard_workers[seccion] = identificador
+            self._dashboard_hilos.append(identificador)
+            worker = WorkerDB.get_managed_worker(identificador)
+            if worker is None:
+                raise RuntimeError("Worker no disponible.")
+
+            def resultado_callback(resultado):
+                if self._dashboard_generaciones.get(seccion) != generacion:
+                    return
+                if not resultado.get("exito"):
+                    Mensaje().mensaje_alerta(resultado["mensaje"])
+                    return
+                datos = resultado["data"]
+                if seccion == "estados":
+                    self._llenar_combo_estados(self.sales_estado, datos["ventas"])
+                    self._llenar_combo_estados(self.purchases_estado, datos["compras"])
+                else:
+                    getattr(self, f"cargar_dashboard_{seccion}")(resultado=datos)
+
+            def error_callback(mensaje):
+                if self._dashboard_generaciones.get(seccion) == generacion:
+                    Mensaje().mensaje_alerta("No se pudo cargar el dashboard.")
+
+            WorkerDB.connect_managed_signals(worker_id=identificador, resultado_callback=resultado_callback,
+                                             error_callback=error_callback)
+            worker.ejecutar(funcion=consultar_dashboard, seccion=seccion, filtros=dict(filtros))
+        except Exception:
+            if identificador:
+                WorkerDB.cleanup_managed_worker(identificador)
+            Mensaje().mensaje_alerta("No se pudo iniciar la consulta del dashboard.")
 
     def _construir_ui(self):
         self.setStyleSheet(
@@ -450,7 +512,7 @@ class DashboardController(QWidget):
         resumen_layout.setSpacing(12)
 
         self.purchases_resumen_labels = {}
-        for indice, titulo in enumerate(["Compras", "Unidades compradas", "Productos distintos", "Pendientes", "Monto estimado"]):
+        for indice, titulo in enumerate(["Compras", "Unidades compradas", "Productos distintos", "Pendientes", "Monto registrado", "Monto estimado"]):
             tarjeta, label_valor = self._crear_card_resumen(titulo)
             self.purchases_resumen_labels[titulo] = label_valor
             resumen_layout.addWidget(tarjeta, 0 if indice < 3 else 1, indice % 3)
@@ -486,22 +548,7 @@ class DashboardController(QWidget):
         return datetime(qdate.year(), qdate.month(), qdate.day()).date()
 
     def _cargar_estados_dashboard(self):
-        try:
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                dashboard_model = DashboardModel(session)
-                estados_ventas, exito_ventas, mensaje_ventas = dashboard_model.obtener_estados_ventas()
-                estados_compras, exito_compras, mensaje_compras = dashboard_model.obtener_estados_compras()
-
-            if not exito_ventas:
-                Mensaje().mensaje_alerta(mensaje_ventas)
-            if not exito_compras:
-                Mensaje().mensaje_alerta(mensaje_compras)
-
-            self._llenar_combo_estados(self.sales_estado, estados_ventas)
-            self._llenar_combo_estados(self.purchases_estado, estados_compras)
-        except Exception as e:
-            Mensaje().mensaje_alerta(f"No se pudieron cargar los estados del dashboard: {e}")
+        self._solicitar_dashboard("estados", {})
 
     def _llenar_combo_estados(self, combo, estados):
         estado_actual = combo.currentText() or "TODOS"
@@ -525,23 +572,16 @@ class DashboardController(QWidget):
         elif indice == 2:
             self.cargar_dashboard_compras(force=force)
 
-    def cargar_dashboard_inventario(self, force=False):
+    def cargar_dashboard_inventario(self, force=False, resultado=None):
+        if resultado is None:
+            self._solicitar_dashboard("inventario", {
+                "start_date": self._qdate_to_date(self.inv_fecha_inicio.date()),
+                "end_date": self._qdate_to_date(self.inv_fecha_fin.date()),
+                "low_stock_only": self.inv_stock_bajo.isChecked(), "top_n": self.inv_top_n.value(),
+            })
+            return
         del force
         try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                resultado, exito, mensaje = DashboardModel(session).get_inventory_dashboard(
-                    start_date=self._qdate_to_date(self.inv_fecha_inicio.date()),
-                    end_date=self._qdate_to_date(self.inv_fecha_fin.date()),
-                    low_stock_only=self.inv_stock_bajo.isChecked(),
-                    top_n=self.inv_top_n.value(),
-                )
-
-            if not exito:
-                Mensaje().mensaje_alerta(mensaje)
-                return
-
             self.inventory_report_rows = resultado.get("report_rows", [])
             resumen = resultado.get("summary", {})
             self._actualizar_tarjetas(
@@ -579,26 +619,16 @@ class DashboardController(QWidget):
             )
         except Exception as e:
             Mensaje().mensaje_alerta(f"No se pudo cargar el dashboard de inventario: {e}")
-        finally:
-            if QApplication.overrideCursor() is not None:
-                QApplication.restoreOverrideCursor()
 
-    def cargar_dashboard_ventas(self, force=False):
+    def cargar_dashboard_ventas(self, force=False, resultado=None):
+        if resultado is None:
+            self._solicitar_dashboard("ventas", {
+                "start_date": self._qdate_to_date(self.sales_fecha_inicio.date()),
+                "end_date": self._qdate_to_date(self.sales_fecha_fin.date()), "estado": self.sales_estado.currentText(),
+            })
+            return
         del force
         try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                resultado, exito, mensaje = DashboardModel(session).get_sales_dashboard(
-                    start_date=self._qdate_to_date(self.sales_fecha_inicio.date()),
-                    end_date=self._qdate_to_date(self.sales_fecha_fin.date()),
-                    estado=self.sales_estado.currentText(),
-                )
-
-            if not exito:
-                Mensaje().mensaje_alerta(mensaje)
-                return
-
             self.sales_report_rows = resultado.get("report_rows", [])
             resumen = resultado.get("summary", {})
             self._actualizar_tarjetas(
@@ -633,26 +663,16 @@ class DashboardController(QWidget):
             )
         except Exception as e:
             Mensaje().mensaje_alerta(f"No se pudo cargar el dashboard de ventas: {e}")
-        finally:
-            if QApplication.overrideCursor() is not None:
-                QApplication.restoreOverrideCursor()
 
-    def cargar_dashboard_compras(self, force=False):
+    def cargar_dashboard_compras(self, force=False, resultado=None):
+        if resultado is None:
+            self._solicitar_dashboard("compras", {
+                "start_date": self._qdate_to_date(self.purchases_fecha_inicio.date()),
+                "end_date": self._qdate_to_date(self.purchases_fecha_fin.date()), "estado": self.purchases_estado.currentText(),
+            })
+            return
         del force
         try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            with Conexion_base_datos() as db:
-                session = db.abrir_sesion()
-                resultado, exito, mensaje = DashboardModel(session).get_purchases_dashboard(
-                    start_date=self._qdate_to_date(self.purchases_fecha_inicio.date()),
-                    end_date=self._qdate_to_date(self.purchases_fecha_fin.date()),
-                    estado=self.purchases_estado.currentText(),
-                )
-
-            if not exito:
-                Mensaje().mensaje_alerta(mensaje)
-                return
-
             self.purchases_report_rows = resultado.get("report_rows", [])
             resumen = resultado.get("summary", {})
             calidad = resultado.get("data_quality", {})
@@ -663,13 +683,14 @@ class DashboardController(QWidget):
                     "Unidades compradas": self._formatear_numero(resumen.get("unidades", 0.0)),
                     "Productos distintos": f"{int(resumen.get('productos_distintos', 0))}",
                     "Pendientes": f"{int(resumen.get('pendientes', 0))}",
+                    "Monto registrado": self._formatear_moneda(resumen.get("monto_total", 0.0)),
                     "Monto estimado": self._formatear_moneda(resumen.get("monto_estimado", 0.0)),
                 },
             )
 
-            if calidad.get("monto_registrado_en_cero"):
+            if calidad.get("usa_estimaciones", calidad.get("monto_registrado_en_cero")):
                 self.purchases_hint.setText(
-                    "Los montos registrados de compra están en cero en la base actual. Este panel usa unidades y un monto estimado calculado desde el costo actual del producto para mantener análisis útil."
+                    "El monto estimado combina importes registrados y costos actuales de las líneas sin importe registrado. No equivale a un costo histórico confirmado."
                 )
             else:
                 self.purchases_hint.setText(
@@ -704,9 +725,6 @@ class DashboardController(QWidget):
             )
         except Exception as e:
             Mensaje().mensaje_alerta(f"No se pudo cargar el dashboard de compras: {e}")
-        finally:
-            if QApplication.overrideCursor() is not None:
-                QApplication.restoreOverrideCursor()
 
     def _actualizar_tarjetas(self, labels_dict, valores):
         for titulo, label in labels_dict.items():
@@ -897,9 +915,12 @@ class DashboardController(QWidget):
             return
 
         try:
-            pd = self._importar_pandas()
-            df = pd.DataFrame(filas)
-            df.to_csv(archivo, index=False, encoding="utf-8-sig")
+            validar_reporte_finito(filas)
+            columnas = list(dict.fromkeys(campo for fila in filas for campo in fila))
+            with open(archivo, "w", newline="", encoding="utf-8-sig") as destino:
+                escritor = csv.DictWriter(destino, fieldnames=columnas)
+                escritor.writeheader()
+                escritor.writerows(filas)
             Mensaje().mensaje_informativo(f"Reporte exportado correctamente en: {archivo}")
         except Exception as e:
             Mensaje().mensaje_alerta(f"No se pudo exportar el reporte CSV: {e}")

@@ -6,6 +6,32 @@ Fecha: 2026-11-10. Estado: plan tecnico entregado; ninguna tarea REF esta implem
 
 Fuentes exclusivas de diagnostico: [arquitectura As-Is](01-arquitectura-y-analisis-actual.md), [datos](02-modelo-de-datos.md), [spec de productos](specs/spec-01-productos-e-importacion.md), [ventas/caja/promociones](specs/spec-02-ventas-caja-y-promociones.md), [compras/proveedores/inventario](specs/spec-03-compras-proveedores-e-inventario.md) y [clientes/personal/seguridad](specs/spec-04-clientes-personal-sucursales-y-seguridad.md). Los enlaces a fuentes Python son anclas de esos hallazgos, no una nueva auditoria ni prueba de reproduccion.
 
+### Lote 2: cierre local de Modulo 4 (2026-11-12)
+
+Remate autorizado completado en codigo y regresiones locales. [Tabla de cierre, deltas y gates en Spec 04](specs/spec-04-clientes-personal-sucursales-y-seguridad.md#lote-2-cierre-local-del-modulo-4-2026-11-12). No equivale a cierre global de REFs compartidos ni a certificar persistencia/concurrencia PostgreSQL o los 17 casos completos.
+
+| REF | Cierre del incremento local |
+| --- | --- |
+| REF-22/23 | Contratos de entradas/catalogos, FK/placeholder y numeros; cambio Qt validado; regresion bcrypt legacy compatible sin relajar altas/cambios |
+| REF-25 | Errores tecnicos propagados en los seis modelos; asociaciones por IDs en sesion propia, coordinador con commit/rollback; ausencias y callbacks sin falso exito |
+| REF-30/31 sobre REF-27 | Savepoint por fila y cache condicionada al exito; duplicado tardio/error de entrada aislado, fallo tecnico revierte lote |
+| REF-35/36 | DTO administrativos/perfil/login y payloads de altas; capturas previas al worker, owners/limpieza por instancia conservados |
+
+Gates con `PYTHONDONTWRITEBYTECODE=1`: `.venv/Scripts/python.exe -m pytest -q -m unit` **392 passed**; `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin` **320 passed**. Evidencia en [test_module4_clients.py](../tests/test_module4_clients.py) y [test_phase1_access.py](../tests/test_phase1_access.py). SQL real, Session.new/dirty efectiva, carreras, constraints, relectura tras rollback, migraciones y smoke siguen bloqueados/no verificados. Ningun PostgreSQL/DDL ni commit. Recuperacion: artefacto de codigo previo, preservar trabajo ajeno; sin migracion de datos/esquema.
+
+Gate documental del Lote 2: `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/check_docs_links.py`: **491 enlaces, 0 errores**. Esta comprobacion estructural no certifica SQL ni renderizado.
+
+### Incremento vertical de Modulo 4
+
+Esta seccion conserva el **estado historico del Lote 1**, que no cerraba Modulo 4 ni los REFs globales. Su tabla de pendientes previa al remate se mantiene en [Spec 04](specs/spec-04-clientes-personal-sucursales-y-seguridad.md#incremento-vertical-de-modulo-4-evidencia-y-pendientes); el cierre local posterior se registra arriba.
+
+- REF-22/23: limites/validacion de longitudes y politica aprobada de nuevas claves (12 caracteres, 72 bytes UTF-8, sin espacios exteriores); quedan validadores/canales de cambio y regresion explicita de login legacy.
+- REF-25: coordinadores y modelos migrados de clientes y parte de organizacion; quedan retornos absorbidos y alta/asociaciones de departamento/usuario/empleado por revisar.
+- REF-30/31 sobre REF-27: lector comun, reporte por fila y commit unico en ambas importaciones; quedan efectos de duplicado tardio, presentacion detallada y ensayo atomico PostgreSQL.
+- REF-35/36: DTO de clientes/personal, pagina capturada y siete controladores con owners por instancia/cierre al ocultar; adaptadores administrativos disponibles, otros consumidores/perfil pendientes.
+
+Evidencia: [137 pruebas focalizadas](../tests/test_module4_clients.py); `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m unit`: **339 passed**; `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`: **297 passed**. Sin SQL real/DDL, Alembic, despliegue ni commit. Los tests simulados no autorizan afirmar persistencia, concurrencia, recuperacion de datos ni cobertura total S-01 a S-17. Recuperacion de codigo: artefacto previo, sin revertir trabajo ajeno; no hay migracion que revertir. S-12/S-16 siguen siendo ausencia caracterizada, no nuevas capacidades.
+
 ### Principios
 
 1. Antes de cambiar un camino productivo, ejecutar su caracterizacion As-Is en entorno aislado. Para defectos conocidos, conservar fixture y prueba de regresion del resultado correcto; no convertir False silencioso o dato corrupto en el comportamiento deseado. Registrar cambio correctivo autorizado y delta respecto de la spec.
@@ -330,6 +356,7 @@ Rollback: volver solo a artefacto anterior del lote, sin migracion ni saneamient
 
 ### REF-22: limites administrativos, clientes y catalogos
 
+- **Proveedores (2026-11-11):** ubicacion UI30/BD30; contrato String de proveedor/representante contrastado con esquema, categoria proveedor1..150/descripcion obligatoria. Alta/edicion estrictas e importacion validan longitudes antes de mutar. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11); resto del REF pendiente.
 - **Actualizacion Ventas Lote 2 (2026-11-10):** pagos nombre1..100 (UI local30->100), promociones nombre1..120 y porcentaje finito0..100, editor folio100. Limites y n-1/n/n+1 probados sin truncado de servicio. No completa clientes/proveedores ni todos los campos promocionales.
 - **Estado de ejecucion, Lote 1 (2026-11-10):** solo cohorte P-06: categoria de producto limita captura a100 y valida nombre1..100/descripcion obligatoria antes de escribir en CategoriasModel. Tests99/100/101 y Qt del limite efectivo. REF-25 parcialmente migrada; resto de categorias, clientes y proveedores pendiente. REF-22 global no completada.
 - **Problema/evidencia:** C-06/C-08, S-03/S-05/S-06 y P-06: proveedor ubicacion UI50/BD30; clientes con QLineEdit default32767 frente a String finitos, tasas hasta99999999.99; categorias UI150 frente a100 para producto/cliente. Fuentes: [ProveedoresController.py](../app/Controller/ProveedoresController.py), [UI_CONTROL_CLIENTES.py](../app/View/UserInterfacePy/UI_CONTROL_CLIENTES.py), [CategoriasController.py](../app/Controller/CategoriasController.py).
@@ -340,6 +367,7 @@ Rollback: volver solo a artefacto anterior del lote, sin migracion ni saneamient
 
 ### REF-23: politica de password sin truncado ni cambio de hashes legacy
 
+- **Aclaracion Proveedores (2026-11-11):** los validadores solicitados de proveedores/representantes pertenecen a REF-22. REF-23 conserva su politica de passwords pendiente; no hay passwords de representantes ni cambios de hashes/login en esta cohorte.
 - **Problema/evidencia:** S-02/S-07/S-08: [RegistroInicialController.py](../app/Controller/RegistroInicialController.py) limita password10; [UsuarioModel.py](../app/Model/UsuarioModel.py) no tiene esa regla y bcrypt recibe bytes. Login strip y comparacion exacta forman parte del contrato actual.
 - **Cambio:** acordar y documentar politica separada para creacion/cambio, no para verificar claves antiguas: propuesta minimo12 caracteres y maximo72 bytes UTF-8 mientras se conserve bcrypt. Validar bytes antes de hashear, no truncar a72 ni solo maxLength de caracteres; input puede admitir hasta72 caracteres pero valida longitud en bytes y no debe cortar silenciosamente entrada pegada. Contratar uso de espacios de forma consistente en nueva creacion y login; no activar un strip distinto para cuentas existentes sin transicion.
 - **Dependencias/casos:** REF-16 y aprobacion de seguridad/negocio; S-02, S-07, S-08, S-14. No elevar minimo en login ni forzar cambio masivo de hashes por esta tarea. Si se elige otro algoritmo, especificarlo y versionar hashes en cambio independiente.
@@ -348,6 +376,7 @@ Rollback: volver solo a artefacto anterior del lote, sin migracion ni saneamient
 
 ### REF-24: escribir asociaciones persistentes y respetar sus precios
 
+- **Proveedores (2026-11-11):** escritor compartido existente conservado y confirmar=False en editor; lecturas DTO, precio finito positivo y desvinculacion con errores propagados opt-in. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11); persistencia/relectura PostgreSQL pendiente, sin DDL ni cambios de precio/stock del producto.
 - **Actualizacion Lote 3 (2026-11-10):** escritor compartido sincronizar_proveedores_producto utilizado por ProductosModel y ProveedoresModel. Producto reemplaza por diferencias; editor proveedor agrega pares sin quitar otros, deduplica IDs y conserva precio de pares existentes/nuevos0.0, stock y precio de producto. actualizar_productos_al_proveedor conserva wrapper legacy con confirmar=True; el unico llamador real del editor pasa confirmar=False y su coordinador posee commit/rollback. Producto faltante invalida la vinculacion completa antes de mutar; callback fallido no emite exito ni limpia seleccion. Pruebas con entidades transitorias/sesion simulada; REF-17/25 y relectura/rollback SQL reales siguen pendientes. El estado Lote 1 siguiente es historico.
 - **Estado de ejecucion, Lote 1 (2026-11-10):** incremento local de alta/edicion desde producto escribe ProductoProveedor por diferencias en la coleccion persistente; deduplica IDs, retiene precio existente, nuevos0.0 (politica actual), elimina solo pares ausentes. No merge de proveedores ni cambios a viewonly/PK/DDL. Sesion simulada y entidades ORM transitorias prueban objetos preparados, no persistencia efectiva. Dependencias: REF-09 disponible a nivel unit/Qt; REF-17 no iniciada y REF-25 parcial. NO completada: editor de proveedor/escritor compartido con sus adaptadores, relectura entre sesiones y rollback SQL pendientes. No se adelanta venta/caja para resolver esa dependencia.
 - **Problema/evidencia:** P-02/P-03/C-09, [ProductosModel.py](../app/Model/ProductosModel.py) asigna Productos.proveedores viewonly; [Proveedores_ProductosModel.py](../app/Model/Proveedores_ProductosModel.py) y ProveedoresModel.actualizar_productos_al_proveedor si escriben ProductoProveedor, con commits dispares.
@@ -359,6 +388,7 @@ Rollback: volver solo a artefacto anterior del lote, sin migracion ni saneamient
 
 ### REF-25: errores tipados y propietario explicito por operacion
 
+- **Proveedores (2026-11-11):** modo estricto opt-in conserva firmas/retornos legacy, propaga errores de proveedor/representante/precio/desvinculacion y deja commit/rollback en coordinadores migrados. Alta con representante comprueba ambos estados; commit de alta, baja de categoria y desvinculacion dentro de try. Importador estricto tiene un propietario de lote. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11); taxonomia global y rollback SQL real pendientes.
 - **Actualizacion Ventas Lote 2 (2026-11-10):** alta de pago propaga errores al coordinador opt-in, que cubre commit/rollback y devuelve codigo estable; wrapper legacy conservado. Promocion valida antes de ensure_schema y prepara respuesta tras flush antes de commit, sin reconsulta posterior; IntegrityError no presupone nombre duplicado. No completa taxonomia global ni prueba rollback SQL real.
 - **Estado de ejecucion, Lote 1 (2026-11-10):** incremento parcial P-02/P-03/P-06/P-08: alta del modelo propaga error de flush; coordinadores de alta modal/edicion/categoria cubren mutacion y commit con rollback; importacion principal revierte y propaga error al worker. Callbacks de categoria aceptan error str/dict incompleto sin anunciar exito. Se mantienen firmas/tuplas legacy; algunos dict agregan codigo, pero NO existe aun resultado tipado integral ni DTO de salida para todos los consumidores. REF-02 caracterizada solo en caminos tocados; integracion REF-17 pendiente. Consultas P-01, bajas y otros catalogos/modelos conservan deuda legacy. NO completada.
 - **Problema/evidencia:** P-01/P-02/P-06/S-03, ProductosModel.agregar_producto captura Exception y retorna None,False, CategoriasController.resultado_del_hilo supone mensaje incluso cuando falta y varios modelos confirman sin que el llamador lo sepa. Fuentes: [ProductosModel.py](../app/Model/ProductosModel.py), [CategoriasController.py](../app/Controller/CategoriasController.py), [ClientesFisicosAndMoralesModel.py](../app/Model/ClientesFisicosAndMoralesModel.py).
@@ -425,6 +455,7 @@ La unidad compartida es lectura, normalizacion, validacion, resolucion explicita
 
 ### REF-29: migrar importacion de proveedor al servicio comun
 
+- **Proveedores (2026-11-11):** 18 columnas/1 requerida conectadas a leer_con_reporte; preparacion ORM en ProveedoresModel, longitudes, invalidos/duplicados por fila, id ignorado y FK desconocida advertida/None. CSV/XLSX mixtos y flush/commit fallidos probados con dobles; codigo sin_cambios con cero altas. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11); SQL y unicidad concurrente pendientes.
 - **Problema/evidencia:** C-08: Control_proveedores.importar_proveedores_query en [ProveedoresController.py](../app/Controller/ProveedoresController.py) normaliza/deduplica/construye ORM dentro del controlador y puede informar exito con cero altas, sin errores por fila.
 - **Cambio:** adaptador de18 columnas validas/1 requerida con semantica de nombre lower para dedupe, RFC upper, FK desconocida a None y ausencia de representantes autocreados. Servicio aplica limites antes de SQL; id aceptado se informa ignorado. Mantener opcion de omitir duplicados, pero especificar que cero altas es resultado sin cambios, no alta realizada. Commit exterior una vez por lote aceptado segun politica aprobada.
 - **Dependencias/casos:** REF-22/REF-25/REF-27; C-08, regresion C-06/C-07.
@@ -468,6 +499,7 @@ La unidad compartida es lectura, normalizacion, validacion, resolucion explicita
 
 ### REF-34: coordinacion de compras fuera de dialogos
 
+- **Extension autorizada Proveedores (2026-11-11):** SQL del importador extraido a ProveedoresModel; listados/filtros de proveedor/editor usan modelos con DTO. Consultas en workers reciben snapshot sin QWidget; paginacion se aplica en callback GUI. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11). Compras C-01/C-02/C-04/C-05 NO implementadas por este lote; REF-34 global pendiente.
 - **Problema/evidencia:** C-01/C-04: Orden_compra.__createOrder_query en [ComprasController.py](../app/Controller/ComprasController.py) limpia tabla desde worker antes del commit; Compras.recibir_orden_compra_query coordina persistencia sobre objetos del UI.
 - **Cambio:** tomar snapshot de IDs/UPC/cantidades/precios/usuario/proveedor antes de lanzar worker; servicio resuelve referencias en su sesion y confirma orden o recepcion. Solo callback de exito confirmado limpia UI en hilo principal. Mantener FK por UPC y politica de costos sin actualizacion de C-04 hasta migracion/refuncionalizacion aprobada; no agregar recepcion parcial ni nuevo editor por extraer servicio.
 - **Dependencias/casos:** REF-07/REF-25/REF-36; C-01, C-02, C-04, C-05. En otro incremento corregir Signal(int) de CantidadProductosComprasController.aceptar y contrato de cantidad fraccionaria si se aprueba conservar3/4 decimales; no perder fraccion al cruzar senal.
@@ -484,6 +516,7 @@ La unidad compartida es lectura, normalizacion, validacion, resolucion explicita
 
 ### REF-36: frontera de hilos con snapshots y DTO
 
+- **Proveedores (2026-11-11):** owners por instancia y cierre_seguro=True en proveedor/categorias/editor/precio. Hide/close/error de lanzamiento cierran modal; callbacks de importacion cierran antes de cleanup. Consultas sobre snapshot de valores/DTO sin QWidget, paginacion GUI y adaptador opt-in ResultadoProductos con estado real. Dos QThreads reales/conexiones simuladas verifican sesiones distintas, callback GUI y cierre aislado. [Evidencia de cohorte](#cohorte-vertical-proveedores-2026-11-11); SQL real y REF-37 pendientes. Cerrar no cancela ni revierte SQL.
 - **Actualizacion Ventas Lote 2 (2026-11-10):** snapshots frozen de producto/cliente/pago/venta, detalles y sucursal fiscal; opt-in conserva salidas legacy. Historial y alta de pago capturan escalares/paginacion en GUI, usan funciones libres y owners por instancia con cierre seguro existente. Dos QThreads reales con conexiones simuladas prueban sesiones distintas, callback GUI y cierre aislado; cerrar suprime callback, no cancela ni revierte SQL. REF-37 y otros consumidores pendientes.
 - **Actualizacion Lote 3 (2026-11-10):** los 14 owners de ProductosController distinguen instancia y operacion y optan por cierre_seguro. Limpieza de worker activo conserva referencias hasta thread.finished y suprime callbacks; no quit/wait/terminate de consulta en curso. Nuevo trabajo con el mismo owner se rechaza mientras termina el anterior; otra instancia queda intacta. Pruebas de aislamiento y QThread real con conexion simulada/consulta bloqueada verifican limpieza diferida y salida de contexto. Cerrar ventana NO cancela ni revierte SQL: operacion puede confirmar sin callback. Otros dominios mantienen limpieza legacy; snapshots/DTO de restantes flujos Productos y REF-17/25/37 siguen pendientes.
 - **Estado, Lote 2 parcial autorizado (2026-11-10):** adaptador opt-in ResultadoProductos en [ProductoEntrada.py](../app/Model/ProductoEntrada.py); WorkerDB emite bool real solo para ese tipo, conservando dict/tuple legacy de otros modulos. Busqueda y preview se encolan sin metodo ligado a QWidget: filtros/offset/limite/UPCs temporales se capturan en GUI; busqueda devuelve DTO y preview estructuras simples. Firma directa legacy conserva fallback de self para consumidores no migrados. Worker real con conexion simulada verifica resultado True/False, callback GUI y fin unico; legacy dict exitoFalse sigue emitiendo True por compatibilidad. Pendientes: migrar resto de Productos, owner por instancia, cancelacion cooperativa/cierre seguro y sesiones/pool reales; REF-17/25/37 no satisfechas. NO cierre de cohorte ni cambio global del contrato de senales.
@@ -716,6 +749,52 @@ Contenido propuesto minimo (no instalado; revisar con el equipo antes de adoptar
 ```
 
 ## 9. Gates, recuperacion y cierre del plan
+
+### Lote 2 Cierre Local Modulo 3 2026-11-12
+
+Delta autorizado Compras/OrdenesDeCompra y Dashboard, REF-22/25/34/36; C-01/C-02/C-04/C-05/C-11 y clasificacion C-12 de REF-18 existente. [Contrato, deltas y evidencia](specs/spec-03-compras-proveedores-e-inventario.md#lote-2-cierre-local-modulo-3-2026-11-12). Cohorte local cerrada, no cierre global de los REFs ni certificacion SQL/multiusuario. Se conserva sin revertir el bloque vertical previo de Proveedores.
+
+| Modulo 3 / cohorte | Estado local | Gate pendiente |
+| --- | --- | --- |
+| Proveedores y submodulos / Lote1 | CRUD, validadores, importacion y DTO previos conservados | FK/rollback/relectura/concurrencia PostgreSQL |
+| Ordenes / REF-22, REF-25 | Limites de captura, validacion estricta antes de add, pago clasificado, Float/fraccion3; commit unico y ticket limpiado solo en GUI postcommit | Persistencia/FK/rollback en otra sesion, autorizacion integral de dominio |
+| Recepcion / REF-25, REF-34 | Prevalidacion integral, stock global/movimientos por PK y estado; coordinador commit/rollback, ID materializado precommit | Locks/dos conexiones de REF-40; no recepcion parcial ni costo ponderado |
+| Compras/tablas/selector / REF-34, REF-36 | Operaciones en modelo, snapshots/DTO para tabla/PDF, fecha por dia, paginacion GUI, owner por instancia y cierre seguro | SQL real, PDF/render, REF-17/37 y empaquetado |
+| Dashboard / REF-34, REF-36 | Consultas libres con worker, filtros/generaciones y cierre; reportes sin filas obsoletas | Coherencia entre agregados en SQL real, volumen y render Plotly |
+| Reportes C-11 | Registrado/estimado separados, mixtos advertidos, finitos y CSV estandar con BOM | Equivalencia de agregados SQL/Python en datos reales y calidad historica |
+| Esquema y capacidades ausentes | REF-39/40 sin DDL ni conexiones; C-03 conserva baja legacy y editor ausente | Numeric/UPC/locks/Alembic y anulacion con reverso requieren otro incremento |
+
+[test_purchases_dashboard.py](../tests/test_purchases_dashboard.py):58 pruebas nuevas (25 unit/33 Qt), escritas y ejecutadas antes del parche de cada comportamiento. Gates finales: `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m unit`:264 aprobadas; `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`:235 aprobadas. Total499, frente a441 del bloque anterior. Warning legacy SQLAlchemy declarative_base sin cambios. Editor sin errores en las cinco fuentes y pruebas del lote; git diff --check sin errores de whitespace (aviso CRLF en logfile preexistente ajeno, no modificado por el lote).
+
+Comando documental ejecutado: `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/check_docs_links.py`:477 enlaces comprobados,0 errores. Enlaces/AST no prueban comportamiento SQL ni render Mermaid.
+
+Lector de escaneo estricto evita absorber/imprimir errores SQL. CSV tabular migra de pandas a csv.DictWriter por fallo de importacion pandas/six reproducido en sandbox; mantiene BOM/sin indice/orden de columnas y API legacy _importar_pandas, sin cambios de dependencias. No se reescriben cabeceras, costos ni datos historicos.
+
+No se ejecutan PostgreSQL, DDL, Alembic, REF-39/40, hardware, impresora/PDF, render de graficas/diagramas ni empaquetado. Dobles y conexiones simuladas prueban coordinacion/callback/cierre, no durabilidad/FK/concurrencia. No habilitar multiusuario con esta evidencia. Wrappers legacy disponibles, no se afirma migracion global de todos los llamadores ni cumplimiento completo de REF-17/25/37.
+
+Recuperacion: retirar solo los hunks autorizados de Compras/Dashboard/cantidad, pruebas y notas del Lote2, tras revisar cambios ajenos; nunca revertir archivos documentales completos que contienen Proveedores. Sin DDL ni saneamiento que deshacer. Cerrar ventana suprime callbacks, no cancela ni revierte SQL activo y no autoriza repetir escritura.
+
+### Cohorte vertical Proveedores 2026-11-11
+
+Incremento autorizado C-06/C-07/C-08/C-09 y categorias proveedor C-12. Solo Proveedores y submodulos; sin modificar Compras, Dashboard, esquema, configuracion local ni datos. REF-23 conserva politica de password, no se renumera como validacion administrativa.
+
+| Cohorte | Estado local | Gate pendiente |
+| --- | --- | --- |
+| CRUD Proveedores / REF-22, REF-25 | Captura ubicacion30, contrato String, alta con representante y edicion/baja con rollback seguro | FK y rollback/relectura PostgreSQL |
+| Representantes / REF-22, REF-25 | Limites100/60/60/10/100/100, alta/edicion estrictas; baja por ID | Integridad SQL; no se inventa pantalla CRUD independiente ni se borran al desmarcarlos |
+| Categorias proveedor / REF-22, REF-25 | Nombre1..150, descripcion obligatoria, baja DTO resuelta por ID, commit protegido | Referencias desde proveedores en PostgreSQL |
+| Productos proveedor / REF-24, REF-25 | Escritor existente conservado, DTO/precio finito positivo/desvinculacion sin commit oculto en modo estricto | Pares/precios releidos en otra sesion SQL |
+| Importacion / REF-29, REF-27 | 18 columnas, reporte por fila, invalidos/duplicados omitidos, FK/id advertidos, un propietario de lote | Rollback integral y duplicados concurrentes SQL |
+| Consultas/hilos / REF-34, REF-36 | Consultas en modelos, snapshots sin QWidget, paginacion GUI, owners aislados y cierre de modal | Cierre durante SQL real, pooling/REF-37 y empaquetado |
+| REF-23 | Fuera de cohorte; validadores administrativos en REF-22 | Decision de politica de password original |
+
+Pruebas primero: [test_suppliers_vertical.py](../tests/test_suppliers_vertical.py), defectos reproducidos antes de corregir. Escritor REF-24 ya cubierto en [test_products_phase3.py](../tests/test_products_phase3.py). Entidades transitorias/dobles no prueban persistencia SQL.
+
+Comandos finales con PYTHONDONTWRITEBYTECODE=1: `.venv/Scripts/python.exe -m pytest -q -m unit`, `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin` y `.venv/Scripts/python.exe tests/check_docs_links.py`. Resultados en la spec. [Comprobador de enlaces](../tests/check_docs_links.py): rutas/anclas Markdown, excluye codigo/enlaces externos; no prueba render Mermaid ni semantica.
+
+Siguiente lote previsto al cierre de Proveedores: Compras C-01/C-02/C-04/C-05 y Dashboard C-11, ahora ejecutado localmente en Lote2 anterior. C-03 conserva edicion incompleta/baja sin reverso, sin autorizacion para inventar capacidades. REF-38/39 y REF-40/42 requieren decisiones/migracion/SQL aislado. REF-37 bloqueada por sus prerrequisitos; no se retira create_all.
+
+Recuperacion: revertir solo el diff de cohorte tras revisar cambios ajenos; wrappers legacy permanecen, sin DDL ni saneamiento que deshacer. No se ejecuto PostgreSQL, Alembic, instalador, impresora ni datos de produccion. Cerrar suprime callbacks, no cancela una transaccion ni garantiza rollback.
 
 | Momento | Evidencia minima para liberar |
 | --- | --- |

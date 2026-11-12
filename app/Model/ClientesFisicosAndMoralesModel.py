@@ -2,7 +2,7 @@ from .BaseDatosModel import Clientes_fisicos, Clientes_morales, Clientes, Repres
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, select
 from sqlalchemy.orm import joinedload
-from ..Controller.MensajesAlertasController import Mensaje
+from .AdministracionEntrada import validar_longitudes, snapshot_cliente
 
 class ClientesFisicosAndMorales:
     def __init__(self, session):
@@ -99,6 +99,7 @@ class ClientesFisicosAndMorales:
             return True
 
     def agregar_cliente_fisico(self, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
+        validar_longitudes(Clientes_fisicos, locals())
         try:
             foto = str(foto).strip() if foto else ""
             cliente_existente = (
@@ -153,10 +154,10 @@ class ClientesFisicosAndMorales:
                 self.session.flush()
                 return cliente, True
         except Exception as e:
-            print(f"mostrando el error: {e}")
-            return None, False
+            raise
 
     def agregar_cliente_moral(self,nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, tipo_cliente, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, razon_social, fecha_constitucion, web, sector, nif, representante_id=None):
+        validar_longitudes(Clientes_morales, dict(locals(), NIF=nif))
         try:
             cliente_existente = (self.session.query(Clientes_morales).filter(Clientes.nombre == nombre).filter(Clientes_morales.razon_social == razon_social).first())
             if cliente_existente:
@@ -169,9 +170,10 @@ class ClientesFisicosAndMorales:
                 self.session.flush()
                 return cliente, True
         except Exception as e:
-            return None, False
+            raise
 
     def agregar_representante_cliente_moral(self, nombre, telefono, correo, puesto):
+        validar_longitudes(Representantes_clientes_morales, locals())
 
         try:
             representante_existente = (self.session.query(Representantes_clientes_morales).filter(Representantes_clientes_morales.nombre == nombre, Representantes_clientes_morales.telefono == telefono).first())
@@ -183,9 +185,9 @@ class ClientesFisicosAndMorales:
                 self.session.flush()
                 return representante
         except Exception as e:
-            return None
+            raise
 
-    def mostrar_clientes_fisicos(self, cantidad_inicial=0, cantidad_final = 100):
+    def mostrar_clientes_fisicos(self, cantidad_inicial=0, cantidad_final = 100, snapshots=False):
         try:
             clientes = (
                 self.session.query(Clientes_fisicos)
@@ -196,11 +198,11 @@ class ClientesFisicosAndMorales:
                 .all()
             )
 
-            return clientes, True
+            return [snapshot_cliente(cliente) for cliente in clientes] if snapshots else clientes, True
         except Exception as e:
-            return [], False
+            raise
 
-    def mostrar_clientes_morales(self, cantidad_inicial=0, cantidad_final = 100):
+    def mostrar_clientes_morales(self, cantidad_inicial=0, cantidad_final = 100, snapshots=False):
         try:
             clientes = (
                 self.session.query(Clientes_morales)
@@ -211,10 +213,9 @@ class ClientesFisicosAndMorales:
                 .all()
             )
 
-            return clientes, True
+            return [snapshot_cliente(cliente) for cliente in clientes] if snapshots else clientes, True
         except Exception as e:
-            print(f"Error: {e}")
-            return [], False
+            raise
 
     def obtener_cliente_fisico_por_id(self, id):
         try:
@@ -228,7 +229,7 @@ class ClientesFisicosAndMorales:
             else:
                 return None
         except Exception as e:
-            return None
+            raise
 
     def obtener_cliente_moral_por_id(self, id):
         try:
@@ -242,9 +243,9 @@ class ClientesFisicosAndMorales:
             else:
                 return None
         except Exception as e:
-            return None
+            raise
 
-    def filtrar_clientes_fisicos_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
+    def filtrar_clientes_fisicos_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100, snapshots=False):
         try:
             clientes = (
                 self.session.query(Clientes_fisicos)
@@ -266,12 +267,11 @@ class ClientesFisicosAndMorales:
                 .all()
             )
         except Exception as e:
-            print(f"💥 Error en filtrar_clientes_fisicos_por_nombre: {e}")
-            return [], False
+            raise
 
-        return clientes, True
+        return [snapshot_cliente(cliente) for cliente in clientes] if snapshots else clientes, True
 
-    def filtrar_clientes_morales_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100):
+    def filtrar_clientes_morales_por_nombre(self, texto, cantidad_inicial = 0, cantidad_final = 100, snapshots=False):
         try:
             clientes = (
                 self.session.query(Clientes_morales)
@@ -294,21 +294,20 @@ class ClientesFisicosAndMorales:
                 .all()
             )
         except Exception as e:
-            print(f"💥 Error en filtrar_clientes_morales_por_nombre: {e}")
-            return [], False
+            raise
 
-        return clientes, True
+        return [snapshot_cliente(cliente) for cliente in clientes] if snapshots else clientes, True
 
     def actualizar_cliente_fisico(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, apellido_paterno, apellido_materno, curp, fecha_nacimiento, num_identificacion, ocupacion, ingresos, estado_civil, foto):
+        validar_longitudes(Clientes_fisicos, locals())
         try:
             foto = str(foto).strip() if foto else ""
-            clientes_fisicos_alias = aliased(Clientes_fisicos)
             if id:
                 # Consultar el cliente base y cliente físico
-                cliente_base, cliente_fisico = (self.session.query(Clientes, Clientes_fisicos)
-                                                .join(clientes_fisicos_alias, Clientes.id == clientes_fisicos_alias.id)
-                                                .filter(Clientes.id == id)
-                                                .first())
+                resultado = self.session.query(Clientes_fisicos).filter(Clientes_fisicos.id == id).first()
+                if resultado is None:
+                    return False
+                cliente_base = cliente_fisico = resultado
 
                 if cliente_base and cliente_fisico:
                     # Actualizar los campos del cliente base
@@ -352,33 +351,34 @@ class ClientesFisicosAndMorales:
                         if categoria:
                             cliente_base.categoria = categoria
                         else:
-                            Mensaje().mensaje_alerta(f"No se encontró categoría de cliente con ID: {categoria_cliente_id}")
+                            raise ValueError("No se encontro la categoria del cliente.")
 
                     if areas_de_negocios_id:
                         area = self.session.query(Areas_negocios).get(areas_de_negocios_id)
                         if area:
                             cliente_base.areas_de_negocios = area
                         else:
-                            Mensaje().mensaje_alerta(f'No se encontró área de negocio con ID: {areas_de_negocios_id}')
+                            raise ValueError("No se encontro el area de negocio del cliente.")
 
-                    # Confirmar cambios
-                    self.session.commit()
                     return True
                 else:
                     return False
         except Exception as e:
-            self.session.rollback()
-            return False
+            raise
 
     def actualizar_cliente_moral(self, id, nombre, correo, rfc, telefono, pais, estado, ciudad, avenidas, calles, codigo_postal, direccion_adicional, entidad_legalizada, categoria_cliente_id, credito, estado_credito, limite_credito, porcentaje_interes, fecha_ultimo_reporte, credito_disponible, credito_utilizado, aplica_descuento, porcentaje_descuento, comentarios, areas_de_negocios_id, razon_social, fecha_constitucion, web, sector, nif, nombre_representante, telefono_representante, correo_representante, puesto_representante):
+        validar_longitudes(Clientes_morales, dict(locals(), NIF=nif))
+        validar_longitudes(Representantes_clientes_morales, {
+            "nombre": nombre_representante, "telefono": telefono_representante,
+            "correo": correo_representante, "puesto": puesto_representante,
+        })
         try:
-            clientes_morales_alias = aliased(Clientes_morales)
             if id:
                 # Consultar el cliente base y cliente físico
-                cliente_base, cliente_moral = (self.session.query(Clientes, Clientes_morales)
-                                                .join(clientes_morales_alias, Clientes.id == clientes_morales_alias.id)
-                                                .filter(Clientes.id == id)
-                                                .first())
+                resultado = self.session.query(Clientes_morales).filter(Clientes_morales.id == id).first()
+                if resultado is None:
+                    return False
+                cliente_base = cliente_moral = resultado
 
                 if cliente_base and cliente_moral:
                     # Actualizar los campos del cliente base
@@ -418,14 +418,14 @@ class ClientesFisicosAndMorales:
                         if categoria:
                             cliente_base.categoria = categoria
                         else:
-                            Mensaje().mensaje_alerta(f"No se encontró categoría de cliente con ID: {categoria_cliente_id}")
+                            raise ValueError("No se encontro la categoria del cliente.")
 
                     if areas_de_negocios_id:
                         area = self.session.query(Areas_negocios).get(areas_de_negocios_id)
                         if area:
                             cliente_base.areas_de_negocios = area
                         else:
-                            Mensaje().mensaje_alerta(f'No se encontró área de negocio con ID: {areas_de_negocios_id}')
+                            raise ValueError("No se encontro el area de negocio del cliente.")
                     # Actualizar o agregar representante
                     if cliente_moral.representante:
                         # Actualizar el primer representante si existe
@@ -452,8 +452,7 @@ class ClientesFisicosAndMorales:
                 else:
                     return False
         except Exception as e:
-            self.session.rollback()
-            return False
+            raise
 
     def eliminar_cliente(self, id, modelo):
         try:
@@ -463,6 +462,6 @@ class ClientesFisicosAndMorales:
                 return True
             return False
         except Exception as e:
-            return False
+            raise
 
 

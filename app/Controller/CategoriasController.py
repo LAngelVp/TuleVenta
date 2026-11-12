@@ -1,5 +1,6 @@
 import sys
 import os
+from functools import partial
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
@@ -30,6 +31,14 @@ class CategoriasController(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
+    def hideEvent(self, event):
+        self.manejadorModal.cerrar_modal()
+        for atributo in ("id_hilo_agregar_categoria", "id_hilo_eliminar_categoria"):
+            identificador = getattr(self, atributo, None)
+            if identificador:
+                WorkerDB.cleanup_managed_worker(identificador)
+        super().hideEvent(event)
+
     def guardar(self):
         categoria = self.ui.txt_nombre.text().upper().strip()
         descripcion = self.ui.txtlargo_descripcion.toPlainText().upper().strip()
@@ -38,8 +47,8 @@ class CategoriasController(QWidget):
             return
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_categoria_thread")
-            self.id_hilo_agregar_categoria = WorkerDB.create_managed_worker(owner_id="agregar_categoria_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_categoria_thread")
+            self.id_hilo_agregar_categoria = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_categoria_thread", cierre_seguro=True)
             self.consultor_agregar_categoria = WorkerDB.get_managed_worker(self.id_hilo_agregar_categoria)
             if not self.consultor_agregar_categoria:
                 raise Exception("No se logro obtener el worker gestionado")
@@ -50,13 +59,16 @@ class CategoriasController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_agregar_categoria.ejecutar(
-                    funcion=self.agregar_categoria_query,
+                    funcion=partial(CategoriasController.agregar_categoria_query, None),
                     tipo_categoria = self.tipo_categoria,
                     nombre = categoria,
                     descripcion = descripcion
                     )
         except Exception as e:
-            pass
+            self.manejadorModal.cerrar_modal()
+            if getattr(self, "id_hilo_agregar_categoria", None):
+                WorkerDB.cleanup_managed_worker(self.id_hilo_agregar_categoria)
+            Mensaje().mensaje_alerta("No se pudo iniciar el registro de categoria")
 
     def agregar_categoria_query(self, session, tipo_categoria, nombre, descripcion):
         try:
@@ -87,8 +99,8 @@ class CategoriasController(QWidget):
     def eliminar(self, objeto):
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("eliminar_categoria_thread")
-            self.id_hilo_eliminar_categoria = WorkerDB.create_managed_worker(owner_id="eliminar_categoria_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_categoria_thread")
+            self.id_hilo_eliminar_categoria = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_categoria_thread", cierre_seguro=True)
             self.consultor_eliminar_categoria = WorkerDB.get_managed_worker(self.id_hilo_eliminar_categoria)
             if not self.consultor_eliminar_categoria:
                 raise Exception("No se logro obtener el worker gestionado")
@@ -99,30 +111,31 @@ class CategoriasController(QWidget):
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
             self.consultor_eliminar_categoria.ejecutar(
-                    funcion=self.eliminar_categoria_query,
+                    funcion=partial(CategoriasController.eliminar_categoria_query, None),
                     objeto = objeto
                     )
         except Exception as e:
+            self.manejadorModal.cerrar_modal()
             if hasattr(self, 'id_hilo_eliminar_categoria'):
                 WorkerDB.cleanup_managed_worker(self.id_hilo_eliminar_categoria)
             Mensaje().mensaje_alerta(f"Error al iniciar el proceso {str(e)}")
 
     def eliminar_categoria_query(self, session, objeto):
         try:
-            estado = CategoriasModel(session).eliminar(objeto)
+            estado = CategoriasModel(session).eliminar(objeto, estricto=getattr(objeto, "tipo", None) == "categoria_proveedor")
             if not estado:
                 session.rollback()
                 return {
                     "exito": estado,
                     "mensaje": f'No se logro eliminar la categoria {objeto.nombre}'
                 }
+            session.commit()
         except Exception as e:
             session.rollback()
             return {
                 "exito": False,
                 "mensaje": f'Ocurrio un problema en el proceso'
             }
-        session.commit()
         return {
             "exito": estado,
             "mensaje": f'La categoria {objeto.nombre} fue eliminada'
@@ -140,4 +153,5 @@ class CategoriasController(QWidget):
         self.close()
 
     def mostrar_error_hilo(self, objetoMensaje):
+        self.manejadorModal.cerrar_modal()
         Mensaje().mensaje_alerta("No se pudo completar la operacion de categoria")

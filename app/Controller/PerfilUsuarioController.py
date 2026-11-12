@@ -31,8 +31,16 @@ class Perfil(QWidget):
         self.ui.btn_btn_verdatos.setIcon(QIcon(":Icons/Bootstrap/eye-slash.svg"))
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
+        self.lista_hilos_perfil = []
 
         self.ui.btn_btn_verdatos.clicked.connect(self.comprobarIntegridad)
+
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_perfil:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_perfil.clear()
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)
 
     def _configurar_foto_perfil(self):
         self.ui.foto_empleadoperfil.setMinimumSize(QSize(220, 180))
@@ -73,7 +81,7 @@ class Perfil(QWidget):
         dialogo = PasswordDialog(self)
         if dialogo.exec() == QDialog.Accepted:
             contraseña = dialogo.password_input.text()
-            usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = self.usuario["nombre_usuario"], contraseña = contraseña)
+            usuario_existente, estatus_consulta = CredencialesModel().verificar_credenciales(usuario = self.usuario["nombre_usuario"], contraseña = contraseña, snapshots=True)
             if estatus_consulta:
                 self.obtenerDatosUsuario()
             else:
@@ -83,8 +91,9 @@ class Perfil(QWidget):
 
     def obtenerDatosUsuario(self):
         self.manejadorModal.mostrar_modal(self)
-        WorkerDB.cleanup_owner_workers("buscarDatosEmpleadoPerfil_thread")
-        self.id_hiloBuscarDatosEmpleadoPerfil = WorkerDB.create_managed_worker(owner_id="buscarDatosEmpleadoPerfil_thread")
+        WorkerDB.cleanup_owner_workers(f"{id(self)}_buscarDatosEmpleadoPerfil_thread")
+        self.id_hiloBuscarDatosEmpleadoPerfil = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscarDatosEmpleadoPerfil_thread", cierre_seguro=True)
+        self.lista_hilos_perfil.append(self.id_hiloBuscarDatosEmpleadoPerfil)
         self.consultorBuscarDatosEmpleadoPerfil = WorkerDB.get_managed_worker(self.id_hiloBuscarDatosEmpleadoPerfil)
         if not self.consultorBuscarDatosEmpleadoPerfil:
             raise Exception("No se logro realizar la busqueda del empleado")
@@ -103,7 +112,7 @@ class Perfil(QWidget):
 
     def buscarEmpleadoQuery(self, session, idUsuario):
         try:
-            datosGenerales, estado = UsuarioModel(session).obtenerDatosGeneralesUsuario(idUsuario=idUsuario)
+            datosGenerales, estado = UsuarioModel(session).obtenerDatosGeneralesUsuario(idUsuario=idUsuario, snapshots=True)
             if estado:
                 return {
                     "exito": estado,
@@ -123,6 +132,9 @@ class Perfil(QWidget):
 
     def llenarCampos(self, data):
         if data["exito"]:
+            puesto = data["data"].empleado.puesto
+            departamento = data["data"].empleado.departamento
+            sucursal = data["data"].empleado.sucursal
             self.ui.btn_btn_verdatos.setIcon(QIcon(":Icons/Bootstrap/eye-fill.svg"))
             self.estadoBotonVista = True
             cajas_verificacion = self.cajas_dias_laborales()
@@ -150,22 +162,30 @@ class Perfil(QWidget):
             self.ui.txt_numerointerior.setText(data["data"].empleado.num_interior)
             self.ui.txt_numeroexterior.setText(data["data"].empleado.num_exterior)
             self.ui.txtlargo_referenciadireccion.setPlainText(data["data"].empleado.direccion_adicional)
-            self.ui.txtlargo_descripcionpuesto.setPlainText(data["data"].empleado.puesto.descripcion_puesto)
+            self.ui.txtlargo_descripcionpuesto.setPlainText(puesto.descripcion_puesto if puesto else "")
             self.ui.txt_parentescoContactoEmergencia.setText(data["data"].empleado.parentesco_contacto)
             self.ui.txt_fechaNacimiento.setText((data["data"].empleado.fecha_nacimiento).isoformat())
 
-            self.ui.txt_sucursal.setText(data["data"].empleado.sucursal.nombre_sucursal)
-            self.ui.txt_departamento.setText(data["data"].empleado.departamento.nombre)
-            self.ui.txt_puesto.setText(data["data"].empleado.puesto.nombre)
-            self.ui.txtlargo_descripcionDepartamento.setPlainText(data["data"].empleado.departamento.descripcion)
-            self.ui.numerodecimal_salario.setValue(data["data"].empleado.puesto.salario)
-            self.ui.numerodecimal_horastrabajo.setValue(data["data"].empleado.puesto.horas_laborales)
+            self.ui.txt_sucursal.setText(sucursal.nombre_sucursal if sucursal else "")
+            self.ui.txt_departamento.setText(departamento.nombre if departamento else "")
+            self.ui.txt_puesto.setText(puesto.nombre if puesto else "")
+            self.ui.txtlargo_descripcionDepartamento.setPlainText(departamento.descripcion if departamento else "")
+            if puesto:
+                self.ui.numerodecimal_salario.setValue(puesto.salario)
+                self.ui.numerodecimal_horastrabajo.setValue(puesto.horas_laborales)
+            else:
+                self.ui.numerodecimal_salario.clear()
+                self.ui.numerodecimal_horastrabajo.clear()
 
 
             self.ui.txt_usuario.setText(data["data"].usuario)
             self.ui.txt_fechaContratacion.setText((data["data"].empleado.fecha_contratacion).isoformat())
-            self.ui.tiempo_horaentrada.setTime(QTime(data["data"].empleado.puesto.hora_entrada))
-            self.ui.tiempo_horasalida.setTime(QTime(data["data"].empleado.puesto.hora_salida))
+            if puesto:
+                self.ui.tiempo_horaentrada.setTime(QTime(puesto.hora_entrada))
+                self.ui.tiempo_horasalida.setTime(QTime(puesto.hora_salida))
+            else:
+                self.ui.tiempo_horaentrada.clear()
+                self.ui.tiempo_horasalida.clear()
 
             if data["data"].empleado.activo:
                 self.ui.contenedor_baja.show()
@@ -173,9 +193,8 @@ class Perfil(QWidget):
                 self.ui.etiqueta_baja.setText("ESTAS ACTIVO")
                 self.ui.fecha_baja.hide()
 
-            if data["data"].empleado.puesto.dias_laborales is not None:
-                for dia, checkbox in cajas_verificacion.items():
-                    checkbox.setChecked(FuncionesAuxiliaresController().quitar_acentos(dia) in data["data"].empleado.puesto.dias_laborales)
+            for dia, checkbox in cajas_verificacion.items():
+                checkbox.setChecked(bool(puesto and puesto.dias_laborales and FuncionesAuxiliaresController().quitar_acentos(dia) in puesto.dias_laborales))
 
             if data["data"].empleado.foto_empleado is not None and data["data"].empleado.foto_empleado != "":
                 try:

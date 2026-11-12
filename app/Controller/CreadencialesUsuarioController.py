@@ -3,13 +3,18 @@ import bcrypt
 import logging
 from ..Model.BaseDatosModel import Usuarios
 from ..Model.UsuarioModel import UsuarioModel
-from app.DataBase.conexionBD import *
+from ..Model.AdministracionEntrada import serializar_resultado
+
+
+def Conexion_base_datos(*args, **kwargs):
+    from app.DataBase.conexionBD import Conexion_base_datos as conexion
+    return conexion(*args, **kwargs)
 
 class CredencialesModel:
     def __init__(self):
         self.conexion = Conexion_base_datos()
         
-    def verificar_credenciales(self, usuario, contraseña):
+    def verificar_credenciales(self, usuario, contraseña, snapshots=False):
         try:
             with self.conexion as db:
                 session = db.abrir_sesion()
@@ -24,7 +29,7 @@ class CredencialesModel:
                     logging.getLogger(__name__).warning("Contexto de autenticacion no habilitado o incompleto.")
                     return None, False
                 if bcrypt.checkpw(contraseña.encode(), usuario_existe.contraseña):
-                    return usuario_existe, True
+                    return serializar_resultado(usuario_existe) if snapshots else usuario_existe, True
             return None, False
         except Exception as error:
             logging.getLogger(__name__).warning("No se pudo verificar autenticacion (%s).", type(error).__name__)

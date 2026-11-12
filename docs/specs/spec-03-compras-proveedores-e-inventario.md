@@ -265,6 +265,60 @@ MetodosPagoController.agregar_metodo_pago normaliza upper/strip no vacio; vista 
 
 ## 14. Trazabilidad de riesgos y validacion
 
+### Lote 2 Cierre Local Modulo 3 2026-11-12
+
+Incremento autorizado C-01/C-02/C-04/C-05/C-11 y seleccion de pago C-12, REF-22/25/34/36. Los apartados As-Is anteriores conservan evidencia historica; los deltas siguientes prevalecen para los caminos activos migrados. Dependencias locales: REF-07 disponible, REF-25 parcial y soporte opt-in REF-36 existente; REF-17/37 y gates PostgreSQL no se dan por completados.
+
+- C-01/REF-22: UPC20, nombre de producto60 y proveedor150 en buscadores; empleado100 e ID numerico de compra hasta BigInteger positivo en filtros. Captura Qt probada n-1/n/n+1 sin ampliar columnas. El ticket rechaza cantidades vacias/no numericas/no finitas/no positivas, UPC vacio/excesivo/duplicado, precios negativos/no finitos, subtotales incoherentes y total incoherente antes de add en modo estricto. Precio cero se conserva, sin redondeo monetario nuevo; Float permanece. Metodo/empleado/proveedor obligatorios; la integridad de FK exige SQL real.
+- C-01/C-12: clasificar_forma_pago existente sustituye igualdad exacta con Credito. CREDITO/Crédito muestran plazo; tarjeta de credito no es financiamiento. Desconocidos impiden formar la orden; el slot controla ValueError. Plazo entero no negativo; pagos no crediticios reinician plazo0. Vencimiento de30 dias por periodo y vencimiento de hoy con plazo0 se conservan; no se crean abonos ni egresos de caja.
+- C-01/REF-25/34: consulta_compras coordina la creacion, modelo add/flush sin commit propio, confirmacion unica en coordinacion de modelo. Error tecnico se propaga por propagar=True al coordinador, rollback y mensaje seguro. Retorno de escritura contiene ID escalar capturado antes de commit, no entidad expirada. La limpieza de tabla/conjuntos ocurre exclusivamente en callback GUI exitoso postcommit; fallo conserva ticket. Wrappers/firmas legacy quedan disponibles, no se declara migracion de todos sus llamadores.
+- C-04/REF-25: todas las lineas/productos/cantidades y existencias finitas se validan antes de mutar. Recepcion completa stock global y movimientos por PK de producto/usuario, con detalle por UPC; fecha y estado COMPLETADA conservados. El coordinador confirma o revierte la unidad, sin tocar costos/precio/caja. Segundo intento serial se rechaza. No se agregan locks ni recepcion parcial y no se certifica atomicidad/concurrencia PostgreSQL con dobles.
+- C-01: el formulario importado realmente usa QSpinBox, no captura decimal. Se sustituye localmente en controlador por QDoubleSpinBox con3 decimales, minimo0.001 y maximo anterior; Signal(float) conserva0.125. No se regeneran vistas ni se cambian escalas SQL. Este es delta deliberado, no prueba de precision persistida.
+- C-02/C-05/REF-34: cargas activas llaman consulta_compras con snapshots capturados en GUI; SQL y transacciones quedan en OrdenesDeCompraModel. ordenes_dto materializa cabecera/proveedor/empleado/sucursal/departamento/puesto/pago/detalles/producto/unidad/presentacion para tablas y contrato PDF. Asociaciones reutilizan DTO hashables existentes. Escaneo estricto distingue error SQL de no encontrado, sin imprimir detalles tecnicos. Filtro de fecha ahora cubre todo el dia, delta autorizado frente a igualdad a medianoche; orden estable con desempate ID. Vacias son consultas exitosas, no errores SQL.
+- REF-36: todas las cargas activas de compras/orden/selector usan funciones libres, owners por instancia/operacion y cierre_seguro=True. Offset cambia en callback GUI, no en query; tablas se enrutan por estado original aunque cambie la pestaña. Hide/close/error de lanzamiento cierran modal antes de terminar limpieza. Cierre suprime callbacks, no mata QThread ni cancela/revierte SQL en curso. Callbacks y sesiones distintas verificados con dos QThreads reales y conexiones simuladas.
+- C-11/REF-34/36: dashboard usa consultar_dashboard con filtros escalares, sesion del worker y payload simple; no hay SQL directo en QWidget. Se mantienen rango inclusivo/intercambio de extremos, fecha coalesce de compra, TODOS incluyendo canceladas, top/stock actual y prioridad de importe registrado/estimado. No es una nueva extraccion de SQL que ya residia en modelo. Generaciones por seccion descartan respuestas antiguas; hide/close limpian workers; filas exportables se vacian al solicitar recarga/fallar, sin exportar datos de filtros anteriores. No se prueba pool real ni volumen de produccion.
+- C-11: importes no finitos rechazan reporte/exportacion. usa_estimaciones identifica tambien cohortes mixtas; resumen muestra monto registrado y estimado separados. Estimado con costo actual no es historico confirmado, no modifica cabecera/costos. CSV usa csv.DictWriter estandar, columnas en orden de primera aparicion, sin indice y UTF-8 con BOM; evita el fallo del importador pandas/six observado en test. Cancelar no escribe; CSV real verificado en directorio aislado. _importar_pandas queda como API legacy, no se cambia requirements ni empaquetado.
+
+[Pruebas del lote](../../tests/test_purchases_dashboard.py):58 pruebas,25 unit y33 Qt. Pruebas primero con fallos reproducidos de limpieza precommit, no finitos, fraccion truncada, pago CREDITO, hide/lanzamiento, owners/paginacion, errores SQL absorbidos y reporte mixto. Matriz de12 lanzamientos, snapshot sin ORM, limites Qt, rollback/commit simulado, recepcion fraccionaria serial, filtros compilados PostgreSQL, CSV aislado, dos QThreads de compras y QThread de dashboard con cierre durante trabajo. Compilar filtros no demuestra ejecucion SQL; conexiones simuladas no prueban locks/FK/rollback real.
+
+Gates finales (2026-11-12), todos con `PYTHONDONTWRITEBYTECODE=1`:
+
+| Comando | Resultado |
+| --- | --- |
+| `.venv/Scripts/python.exe -m pytest -q -m unit` | 264 aprobadas |
+| `.venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin` | 235 aprobadas |
+| `.venv/Scripts/python.exe tests/check_docs_links.py` | 477 enlaces comprobados, 0 errores |
+
+Diagnosticos del editor sin errores en fuentes/tests tocados. Warning legacy declarative_base permanece. Cierre local499 pruebas, no certificacion de instalacion ni cierre global de REF-22/25/34/36. No se ejecutan PostgreSQL, DDL/REF-39/40, Alembic, datos reales, impresora, PDF real, render Plotly/Mermaid ni empaquetado.
+
+| Cohorte del Modulo 3 | Cierre local | Pendiente |
+| --- | --- | --- |
+| Proveedores/representantes/categorias/importacion/asociaciones | Lote vertical anterior conservado | FK, relectura, rollback SQL y duplicados concurrentes |
+| Orden/ticket y pago C-01/C-12 | Limites, validacion estricta, fraccion3, ID y limpieza GUI postcommit | Persistencia de Float/FK y autorizacion de dominio global |
+| Recepcion C-04/C-05 | Prevalidacion, stock/movimientos/estado y commit/rollback coordinados | Dos conexiones PostgreSQL, exactamente una recepcion y conflictos de stock |
+| Tablas/selector C-02 y REF-34/36 | Snapshots/DTO, filtros por dia, paginacion GUI y cierre seguro | PDF real, SQL real, REF-17/37 y empaquetado |
+| Dashboard C-11 | Workers, rango/estados, registrado/estimado separado y CSV sin datos obsoletos | Agregados SQL, consistencia entre consultas, volumen y render graficas |
+| C-03 y evolucion de esquema | Sin nuevas capacidades; adaptador de baja conserva politica legacy | Edicion, anulacion con reverso, Numeric, UPC estable y REF-39/40 |
+
+Recuperacion: retirar solo los hunks del Lote2 y sus pruebas/notas despues de revisar el worktree; preservar el diff previo de Proveedores. No hay DDL ni datos que revertir. [Cierre y gates del plan](../04-plan-de-refactorizacion.md#lote-2-cierre-local-modulo-3-2026-11-12).
+
+### Cohorte vertical Proveedores 2026-11-11
+
+Delta autorizado C-06/C-07/C-08/C-09 y categorias proveedor C-12; los apartados As-Is anteriores son evidencia historica, no cierre de gates SQL.
+
+- C-06/C-07/REF-22: pais/estado/ciudad UI50->30; String de proveedor/representante validados contra ORM en modo estricto, sin ampliar columnas. Categoria proveedor nombre1..150/descripcion obligatoria. Representante marcado/incompleto impide alta/edicion; desmarcar conserva desvinculacion legacy, no borra representante compartido.
+- REF-25: coordinadores migrados poseen commit/rollback. Alta con representante comprueba ambos estados y no confirma representante solo cuando falla proveedor. Alta/edicion/baja/precio/desvinculacion usan propagacion opt-in y firmas legacy. Baja de representante usa session.get de Representantes_proveedores; no se agrega pantalla ausente. Baja de categoria resuelve DTO por ID en sesion de escritura.
+- C-08/REF-29: leer_con_reporte acepta las mismas18 columnas/exige nombre. ID ignorado advertido; nombre lower/RFC upper deduplican BD/lote. Campos ausentes conservan cadena vacia legacy. Nombre vacio o String excesivo omite/reporta fila; FK desconocida mantiene None advertido, sin crear representante/categoria. Invalidos/duplicados no abortan otras filas; SQL/commit fallido revierte lote, exitoFalse/agregados0/diagnostico seguro. Cero altas produce sin_cambios sin commit. Reporte conserva origen CSV/XLSX y se presenta en callback.
+- C-09/REF-24: escritor compartido existente conservado con confirmar=False; precio de pares existentes y stock/precio del producto no cambian al vincular. Precio por API migrada finito/>0. Listados/filtros devuelven DTO de asociacion/producto/presentacion/unidad dentro de sesion, no entidades lazy.
+- REF-34/REF-36: SQL de importacion fuera del QWidget; lecturas proveedor/categoria/editor en modelos. Workers consultan sobre snapshot local de valores/DTO; paginacion en callback GUI. Adaptador opt-in ResultadoProductos conserva contrato directo legacy/emite estado real. Owners por instancia/operacion con cierre_seguro=True en proveedores/editor/precio/categorias. Hide/close/errores de lanzamiento y callbacks de importacion cierran modal antes de cleanup; limpieza no mata hilo activo. Cerrar no cancela SQL ni autoriza repetir escritura.
+- REF-23 conserva politica de password pendiente: no hay password de representante; validadores en REF-22, sin cambios de hashes/login.
+
+[Pruebas de cohorte](../../tests/test_suppliers_vertical.py): String n-1/n/n+1, categoria149/150/151, alta rechazada/mutacion/commit, edicion/baja, baja por ID, precio0/negativo/NaN/inf, snapshots sin ORM/hashables, CSV/XLSX mixtos, flush/commit, modal real y dos QThreads reales con conexiones simuladas, sesiones distintas/callback GUI/cierre independiente. Escritor compartido en [test_products_phase3.py](../../tests/test_products_phase3.py). Cohorte43 pruebas locales, sin PostgreSQL.
+
+Gates finales ejecutados (2026-11-11): `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m unit`:239 aprobadas; `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -m pytest -q -m qt -p pytestqt.plugin`:202 aprobadas; `PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/check_docs_links.py`:473 enlaces locales/anclas,0 errores. Diagnosticos del editor sin errores en fuentes/tests tocados y git diff --check sin errores de whitespace. Warning legacy declarative_base de SQLAlchemy, sin modificarlo. Estas verificaciones no prueban restricciones SQL, concurrencia, render Mermaid ni empaquetado.
+
+Pendiente al cierre de Proveedores: persistencia/relectura/FK/rollback SQL real/concurrencia (PostgreSQL aislado fuera de lote), REF-37/empaquetado. Compras/Dashboard estaban sin cambios en ese lote; su incremento posterior se registra en Lote2 anterior. C-03 incompleto, Numeric, migracion UPC y locks no se implementan por semejanza. [Estado y recuperacion](../04-plan-de-refactorizacion.md#cohorte-vertical-proveedores-2026-11-11).
+
 | Riesgo | Casos |
 | --- | --- |
 | FK de compra por UPC, no PK; costo no actualizado al recibir | C-01, C-04, C-05 |

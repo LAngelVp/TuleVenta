@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from .UsuarioModel import UsuarioModel
 from .BaseDatosModel import Empleados, Departamentos, Puestos, Sucursales, Usuarios
 from sqlalchemy.orm import joinedload
+from .AdministracionEntrada import validar_longitudes, snapshot_empleado
 
 class EmpleadosModel:
     def __init__(self, session):
@@ -15,6 +16,7 @@ class EmpleadosModel:
                          contacto_emergencia, parentesco_contacto, calles, avenidas, colonia,
                          num_interior, num_exterior, direccion_adicional, activo, foto,
                          puesto_id, usuario_id, departamento_id, sucursal_id):
+        validar_longitudes(Empleados, locals())
         empleado_existente = self.session.query(Empleados).filter((Empleados.curp == curp) | (Empleados.rfc == rfc)).first()
         if empleado_existente is not None:
             return None, False
@@ -60,7 +62,7 @@ class EmpleadosModel:
         self.session.flush()
         return nuevo_empleado, True
 
-    def obtener_empleados_detallados(self, offset=0, limit=100):
+    def obtener_empleados_detallados(self, offset=0, limit=100, snapshots=False):
         try:
             empleados = (
                 self.session.query(Empleados).options(
@@ -78,11 +80,11 @@ class EmpleadosModel:
                 .all()
             )
             if empleados:
-                return empleados, True
+                return [snapshot_empleado(empleado) for empleado in empleados] if snapshots else empleados, True
             else:
                 return [], False
         except Exception as e:
-            return [], False
+            raise
 
     def eliminar_empleado(self, id):
         empleado = self.session.query(Empleados).filter(Empleados.id == id).one_or_none()
@@ -91,7 +93,7 @@ class EmpleadosModel:
             return True
         return False
 
-    def filtrar_empleados(self, id=None, nombre=None, tipo_filtro_nombre=None, offset=0, limit=100):
+    def filtrar_empleados(self, id=None, nombre=None, tipo_filtro_nombre=None, offset=0, limit=100, snapshots=False):
         # Base de la consulta
         consulta = self.session.query(Empleados).options(
             joinedload(Empleados.puesto),
@@ -126,7 +128,7 @@ class EmpleadosModel:
         )
 
         if empleados:
-            return empleados, True
+            return [snapshot_empleado(empleado) for empleado in empleados] if snapshots else empleados, True
         return [], False
 
     def obtener_empleado_por_id(self, id):
@@ -136,6 +138,8 @@ class EmpleadosModel:
                 return empleado, True
             else:
                 return None, False
+
+        return None, False
 
     def baja_empleado(self, id_empleado, fecha_baja):
         try:
@@ -149,19 +153,18 @@ class EmpleadosModel:
             return None, False
 
         except Exception as e:
-            self.session.rollback()
-            print(f"Error en baja_empleado: {e}")
-            return None, False
+            raise
 
     def alta_empleado(self, id_empleado, fecha_alta):
         if id_empleado is None:
             return None, False
         empleado = self.session.get(Empleados, id_empleado)
-        if empleado:
-            empleado.activo = True
-            empleado.fecha_contratacion = fecha_alta
-            empleado.fecha_despido = None
-            return empleado, True
+        if empleado is None:
+            return None, False
+        empleado.activo = True
+        empleado.fecha_contratacion = fecha_alta
+        empleado.fecha_despido = None
+        return empleado, True
 
     def actualizar_empleado(self,id_empleado, nombre, apellido_paterno, apellido_materno, fecha_nacimiento,
                         estado_civil, genero, curp, rfc, nivel_academico, carrera, correo_electronico,
@@ -170,6 +173,9 @@ class EmpleadosModel:
                         contacto_emergencia, parentesco_contacto, calles, avenidas, colonia,
                         num_interior, num_exterior, direccion_adicional, foto,
                         puesto_id, departamento_id, sucursal_id):
+        validar_longitudes(Empleados, locals())
+        if id_empleado is None:
+            return None, False
         if id_empleado is not None:
             empleado = self.session.query(Empleados).filter(Empleados.id == id_empleado).first()
             if empleado is None:
@@ -211,19 +217,19 @@ class EmpleadosModel:
 
             return empleado, True
         except Exception as e:
-            self.session.rollback()
-            return None, False
+            raise
 
     def eliminar_credenciales(self, empleado):
-        if not empleado or not empleado.usuario:
+        if not empleado:
             return False
-        try:
-            UsuarioModel(self.session).eliminar(empleado.usuario)
-            return True
-        except:
+        persistido = self.session.get(Empleados, empleado.id)
+        if persistido is None or persistido.usuario is None:
             return False
+        usuario = persistido.usuario
+        persistido.usuario = None
+        return UsuarioModel(self.session).eliminar(usuario)
 
-    def obtener_empleado_detallado_porId(self, id_empleado):
+    def obtener_empleado_detallado_porId(self, id_empleado, snapshots=False):
         try:
             empleado = (
                 self.session.query(Empleados).options(
@@ -239,10 +245,9 @@ class EmpleadosModel:
                 .first()
             )
             if empleado:
-                return empleado, True
+                return snapshot_empleado(empleado) if snapshots else empleado, True
             else:
                 return None, False
         except Exception as e:
-            self.session.rollback()
-            return None, False
+            raise
 

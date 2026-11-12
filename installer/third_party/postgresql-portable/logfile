@@ -102,3 +102,35 @@
 2026-11-10 16:54:39.518 CST [31064] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.113 s, sync=0.003 s, total=0.131 s; sync files=1, longest=0.003 s, average=0.003 s; distance=5 kB, estimate=18 kB; lsn=0/1EAE8D0, redo lsn=0/1EAE878
 2026-11-10 17:09:39.544 CST [31064] LOG:  checkpoint starting: time
 2026-11-10 17:09:46.966 CST [31064] LOG:  checkpoint complete: wrote 67 buffers (0.4%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=7.389 s, sync=0.017 s, total=7.423 s; sync files=40, longest=0.002 s, average=0.001 s; distance=314 kB, estimate=314 kB; lsn=0/1EFD420, redo lsn=0/1EFD3C8
+2026-11-11 09:32:36.913 CST [32796] LOG:  background worker "logical replication launcher" (PID 16344) was terminated by exception 0xC000013A
+2026-11-11 09:32:36.913 CST [32796] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-11-11 09:32:36.914 CST [32796] LOG:  terminating any other active server processes
+2026-11-11 09:32:36.953 CST [32796] LOG:  all server processes terminated; reinitializing
+2026-11-11 23:29:21.298 CST [30776] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-11-11 23:29:21.306 CST [30776] LOG:  listening on IPv6 address "::1", port 5432
+2026-11-11 23:29:21.306 CST [30776] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-11-11 23:29:21.514 CST [5180] LOG:  database system was interrupted; last known up at 2026-11-10 17:09:46 CST
+2026-11-11 23:29:25.324 CST [5180] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-11-11 23:29:25.329 CST [5180] LOG:  redo starts at 0/1EFD3C8
+2026-11-11 23:29:25.329 CST [5180] LOG:  invalid record length at 0/1EFD4D0: expected at least 24, got 0
+2026-11-11 23:29:25.329 CST [5180] LOG:  redo done at 0/1EFD498 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-11-11 23:29:25.350 CST [24840] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-11-11 23:29:25.372 CST [24840] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.009 s, sync=0.003 s, total=0.033 s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=0 kB; lsn=0/1EFD4D0, redo lsn=0/1EFD4D0
+2026-11-11 23:29:25.390 CST [30776] LOG:  database system is ready to accept connections
+2026-11-11 23:32:21.652 CST [30776] LOG:  received fast shutdown request
+2026-11-11 23:32:21.677 CST [30776] LOG:  aborting any active transactions
+2026-11-11 23:32:21.685 CST [30776] LOG:  background worker "logical replication launcher" (PID 3596) exited with exit code 1
+2026-11-11 23:32:21.688 CST [24840] LOG:  shutting down
+2026-11-11 23:32:21.689 CST [24840] LOG:  checkpoint starting: shutdown immediate
+2026-11-11 23:32:21.704 CST [24840] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.017 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB; lsn=0/1EFD580, redo lsn=0/1EFD580
+2026-11-11 23:32:21.727 CST [30776] LOG:  database system is shut down
+2026-11-11 23:32:30.737 CST [11020] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-11-11 23:32:30.740 CST [11020] LOG:  listening on IPv4 address "127.0.0.1", port 58432
+2026-11-11 23:32:30.895 CST [25248] LOG:  database system was shut down at 2026-11-11 23:32:21 CST
+2026-11-11 23:32:30.931 CST [11020] LOG:  database system is ready to accept connections
+2026-11-11 23:37:30.872 CST [11652] LOG:  checkpoint starting: time
+2026-11-11 23:37:31.503 CST [11652] LOG:  checkpoint complete: wrote 5 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.554 s, sync=0.031 s, total=0.632 s; sync files=7, longest=0.023 s, average=0.005 s; distance=1 kB, estimate=1 kB; lsn=0/1EFDC10, redo lsn=0/1EFDBB8
+2026-11-12 00:27:30.579 CST [11652] LOG:  checkpoint starting: time
+2026-11-12 00:27:31.942 CST [11652] LOG:  checkpoint complete: wrote 12 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.310 s, sync=0.031 s, total=1.364 s; sync files=7, longest=0.025 s, average=0.005 s; distance=75 kB, estimate=75 kB; lsn=0/1F10878, redo lsn=0/1F10820
+2026-11-12 00:32:30.958 CST [11652] LOG:  checkpoint starting: time
+2026-11-12 00:32:31.565 CST [11652] LOG:  checkpoint complete: wrote 5 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.553 s, sync=0.034 s, total=0.608 s; sync files=5, longest=0.030 s, average=0.007 s; distance=30 kB, estimate=70 kB; lsn=0/1F18350, redo lsn=0/1F182F8

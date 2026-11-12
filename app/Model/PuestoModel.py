@@ -3,12 +3,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .BaseDatosModel import Puestos, Empleados
 from sqlalchemy.orm import joinedload
+from .AdministracionEntrada import snapshot_puesto, validar_longitudes
 
 class PuestoModel:
     def __init__(self,session):
         self.session = session
         
     def crear_puesto(self, nombre,salario,horas_laborales,dias_laborales,descripcion_puesto, hora_entrada, hora_salida, departamento_id):
+            validar_longitudes(Puestos, locals())
             puesto = self.session.query(Puestos).filter_by(nombre =  nombre).first()
             if  puesto:
                 return puesto, False
@@ -20,6 +22,7 @@ class PuestoModel:
                 return nuevo_puesto, True
 
     def actualizar(self, id_elemento, nombre,salario,horas_laborales,dias_laborales,descripcion_puesto, hora_entrada, hora_salida, departamento_id):
+        validar_longitudes(Puestos, locals())
         puesto = self.session.get(Puestos, id_elemento)
         if puesto is not None:
             puesto.nombre = nombre
@@ -34,24 +37,24 @@ class PuestoModel:
             return puesto, True
         return None, False
     
-    def filtrar_por_nombre(self, txt_nombre):
+    def filtrar_por_nombre(self, txt_nombre, snapshots=False):
         puesto = self.session.query(Puestos).options(
             joinedload(Puestos.departamento),
             ).filter(Puestos.nombre.ilike(f"%{txt_nombre}%")).all()
         if puesto:
-            return puesto, True
+            return [snapshot_puesto(elemento) for elemento in puesto] if snapshots else puesto, True
         return [], False
     
-    def obtener_todos(self):
+    def obtener_todos(self, snapshots=False):
         try:
             puestos = self.session.query(Puestos).options(
                 joinedload(Puestos.departamento)).all()
             if puestos:
-                return puestos, True
+                return [snapshot_puesto(puesto) for puesto in puestos] if snapshots else puestos, True
             else:
                 return [], False
         except Exception as e:
-            return [], False
+            raise
     
     def obtener_puesto_por_id(self, id_elemento):
         try:
@@ -61,7 +64,7 @@ class PuestoModel:
             else:
                 return None, False
         except Exception as e:
-            return None, False
+            raise
 
     def eliminar_puesto(self, id):
         try:
@@ -74,4 +77,4 @@ class PuestoModel:
             if resultado > 0:
                 return True
         except Exception as e:
-            return  False
+            raise

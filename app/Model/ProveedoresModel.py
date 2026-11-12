@@ -2,11 +2,111 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import select, func
 from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, ProductoProveedor
 import logging
+from collections import namedtuple
 from .Proveedores_ProductosModel import sincronizar_proveedores_producto
+
+ProveedorListadoDTO = namedtuple("ProveedorListadoDTO", [columna.name for columna in Proveedores.__table__.columns] + ["categoria", "representante"])
+RepresentanteListadoDTO = namedtuple("RepresentanteListadoDTO", [columna.name for columna in Representantes_proveedores.__table__.columns])
+CategoriaProveedorDTO = namedtuple("CategoriaProveedorDTO", "id nombre descripcion tipo")
+
+
+def proveedor_snapshot(proveedor):
+    categoria = proveedor.categoria
+    representante = proveedor.representante
+    return ProveedorListadoDTO(
+        **{columna.name: getattr(proveedor, columna.name) for columna in Proveedores.__table__.columns},
+        categoria=CategoriaProveedorDTO(categoria.id, categoria.nombre, categoria.descripcion, "categoria_proveedor") if categoria else None,
+        representante=RepresentanteListadoDTO(**{columna.name: getattr(representante, columna.name)
+                                                for columna in Representantes_proveedores.__table__.columns}) if representante else None
+    )
+
+def validar_textos_proveedor(entidad, valores):
+    for columna in entidad.__table__.columns:
+        if columna.name not in valores:
+            continue
+        limite = getattr(columna.type, "length", None)
+        if limite:
+            valor = valores[columna.name]
+            if not isinstance(valor, str) or len(valor) > limite:
+                raise ValueError(f"{columna.name}: maximo {limite} caracteres")
 
 class ProveedoresModel:
     def __init__(self, session):
         self.session = session
+
+    def listar_dto(self, offset=0, limit=100, texto=None):
+        consulta = self.session.query(Proveedores).options(joinedload(Proveedores.categoria), joinedload(Proveedores.representante))
+        if texto is not None:
+            consulta = consulta.filter(Proveedores.nombre.ilike(f"%{texto}%"))
+        proveedores = consulta.order_by(Proveedores.nombre.asc()).offset(offset).limit(limit).all()
+        return [proveedor_snapshot(proveedor) for proveedor in proveedores], bool(proveedores)
+
+    def categorias_dto(self):
+        categorias = self.session.query(Categorias_proveedores).all()
+        return [CategoriaProveedorDTO(categoria.id, categoria.nombre, categoria.descripcion, "categoria_proveedor")
+                for categoria in categorias], bool(categorias)
+
+    def importar_con_reporte(self, reporte, estricto=False):
+        resultado = {"exito": False, "agregados": 0, "duplicados": 0,
+                     "invalidos": 0, "proveedores_duplicados": [], "reporte": reporte}
+        if reporte["errores"]:
+            return resultado
+        try:
+            categorias = {fila[0] for fila in self.session.query(Categorias_proveedores.id).all()}
+            representantes = {fila[0] for fila in self.session.query(Representantes_proveedores.id).all()}
+            nombres = {str(fila[0]).strip().lower() for fila in self.session.query(Proveedores.nombre).all() if fila[0]}
+            rfcs = {str(fila[0]).strip().upper() for fila in self.session.query(Proveedores.rfc).all() if fila[0]}
+            campos = [columna.name for columna in Proveedores.__table__.columns
+                      if columna.name not in ("id", "categoria_id", "representante_id")]
+            for origen in reporte["filas"]:
+                fila = origen["valores"]
+                if str(fila.get("id", "")).strip():
+                    reporte["advertencias"].append({"fila": origen["fila"], "campo": "id",
+                                                    "codigo": "id_ignorado", "mensaje": "El ID del archivo no se utiliza"})
+                datos = {campo: str(fila.get(campo, "")).strip() for campo in campos}
+                datos["rfc"] = datos["rfc"].upper()
+                try:
+                    if not datos["nombre"]:
+                        raise ValueError("nombre: es obligatorio")
+                    validar_textos_proveedor(Proveedores, datos)
+                except ValueError as error:
+                    resultado["invalidos"] += 1
+                    reporte["errores"].append({"fila": origen["fila"], "campo": str(error).split(":")[0],
+                                               "codigo": "entrada_invalida", "mensaje": str(error)})
+                    continue
+                nombre = datos["nombre"].lower()
+                if nombre in nombres or (datos["rfc"] and datos["rfc"] in rfcs):
+                    resultado["duplicados"] += 1
+                    resultado["proveedores_duplicados"].append(datos["nombre"])
+                    reporte["advertencias"].append({"fila": origen["fila"], "campo": "nombre/rfc",
+                                                    "codigo": "duplicado", "mensaje": "Fila duplicada omitida"})
+                    continue
+                for campo, existentes in (("categoria_id", categorias), ("representante_id", representantes)):
+                    valor = fila.get(campo, "")
+                    try:
+                        identificador = int(str(valor).strip()) if str(valor).strip() else None
+                    except (ValueError, TypeError):
+                        identificador = None
+                    datos[campo] = identificador if identificador in existentes else None
+                    if str(valor).strip() and datos[campo] is None:
+                        reporte["advertencias"].append({"fila": origen["fila"], "campo": campo,
+                                                        "codigo": "fk_omitida", "mensaje": "Referencia desconocida omitida"})
+                self.session.add(Proveedores(**datos))
+                self.session.flush()
+                nombres.add(nombre)
+                if datos["rfc"]:
+                    rfcs.add(datos["rfc"])
+                resultado["agregados"] += 1
+            resultado["exito"] = True
+            resultado["codigo"] = "importado" if resultado["agregados"] else "sin_cambios"
+        except Exception:
+            if estricto:
+                raise
+            self.session.rollback()
+            resultado["agregados"] = 0
+            reporte["errores"].append({"fila": None, "campo": None, "codigo": "persistencia",
+                                       "mensaje": "No se confirmo el lote por un error de persistencia"})
+        return resultado
 
 
     def insertar_categoria_proveedor_basicas(self):
@@ -52,8 +152,13 @@ class ProveedoresModel:
                         correo,
                         telefono,
                         clave_moneda,
-                        tipo_moneda
+                        tipo_moneda,
+                        estricto=False
                         ):
+        if estricto:
+            validar_textos_proveedor(Proveedores, locals())
+            if not nombre.strip() or categoria_id is None:
+                raise ValueError("nombre/categoria: son obligatorios")
         try:
             proveedor = self.session.query(Proveedores).filter_by(nombre=nombre).first()
             if proveedor:
@@ -86,6 +191,8 @@ class ProveedoresModel:
                     if representante:
                         nuevo_proveedor.representante = representante
                 except Exception as e:
+                    if estricto:
+                        raise
                     self.session.rollback()
                     # Agregar el mensaje de error para el rollback
                     logging.error(f"Error al agregar representante: {e}")
@@ -94,6 +201,8 @@ class ProveedoresModel:
             self.session.flush()
             return nuevo_proveedor, True  # Si todo va bien, devolver el nuevo proveedor y un estado True
         except Exception as e:
+            if estricto:
+                raise
             # Asegúrate de devolver siempre una tupla, incluso cuando hay un error
             logging.error(f"Error al agregar proveedor: {e}")
             return None, False  # Devolver None y False si hay un error
@@ -156,8 +265,13 @@ class ProveedoresModel:
                             correo,
                             telefono,
                             clave_moneda,
-                            tipo_moneda
+                            tipo_moneda,
+                            estricto=False
                             ):
+        if estricto:
+            validar_textos_proveedor(Proveedores, locals())
+            if not nombre.strip() or categoria_id is None:
+                raise ValueError("nombre/categoria: son obligatorios")
         try:
             # Buscar el proveedor por ID
 
@@ -188,10 +302,14 @@ class ProveedoresModel:
 
             try:
                 categoria = self.session.query(Categorias_proveedores).get(categoria_id)
+                if estricto and categoria is None:
+                    raise ValueError("categoria: no existe")
                 if categoria:
                     # Limpiar las categorías existentes y agregar la nueva
                     proveedor.categoria = categoria
             except Exception as e:
+                if estricto:
+                    raise
                 self.session.rollback()
                 return None, False
 
@@ -200,15 +318,21 @@ class ProveedoresModel:
                 # Si no se proporciona representante_id, eliminar los representantes existentes
                 proveedor.representante = None
             try:
-                representante = self.session.query(Representantes_proveedores).get(representante_id)
+                representante = self.session.get(Representantes_proveedores, representante_id) if representante_id is not None else None
+                if estricto and representante_id is not None and representante is None:
+                    raise ValueError("representante: no existe")
                 if representante:
                     proveedor.representante = representante
             except Exception as e:
+                if estricto:
+                    raise
                 self.session.rollback()
                 return None, False
 
             return proveedor, True  # Retorna el ID del proveedor actualizado
         except Exception as e:
+            if estricto:
+                raise
             self.session.rollback()  # Hacer rollback en caso de error
             logging.error(f"Error al agregar proveedor: {e}")
             return None
@@ -225,7 +349,7 @@ class ProveedoresModel:
         except Exception as e:
             return None, False
 
-    def eliminar_proveedor(self, id):
+    def eliminar_proveedor(self, id, estricto=False):
         try:
             proveedor = self.session.get(Proveedores, id)
             if proveedor:
@@ -234,6 +358,8 @@ class ProveedoresModel:
             else:
                 return False, False
         except Exception as e:
+            if estricto:
+                raise
             return None, False
 
     def filtrar_productos_del_proveedor_exacto_nombre(self, proveedor_id, nombre, cantidad_inicial=0, cantidad_final=100):

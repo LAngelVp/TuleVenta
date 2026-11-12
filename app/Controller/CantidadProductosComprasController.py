@@ -5,12 +5,24 @@ from PySide6.QtGui import *
 from .UiTheme import apply_module_theme, configure_child_modal
 
 class CantidadProductosComprasController(QDialog):
-    cantidadEnviadaSignal = Signal(int)
+    cantidadEnviadaSignal = Signal(float)
     def __init__(self, parent=None):
         super().__init__(parent)
         print("CantidadProductosComprasController")
         self.formulario_cantidad_productos_agregar_compras = Ui_formulario_cantidad_productos_agregar_compras()
         self.formulario_cantidad_productos_agregar_compras.setupUi(self)
+        anterior = self.formulario_cantidad_productos_agregar_compras.decimal_cantidadAgregar
+        cantidad = QDoubleSpinBox(anterior.parentWidget())
+        cantidad.setObjectName(anterior.objectName())
+        cantidad.setAlignment(anterior.alignment())
+        cantidad.setButtonSymbols(anterior.buttonSymbols())
+        cantidad.setDecimals(3)
+        cantidad.setRange(0.001, anterior.maximum())
+        cantidad.setValue(1.0)
+        self.formulario_cantidad_productos_agregar_compras.gridLayout.replaceWidget(anterior, cantidad)
+        anterior.hide()
+        anterior.deleteLater()
+        self.formulario_cantidad_productos_agregar_compras.decimal_cantidadAgregar = cantidad
         self.setModal(True)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())

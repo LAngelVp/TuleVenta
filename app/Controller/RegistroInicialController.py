@@ -13,6 +13,8 @@ from .Validaciones import Validaciones
 from ..Model.EmpleadoModel import EmpleadosModel
 from ..Model.GruposyPermisosModel import RolesModel, PermisosModel
 from ..Model.UsuarioModel import UsuarioModel
+from ..Model.UsuarioEntrada import validar_password_nuevo
+from ..Model.AdministracionEntrada import serializar_resultado, id_seleccionado
 from ..Model.PuestoModel import PuestoModel
 from ..Model.DepartamentosModel import DepartamentosModel
 from ..Model.SucursalesModel import SucursalesModel
@@ -134,6 +136,13 @@ class Registro_personal_inicial(QDialog):
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCerradaRegistro = True
 
+    def hideEvent(self, event):
+        for hilo in self.lista_hilos_registroEmpleado:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.lista_hilos_registroEmpleado.clear()
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)
+
     def closeEvent(self, event):
         for hilo in self.lista_hilos_registroEmpleado:
             WorkerDB.cleanup_managed_worker(hilo)
@@ -189,8 +198,9 @@ class Registro_personal_inicial(QDialog):
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal()
-                    WorkerDB.cleanup_owner_workers("eliminar_credenciales_usuario")
-                    self.id_hilo_eliminar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id="eliminar_credenciales_usuario")
+                    WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_credenciales_usuario")
+                    self.id_hilo_eliminar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_credenciales_usuario", cierre_seguro=True)
+                    self.lista_hilos_registroEmpleado.append(self.id_hilo_eliminar_credenciales_usuario)
                     self.consultor_eliminar_credenciales = WorkerDB.get_managed_worker(self.id_hilo_eliminar_credenciales_usuario)
                     if not self.consultor_eliminar_credenciales:
                         raise Exception("No se pudo obtener el worker gestionado")
@@ -228,12 +238,22 @@ class Registro_personal_inicial(QDialog):
         except Exception as e:
             session.rollback()
             return {
-                "exito": estado,
-                "mensaje": f"Error al eliminar las credenciales: {str(e)}",
+                "exito": False,
+                "mensaje": "No se pudieron confirmar los cambios de credenciales.",
                 "resultado":None
             }
 
     def actualizar_credenciales(self):
+        if self.empleado_existente is None or self.empleado_existente.usuario is None:
+            Mensaje().mensaje_alerta("No hay credenciales que actualizar.")
+            return
+        nueva_clave = self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text()
+        if nueva_clave:
+            try:
+                validar_password_nuevo(nueva_clave)
+            except ValueError as error:
+                Mensaje().mensaje_alerta(str(error))
+                return
         id_usuario = self.empleado_existente.usuario.id
         usuario = self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text()
         password = self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text()
@@ -246,8 +266,9 @@ class Registro_personal_inicial(QDialog):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("actualizar_credenciales_usuario")
-                self.id_hilo_actualizar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id="actualizar_credenciales_usuario")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_credenciales_usuario")
+                self.id_hilo_actualizar_credenciales_usuario = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_credenciales_usuario", cierre_seguro=True)
+                self.lista_hilos_registroEmpleado.append(self.id_hilo_actualizar_credenciales_usuario)
                 self.consultor_actualizar_credenciales = WorkerDB.get_managed_worker(self.id_hilo_actualizar_credenciales_usuario)
                 if not self.consultor_actualizar_credenciales:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -303,8 +324,9 @@ class Registro_personal_inicial(QDialog):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("dar_de_baja_registro_thread")
-                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id="dar_de_baja_registro_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_dar_de_baja_registro_thread")
+                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_dar_de_baja_registro_thread", cierre_seguro=True)
+                self.lista_hilos_registroEmpleado.append(self.id_hilo_dar_de_baja_registro)
                 self.consultor_dar_de_baja_registro = WorkerDB.get_managed_worker(self.id_hilo_dar_de_baja_registro)
                 if not self.consultor_dar_de_baja_registro:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -357,8 +379,9 @@ class Registro_personal_inicial(QDialog):
         if respuesta == QMessageBox.Yes:
             try:
                 self.manejadorModal.mostrar_modal()
-                WorkerDB.cleanup_owner_workers("dar_de_baja_registro_thread")
-                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id="dar_de_baja_registro_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_dar_de_baja_registro_thread")
+                self.id_hilo_dar_de_baja_registro = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_dar_de_baja_registro_thread", cierre_seguro=True)
+                self.lista_hilos_registroEmpleado.append(self.id_hilo_dar_de_baja_registro)
                 self.consultor_dar_de_baja_registro = WorkerDB.get_managed_worker(self.id_hilo_dar_de_baja_registro)
                 if not self.consultor_dar_de_baja_registro:
                     raise Exception("No se pudo obtener el worker gestionado")
@@ -583,8 +606,8 @@ class Registro_personal_inicial(QDialog):
 
     def obtener_sucursales(self):
         try:
-            WorkerDB.cleanup_owner_workers("obtener_sucursales_registro_empleado_thread")
-            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_sucursales_registro_empleado_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_sucursales_registro_empleado_thread")
+            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_sucursales_registro_empleado_thread", cierre_seguro=True)
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
             self.lista_hilos_registroEmpleado.append(self.id_hilo_obtener_sucursales)
             if not self.consultor_obtener_sucursal_hilo:
@@ -604,7 +627,7 @@ class Registro_personal_inicial(QDialog):
 
     def obtener_sucursales_query(self, session):
         try:
-            sucursales, estado = SucursalesModel(session).obtener_todo()
+            sucursales, estado = SucursalesModel(session).obtener_todo(snapshots=True)
             if not estado:
                 return {
                     "exito": estado,
@@ -706,8 +729,8 @@ class Registro_personal_inicial(QDialog):
     def listar_grupo_permisos_rol(self):
         self.WindowRegistroEmpleado.cajaOpciones_rol_usuario.clear()
         try:
-            WorkerDB.cleanup_owner_workers("obtener_grupos_thread")
-            self.id_hilo_obtener_grupos = WorkerDB.create_managed_worker(owner_id="obtener_grupos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_grupos_thread")
+            self.id_hilo_obtener_grupos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_grupos_thread", cierre_seguro=True)
             self.consultor_obtener_grupos = WorkerDB.get_managed_worker(self.id_hilo_obtener_grupos)
             self.lista_hilos_registroEmpleado.append(self.id_hilo_obtener_grupos)
             if not self.consultor_obtener_grupos:
@@ -728,6 +751,7 @@ class Registro_personal_inicial(QDialog):
     def obtener_grupos_query(self, session):
         try:
             grupos, estado = RolesModel(session).obtener_todos()
+            grupos = serializar_resultado(grupos)
             if estado:
                 return {
                     "exito": True,
@@ -760,8 +784,8 @@ class Registro_personal_inicial(QDialog):
         try:
             if mostrar_modal:
                 self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_departamentos_thread")
-            self.id_hilo_obtener_departamentos_lista = WorkerDB.create_managed_worker(owner_id="obtener_departamentos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_departamentos_thread")
+            self.id_hilo_obtener_departamentos_lista = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_departamentos_thread", cierre_seguro=True)
             self.consultor_obtener_departamentos_lista = WorkerDB.get_managed_worker(self.id_hilo_obtener_departamentos_lista)
             self.lista_hilos_registroEmpleado.append(self.id_hilo_obtener_departamentos_lista)
             if not self.consultor_obtener_departamentos_lista:
@@ -782,7 +806,7 @@ class Registro_personal_inicial(QDialog):
 
     def obtener_departamentos_query(self, session):
         try:
-            departamentos, estado = DepartamentosModel(session).obtener_todos()
+            departamentos, estado = DepartamentosModel(session).obtener_todos(snapshots=True)
             if not estado:
                 return {
                     "exito": estado,
@@ -811,8 +835,8 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.cajaOpciones_puestos.clear()
         puestos = None
         try:
-            WorkerDB.cleanup_owner_workers("obtener_puestos_thread")
-            self.id_hilo_obtener_puestos = WorkerDB.create_managed_worker(owner_id="obtener_puestos_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_puestos_thread")
+            self.id_hilo_obtener_puestos = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_puestos_thread", cierre_seguro=True)
             self.consultor_obtener_puestos = WorkerDB.get_managed_worker(self.id_hilo_obtener_puestos)
             self.lista_hilos_registroEmpleado.append(self.id_hilo_obtener_puestos)
             if not self.consultor_obtener_puestos:
@@ -831,7 +855,7 @@ class Registro_personal_inicial(QDialog):
 
     def obtener_puestos_query(self, session):
         try:
-            puestos, estado = PuestoModel(session).obtener_todos()
+            puestos, estado = PuestoModel(session).obtener_todos(snapshots=True)
             if not estado:
                 return {
                     "exito": estado,
@@ -876,28 +900,28 @@ class Registro_personal_inicial(QDialog):
         self.file_name = None
 
     def ingresar_validaciones(self):
-        self.WindowRegistroEmpleado.txt_nombre.setMaxLength(60)
-        self.WindowRegistroEmpleado.txt_apellidop.setMaxLength(60)
-        self.WindowRegistroEmpleado.txt_apellidom.setMaxLength(60)
+        self.WindowRegistroEmpleado.txt_nombre.setMaxLength(100)
+        self.WindowRegistroEmpleado.txt_apellidop.setMaxLength(100)
+        self.WindowRegistroEmpleado.txt_apellidom.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_curp.setMaxLength(18)
         self.WindowRegistroEmpleado.txt_rfc.setMaxLength(13)
         self.WindowRegistroEmpleado.txt_carrera.setMaxLength(150)
         self.WindowRegistroEmpleado.txt_correoelectronico.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_numerosegurosicial.setMaxLength(13)
-        self.WindowRegistroEmpleado.txt_ciudad.setMaxLength(50)
+        self.WindowRegistroEmpleado.txt_ciudad.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_codigopostal.setMaxLength(5)
-        self.WindowRegistroEmpleado.txt_estado.setMaxLength(50)
-        self.WindowRegistroEmpleado.txt_pais.setMaxLength(50)
+        self.WindowRegistroEmpleado.txt_estado.setMaxLength(100)
+        self.WindowRegistroEmpleado.txt_pais.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_numerotelefono.setMaxLength(10)
         self.WindowRegistroEmpleado.txt_nombrecontactoemergencia.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_contactoemergencia.setMaxLength(10)
-        self.WindowRegistroEmpleado.txt_calles.setMaxLength(50)
-        self.WindowRegistroEmpleado.txt_avenidas.setMaxLength(50)
-        self.WindowRegistroEmpleado.txt_colonia.setMaxLength(50)
+        self.WindowRegistroEmpleado.txt_calles.setMaxLength(100)
+        self.WindowRegistroEmpleado.txt_avenidas.setMaxLength(100)
+        self.WindowRegistroEmpleado.txt_colonia.setMaxLength(100)
         self.WindowRegistroEmpleado.txt_ninterior.setMaxLength(10)
         self.WindowRegistroEmpleado.txt_nexterior.setMaxLength(10)
         self.WindowRegistroEmpleado.txt_usuario_iniciosesion.setMaxLength(60)
-        self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setMaxLength(10)
+        self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setMaxLength(32767)
 
         self.WindowRegistroEmpleado.txt_nombre.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_nombre))
         self.WindowRegistroEmpleado.txt_apellidop.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_apellidop))
@@ -912,7 +936,7 @@ class Registro_personal_inicial(QDialog):
         self.WindowRegistroEmpleado.txt_pais.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_pais))
         self.WindowRegistroEmpleado.txt_numerotelefono.setValidator(Validaciones().get_phone_validator(self.WindowRegistroEmpleado.txt_numerotelefono))
         self.WindowRegistroEmpleado.txt_usuario_iniciosesion.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_usuario_iniciosesion))
-        self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setValidator(Validaciones().get_password_validator(self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion))
+        self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.setValidator(None)
         self.WindowRegistroEmpleado.txt_carrera.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_carrera))
         self.WindowRegistroEmpleado.txt_contactoemergencia.setValidator(Validaciones().get_phone_validator(self.WindowRegistroEmpleado.txt_contactoemergencia))
         self.WindowRegistroEmpleado.txt_nombrecontactoemergencia.setValidator(Validaciones().get_text_validator(self.WindowRegistroEmpleado.txt_nombrecontactoemergencia))
@@ -977,6 +1001,12 @@ class Registro_personal_inicial(QDialog):
 
     def validar_datos(self, datos):
         for nombre, valor in datos.items():
+            if nombre in {"puesto", "departamento", "sucursal", "rol"}:
+                try:
+                    id_seleccionado(valor, nombre)
+                except ValueError as error:
+                    QMessageBox.critical(self, "Error", str(error))
+                    return False
             if not valor:
                 QMessageBox.critical(self, "Error", f"El campo {nombre} no puede estar vacío.")
                 return False
@@ -990,15 +1020,22 @@ class Registro_personal_inicial(QDialog):
         uso_del_sistema = self.WindowRegistroEmpleado.opcion_usodelsistema.isChecked()
         id_empleado = self.empleado.id if self.empleado else None
         nombre_usuario = self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text().strip()
-        password_usuario = self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text().strip()
+        password_usuario = self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text()
+        if uso_del_sistema:
+            try:
+                validar_password_nuevo(password_usuario)
+            except ValueError as error:
+                Mensaje().mensaje_alerta(str(error))
+                return
         current_data_rol = self.WindowRegistroEmpleado.cajaOpciones_rol_usuario.currentData()
         datos = self.obtener_datos()
 
         if self.validar_datos(datos=datos):
             try:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("agregar_empleado")
-                self.id_hilo_agregar_empleado = WorkerDB.create_managed_worker(owner_id="agregar_empleado")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_empleado")
+                self.id_hilo_agregar_empleado = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_empleado", cierre_seguro=True)
+                self.lista_hilos_registroEmpleado.append(self.id_hilo_agregar_empleado)
                 self.consultor = WorkerDB.get_managed_worker(self.id_hilo_agregar_empleado)
 
                 if not self.consultor:
@@ -1060,10 +1097,11 @@ class Registro_personal_inicial(QDialog):
                     rol_id=current_data_rol.id
                 )
                 if not estadoUsuario:
+                    session.rollback()
                     return {
                         "exito": False,
                         "mensaje" : f"El usuario {nombre_usuario} que estas intentando asignar ya existe",
-                        "data": usuario
+                        "data": None
                     }
 
             empleado, estadoEmpleado = EmpleadosModel(session).crear_empleado(
@@ -1104,6 +1142,7 @@ class Registro_personal_inicial(QDialog):
             )
 
             if estadoEmpleado:
+                empleado = serializar_resultado(empleado)
                 session.commit()
                 return {
                         "exito": True,
@@ -1145,8 +1184,9 @@ class Registro_personal_inicial(QDialog):
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers(owner_id="actualizar_empleado_thread")
-                    self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id="actualizar_empleado_thread")
+                    WorkerDB.cleanup_owner_workers(owner_id=f"{id(self)}_actualizar_empleado_thread")
+                    self.id_hilo_actual_actualizar_empleado = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_empleado_thread", cierre_seguro=True)
+                    self.lista_hilos_registroEmpleado.append(self.id_hilo_actual_actualizar_empleado)
                     self.consultor_actualizar_empleado = WorkerDB.get_managed_worker(self.id_hilo_actual_actualizar_empleado)
                     if not self.consultor_actualizar_empleado:
                         raise Exception("No se logro hacer la actualizacion del registro")
@@ -1207,6 +1247,10 @@ class Registro_personal_inicial(QDialog):
                 departamento_id=datos['departamento'].id,
                 sucursal_id=datos['sucursal'].id
             )
+            if not estado:
+                session.rollback()
+                return {"exito": False, "mensaje": "No se logro actualizar el empleado."}
+            session.commit()
         except Exception as e:
             session.rollback()
             mensaje = f"Error al actualizar el empleado: {e}"
@@ -1215,7 +1259,6 @@ class Registro_personal_inicial(QDialog):
                     "mensaje": mensaje
                     }
         if estado:
-            session.commit()
             mensaje = f"Registro exitoso, {datos['nombre']} fue actualizado"
             return {
                     "exito": True,
@@ -1231,8 +1274,13 @@ class Registro_personal_inicial(QDialog):
         if not self.empleado_existente:
             Mensaje().mensaje_alerta("No se encuentra vinculado el empleado a la session de base de datos")
             return
-        elif not self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text() and not self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text():
+        elif not self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text().strip() or not self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text():
             Mensaje().mensaje_alerta("Debes de agregar un usuario y una contraseña para completar el registro del usuario para el empleado.")
+            return
+        try:
+            validar_password_nuevo(self.WindowRegistroEmpleado.txt_contrasenia_usuario_iniciosesion.text())
+        except ValueError as error:
+            Mensaje().mensaje_alerta(str(error))
             return
         fecha_actual = datetime.now().date()
         usuario = self.WindowRegistroEmpleado.txt_usuario_iniciosesion.text()
@@ -1241,8 +1289,9 @@ class Registro_personal_inicial(QDialog):
         rol = self.WindowRegistroEmpleado.cajaOpciones_rol_usuario.currentData()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_usuario_thread")
-            self.id_hilo_agregar_usuario = WorkerDB.create_managed_worker(owner_id="agregar_usuario_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_usuario_thread")
+            self.id_hilo_agregar_usuario = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_usuario_thread", cierre_seguro=True)
+            self.lista_hilos_registroEmpleado.append(self.id_hilo_agregar_usuario)
             self.consultor_agregar_usuario = WorkerDB.get_managed_worker(self.id_hilo_agregar_usuario)
 
             if not self.consultor_agregar_usuario:
@@ -1291,6 +1340,7 @@ class Registro_personal_inicial(QDialog):
                     "mensaje": f"No se logro asignar el usuario al empleado",
                     "data": None
                 }
+            usuario = serializar_resultado(usuario)
             session.commit()
             return {
                 "exito": estado_asignacion,

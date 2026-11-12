@@ -8,6 +8,7 @@ from .MensajesAlertasController import Mensaje
 from ..DataBase.conexionBD import *
 from ..View.UserInterfacePy.UI_CONTROL_SUCURSALES import *
 from ..Model.SucursalesModel import SucursalesModel
+from ..Model.AdministracionEntrada import serializar_resultado
 from ..Model.DepartamentosModel import DepartamentosModel
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .Validaciones import Validaciones
@@ -112,6 +113,13 @@ class SucursalesController(QDialog):
             FuncionesAuxiliaresController.centrar_en_padre(self)
             self._ventanaCentradaSucursales = True
 
+    def hideEvent(self, event):
+        for hilo in self.listaHilosSucursales:
+            WorkerDB.cleanup_managed_worker(hilo)
+        self.listaHilosSucursales.clear()
+        self.manejadorModal.cerrar_modal()
+        super().hideEvent(event)
+
     def closeEvent(self, event):
         for hilos in self.listaHilosSucursales:
             WorkerDB.cleanup_managed_worker(hilos)
@@ -127,8 +135,8 @@ class SucursalesController(QDialog):
         self.windowSucursales.txt_buscarsucursales.clearFocus()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("buscar_sucursal_thread")
-            self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id="buscar_sucursal_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_buscar_sucursal_thread")
+            self.id_hilo_buscar_sucursal = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_buscar_sucursal_thread", cierre_seguro=True)
             self.consultor_buscar_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_buscar_sucursal)
             if not self.consultor_buscar_sucursal_hilo:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
@@ -150,7 +158,7 @@ class SucursalesController(QDialog):
 
     def buscar_sucursal_query(self, session, nombre_sucursal):
         try:
-            sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal)
+            sucursales, estado = SucursalesModel(session).filtrar_nombre(nombre_sucursal, snapshots=True)
             if not estado:
                 return {
                     "exito" : estado,
@@ -215,8 +223,8 @@ class SucursalesController(QDialog):
         # Iniciar la conexión a la base de datos
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("agregar_sucursal_thread")
-            self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id="agregar_sucursal_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_sucursal_thread")
+            self.id_hilo_agregar_sucursal = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_agregar_sucursal_thread", cierre_seguro=True)
             self.consultor_agregar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_agregar_sucursal)
             if not self.consultor_agregar_sucursal:
                 raise Exception("No se pudo obtener el worker gestionado al agregar la sucursal")
@@ -242,6 +250,7 @@ class SucursalesController(QDialog):
             sucursal, exito = SucursalesModel(session).agregar_sucursal(**datos)
             nombre = datos['nombre_sucursal']
             if exito:
+                sucursal = serializar_resultado(sucursal)
                 session.commit()
                 return {
                     'exito': True,
@@ -269,8 +278,8 @@ class SucursalesController(QDialog):
         self.windowSucursales.lista_sucursales.clear()
         try:
             self.manejadorModal.mostrar_modal(self)
-            WorkerDB.cleanup_owner_workers("obtener_todas_las_sucursales_thread")
-            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id="obtener_todas_las_sucursales_thread")
+            WorkerDB.cleanup_owner_workers(f"{id(self)}_obtener_todas_las_sucursales_thread")
+            self.id_hilo_obtener_sucursales = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_obtener_todas_las_sucursales_thread", cierre_seguro=True)
             self.consultor_obtener_sucursal_hilo = WorkerDB.get_managed_worker(self.id_hilo_obtener_sucursales)
             if not self.consultor_obtener_sucursal_hilo:
                 raise Exception("No se pudo obtener el worker gestionado al obtener la sucursal")
@@ -291,7 +300,7 @@ class SucursalesController(QDialog):
 
     def obtener_sucursales_query(self, session):
         try:
-            sucursales, estado = SucursalesModel(session).obtener_todo()
+            sucursales, estado = SucursalesModel(session).obtener_todo(snapshots=True)
             if estado:
                 return {
                     'exito': True,
@@ -366,8 +375,8 @@ class SucursalesController(QDialog):
             respuesta = Mensaje(self).mensaje_pregunta(f"Estas seguro de eliminar -- {self.idSucursal.nombre_sucursal}")
             if respuesta == QMessageBox.Yes:
                 self.manejadorModal.mostrar_modal(self)
-                WorkerDB.cleanup_owner_workers("eliminar_sucursal_thread")
-                self.id_hilo_eliminar_sucursal = WorkerDB.create_managed_worker(owner_id="eliminar_sucursal_thread")
+                WorkerDB.cleanup_owner_workers(f"{id(self)}_eliminar_sucursal_thread")
+                self.id_hilo_eliminar_sucursal = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_eliminar_sucursal_thread", cierre_seguro=True)
                 self.consultor_eliminar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_eliminar_sucursal)
                 if not self.consultor_eliminar_sucursal:
                     raise Exception("No se logro hacer la operación para eliminar el registro")
@@ -422,8 +431,8 @@ class SucursalesController(QDialog):
             if respuesta == QMessageBox.Yes:
                 try:
                     self.manejadorModal.mostrar_modal(self)
-                    WorkerDB.cleanup_owner_workers("actualizar_sucursal_thread")
-                    self.id_hilo_actualizar_sucursal = WorkerDB.create_managed_worker(owner_id="actualizar_sucursal_thread")
+                    WorkerDB.cleanup_owner_workers(f"{id(self)}_actualizar_sucursal_thread")
+                    self.id_hilo_actualizar_sucursal = WorkerDB.create_managed_worker(owner_id=f"{id(self)}_actualizar_sucursal_thread", cierre_seguro=True)
                     self.consultor_actualizar_sucursal = WorkerDB.get_managed_worker(self.id_hilo_actualizar_sucursal)
                     if not self.consultor_actualizar_sucursal:
                         raise Exception("No se pudo obtener el worker gestionado al actualizar")
@@ -446,18 +455,19 @@ class SucursalesController(QDialog):
                     Mensaje(self).mensaje_critico(f"Error al actualizar: {e}")
 
     def actualizar_sucursal_query(self, session, sucursal, datos):
-        sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
-        if not estado:
-            session.rollback()
+        try:
+            sucursal_actualizada, estado = SucursalesModel(session).actualizar(sucursal.id, **datos)
+            if estado is not True:
+                session.rollback()
+                return {'exito': False, 'mensaje': 'No se logro actualizar la sucursal.'}
+            session.commit()
             return {
-                'exito': estado,
-                'mensaje': f'No se logro completar la operacion'
-            }
-        session.commit()
-        return {
-                'exito': estado,
+                'exito': True,
                 'mensaje': f'Opereacion exitosa, registro {sucursal_actualizada.nombre_sucursal} actualizado'
             }
+        except Exception:
+            session.rollback()
+            return {'exito': False, 'mensaje': 'No se pudo confirmar la actualizacion de la sucursal.'}
 
     def mostrar_resultado_hilo(self, objetoMensaje):
         if not objetoMensaje.get('exito', False):
