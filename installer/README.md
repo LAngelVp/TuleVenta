@@ -31,29 +31,29 @@ La carpeta portable debe incluir tambien las subcarpetas auxiliares que usa Post
 2. Coloca la carpeta de PostgreSQL portable en `installer\third_party\postgresql-portable`.
 3. Ejecuta `installer\build_installer.bat`.
 
-`installer\build_installer.bat` intentara primero generar `dist\TuleVenta\TuleVenta.exe` llamando a `build_app.bat` si todavia no existe.
+`installer\build_installer.bat` siempre genera `dist\TuleVenta\TuleVenta.exe` llamando a `build_app.bat`, aunque exista un build anterior.
 
 El resultado quedara en `installer\output`.
 
-## Que instala el setup
+## Instalacion y actualizacion
 
-- Aplicacion en `C:\Program Files\TuleVenta`.
-- Binarios portables de PostgreSQL en `C:\Program Files\PostgreSQL\TuleVenta16`.
-- Datos de PostgreSQL en `%ProgramData%\TuleVenta\PostgreSQL\data`.
-- Archivo de conexion en `%ProgramData%\TuleVenta\configuracion_bd.json`.
-- Servicio de Windows `postgresql-tuleventa-16`.
+- Aplicacion por usuario en `%APPDATA%\TuleVenta`; cluster en `{app}\data`.
+- Binarios en `{app}\PostgreSQL<major>`; el build verifica major de pg_ctl/initdb/psql reales.
+- Configuracion en `%PROGRAMDATA%\TuleVenta\configuracion_bd.json`. La instalacion inicial requiere permisos efectivos de escritura en ese destino.
+- No se registra servicio Windows. El script setup_postgresql.cmd es legacy y no se invoca desde el .iss.
+- Una instalacion existente omite bootstrap, copia de PostgreSQL, escritura de configuracion/entorno y VC++. Nunca se borra data; un directorio incompleto requiere recuperacion explicita.
+- El build obtiene version de [app/version.py](../app/version.py); no compilar directamente el .iss sin esos parametros.
+- Produce `TuleVenta-Update-vX.Y.Z-windows-x64.exe` y `.exe.sha256` en output. No publica Releases automaticamente.
+- Actualizador: repositorio publico configurado mediante variables o actualizador.json, consulta manual desde Opciones, SHA-256, confirmacion de administrador y puente /UPDATEONLY. Instalacion limpia silenciosa y actualizacion sin destino existente se rechazan.
+- Contrato, publicacion y gates Windows: [plan SDD](../docs/04-plan-de-refactorizacion.md#9-actualizacion-remota-por-github-releases-2026-11-12).
 
-## Restricciones actuales del asistente
-
-- El asistente valida usuarios y nombre de base de datos con letras, numeros y guion bajo.
-- Los identificadores (`superuser`, base de datos y usuario app) se normalizan a minusculas para evitar choques con identificadores citados de PostgreSQL.
-- Las contrasenas aceptadas por el asistente se limitan a letras, numeros, `_`, `-`, `.`, `@`.
-
-Esta restriccion existe para mantener simple y robusta la automatizacion por lote del alta de PostgreSQL dentro del instalador.
+El asistente actual no implementa todas las restricciones de identificadores/contrasenas descritas en versiones anteriores del README. No se certifica aqui el bootstrap de PostgreSQL ni se cambia su politica de autenticacion.
 
 ## Comportamiento de desinstalacion
 
 - El desinstalador elimina la aplicacion.
-- Detiene y desregistra el servicio `postgresql-tuleventa-16`.
+- Intenta detener el cluster portable mediante pg_ctl; no desregistra un servicio.
 - Elimina los binarios portables instalados de PostgreSQL.
 - No elimina automaticamente los datos de la base de datos ni `%ProgramData%\TuleVenta` para evitar perdida accidental de informacion.
+
+No desinstalar para actualizar. Preservacion y recuperacion requieren ensayo Windows; las pruebas estaticas del .iss no lo sustituyen.

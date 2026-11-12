@@ -103,6 +103,15 @@ class Inicio_sistema(QObject):
         self.lista_hilos_inicio.clear()
 
 if __name__ == "__main__":
+    import os
+    if os.name == 'nt' and getattr(sys, 'frozen', False):
+        import ctypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+        kernel.CreateMutexW.restype = ctypes.c_void_p
+        mutex = kernel.CreateMutexW(None, False, r'Local\TuleVentaPOS')
+        if not mutex or ctypes.get_last_error() == 183:
+            sys.exit(1)
     sistema = Inicio_sistema()
 
     # Verificación de Licencia antes del arranque de la app

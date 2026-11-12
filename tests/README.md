@@ -1,5 +1,21 @@
 # Pruebas aisladas: REF-01
 
+## PostgreSQL efimero: evidencia 2026-11-12
+
+Actualizacion posterior a las notas historicas de REF-01 siguientes: provisionamiento, limpieza y dos backends reales ya ensayados. [run_postgres_ephemeral.py](run_postgres_ephemeral.py) usa exclusivamente los binarios portable autorizados, directorio temporal, puerto libre de 127.0.0.1 y una BD/rol de test. El administrador temporal solo provisiona; pytest conecta como rol sin SUPERUSER/CREATEDB/CREATEROLE, conservando firewall, autorizacion y search_path por esquema UUID. No conecta ni escribe en la BD habitual.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/run_postgres_ephemeral.py
+PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/run_postgres_ephemeral.py -q -m db tests/test_modules_postgres.py --tb=short
+PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe tests/check_docs_links.py
+```
+
+Sin argumentos el ejecutor lanza el mismo interprete con `-m pytest -q -m db --tb=short`. Resultado PostgreSQL **18.4**: **36 passed, 712 deselected, 1 warning**, 26.60 s. [test_modules_postgres.py](test_modules_postgres.py) agrega 34 escenarios: limites de producto alta/edicion, asociaciones con precios, lote productos; venta/caja contado/credito, rollback SQL y cancelacion serial; compra/recepcion por UPC/stock fraccionario, proveedores; clientes fisicos/morales con duplicado tardio desde otra conexion, savepoints/rollback tecnico y organizacion/personal. Los dos tests previos prueban aislamiento y conexiones independientes. Datos sinteticos, CHECK/FK solo de test, metadata ORM creada dentro del esquema efimero; nada de DDL habitual ni Alembic. Un fallo inicial se corrigio completando datos sinteticos del representante moral, no relajando reglas productivas.
+
+El finally detiene con pg_ctl `-D` exacto y modo fast, luego elimina el directorio; comprobado tanto con pytest fallido como exitoso. Si el proceso se mata forzosamente puede quedar el cluster anunciado: detener y retirar solo ese destino temporal; no barrer procesos/esquemas por nombre. Autenticacion trust limitada al servidor temporal de loopback, sin secretos reales; no usar este ejecutor para servidores compartidos ni produccion. La seleccion del puerto puede competir con otro proceso: si falla start, no reutiliza otro servidor y limpia el directorio.
+
+No se reejecutaron los 712 unit/Qt. Persistencia de estos escenarios no certifica concurrencia general, restricciones de unicidad ausentes, migraciones, workers SQL, hardware/PDF ni empaquetado. [Matriz SDD y limites](../docs/04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). Gate documental: **502 enlaces locales, 0 errores**. Las afirmaciones posteriores de DB bloqueada/no provisionamiento corresponden al ensayo inicial historico.
+
 Alcance: infraestructura de pruebas de S-16/S-17, no caracterizacion de los 51 casos (REF-02). No se modifica la conexion productiva ni se retira create_all. Referencias: [ficha REF-01](../docs/04-plan-de-refactorizacion.md) y [spec de seguridad/infraestructura](../docs/specs/spec-04-clientes-personal-sucursales-y-seguridad.md).
 
 ## Entorno y comandos

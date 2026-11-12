@@ -933,6 +933,61 @@ def test_ref33_pos_product_and_customer_reads_return_snapshots(sale_context):
     assert customer.credito_disponible == 100
 
 
+@pytest.mark.qt
+@pytest.mark.parametrize("criterion", ["0007", "Taladro"])
+def test_pos_product_description_selector_and_ticket(monkeypatch, qtbot, criterion):
+    import app.Controller.VentaController as module
+    from app.Model.BaseDatosModel import Productos
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtWidgets import QDialog
+
+    product = Productos(id=7, codigo_upc="0007", nombre_producto="Taladro",
+                        descripcion_producto="Percutor de 750 W", marca="Marca local",
+                        modelo="Modelo 42", precio=1234.5, existencia=17.0)
+    database = Mock()
+    database.__enter__ = Mock(return_value=database)
+    database.__exit__ = Mock(return_value=False)
+    query = database.abrir_sesion.return_value.query.return_value.filter.return_value.order_by.return_value
+    query.first.return_value = product
+    query.limit.return_value.all.return_value = [product]
+    monkeypatch.setattr(module, "Conexion_base_datos", lambda: database)
+    monkeypatch.setattr(module.Venta, "_cargar_menu_cobro", lambda self: None)
+    monkeypatch.setattr(module.Venta, "_verificar_y_asegurar_caja", lambda self: True)
+    monkeypatch.setattr(module.Venta, "_recalcular_promociones_ticket", lambda self: None)
+    original_exec = module.DialogoSeleccionProductoVenta.exec
+    dialogs = []
+
+    def check_dialog(dialog):
+        qtbot.addWidget(dialog)
+        dialogs.append(dialog)
+        table = dialog.tabla_productos
+        assert [table.horizontalHeaderItem(column).text() for column in range(7)] == [
+            "Código", "Producto", "Descripción", "Marca", "Modelo", "Precio", "Existencia"]
+        assert [table.item(0, column).text() for column in range(7)] == [
+            "0007", "Taladro", "Percutor de 750 W", "Marca local", "Modelo 42", "$1,234.50", "17.00"]
+        assert table.item(0, 2).toolTip() == product.descripcion_producto
+        assert dialog.obtener_producto_seleccionado().descripcion_producto == product.descripcion_producto
+        QTimer.singleShot(0, dialog.accept)
+        return original_exec(dialog)
+
+    monkeypatch.setattr(module.DialogoSeleccionProductoVenta, "exec", check_dialog)
+    window = module.Venta()
+    qtbot.addWidget(window)
+    window.ui.txt_buscarproducto.setText(criterion)
+    window.ui.txt_buscarproducto.returnPressed.emit()
+    assert len(dialogs) == int(not criterion.isdigit())
+    item = window.ticket_items[0]
+    assert item["descripcion_producto"] == product.descripcion_producto
+    assert item["codigo_upc"] == "0007" and item["nombre_producto"] == "Taladro"
+    assert item["precio_unitario"] == 1234.5 and item["existencia"] == 17.0
+    table = window.modelo_tabla_ticket
+    assert [table.headerData(column, Qt.Horizontal) for column in range(6)] == [
+        "CODIGO", "PRODUCTO", "DESCRIPCION", "CANTIDAD", "PRECIO", "SUBTOTAL"]
+    assert [table.data(table.index(0, column)) for column in range(6)] == [
+        "0007", "Taladro", "Percutor de 750 W", "1.00", "$1,234.50", "$1,234.50"]
+    assert window.ui.txt_buscarproducto.text() == ""
+
+
 @pytest.mark.unit
 def test_ref33_ticket_snapshot_contains_all_read_relations(persisted_sale):
     from app.Model.VentasModel import VentasModel

@@ -1,5 +1,11 @@
 # Spec 03: compras, proveedores e inventario
 
+## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+Gate SQL focalizado de C-01/C-04/C-07, REF-25/29, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): alta de compra y detalle con FK a codigo_upc, recepcion0.125 con stock5->5.125/estado COMPLETADA/movimiento durable. FK de usuario invalido falla en flush y rollback conserva stock5, orden PENDIENTE y cero movimientos; segunda recepcion serial se rechaza. Importacion real de proveedores agrega dos, omite duplicado y pais31 invalido; CHECK temporal en segunda fila revierte lote completo.
+
+Ejecucion conjunta: **36 db passed, 712 deselected**, cluster efimero detenido/eliminado. [Comando, aislamiento, matriz y recuperacion](../04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). No altera reglas, precision ni esquema instalado. No demuestra carreras de recepcion/stock, informes/dashboard SQL, PDF, pagos de compra C-12 ni Alembic. Las notas de lotes previos conservan valor historico; gates sustituidos solo para estos escenarios.
+
 ## 1. Alcance y fuentes
 
 Fecha: 2026-11-10. As-Is por lectura estatica, sin ejecutar GUI, SQL, recepciones ni reportes. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [datos](../02-modelo-de-datos.md), [productos](spec-01-productos-e-importacion.md), [ventas/caja](spec-02-ventas-caja-y-promociones.md). Los escenarios son requisitos para pruebas futuras, no pruebas ejecutadas.

@@ -1,5 +1,11 @@
 # Spec 04: clientes, personal, organizacion y seguridad
 
+## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+Gate SQL focalizado S-03/S-05/S-06/S-07/S-08/S-10, REF-25/30/31, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): clientes fisicos y morales importados con herencia ORM real. Una segunda conexion confirma un duplicado despues del snapshot inicial; el escritor real lo detecta, el savepoint elimina categoria/area y representante de esa fila, conserva primera/tercera fila y solo publica caches exitosas. CHECK tecnico en segunda fila seguido de rollback exterior elimina todo el lote y sus catalogos/representantes.
+
+Alta/edicion de personal y sincronizacion departamento-sucursales persistidas y relectas desde otra Session; FK invalida revierte cambio de personal y desvinculaciones. Ejecucion conjunta: **36 db passed, 712 deselected**, cluster efimero detenido/eliminado. [Comando, aislamiento, matriz y recuperacion](../04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). No modifica restricciones instaladas ni politica de claves. Duplicado tardio controlado no prueba unicidad SQL ni toda carrera de importacion; permisos de dominio, login SQL, usuarios/roles, workers, migraciones y seguridad global siguen fuera de evidencia. Gates historicos se sustituyen solo para escenarios probados.
+
 ## 1. Alcance y fuentes
 
 Fecha: 2026-11-10. As-Is por lectura estatica; no se ejecutan login, licencia, migraciones, respaldo ni cambios reales de personal/credito. [Maestro](../03-especificaciones-funcionales-sdd.md), [datos](../02-modelo-de-datos.md), [productos](spec-01-productos-e-importacion.md), [ventas](spec-02-ventas-caja-y-promociones.md), [compras](spec-03-compras-proveedores-e-inventario.md). Las pruebas de caracterizacion propuestas no son tests existentes ni autorizacion para corregir estos defectos.

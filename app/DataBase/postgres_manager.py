@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -177,11 +178,15 @@ class PostgresServiceManager:
         if appdata is not None:
             candidates.append(appdata / APP_NAME / "data")
             candidates.append(appdata / APP_NAME / POSTGRES_HOME_NAME / "data")
+            candidates.extend((appdata / APP_NAME).glob('PostgreSQL*/data'))
 
         if programdata is not None:
             candidates.append(programdata / APP_NAME / "data")
+            candidates.extend((programdata / APP_NAME).glob('PostgreSQL*/data'))
 
         for root in self._iter_runtime_roots():
+            candidates.extend(root.glob('PostgreSQL*/data'))
+            candidates.extend((root / APP_NAME).glob('PostgreSQL*/data'))
             candidates.extend(
                 [
                     root / "data",
@@ -201,18 +206,25 @@ class PostgresServiceManager:
         )
 
     def _resolver_pg_ctl_path(self, appdata, programdata, data_dir):
+        try:
+            major = (data_dir / PG_VERSION_NAME).read_text(encoding='ascii').strip()
+        except OSError as exc:
+            raise PostgresStartupError('No se pudo leer PG_VERSION.') from exc
+        if not major.isdigit() or int(major) < 10:
+            raise PostgresStartupError('Version PostgreSQL no soportada.')
+        postgres_home = 'PostgreSQL' + major
         candidates = []
 
         if appdata is not None:
-            candidates.append(appdata / APP_NAME / POSTGRES_HOME_NAME / "bin" / PG_CTL_NAME)
+            candidates.append(appdata / APP_NAME / postgres_home / "bin" / PG_CTL_NAME)
 
         if programdata is not None:
-            candidates.append(programdata / APP_NAME / POSTGRES_HOME_NAME / "bin" / PG_CTL_NAME)
+            candidates.append(programdata / APP_NAME / postgres_home / "bin" / PG_CTL_NAME)
 
         data_root = data_dir.parent
         candidates.extend(
             [
-                data_root / POSTGRES_HOME_NAME / "bin" / PG_CTL_NAME,
+                data_root / postgres_home / "bin" / PG_CTL_NAME,
                 data_root / "bin" / PG_CTL_NAME,
             ]
         )
@@ -220,8 +232,8 @@ class PostgresServiceManager:
         for root in self._iter_runtime_roots():
             candidates.extend(
                 [
-                    root / POSTGRES_HOME_NAME / "bin" / PG_CTL_NAME,
-                    root / APP_NAME / POSTGRES_HOME_NAME / "bin" / PG_CTL_NAME,
+                    root / postgres_home / "bin" / PG_CTL_NAME,
+                    root / APP_NAME / postgres_home / "bin" / PG_CTL_NAME,
                     root / "bin" / PG_CTL_NAME,
                 ]
             )
@@ -288,6 +300,13 @@ class PostgresServiceManager:
 
         self.logger.info("Intentando iniciar PostgreSQL con %s", pg_ctl_path)
         try:
+            major = (data_dir / PG_VERSION_NAME).read_text(encoding='ascii').strip()
+            version = subprocess.run(
+                [str(pg_ctl_path), '--version'], check=False, capture_output=True,
+                text=True, timeout=5, startupinfo=startupinfo, creationflags=creationflags)
+            match = re.search(r'PostgreSQL\) (\d+)', version.stdout)
+            if version.returncode != 0 or not match or match[1] != major:
+                raise PostgresStartupError('Binario PostgreSQL incompatible con PG_VERSION; no se iniciara ni migrara.')
             resultado = subprocess.run(
                 comando,
                 check=False,

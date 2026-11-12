@@ -1,5 +1,11 @@
 # Spec 02: ventas, caja y promociones
 
+## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+Gate SQL focalizado de V-07/V-09/V-10, REF-17..20, en [test_modules_postgres.py](../../tests/test_modules_postgres.py): contado/credito con una Session y un unico commit real; otra Session confirma venta/detalles/stock/movimientos y saldos de caja/credito. CHECK temporal provoca fallo SQL despues de las mutaciones y se verifica cero venta/detalles/movimientos, stock5 y saldos originales. Cancelacion de cohorte nueva repone stock/credito/caja; segundo intento serial no vuelve a reponer stock.
+
+Ejecucion conjunta: **36 db passed, 712 deselected**, cluster efimero detenido/eliminado. [Comando, aislamiento, matriz y recuperacion](../04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). Sin cambio de reglas, Float ni DDL instalado. Pendientes: edicion de venta contra SQL, fallo de cancelacion SQL, commit incierto, promociones SQL, locks/idempotencia/carreras REF-39/40 y corte operativo multiusuario. Las notas SQL pendiente historicas se sustituyen exclusivamente para el cobro/rollback/cancelacion ensayados, no para toda la ficha.
+
 ## 1. Alcance, fuentes y permisos
 
 Fecha: 2026-11-10. Levantamiento As-Is original por lectura estatica, sin cobros ni cortes reales. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). Las secciones originales conservan evidencia historica; los deltas implementados siguientes prevalecen para los caminos modificados.
@@ -85,6 +91,14 @@ Promociones se abre desde OpcionesSistemaController.agregar_promociones, no por 
 No se encontro clase, tabla ni uso Historial_creditos en el codigo propio revisado. El credito actual se representa mediante acumulados en Clientes y ventas/comentarios; no se documenta como un libro de abonos, cuotas, vencimientos o intereses ya implementado. Turnos/Transacciones no estan enlazados a SesionCaja por FK y no son un historial equivalente.
 
 ## 2. V-01: buscar o escanear productos
+
+### Correccion local de descripcion POS (2026-11-12)
+
+Delta correctivo V-01/V-02 sobre el snapshot REF-33, sin ampliar otras tareas: ambas consultas de VentasModel materializan ProductoVentaLectura, que omitia descripcion_producto. El selector ya tenia siete columnas correctamente mapeadas (codigo, producto, descripcion, marca, modelo, precio, existencia); el fallback ocultaba la omision como texto vacio. Se incorpora descripcion_producto al final del DTO para conservar argumentos posicionales anteriores, y se conserva en ticket_items y muestra en una columna DESCRIPCION del ticket del POS. Precio, stock, cantidad, calculos y consultas no cambian.
+
+La entrada numerica sigue agregando directamente al ticket; la entrada por nombre abre DialogoSeleccionProductoVenta. La cantidad se edita mediante QInputDialog, no mediante un formulario de atributos. Unidad de medida y presentacion no son columnas del selector actual ni se agregan en este incremento. No se modifica el ticket impreso ni su snapshot historico.
+
+Regresion Qt parametrizada en [test_sales_cash.py](../../tests/test_sales_cash.py): entidad Productos sintetica y VentasModel real con sesion simulada; emite returnPressed del input, verifica las siete etiquetas/celdas y tooltip del selector, seleccion en modal real, descripcion/codigo/nombre/precio/stock del ticket y las seis columnas visibles. Antes del parche reproduce descripcion vacia y KeyError en el ticket; despues, 2 passed. Comando integrado: `PYTHONDONTWRITEBYTECODE=1 ./.venv/Scripts/python.exe -m pytest -q tests/test_sales_cash.py -p pytestqt.plugin`: **145 passed**, una advertencia legacy declarative_base. Sandbox Qt offscreen y firewall BD; sin PostgreSQL, impresoras ni configuracion real. No certifica renderizado manual ni persistencia SQL. Rollback: retirar solo el campo nuevo del DTO, la captura/columna de descripcion del POS y la regresion asociada; no altera datos ni cobros confirmados.
 
 **Actor/entrada:** cajero con acceso POS; Venta.buscar_y_agregar_producto desde campo de busqueda. Primero exige _verificar_y_asegurar_caja; strip del texto, vacio muestra mensaje. No hay protocolo especial de escaner: se usa el texto del campo y su accion de busqueda.
 

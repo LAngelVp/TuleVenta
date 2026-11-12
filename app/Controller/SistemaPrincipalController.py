@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation, QEvent
-from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSpinBox, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSpinBox, QVBoxLayout, QWidget
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QIcon
 from PySide6.QtPrintSupport import QPrinterInfo
@@ -456,12 +456,47 @@ class SistemaPrincipal(QWidget):
 
     def cerrar_sistema(self):
         try:
+            from gui.herramientas_view import ActualizacionWorker
+            if any(worker.isRunning() for worker in ActualizacionWorker.activos):
+                Mensaje().mensaje_informativo('Espera o cancela la actualizacion antes de cerrar.')
+                return
             respuesta = Mensaje().mensaje_pregunta("¿Quieres cerrar el sistema?")
             if respuesta == QMessageBox.Yes:
                 WorkerDBManager.cleanup_all_workers()
                 sys.exit()
         except Exception as e:
             return
+
+    def aplicar_actualizacion(self, path, checksum):
+        from app.Controller.Hilo_consultas import ProcesadorArchivoManager
+        from gui.herramientas_view import ActualizacionWorker
+        from app.Model.ActualizadorRemotoModel import lanzar_instalador
+        if not self.es_administrador:
+            Mensaje().mensaje_informativo('Se requiere autorizacion de administrador.')
+            return
+        workers = [WorkerDBManager.get_worker(identifier) for identifier in WorkerDBManager.list_active_workers()]
+        workers += list(ProcesadorArchivoManager._workers.values())
+        if (self.venta.ticket_items or any(worker.thread.isRunning() for worker in workers if worker)
+                or any(worker.isRunning() for worker in ActualizacionWorker.activos)):
+            Mensaje().mensaje_informativo('Termina el ticket y las operaciones pendientes antes de actualizar.')
+            return
+        self.setEnabled(False)
+        try:
+            lanzar_instalador(path, checksum)
+        except Exception:
+            self.setEnabled(True)
+            Mensaje().mensaje_informativo('No se pudo iniciar el instalador. La aplicacion sigue abierta.')
+            return
+        WorkerDBManager.cleanup_all_workers()
+        QApplication.instance().quit()
+
+    def closeEvent(self, event):
+        from gui.herramientas_view import ActualizacionWorker
+        if ActualizacionWorker.activos:
+            Mensaje().mensaje_informativo('Espera o cancela la actualizacion antes de cerrar.')
+            event.ignore()
+            return
+        super().closeEvent(event)
 
     def mostrar_menu(self):
         if self.animacion_menu and self.animacion_menu.state() == QAbstractAnimation.Running:
@@ -535,6 +570,7 @@ class OpcionesSistemaController(QDialog):
         self._crear_controles_configuracion_fiscal()
         self._crear_controles_configuracion_impresora()
         self._crear_tarjeta_licenciamiento()
+        self._crear_tarjeta_actualizacion()
         self._cargar_configuracion_fiscal()
         self._cargar_configuracion_impresora()
         self._aplicar_permisos_ui()
@@ -663,6 +699,18 @@ class OpcionesSistemaController(QDialog):
 
     def _cargar_configuracion_fiscal(self):
         self.entrada_iva_porcentaje.setValue(ConfiguracionSistemaModel.obtener_iva_porcentaje())
+
+    def _crear_tarjeta_actualizacion(self):
+        from gui.herramientas_view import TarjetaActualizacionWidget
+        principal = self.parentWidget()
+        self.tarjeta_actualizacion = TarjetaActualizacionWidget(
+            self.ui.contenedor_scrollInternoOpcionesSistema,
+            autorizado=lambda: bool(getattr(principal, 'es_administrador', False)))
+        if principal is not None and hasattr(principal, 'aplicar_actualizacion'):
+            self.tarjeta_actualizacion.instalar_solicitado.connect(principal.aplicar_actualizacion)
+        self.ui.gridLayout_2.removeItem(self.ui.verticalSpacer)
+        self.ui.gridLayout_2.addWidget(self.tarjeta_actualizacion, 6, 0, 1, 1)
+        self.ui.gridLayout_2.addItem(self.ui.verticalSpacer, 7, 0, 1, 1)
 
     def _cargar_configuracion_impresora(self):
         impresora_guardada = ConfiguracionSistemaModel.obtener_impresora_tickets()

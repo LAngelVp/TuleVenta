@@ -1,10 +1,14 @@
 #define AppName "TuleVenta"
-#define AppVersion "1.0.0"
+#ifndef AppVersion
+  #error "Compila mediante build_installer.bat para obtener app/version.py."
+#endif
 #define AppPublisher "TuleVenta"
 #define AppExeName "TuleVenta.exe"
 #define AppDistDir "..\dist\TuleVenta"
 #define InstallerOutputDir "output"
-#define PostgreSqlVersionMajor "16"
+#ifndef PostgreSqlVersionMajor
+  #error "Compila mediante build_installer.bat para verificar PostgreSQL portable."
+#endif
 #define PostgreSqlPortableDir "third_party\postgresql-portable"
 
 #ifnexist AppDistDir + "\" + AppExeName
@@ -39,12 +43,15 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir={#InstallerOutputDir}
-OutputBaseFilename=TuleVenta-Setup-User
+OutputBaseFilename=TuleVenta-Update-v{#AppVersion}-windows-x64
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\app\Source\Icons\logos\TuleVentaIcon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
+AppMutex=Local\TuleVentaPOS
+CloseApplications=no
+RestartApplications=no
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -54,8 +61,9 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 
 [Files]
 Source: "third_party\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
-Source: "{#AppDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#AppDistDir}\*"; DestDir: "{app}"; Excludes: "data\*,datos\*.json,_internal\datos\*.json,PostgreSQL*\*"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#AppDistDir}\_internal\datos\*.json"; DestDir: "{app}\_internal\datos"; Flags: onlyifdoesntexist skipifsourcedoesntexist
+Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Excludes: "data\*"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: not ExistingInstallation
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
@@ -63,10 +71,10 @@ Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Registry]
 ; Escribe en HKCU apuntando a la ruta universal de ProgramData esperada por Python
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "TULEVENTA_DB_CONFIG_PATH"; ValueData: "{commonappdata}\TuleVenta\configuracion_bd.json"; Flags: preservestringtype uninsdeletevalue
+Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "TULEVENTA_DB_CONFIG_PATH"; ValueData: "{commonappdata}\TuleVenta\configuracion_bd.json"; Flags: preservestringtype uninsdeletevalue; Check: not ExistingInstallation
 
 [Run]
-Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando dependencias de sistema (Visual C++)..."; Flags: waituntilterminated
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando dependencias de sistema (Visual C++)..."; Flags: waituntilterminated; Check: not ExistingInstallation
 Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait postinstall skipifsilent unchecked; Check: CanLaunchApplication
 
 [UninstallRun]
@@ -78,6 +86,8 @@ function SetEnvironmentVariable(lpName, lpValue: String): Boolean;
   external 'SetEnvironmentVariableW@kernel32.dll stdcall';
 
 var
+  InstallationChecked: Boolean;
+  InstallationWasExisting: Boolean;
   PostgreSqlPage: TWizardPage;
   PgPort: String;
   PgSuperUser: String;
@@ -144,6 +154,24 @@ begin
   Result := ExpandConstant('{commonappdata}\TuleVenta\configuracion_bd.json');
 end;
 
+function ExistingInstallation(): Boolean;
+var
+  DataDir: String;
+begin
+  if InstallationChecked then
+  begin
+    Result := InstallationWasExisting;
+    Exit;
+  end;
+  DataDir := GetPostgreSqlDataDir();
+  Result := FileExists(DataDir + '\PG_VERSION') or
+    FileExists(ExpandConstant('{app}\{#AppExeName}')) or
+    FileExists(GetDbConfigPath()) or
+    FileExists(ExpandConstant('{app}\datos\configuracion_bd.json')) or
+    FileExists(ExpandConstant('{app}\PostgreSQL{#PostgreSqlVersionMajor}\data\PG_VERSION')) or
+    FileExists(ExpandConstant('{commonappdata}\TuleVenta\data\PG_VERSION'));
+end;
+
 procedure CargarValoresPostgreSql();
 begin
   PgPort := Trim(EdtPgPort.Text);
@@ -186,6 +214,11 @@ var
   JsonText: String;
   ConfigDir: String;
 begin
+  if FileExists(GetDbConfigPath()) then
+  begin
+    Result := True;
+    Exit;
+  end;
   ConfigDir := ExpandConstant('{commonappdata}\TuleVenta');
   if not DirExists(ConfigDir) then
     ForceDirectories(ConfigDir);
@@ -240,9 +273,11 @@ begin
   PgInstallDir := GetPostgreSqlInstallDir();
   SqlFile := PgInstallDir + '\setup.sql';
 
-  // 1. Limpieza de datos antiguos
   if DirExists(DataDir) then
-    DelTree(DataDir, True, True, True);
+  begin
+    ErrorText := 'La carpeta data ya existe; no se inicializara ni borrara.';
+    Exit;
+  end;
 
   // 2. Inicializar con autenticación 'trust' para admitir cualquier contraseña ingresada por el usuario
   InitParams := '-D ' + Q(DataDir) + ' -U postgres -A trust -E UTF8 --locale=C';
@@ -297,6 +332,11 @@ procedure FinalizarPostgreSqlPortable();
 var
   ErrorText: String;
 begin
+  if ExistingInstallation then
+  begin
+    PgBootstrapOk := True;
+    Exit;
+  end;
   CargarValoresPostgreSql();
   PgBootstrapOk := False;
 
@@ -461,6 +501,31 @@ begin
   Result := True;
   if CurPageID = PostgreSqlPage.ID then
     Result := ValidarPaginaPostgreSql();
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (PageID = PostgreSqlPage.ID) and ExistingInstallation;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Index: Integer;
+  UpdateOnly: Boolean;
+begin
+  InstallationChecked := False;
+  InstallationWasExisting := ExistingInstallation;
+  InstallationChecked := True;
+  Result := '';
+  UpdateOnly := False;
+  for Index := 1 to ParamCount do
+    if CompareText(ParamStr(Index), '/UPDATEONLY') = 0 then
+      UpdateOnly := True;
+  if UpdateOnly and (not ExistingInstallation or
+      not FileExists(ExpandConstant('{app}\{#AppExeName}'))) then
+    Result := 'No hay una instalacion existente valida; actualizacion cancelada.';
+  if WizardSilent and not ExistingInstallation then
+    Result := 'La instalacion inicial requiere configurar PostgreSQL en modo interactivo.';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

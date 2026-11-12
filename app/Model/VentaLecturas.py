@@ -11,6 +11,7 @@ class ProductoVentaLectura:
     existencia: float = 0.0
     marca: str = ""
     modelo: str = ""
+    descripcion_producto: str = ""
 
 
 @dataclass(frozen=True)

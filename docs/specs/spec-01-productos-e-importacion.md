@@ -1,5 +1,11 @@
 # Spec 01: productos, catalogos e importacion
 
+## Evidencia PostgreSQL 18.4 (2026-11-12)
+
+Gate SQL focalizado posterior a los lotes historicos: [test_modules_postgres.py](../../tests/test_modules_postgres.py) verifica P-02/P-03/P-08/P-09, REF-21/24/25: alta/edicion n-1/n/n+1 de UPC20/nombre60/marca100/modelo100/color255/material255; exceso rechazado sin persistir/truncar, UPC de edicion permanece inmutable. Relectura independiente confirma producto_proveedor por diferencias y precio37.5 conservado, rollback de desvinculacion; lote modal exitoso y FK invalida en segunda fila revierte productos y categoria lateral.
+
+Ejecucion conjunta: **36 db passed, 712 deselected**, cluster efimero detenido/eliminado. [Comando, aislamiento, matriz y recuperacion](../04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). No se modificaron reglas ni esquema instalado; metadata creada solo en esquema de test. No certifica todos los importadores/canales, consultas, workers, migraciones ni concurrencia P-10. Las menciones SQL pendiente posteriores son evidencia historica y se sustituyen solo para estos escenarios.
+
 ## 1. Alcance y fuentes
 
 Fecha: 2026-11-10. Estado: As-Is documentado por lectura estatica, no ejecutado. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). No se refactoriza ni corrige codigo en esta entrega.

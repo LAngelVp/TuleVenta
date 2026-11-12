@@ -87,10 +87,11 @@ class Venta(QWidget):
         self.ui.gridLayout_4.addWidget(self.ui.tabla_productos, 3, 0, 1, 4)
 
     def _configurar_tabla_ticket(self):
-        cabeceras = ["CODIGO", "PRODUCTO", "CANTIDAD", "PRECIO", "SUBTOTAL"]
+        cabeceras = ["CODIGO", "PRODUCTO", "DESCRIPCION", "CANTIDAD", "PRECIO", "SUBTOTAL"]
         mapeo = {
             "codigo": lambda item: item.get("codigo_upc", ""),
             "producto": lambda item: item.get("nombre_producto", ""),
+            "descripcion": lambda item: item.get("descripcion_producto", "") or "",
             "cantidad": lambda item: f"{float(item.get('cantidad', 0.0)):,.2f}",
             "precio": lambda item: self._formatear_moneda(item.get("precio_unitario", 0.0)),
             "subtotal": lambda item: self._formatear_moneda(item.get("subtotal", 0.0)),
@@ -500,6 +501,7 @@ class Venta(QWidget):
                 "producto_id": producto.id,
                 "codigo_upc": producto.codigo_upc,
                 "nombre_producto": producto.nombre_producto,
+                "descripcion_producto": getattr(producto, "descripcion_producto", "") or "",
                 "cantidad": 1.0,
                 "precio_unitario": precio_unitario,
                 "subtotal": round(precio_unitario, 2),
