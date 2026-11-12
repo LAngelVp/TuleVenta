@@ -1,5 +1,11 @@
 # Spec 01: productos, catalogos e importacion
 
+## Incidencia de carga de imagen: incremento autorizado
+
+P-02/P-03/P-04, continuidad de REF-10: [ImagenEstatica.py](../../app/Controller/ImagenEstatica.py) resuelve rutas relativas existentes desde cwd, recursos de ejecucion y, en frozen, directorio del ejecutable. Una dimension actual cero usa el maximo finito declarado; se conserva proporcion. [ProductosController.py](../../app/Controller/ProductosController.py) agrega un visor runtime de 180x120 en el principal, actualizado por el clic real de tabla. Principal y modal limpian el pixmap y muestran placeholder ante imagen ausente. El modal conserva una ruta guardada aunque el archivo no este disponible; fallar al renderizar no autoriza borrar ese dato.
+
+Evidencia: [tests/test_static_images.py](../../tests/test_static_images.py) y [tests/test_phase2_products_qt.py](../../tests/test_phase2_products_qt.py), con PNG real, cwd distinto, frozen simulado, etiqueta antes de show y seleccion real. No cambia esquema, copia archivos ni regenera UI. Frozen simulado no certifica el ejecutable distribuido.
+
 ## Imagenes Y Catalogos: Correccion 2026-11-12
 
 P-02/P-03/P-04/P-06, REF-10/25/36: [ImagenEstatica](../../app/Controller/ImagenEstatica.py) fija dimensiones antes de asignar pixmap, centra, conserva proporcion y suaviza; ruta nula/inexistente limpia sin escalar pixmap nulo. Alta/edicion y seleccion de imagen usan el mismo helper; recursos QLabel existentes se estabilizan mediante UiTheme sin regenerar vistas. Se preservan rutas, limite de archivo, placeholders, precios y tipos Float.

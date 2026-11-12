@@ -36,6 +36,30 @@ def release(payload):
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize('tag', ['v1.0.0', '1.0.0'])
+def test_stable_release_tag_with_or_without_prefix(monkeypatch, tag):
+    import app.Model.ActualizadorRemotoModel as module
+    monkeypatch.setattr(module, '__version__', '0.9.0')
+    payload = b'installer'
+    data = release(payload)
+    data['tag_name'] = tag
+    for asset in data['assets']:
+        asset['name'] = asset['name'].replace('1.1.0', '1.0.0')
+    digest = hashlib.sha256(payload).hexdigest()
+
+    def opener(request, **kwargs):
+        if 'api.github.com' in request.full_url:
+            return io.BytesIO(json.dumps(data).encode())
+        return io.BytesIO(digest.encode() if request.full_url.endswith('.sha256') else payload)
+
+    model = module.ActualizadorRemotoModel('test', 'repo', opener=opener)
+    update = model.comprobar()
+    assert update.version == 'v1.0.0'
+    assert update.nombre == 'TuleVenta-Update-v1.0.0-windows-x64.exe'
+    assert model.descargar(update).read_bytes() == payload
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize('error', [TimeoutError('timeout')] + [HTTPError('https://github.com', code, 'failure', {}, None) for code in (404, 403, 500)])
 def test_network_errors(error):
     from app.Model.ActualizadorRemotoModel import ActualizadorRemotoModel

@@ -164,6 +164,32 @@ def test_supplier_worker_owners_are_per_instance(monkeypatch, qtbot):
 
 
 @pytest.mark.qt
+def test_supplier_price_modal_spacing_and_no_overlap(qtbot, qapp):
+    from PySide6.QtWidgets import QLabel, QLineEdit, QDoubleSpinBox, QPushButton
+    from app.Controller.Productos_del_Proveedor import CambioPreciosProductosProveedores
+    window = CambioPreciosProductosProveedores(
+        producto=SimpleNamespace(id=1, codigo_upc="TEST-0123456789", nombre_producto="Producto de prueba con nombre amplio"),
+        proveedor=SimpleNamespace(id=2, nombre="Proveedor de prueba con razon social extensa para verificar ajuste de texto"))
+    qtbot.addWidget(window)
+    window.show()
+    qapp.processEvents()
+    assert window.minimumWidth() >= 520 and window.minimumHeight() >= 500
+    assert window.ui.contenedor_datos_principales.spacing() >= 8
+    assert window.ui.etiqueta_nombre_del_proveedor.wordWrap()
+    controls = window.findChildren(QLabel) + window.findChildren(QLineEdit) + window.findChildren(QDoubleSpinBox) + window.findChildren(QPushButton)
+    rectangles = []
+    for widget in controls:
+        if isinstance(widget.parentWidget(), QDoubleSpinBox) or not widget.isVisible():
+            continue
+        rect = widget.geometry()
+        rect.moveTopLeft(widget.mapTo(window, widget.rect().topLeft()))
+        assert window.rect().contains(rect)
+        assert all(not rect.intersects(other) for other in rectangles)
+        rectangles.append(rect)
+    assert not window.grab().isNull()
+
+
+@pytest.mark.qt
 @pytest.mark.parametrize("kind", ["products", "price", "category"])
 def test_supplier_submodules_hide_and_launch_failure(monkeypatch, qtbot, kind):
     from PySide6.QtGui import QHideEvent

@@ -969,6 +969,24 @@ class CambioPreciosProductosProveedores(QDialog):
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         configure_child_modal(self, drag_widget=self.ui.contenedor_principal)
         apply_module_theme(self)
+        self.setWindowTitle("Manejar precio del proveedor")
+        self.setMinimumSize(520, 500)
+        self.resize(560, 560)
+        self.ui.gridLayout.setContentsMargins(16, 16, 16, 16)
+        self.ui.gridLayout_4.setContentsMargins(16, 16, 16, 16)
+        for layout in (self.ui.gridLayout_4, self.ui.contenedor_datos_principales, self.ui.contenedor_datos_precios):
+            layout.setSpacing(12)
+        for nombre in ("etiqueta_nombre_proveedor_titulo", "etiqueta_nombre_del_proveedor",
+                       "etiqueta_cod_producto", "etiqueta_nombre_producto", "etiqueta_costo_proveedor"):
+            label = getattr(self.ui, nombre)
+            label.setWordWrap(True)
+            label.setMinimumHeight(24)
+            label.setStyleSheet(f"#{nombre} {{ min-height: 24px; }}")
+        for nombre in ("txt_codigoupc_producto", "txt_nombre_producto", "decimal_costo_venta_proveedor",
+                       "btn_precio_producto_aceptar", "btn_precio_producto_cancelar"):
+            widget = getattr(self.ui, nombre)
+            widget.setMinimumHeight(32)
+            widget.setStyleSheet(f"#{nombre} {{ min-height: 32px; }}")
         self.producto = producto
         self.proveedor = proveedor
         self._ventanaCentradaPrecioProducto = False

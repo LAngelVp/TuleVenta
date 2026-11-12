@@ -1026,6 +1026,7 @@ class Admin_productosController(QWidget):
     def _cargar_imagen_producto(self):
         try:
             ruta = getattr(self.producto, 'imagen', None)
+            self.imagenProducto = ruta or None
             if mostrar_imagen_estatica(self.WindowsAddProduct_Dialog.etiqueta_fotoProducto, ruta):
                 self.imagenProducto = ruta
                 return
@@ -1035,7 +1036,6 @@ class Admin_productosController(QWidget):
                             </p><p align="center"><span style="font-size:16pt; font-family:Arial; font-weight:bold;">
                             Cargar Imagen</span></p></body></html>"""
             self.WindowsAddProduct_Dialog.etiqueta_fotoProducto.setText(_translate("contenedor_agregar_productos", default_html))
-            self.imagenProducto = None
         except Exception as e:
             Mensaje().mensaje_alerta("No se pudo cargar la imagen del producto.")
 
@@ -1512,6 +1512,15 @@ class Productos(QWidget):
 
         self.WindowProducts = Ui_Control_Productos()
         self.WindowProducts.setupUi(self)
+        self.imagen_producto = QLabel(self.WindowProducts.contenedor_tabla)
+        self.imagen_producto.setObjectName("imagen_producto_seleccionado")
+        self.imagen_producto.setFixedSize(180, 120)
+        self.imagen_producto.setProperty("imagen_estatica_dimension", QSize(180, 120))
+        self.imagen_producto.setStyleSheet("QLabel#imagen_producto_seleccionado { min-width: 180px; max-width: 180px; min-height: 120px; max-height: 120px; }")
+        self.WindowProducts.gridLayout_5.addWidget(self.imagen_producto, 1, 1, Qt.AlignTop)
+        self.WindowProducts.gridLayout_5.setColumnStretch(0, 1)
+        mostrar_imagen_estatica(self.imagen_producto)
+        self.imagen_producto.setText("Sin imagen")
         apply_module_theme(self)
 
         self.WindowProducts.txt_buscar.setValidator(None)
@@ -1959,6 +1968,12 @@ class Productos(QWidget):
 
                 if producto:
                     self.producto_actual = producto
+                    if not mostrar_imagen_estatica(self.imagen_producto, getattr(producto, "imagen", None)):
+                        self.imagen_producto.setText("Sin imagen")
+            else:
+                self.producto_actual = None
+                mostrar_imagen_estatica(self.imagen_producto)
+                self.imagen_producto.setText("Sin imagen")
 
         except Exception as e:
             Mensaje().mensaje_alerta(f"Error al obtener ID del producto: {str(e)}")

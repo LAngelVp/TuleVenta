@@ -1,5 +1,15 @@
 # Plan de refactorizacion incremental SDD
 
+## Cierre de cinco incidencias autorizadas
+
+Incremento acotado: imagenes P-02/P-03/P-04 (REF-10), captura Clientes S-03/S-04 (REF-22), arranque S-01 (REF-15), geometria del modal de precio y comprobacion de actualizaciones. No implementa otros REFs, migraciones ni nuevas reglas financieras. Contratos y limites quedan en [spec productos](specs/spec-01-productos-e-importacion.md), [spec proveedores](specs/spec-03-compras-proveedores-e-inventario.md) y [spec clientes/acceso](specs/spec-04-clientes-personal-sucursales-y-seguridad.md).
+
+[ActualizadorRemotoModel.py](../app/Model/ActualizadorRemotoModel.py) acepta tags estables vX.Y.Z y X.Y.Z y normaliza a vX.Y.Z. Conserva instalador canonico TuleVenta-Update-vX.Y.Z-windows-x64.exe, SHA256, unicidad, tamano y validacion de URLs/redirects. [tests/test_auto_updater.py](../tests/test_auto_updater.py) caracteriza el rechazo del tag sin prefijo y valida ambos sin relajar las pruebas de seguridad.
+
+Validacion ejecutada con PYTHONDONTWRITEBYTECODE=1 y .venv/Scripts/python.exe: `-m pytest -q -m unit`: 480 passed; `-m pytest -q -m qt -p pytestqt.plugin`: 463 passed y dos errores de setup por falta de destino SQL (no conecto). El mismo gate Qt mediante `tests/run_postgres_ephemeral.py -q -m qt -p pytestqt.plugin`: 465 passed con PostgreSQL temporal explicito, detenido y eliminado. Aviso existente de SQLAlchemy declarative_base; no es fallo de las correcciones.
+
+Rollback: revertir exclusivamente este incremento de fuente, pruebas y documentacion; no requiere revertir datos ni DDL. Pendiente: comprobacion manual de instalacion Windows, DPI y paquete frozen real. Qt simulado no demuestra esa distribucion; la suite SQL aqui no certifica todos los escritores ni concurrencia global.
+
 ## Evidencia SQL real de cuatro modulos (2026-11-12)
 
 ### Auditoria de consumidores DTO 2026-11-12

@@ -1,5 +1,13 @@
 # Spec 04: clientes, personal, organizacion y seguridad
 
+## Incidencias de Clientes y primera instalacion
+
+S-03/S-04, continuidad REF-22: [AdministracionEntrada.py](../../app/Model/AdministracionEntrada.py) valida formatos estructurales de RFC fisico/moral, CURP fisica, telefonos, correos, codigo postal y credito finito no negativo. [ClientesController.py](../../app/Controller/ClientesController.py) conserva obligatorios existentes, rechaza blancos sin rechazar credito cero y valida antes de persistir. Delta UI autorizado: RFC 13/12, CURP 18, telefonos 10 y codigo postal 5; columnas RFC20/telefono15/codigo postal20 no cambian. Correos respetan sus columnas por subtipo. No es consulta SAT/RENAPO, validacion de digito verificador ni certificacion de fechas de calendario; no cambia importadores.
+
+Area de negocio/Clasificacion usa texto blanco y fondo contrastante; cuatro combos usan AdjustToContents, minimo 240 y popup 360 mediante restricciones runtime/QSS locales. [tests/test_module4_clients.py](../../tests/test_module4_clients.py) cubre contrato, validadores reales y dimensiones efectivas tras aplicar el tema.
+
+S-01, continuidad REF-15: COUNT Usuarios=0 abre bienvenida sin alerta. La duplicacion reproducida fue tecnica: [conexionBD.py](../../app/DataBase/conexionBD.py) mostraba un error y, al cerrar sin Abort/Retry, continuaba incompleta; el arranque notificaba de nuevo. El parametro opcional interactivo conserva True por defecto; [inicio.py](../../inicio.py) y [VentanaInicialController.py](../../app/Controller/VentanaInicialController.py) usan False para propagar el error sin dialogo interno. El controlador de arranque mantiene su alerta unica y retry. La bienvenida conserva su manejo de excepciones de semillas; no se ha reescrito su flujo ni el registro inicial. [tests/test_phase1_access.py](../../tests/test_phase1_access.py) reproduce dos avisos antes y uno despues, y mantiene rutas cero/positivo/error. No se atribuyen otros avisos no observados a catalogos vacios.
+
 ## Ajustes visuales de Roles, Perfil y personal (2026-11-12)
 
 S-07/S-08/S-13/S-14: Cancelar neutral en Roles cierra sin guardar; Perfil tiene entrada identificable en sidebar y conserva su acceso existente. Foto del formulario de empleado fija180x180 desde creacion, carga y limpieza, sin modificar rutas/datos ni el helper de imagenes. [Detalle y evidencia](../05-guia-ui-ux-y-paleta.md#10-ajustes-de-roles-perfil-y-foto-de-empleado):65 Qt focales aprobadas, sin suite completa ni render Windows real. No se cambian permisos, transacciones, credenciales o generados.

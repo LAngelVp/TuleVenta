@@ -68,6 +68,57 @@ def product_window(monkeypatch, qtbot):
     return window
 
 
+def test_product_selected_image_real_controller(monkeypatch, qtbot, qapp, tmp_path):
+    from types import SimpleNamespace
+    from PySide6.QtCore import QModelIndex, QSize, Qt
+    from PySide6.QtGui import QPixmap
+    from app.Controller.ProductosController import Productos
+    image = QPixmap(300, 100)
+    image.fill()
+    path = tmp_path / "selected.png"
+    assert image.save(str(path))
+    window = Productos()
+    qtbot.addWidget(window)
+    product = SimpleNamespace(codigo_upc="TEST", nombre_producto="Producto", descripcion_producto="",
+                              precio=1.0, existencia=1.0, categoria=None, imagen=str(path))
+    window.modelo_lista_productos_principal.update_data([product], reset=True)
+    window.show()
+    qapp.processEvents()
+    table = window.WindowProducts.tabla_productos
+    qtbot.mouseClick(table.viewport(), Qt.LeftButton, pos=table.visualRect(table.model().index(0, 0)).center())
+    assert window.producto_actual is product
+    assert not window.imagen_producto.pixmap().isNull()
+    assert window.imagen_producto.size() == QSize(180, 120)
+    assert window.imagen_producto.pixmap().width() == 180
+    window.obtener_id_elemento_tabla_productos(QModelIndex())
+    assert window.imagen_producto.pixmap().isNull()
+    assert window.imagen_producto.text() == "Sin imagen"
+    assert window.imagen_producto.size() == QSize(180, 120)
+
+
+def test_product_modal_saved_image_and_missing_path(product_window, tmp_path):
+    from types import SimpleNamespace
+    from PySide6.QtGui import QPixmap
+    label = product_window.WindowsAddProduct_Dialog.etiqueta_fotoProducto
+    size = label.size()
+    path = tmp_path / "modal.png"
+    image = QPixmap(200, 100)
+    image.fill()
+    assert image.save(str(path))
+    product_window.producto = SimpleNamespace(imagen=str(path))
+    product_window._cargar_imagen_producto()
+    assert not label.pixmap().isNull()
+    assert label.size() == size
+    path.unlink()
+    product_window._cargar_imagen_producto()
+    assert label.pixmap().isNull()
+    assert "Cargar Imagen" in label.text()
+    assert product_window.imagenProducto == str(path)
+    product_window.producto.imagen = None
+    product_window._cargar_imagen_producto()
+    assert product_window.imagenProducto is None
+
+
 @pytest.mark.parametrize("widget,limit", [
     ("txt_codBarras", 20), ("txt_nombreProducto", 60), ("txt_marcaProducto", 100),
     ("txt_modeloProducto", 100), ("txt_colorProducto", 255), ("txt_materialProducto", 255),

@@ -1,6 +1,32 @@
 from .BaseDatosModel import Base, Clientes_fisicos, Clientes_morales, Representantes_clientes_morales, Empleados, Usuarios, Departamentos, Sucursales, Puestos
 from types import SimpleNamespace
 from math import isfinite
+import re
+
+
+RFC_FISICO = "[A-Z\u00d1&]{4}[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}"
+RFC_MORAL = "[A-Z\u00d1&]{3}[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}"
+CURP_CLIENTE = "[A-Z][AEIOUX][A-Z]{2}[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9][0-9]"
+CORREO_CLIENTE = r"[^\s@]+@[^\s@]+\.[^\s@]+"
+
+
+def validar_contacto_cliente(datos, moral=False):
+    formatos = [("rfc", RFC_MORAL if moral else RFC_FISICO, "RFC invalido: se requieren 12 caracteres para empresa o 13 para persona fisica."),
+                ("numero telefono", r"[0-9]{10}", "Telefono: se requieren 10 digitos."),
+                ("codigo postal", r"[0-9]{5}", "Codigo postal: se requieren 5 digitos."),
+                ("correo electronico empresa" if moral else "correo electronico", CORREO_CLIENTE, "Correo electronico invalido.")]
+    if moral:
+        formatos.extend([("telefono representante", r"[0-9]{10}", "Telefono del representante: se requieren 10 digitos."),
+                         ("correo electronico representante", CORREO_CLIENTE, "Correo del representante invalido.")])
+    else:
+        formatos.append(("curp", CURP_CLIENTE, "CURP invalida: se requieren 18 caracteres con formato valido."))
+    for campo, patron, mensaje in formatos:
+        valor = datos.get(campo)
+        if not isinstance(valor, str) or not re.fullmatch(patron, valor.strip(), re.IGNORECASE):
+            raise ValueError(mensaje)
+    credito = datos.get("limite del credito")
+    if isinstance(credito, bool) or not isinstance(credito, (int, float)) or not isfinite(credito) or credito < 0:
+        raise ValueError("El limite de credito debe ser un numero finito no negativo.")
 
 
 def snapshot_columnas(entidad):

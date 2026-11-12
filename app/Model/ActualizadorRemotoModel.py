@@ -63,8 +63,9 @@ class ActualizadorRemotoModel:
         if data.get('draft') or data.get('prerelease'):
             return None
         tag = data.get('tag_name', '')
-        if not re.fullmatch(r'v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)', tag, re.ASCII):
+        if not isinstance(tag, str) or not re.fullmatch(r'v?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)', tag, re.ASCII):
             raise ValueError('Tag estable invalido')
+        tag = 'v' + tag.removeprefix('v')
         if not es_version_mayor(tag, __version__):
             return None
         name = f'TuleVenta-Update-{tag}-windows-x64.exe'

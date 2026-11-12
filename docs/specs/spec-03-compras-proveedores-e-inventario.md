@@ -1,5 +1,11 @@
 # Spec 03: compras, proveedores e inventario
 
+## Incidencia visual de Manejar Precio
+
+Incremento de presentacion del modal existente: [Productos_del_Proveedor.py](../../app/Controller/Productos_del_Proveedor.py) configura en runtime minimo 520x500, tamano inicial 560x560, margenes 16, separacion 12, labels con word wrap y alturas minimas de campos/botones 32. Las restricciones QSS locales preservan las dimensiones tras aplicar el tema. No modifica consultas, costos, conversiones, permisos, transacciones ni archivos UI generados.
+
+[tests/test_suppliers_vertical.py](../../tests/test_suppliers_vertical.py) caracteriza el minimo previo insuficiente y verifica modal real con nombres largos, geometria dentro del dialogo, ausencia de solapamientos y captura no nula. No certifica todos los DPI de Windows.
+
 ## Auditoria integral de Compras 2026-11-12
 
 Incremento autorizado C-01/C-02/C-03/C-04/C-05, REF-07/22/25/34/36 y cohorte de locks REF-40. Se conserva esquema, FK por UPC, Float, stock global, costos y APIs publicas. Autorizacion explicita posterior: editor de PENDIENTE con proveedor fijo, lineas/cantidades/pago editables y precios registrados conservados; PostgreSQL efimero mediante ejecutor existente. No es certificacion global de infraestructura ni de otros escritores de stock.

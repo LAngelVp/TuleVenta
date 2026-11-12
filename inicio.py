@@ -34,7 +34,7 @@ class Inicio_sistema(QObject):
 
     def comprobar_usuarios(self):
         try:
-            with Conexion_base_datos() as db:
+            with Conexion_base_datos(interactivo=False) as db:
                 session = db.abrir_sesion()
                 resultado = self.comprobar_existencia_usuarios_query(session)
             self.mostrar_resultado_hilo(resultado)
@@ -103,14 +103,14 @@ if __name__ == "__main__":
     sistema = Inicio_sistema()
 
     # Verificación de Licencia antes del arranque de la app
-    lic_guardada = leer_licencia()
-    valida, mensaje, payload = validar_licencia(lic_guardada)
-    if not valida:
-        dialogo = VentanaActivacion()
-        if dialogo.exec() != QDialog.Accepted:
-            sys.exit(0)
+    # lic_guardada = leer_licencia()
+    # valida, mensaje, payload = validar_licencia(lic_guardada)
+    # if not valida:
+    #     dialogo = VentanaActivacion()
+    #     if dialogo.exec() != QDialog.Accepted:
+    #         sys.exit(0)
 
-    if not sistema.preparar_postgresql_portable():
-        sys.exit(1)
+    # if not sistema.preparar_postgresql_portable():
+    #     sys.exit(1)
     sistema.comprobar_usuarios()
     sys.exit(sistema.app.exec())

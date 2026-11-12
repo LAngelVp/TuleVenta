@@ -341,7 +341,7 @@ def test_ref15_retry_is_queued_and_opens_login_once(startup):
 
     startup.controller.comprobar_usuarios()
 
-    startup.factory.assert_called_once_with()
+    startup.factory.assert_called_once_with(interactivo=False)
     startup.welcome.assert_not_called()
     startup.login.assert_not_called()
     startup.timer.singleShot.assert_called_once_with(0, startup.controller.comprobar_usuarios)
@@ -352,6 +352,22 @@ def test_ref15_retry_is_queued_and_opens_login_once(startup):
     startup.login.assert_called_once_with()
     startup.login.return_value.show.assert_called_once_with()
     startup.welcome.assert_not_called()
+
+
+def test_first_startup_connection_has_one_notification(startup, monkeypatch):
+    import app.DataBase.conexionBD as connection
+    from sqlalchemy.exc import SQLAlchemyError
+    monkeypatch.setattr(connection, "create_engine", Mock(side_effect=SQLAlchemyError("synthetic connection failure")))
+    monkeypatch.setattr(connection, "ConfiguracionConexionBD", SimpleNamespace(
+        obtener_url_conexion=lambda: "postgresql://test@127.0.0.1/tuleventa_test",
+        ruta_configuracion=lambda: "test-config", obtener_resumen_conexion=lambda: "test destination"))
+    monkeypatch.setattr(connection, "Mensaje", lambda: startup.messages)
+    startup.messages.mensaje_critico.return_value = 0
+    monkeypatch.setattr(startup.module, "Conexion_base_datos", connection.Conexion_base_datos)
+    startup.controller.comprobar_usuarios()
+    assert startup.messages.mensaje_critico.call_count == 1
+    startup.welcome.assert_not_called()
+    startup.login.assert_not_called()
 
 
 def test_ref15_connection_error_does_not_open_login_or_registration(startup):

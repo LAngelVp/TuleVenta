@@ -59,7 +59,7 @@ class Inicio_principal(QWidget):
         self.close()
 
     def crear_datos_principales(self):
-        with Conexion_base_datos() as db:
+        with Conexion_base_datos(interactivo=False) as db:
             session = db.abrir_sesion()
             with session.begin():
                 try:

@@ -6,6 +6,26 @@ import pytest
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("moral", [False, True])
+@pytest.mark.parametrize("field,value", [("rfc", "INVALIDO"), ("curp", "INVALIDA"),
+    ("numero telefono", "123"), ("codigo postal", "ABC12"), ("correo", "sin-arroba"),
+    ("limite del credito", -1), ("limite del credito", float("nan"))])
+def test_client_contact_contract(moral, field, value):
+    from app.Model.AdministracionEntrada import validar_contacto_cliente
+    data = {"rfc": "ABC010101AB1" if moral else "GODE561231GR8", "curp": "GODE561231HDFRRN09",
+            "numero telefono": "5512345678", "codigo postal": "01234", "correo electronico": "test@example.test",
+            "correo electronico empresa": "test@example.test", "telefono representante": "5512345678",
+            "correo electronico representante": "rep@example.test", "limite del credito": 0}
+    validar_contacto_cliente(data, moral)
+    if field == "curp" and moral:
+        return
+    key = ("correo electronico empresa" if moral else "correo electronico") if field == "correo" else field
+    data[key] = value
+    with pytest.raises(ValueError):
+        validar_contacto_cliente(data, moral)
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize("operacion", ["alta", "consulta", "actualizar"])
 def test_lote2_personal_no_encontrado_tiene_contrato(operacion):
     from app.Model.EmpleadoModel import EmpleadosModel
@@ -799,7 +819,53 @@ def test_ref22_ui_clientes_limites(qtbot):
     Clientes.configurar_limites(SimpleNamespace(WindowClient=ui))
     for widget, (modelo, campo) in CAMPOS_CLIENTES.items():
         limite = modelo.__mapper__.columns[campo].type.length
-        assert getattr(ui, widget).maxLength() == limite
+        assert getattr(ui, widget).maxLength() <= limite
+    assert ui.txt_rfc_fisico.maxLength() == 13
+    assert ui.txt_rfc_empre_moral.maxLength() == 12
+    assert ui.txt_codigopostal_fisico.maxLength() == 5
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("moral", [False, True])
+def test_clients_real_validators_catalog_styles_and_widths(monkeypatch, qtbot, qapp, moral):
+    import app.Controller.ClientesController as module
+    from PySide6.QtGui import QPalette, QValidator
+    from PySide6.QtWidgets import QComboBox
+    monkeypatch.setattr(module.Clientes, "listar_areas", Mock())
+    monkeypatch.setattr(module.Clientes, "listar_categorias", Mock())
+    messages = Mock()
+    monkeypatch.setattr(module, "Mensaje", lambda: messages)
+    window = module.Clientes()
+    qtbot.addWidget(window)
+    window.show()
+    qapp.processEvents()
+    for name in ("btn_btn_nuevacategoriaFisico", "btn_btn_nuevacategoriaMoral",
+                 "btn_btn_nuevaareanegocio_fisico", "btn_btn_areasnegocio_moral"):
+        button = getattr(window.WindowClient, name)
+        assert button.property("variant") == "secondary"
+        assert button.palette().color(QPalette.Button).name() == "#0c445a"
+        assert button.palette().color(QPalette.ButtonText).name() == "#ffffff"
+    for name in ("cajaOpciones_areasnegocio_fisico", "cajaOpciones_categoriaFisico",
+                 "cajaOpciones_areasnegocio_moral", "cajaOpciones_categoriaMoral"):
+        combo = getattr(window.WindowClient, name)
+        assert combo.minimumWidth() >= 240 and combo.view().minimumWidth() >= 360
+        assert combo.sizeAdjustPolicy() == QComboBox.AdjustToContents
+    field = window.WindowClient.txt_rfc_empre_moral if moral else window.WindowClient.txt_rfc_fisico
+    good = "ABC010101AB1" if moral else "GODE561231GR8"
+    assert field.validator().validate(good, 0)[0] == QValidator.Acceptable
+    assert field.validator().validate("INVALIDO!", 0)[0] == QValidator.Invalid
+    getter = window.obtener_datos_cliente_moral if moral else window.obtener_datos_cliente_fisico
+    data = {key: ("TEST" if isinstance(value, str) else value) for key, value in getter().items()}
+    data.update(rfc=good, curp="GODE561231HDFRRN09")
+    data.update({"numero telefono": "5512345678", "codigo postal": "01234", "correo electronico": "test@example.test",
+                 "correo electronico empresa": "test@example.test", "telefono representante": "5512345678",
+                 "correo electronico representante": "rep@example.test", "area de negocio": SimpleNamespace(id=1),
+                 "clasificacion cliente": SimpleNamespace(id=2), "clasificacion de cliente": SimpleNamespace(id=2)})
+    validate = window.validacion_campos_cliente_moral if moral else window.validacion_campos_cliente_fisico
+    assert validate(data)
+    data["rfc"] = "INVALIDO"
+    assert not validate(data)
+    assert "RFC" in messages.mensaje_informativo.call_args.args[0]
 
 
 @pytest.mark.qt

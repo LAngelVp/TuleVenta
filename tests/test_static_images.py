@@ -99,7 +99,7 @@ def test_wait_dialog_keeps_floating_background(qtbot):
     ((640, 480), (120, 80), (120, 80)),
     ((120, 80), (16777215, 16777215), (120, 80)),
     ((60, 40), (120, 80), (60, 40)),
-    ((0, 0), (120, 80), (1, 1)),
+    ((0, 0), (120, 80), (120, 80)),
 ])
 def test_static_dimension_respects_declared_bounds(actual, maximum, expected):
     from PySide6.QtCore import QSize
@@ -135,6 +135,36 @@ def test_real_image_widgets_remain_static(qtbot, view, form, field):
     widget.adjustSize()
     assert widget.size() == original
     assert not mostrar_imagen_estatica(widget, None)
+
+
+@pytest.mark.qt
+@pytest.mark.parametrize("frozen", [False, True])
+def test_product_relative_image_before_show(monkeypatch, qtbot, tmp_path, frozen):
+    import sys
+    from PySide6.QtCore import QSize
+    from PySide6.QtGui import QPixmap
+    from PySide6.QtWidgets import QLabel
+    from app import runtime_paths
+    from app.Controller.ImagenEstatica import mostrar_imagen_estatica
+    root = tmp_path / "bundle"
+    root.mkdir()
+    image = QPixmap(200, 100)
+    image.fill()
+    assert image.save(str(root / "product.png"))
+    monkeypatch.setattr(runtime_paths, "ruta_raiz_proyecto", lambda: root)
+    monkeypatch.setattr(sys, "frozen", frozen, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", str(root), raising=False)
+    monkeypatch.chdir(tmp_path)
+    label = QLabel()
+    qtbot.addWidget(label)
+    label.setMaximumSize(120, 80)
+    label.resize(0, 0)
+    assert mostrar_imagen_estatica(label, "product.png")
+    assert label.size() == QSize(120, 80)
+    assert label.pixmap().width() == 120 and label.pixmap().height() == 60
+    assert not mostrar_imagen_estatica(label, None)
+    assert label.size() == QSize(120, 80)
+    assert label.pixmap().isNull()
 
 
 @pytest.mark.qt

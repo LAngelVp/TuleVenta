@@ -183,6 +183,7 @@ class Registro_personal_inicial(QDialog):
             (self.WindowRegistroEmpleado.Button_agregarpuesto, "Agregar puesto"),
         )
         for boton, tooltip in botones_catalogo:
+            boton.setProperty("variant", "primary")
             boton.setMinimumSize(40, 34)
             boton.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             boton.setToolTip(tooltip)

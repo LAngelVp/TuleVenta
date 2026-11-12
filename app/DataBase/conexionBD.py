@@ -6,8 +6,9 @@ from ..Model.BaseDatosModel import Base
 from .configuracionConexion import ConfiguracionConexionBD
 
 class Conexion_base_datos:
-    def __init__(self, link_conexion=None):
+    def __init__(self, link_conexion=None, interactivo=True):
         self.link_conexion = link_conexion
+        self.interactivo = interactivo
         self._usar_configuracion_compartida = link_conexion is None
         self.conectar()
 
@@ -20,6 +21,8 @@ class Conexion_base_datos:
             self.session = None
             Base.metadata.create_all(self.engine)
         except exc.SQLAlchemyError as e:
+            if not self.interactivo:
+                raise
             ruta_configuracion = ConfiguracionConexionBD.ruta_configuracion()
             mensaje = Mensaje().mensaje_critico(
                 'No se logro hacer conexion con la base de datos.\n\n'

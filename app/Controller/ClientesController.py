@@ -16,13 +16,14 @@ from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
 from .Ventana_espera import Modal_de_espera, ModalManager
 from .Hilo_consultas import WorkerDB
 from .OperacionMasivaCsvController import OperacionMasivaCsvController
-from .UiTheme import apply_module_theme, bring_window_to_front, stabilize_item_view
+from .UiTheme import apply_module_theme, bring_window_to_front, stabilize_item_view, render_qss
 from ..Model.ClientesFisicosAndMoralesModel import *
 from ..Model.BaseDatosModel import Areas_negocios, Categorias_de_clientes, Clientes_fisicos as ClienteFisicoModel, Clientes_morales as ClienteMoralModel
 from .MensajesAlertasController import Mensaje
 from ..Model.AdministracionEntrada import CAMPOS_CLIENTES
 from ..Model.ClientesImportacion import ClientesImportacion
 from ..Model.AdministracionEntrada import serializar_resultado
+from ..Model.AdministracionEntrada import validar_contacto_cliente, RFC_FISICO, RFC_MORAL, CURP_CLIENTE, CORREO_CLIENTE
 
 class Clientes(QWidget):
 # =========== PERSONALIZED SIGNALS ==============
@@ -32,6 +33,16 @@ class Clientes(QWidget):
         self.WindowClient = Ui_Control_Clientes()
         self.WindowClient.setupUi(self)
         self.configurar_limites()
+        for nombre in ("btn_btn_nuevacategoriaFisico", "btn_btn_nuevacategoriaMoral",
+                       "btn_btn_nuevaareanegocio_fisico", "btn_btn_areasnegocio_moral"):
+            button = getattr(self.WindowClient, nombre)
+            button.setProperty("variant", "secondary")
+            button.setStyleSheet(render_qss("""
+                QPushButton { background: ${brand.secondary}; color: ${text.onAccent};
+                    border: 1px solid ${brand.secondary}; padding: 6px 10px; border-radius: 4px; }
+                QPushButton:enabled:hover { background: ${brand.secondary.hover}; }
+                QPushButton:disabled { background: ${surface.disabled}; color: ${text.disabled}; }
+            """))
         apply_module_theme(self)
         self._ajustar_vistas_clientes()
         self.clienteFisico = True
@@ -137,6 +148,27 @@ class Clientes(QWidget):
     def configurar_limites(self):
         for nombre, (modelo, campo) in CAMPOS_CLIENTES.items():
             getattr(self.WindowClient, nombre).setMaxLength(modelo.__mapper__.columns[campo].type.length)
+        formatos = {"txt_rfc_fisico": (RFC_FISICO, 13), "txt_rfc_empre_moral": (RFC_MORAL, 12),
+                    "txt_curp_fisico": (CURP_CLIENTE, 18), "txt_telefono_fisico": (r"[0-9]{10}", 10),
+                    "txt_telefono_empre_moral": (r"[0-9]{10}", 10), "txt_telefono_repre_moral": (r"[0-9]{10}", 10),
+                    "txt_codigopostal_fisico": (r"[0-9]{5}", 5), "txt_codigopostal_moral": (r"[0-9]{5}", 5),
+                    "txt_correo_fisico": (CORREO_CLIENTE, 255), "txt_correo_empre_moral": (CORREO_CLIENTE, 255),
+                    "txt_correo_repre_moral": (CORREO_CLIENTE, 100)}
+        for nombre, (patron, limite) in formatos.items():
+            widget = getattr(self.WindowClient, nombre)
+            widget.setMaxLength(min(widget.maxLength(), limite))
+            expression = QRegularExpression(patron, QRegularExpression.CaseInsensitiveOption)
+            widget.setValidator(QRegularExpressionValidator(expression, widget))
+        for nombre in ("cajaDecimal_wpc_limite_credito", "cajaDecimal_wpc_limite_credito_moral"):
+            getattr(self.WindowClient, nombre).setMinimum(0)
+        for nombre in ("cajaOpciones_areasnegocio_fisico", "cajaOpciones_categoriaFisico",
+                       "cajaOpciones_areasnegocio_moral", "cajaOpciones_categoriaMoral"):
+            combo = getattr(self.WindowClient, nombre)
+            combo.setMinimumWidth(240)
+            combo.setStyleSheet("QComboBox { min-width: 240px; }")
+            combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+            combo.view().setMinimumWidth(360)
+            combo.view().setStyleSheet("QAbstractItemView { min-width: 360px; }")
 
     def _ajustar_vistas_clientes(self):
         stabilize_item_view(self.WindowClient.tabla_clientesFisicos, min_height=260)
@@ -982,9 +1014,14 @@ class Clientes(QWidget):
             "comentarios"
         ]
         for campo in campos_requeridos:
-            if not datos[campo]:
+            if datos.get(campo) is None or (isinstance(datos.get(campo), str) and not datos[campo].strip()):
                 Mensaje().mensaje_informativo(f"Existe un campo llamado \"{campo}\" que no haz completado")
                 return False
+        try:
+            validar_contacto_cliente(datos)
+        except ValueError as error:
+            Mensaje().mensaje_informativo(str(error))
+            return False
         return True
 
     def autorizar_credito_fisico(self):
@@ -1985,9 +2022,14 @@ class Clientes(QWidget):
         ]
 
         for campo in campos_cliente_moral:
-            if not datos[campo]:
+            if datos.get(campo) is None or (isinstance(datos.get(campo), str) and not datos[campo].strip()):
                 Mensaje().mensaje_informativo(f"Existe un campo llamado \"{campo}\" que no esta completo.")
                 return False
+        try:
+            validar_contacto_cliente(datos, moral=True)
+        except ValueError as error:
+            Mensaje().mensaje_informativo(str(error))
+            return False
         return True
 # ===================== DIALOG ==================
     def nueva_area_cliente_moral(self):
