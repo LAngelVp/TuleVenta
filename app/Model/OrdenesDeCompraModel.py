@@ -2,7 +2,9 @@ from datetime import datetime
 from math import isfinite
 from types import SimpleNamespace
 
-from .BaseDatosModel import Compras, Detalles_compras, Metodos_pagos, Empleados, Productos, ProductoProveedor, Unidad_medida_productos, Presentacion_productos, Proveedores, Movimientos_Inventario
+from .BaseDatosModel import (Compras, Detalles_compras, Metodos_pagos, Empleados, Productos,
+                             ProductoProveedor, Unidad_medida_productos, Presentacion_productos,
+                             Proveedores, Movimientos_Inventario, NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
 from sqlalchemy.orm import joinedload
 
 def campos_snapshot(entidad, relaciones=None):
@@ -66,6 +68,10 @@ def consulta_compras(session, operacion, snapshot, state=None, **valores):
                                       "offset": offset, "limit": limit,
                                       "generacion": snapshot.get("_generaciones", {}).get(state, 0), "mensaje": "Consulta completada."})
         if operacion == "__obtener_proveedores_query":
+            from .ProveedoresModel import ProveedoresModel
+            modelo_proveedores = ProveedoresModel(session)
+            modelo_proveedores.obtener_o_crear_proveedor_compra_directa()
+            session.commit()
             rows = session.query(Proveedores).order_by(Proveedores.nombre.asc()).all()
             return [campos_snapshot(row) for row in rows], True
         if operacion == "obtener_metodos_pagos_query":
@@ -248,12 +254,24 @@ class OrdenesDeCompraModel:
                     validar_orden(orderDatails, items)
                     if orderDatails["proveedor"].id != order.proveedor_id or orderDatails.get("version_orden") != version_orden(order):
                         return False
+                    proveedor = self.session.query(Proveedores).filter(
+                        Proveedores.id == order.proveedor_id,
+                        Proveedores.nombre == NOMBRE_PROVEEDOR_COMPRA_DIRECTA,
+                    ).first()
+                    es_compra_directa = proveedor is not None
                     existentes = {detalle.producto_id: detalle for detalle in order.detalles}
                     for item in items:
                         codigo = item["producto"].codigo_upc
                         if codigo in existentes:
                             if item["precio_unitario"] != existentes[codigo].precio_unitario:
                                 raise ValueError("El precio registrado de una linea existente no se puede modificar.")
+                        elif es_compra_directa:
+                            producto = (self.session.query(Productos)
+                                        .filter(Productos.codigo_upc == codigo)
+                                        .first())
+                            costo_actual = float(producto.costo_final or 0) if producto else None
+                            if producto is None or abs(float(item["precio_unitario"]) - costo_actual) > 1e-9:
+                                raise ValueError("Producto o costo del catalogo ya no disponible.")
                         else:
                             asociacion = (self.session.query(ProductoProveedor)
                                           .filter(ProductoProveedor.proveedor_id == order.proveedor_id,

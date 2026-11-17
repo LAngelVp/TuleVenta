@@ -1,8 +1,11 @@
 from .FuncionesAuxiliares import FuncionesAuxiliaresController
 from .AjustarCajaOpcionesGlobal import AjustarcajaOpciones
-from ..Model.ProveedoresModel import ProveedoresModel
+from ..Model.ProveedoresModel import ProveedoresModel, es_proveedor_compra_directa
 from ..Model.MetodoPagoModel import MetodoPagoModel
-from ..Model.Proveedores_ProductosModel import Proveedores_productoModel
+from ..Model.Proveedores_ProductosModel import (Proveedores_productoModel, AsociacionProveedorDTO,
+                                                producto_snapshot)
+from ..Model.ProductosModel import ProductosModel
+from ..Model.BaseDatosModel import NOMBRE_PROVEEDOR_COMPRA_DIRECTA
 from ..Model.OrdenesDeCompraModel import OrdenesDeCompraModel
 from ..DataBase.conexionBD import Conexion_base_datos
 from .MensajesAlertasController import Mensaje
@@ -882,6 +885,9 @@ class Orden_compra(QDialog):
         self._guardando_orden = False
         self.proveedores = {}
         self.proveedor = None
+        self.proveedor_compra_directa = None
+        self.compra_directa = False
+        self._proveedor_antes_directa = None
         self.metodoPago = None
         self.ventana_productos_proveedor = None
         self.setConjuntoProductosDelProveedor = set()
@@ -898,6 +904,14 @@ class Orden_compra(QDialog):
         self.ordenCompraUI.txt_buscarproveedor.setMaxLength(150)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText("NUEVA ORDEN DE COMPRA")
         self.ordenCompraUI.btn_btn_agregar.hide()
+        self.check_compra_directa = QCheckBox("Compra directa sin proveedor")
+        self.check_compra_directa.setObjectName("check_compra_directa")
+        self.check_compra_directa.setToolTip(
+            "Permite comprar productos del catalogo sin un proveedor real. "
+            "El costo unitario se toma del costo actual del producto."
+        )
+        self.check_compra_directa.toggled.connect(self.__alternar_compra_directa)
+        self.ordenCompraUI.gridLayout_2.addWidget(self.check_compra_directa, 1, 0, 1, 2)
         self.btn_quitar_producto = QToolButton(self)
         self.btn_quitar_producto.setObjectName("btn_quitar_producto")
         self.btn_quitar_producto.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
@@ -992,7 +1006,41 @@ class Orden_compra(QDialog):
         else:
             Mensaje().mensaje_alerta(objetoMensaje["mensaje"])
 
+    def __alternar_compra_directa(self, activo):
+        self.compra_directa = bool(activo)
+        self.limpiar_productos_seleccionados()
+        if activo:
+            if not es_proveedor_compra_directa(self.proveedor):
+                self._proveedor_antes_directa = self.proveedor
+            self.proveedor = self.proveedor_compra_directa
+            self.ordenCompraUI.txt_buscarproveedor.blockSignals(True)
+            self.ordenCompraUI.txt_buscarproveedor.setText(NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
+            self.ordenCompraUI.txt_buscarproveedor.blockSignals(False)
+            self.ordenCompraUI.txt_buscarproveedor.setEnabled(False)
+            self.ordenCompraUI.btn_btn_productosProveedor.setEnabled(False)
+            self.ordenCompraUI.etiqueta_proveedor.setText("Proveedor: (compra directa)")
+            self.ordenCompraUI.txt_buscarproducto.setPlaceholderText("Codigo UPC del producto del catalogo")
+        else:
+            self.proveedor = getattr(self, "_proveedor_antes_directa", None)
+            self.ordenCompraUI.txt_buscarproveedor.setEnabled(True)
+            self.ordenCompraUI.txt_buscarproveedor.blockSignals(True)
+            self.ordenCompraUI.txt_buscarproveedor.setText(getattr(self.proveedor, "nombre", "") or "")
+            self.ordenCompraUI.txt_buscarproveedor.blockSignals(False)
+            self.ordenCompraUI.btn_btn_productosProveedor.setEnabled(True)
+            self.ordenCompraUI.etiqueta_proveedor.setText("Proveedor")
+            self.ordenCompraUI.txt_buscarproducto.setPlaceholderText("Buscar por codigo")
+        if activo and self.proveedor is None:
+            Mensaje().mensaje_informativo(
+                "El proveedor interno de compra directa aun no esta disponible. "
+                "Espere un momento e intente de nuevo."
+            )
+
     def __terminar_orden_compra(self):
+        if self.compra_directa and self.proveedor is None:
+            Mensaje().mensaje_informativo(
+                "El proveedor interno de compra directa aun no esta disponible. Intente de nuevo."
+            )
+            return
         if self.proveedor is None:
             Mensaje().mensaje_informativo("Debe seleccionar un proveedor y al menos un producto.")
             return
@@ -1179,8 +1227,10 @@ class Orden_compra(QDialog):
                 error_callback=self.mostrar_error_hilo,
                 terminado_callback=self.manejadorModal.cerrar_modal
             )
+            funcion = (self.consultar_producto_catalogo_query if self.compra_directa
+                       else capturar_consulta(self, self.consultar_productos_del_proveedor_query))
             self.consultor_productos_del_proveedor.ejecutar(
-                funcion=capturar_consulta(self, self.consultar_productos_del_proveedor_query),
+                funcion=funcion,
                 codigo_upc=codigo_upc
             )
         except Exception:
@@ -1193,6 +1243,9 @@ class Orden_compra(QDialog):
         if not resultado["exito"]:
             Mensaje().mensaje_alerta(resultado["mensaje"])
             return False
+
+        if self.compra_directa:
+            return self.__agregar_producto_catalogo(resultado["data"])
 
         producto = resultado["data"]
         if self.proveedor is None or (hasattr(producto, "proveedor_id") and producto.proveedor_id != self.proveedor.id):
@@ -1213,6 +1266,44 @@ class Orden_compra(QDialog):
         )
         Mensaje().mensaje_informativo("Producto agregado")
         return True
+
+    def __agregar_producto_catalogo(self, producto):
+        if producto is None:
+            Mensaje().mensaje_alerta("No se encontro el producto en el catalogo.")
+            return False
+        codigo = producto.codigo_upc
+        if codigo in self.codigos_agregados:
+            Mensaje().mensaje_alerta(f"Producto {codigo} ya existe")
+            return False
+        costo = float(producto.costo_final or 0)
+        asociacion = AsociacionProveedorDTO(
+            producto.id,
+            self.proveedor.id,
+            costo,
+            producto_snapshot(producto),
+        )
+        self.setConjuntoProductosDelProveedor.add(asociacion)
+        self.codigos_agregados.add(codigo)
+        self.modeloTablaProductosOrden.update_data([asociacion], reset=False)
+        Mensaje().mensaje_informativo("Producto agregado")
+        return True
+
+    def consultar_producto_catalogo_query(self, session, codigo_upc):
+        try:
+            producto, estado = ProductosModel(session).consultar_producto_por_codigoUPC(codigo_upc)
+            if not estado or producto is None:
+                return {
+                    "exito": False,
+                    "mensaje": "No se encontro el producto en el catalogo.",
+                    "data": None,
+                }
+            return {"exito": True, "mensaje": "OK", "data": producto}
+        except Exception:
+            return {
+                "exito": False,
+                "mensaje": "No se pudo consultar el producto del catalogo.",
+                "data": None,
+            }
 
     def consultar_productos_del_proveedor_query(self, session, codigo_upc):
         try:
@@ -1296,6 +1387,8 @@ class Orden_compra(QDialog):
         self.__mostrarTotalCompraUI()
 
     def productos_orden_tabla_compras_seleccionados(self, conjuntoProductosDelProveedor):
+        if self.compra_directa:
+            return 0
         if not hasattr(self, 'codigos_agregados'):
             self.codigos_agregados = set()
 
@@ -1324,6 +1417,11 @@ class Orden_compra(QDialog):
         return len(productos_nuevos)
 
     def mostrar_productos_proveedores(self):
+        if self.compra_directa:
+            Mensaje().mensaje_informativo(
+                "En compra directa busque el producto por su codigo UPC del catalogo."
+            )
+            return
         if self.proveedor is None:
             Mensaje().mensaje_alerta("Debe seleccionar un proveedor")
             return
@@ -1367,19 +1465,33 @@ class Orden_compra(QDialog):
             Mensaje().mensaje_alerta("No se pudo iniciar la consulta de proveedores.")
 
     def __obtener_proveedores_query(self, session):
-        proveedores, estado = ProveedoresModel(session).obtener_proveedores()
+        modelo = ProveedoresModel(session)
+        modelo.obtener_o_crear_proveedor_compra_directa()
+        session.commit()
+        proveedores, estado = modelo.obtener_proveedores()
         return proveedores, estado
 
     def __almacenar_proveedores_del_sistema(self, proveedores, estado, mensaje = None):
-        self.proveedores_generales_del_sistema_dict = {p.id: p for p in (proveedores if proveedores else [])}
+        proveedores = proveedores if proveedores else []
+        self.proveedor_compra_directa = next(
+            (proveedor for proveedor in proveedores if es_proveedor_compra_directa(proveedor)),
+            self.proveedor_compra_directa,
+        )
+        self.proveedores_generales_del_sistema_dict = {
+            p.id: p for p in proveedores if not es_proveedor_compra_directa(p)
+        }
         completar = QCompleter([proveedor.nombre for proveedor in self.proveedores_generales_del_sistema_dict.values()])
         completar.setCaseSensitivity(Qt.CaseInsensitive)
         completar.setFilterMode(Qt.MatchContains)
         completar.setCompletionMode(QCompleter.PopupCompletion)
         self.ordenCompraUI.txt_buscarproveedor.textChanged.connect(self.__proveedor_seleccionado)
         self.ordenCompraUI.txt_buscarproveedor.setCompleter(completar)
+        if self.compra_directa and self.proveedor is None:
+            self.proveedor = self.proveedor_compra_directa
 
     def __proveedor_seleccionado(self, texto):
+        if self.compra_directa:
+            return
         proveedor_anterior = getattr(self.proveedor, "id", None)
         for id_proveedor, proveedor in self.proveedores_generales_del_sistema_dict.items():
             if proveedor.nombre == texto:
@@ -1948,7 +2060,20 @@ class WindowEditarOrdenCompra(Orden_compra):
 
         self._version_orden = version_orden(orden)
         self.proveedor = orden.proveedor
-        self.ordenCompraUI.txt_buscarproveedor.setText(orden.proveedor.nombre)
+        self.check_compra_directa.setEnabled(False)
+        if es_proveedor_compra_directa(orden.proveedor):
+            self.proveedor_compra_directa = orden.proveedor
+            self.compra_directa = True
+            self.check_compra_directa.blockSignals(True)
+            self.check_compra_directa.setChecked(True)
+            self.check_compra_directa.blockSignals(False)
+            self.ordenCompraUI.txt_buscarproveedor.setText(orden.proveedor.nombre)
+            self.ordenCompraUI.txt_buscarproveedor.setEnabled(False)
+            self.ordenCompraUI.btn_btn_productosProveedor.setEnabled(False)
+            self.ordenCompraUI.etiqueta_proveedor.setText("Proveedor: (compra directa)")
+            self.ordenCompraUI.txt_buscarproducto.setPlaceholderText("Codigo UPC del producto del catalogo")
+        else:
+            self.ordenCompraUI.txt_buscarproveedor.setText(orden.proveedor.nombre)
         self.ordenCompraUI.txt_buscarproveedor.setReadOnly(True)
         self.ordenCompraUI.label_wc_titulo_ordencompra.setText(f"EDITAR ORDEN #{orden.id}")
         for detalle in orden.detalles:

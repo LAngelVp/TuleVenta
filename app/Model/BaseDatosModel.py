@@ -26,6 +26,9 @@ from sqlalchemy.orm import relationship, configure_mappers, Mapped, mapped_colum
 # configure_mappers()
 Base = declarative_base()
 
+# Proveedor reservado del sistema para compras directas (sin proveedor real).
+NOMBRE_PROVEEDOR_COMPRA_DIRECTA = "COMPRA DIRECTA (SIN PROVEEDOR)"
+
 # Tabla M:M entre Roles y Permisos
 rol_permiso = Table(
     "rol_permisos",

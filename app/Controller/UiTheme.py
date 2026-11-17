@@ -3,7 +3,9 @@ from types import MappingProxyType
 
 from PySide6.QtCore import QEvent, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QKeySequence, QPalette, QShortcut
-from PySide6.QtWidgets import QAbstractButton, QAbstractItemView, QFrame, QGroupBox, QLabel, QSizePolicy, QTableWidget, QWidget
+from PySide6.QtWidgets import (QAbstractButton, QAbstractItemView, QAbstractSpinBox, QComboBox,
+                               QFrame, QGroupBox, QLabel, QLineEdit, QPlainTextEdit,
+                               QSizePolicy, QTableWidget, QWidget)
 from app.runtime_paths import ruta_recurso
 from .ImagenEstatica import mostrar_imagen_estatica
 
@@ -203,17 +205,30 @@ QLabel[role="caption"] {
 QLineEdit,
 QPlainTextEdit,
 QComboBox,
-QDateEdit,
-QSpinBox,
-QDoubleSpinBox {
+QDateEdit {
     min-height: 38px;
     padding: 0 12px;
     background-color: ${surface.panel};
-    color: ${text.main};
+    color: #000000;
     border: 1px solid ${border.control};
     border-radius: 10px;
     selection-background-color: ${brand.secondary};
     selection-color: ${surface.panel};
+}
+/* Los spinboxes NO deben recibir border/padding en el widget externo:
+   Qt reduce el QLineEdit interno a 1 px y el texto deja de verse. */
+QSpinBox,
+QDoubleSpinBox {
+    min-height: 38px;
+    background-color: transparent;
+    color: #000000;
+    selection-background-color: ${brand.secondary};
+    selection-color: ${surface.panel};
+}
+QSpinBox QLineEdit,
+QDoubleSpinBox QLineEdit {
+    padding: 0 8px;
+    color: #000000;
 }
 QPlainTextEdit {
     padding: 10px 12px;
@@ -221,9 +236,7 @@ QPlainTextEdit {
 QLineEdit:focus,
 QPlainTextEdit:focus,
 QComboBox:focus,
-QDateEdit:focus,
-QSpinBox:focus,
-QDoubleSpinBox:focus {
+QDateEdit:focus {
     border: 2px solid ${brand.secondary};
 }
 QLineEdit:read-only,
@@ -232,11 +245,7 @@ QPlainTextEdit:read-only {
     color: ${text.secondary};
 }
 QComboBox::drop-down,
-QDateEdit::drop-down,
-QSpinBox::up-button,
-QSpinBox::down-button,
-QDoubleSpinBox::up-button,
-QDoubleSpinBox::down-button {
+QDateEdit::drop-down {
     border: none;
     background: transparent;
     width: 20px;
@@ -699,8 +708,21 @@ def apply_module_theme(root_widget):
     _decorate_buttons(root_widget)
     _decorate_labels(root_widget)
     _decorate_views(root_widget)
+    _aplicar_texto_negro_campos(root_widget)
     root_widget.setStyleSheet(MODULE_STYLESHEET + TITLE_SCALE_STYLESHEET)
     QTimer.singleShot(0, lambda widget=root_widget: _sync_window_state(widget, refresh_style=True))
+
+
+def _aplicar_texto_negro_campos(root_widget):
+    """Fuerza texto negro en los campos de captura sin tocar bordes ni tamanos."""
+    tipos_campo = (QLineEdit, QPlainTextEdit, QComboBox, QAbstractSpinBox)
+    for widget in root_widget.findChildren(QWidget):
+        if not isinstance(widget, tipos_campo):
+            continue
+        estilo = widget.styleSheet() or ""
+        if "color: #000000" in estilo.lower():
+            continue
+        widget.setStyleSheet(estilo + "\ncolor: #000000;")
 
 
 def apply_access_theme(root_widget):

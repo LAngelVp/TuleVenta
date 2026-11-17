@@ -1,6 +1,7 @@
 from sqlalchemy.orm import joinedload
 from sqlalchemy import select, func
-from .BaseDatosModel import Proveedores, Categorias_proveedores, Representantes_proveedores, Productos, ProductoProveedor
+from .BaseDatosModel import (Proveedores, Categorias_proveedores, Representantes_proveedores,
+                             Productos, ProductoProveedor, NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
 import logging
 from collections import namedtuple
 from .Proveedores_ProductosModel import sincronizar_proveedores_producto
@@ -20,6 +21,13 @@ def proveedor_snapshot(proveedor):
                                                 for columna in Representantes_proveedores.__table__.columns}) if representante else None
     )
 
+
+def es_proveedor_compra_directa(proveedor):
+    if proveedor is None:
+        return False
+    nombre = getattr(proveedor, "nombre", proveedor)
+    return str(nombre or "").strip().upper() == NOMBRE_PROVEEDOR_COMPRA_DIRECTA
+
 def validar_textos_proveedor(entidad, valores):
     for columna in entidad.__table__.columns:
         if columna.name not in valores:
@@ -36,10 +44,33 @@ class ProveedoresModel:
 
     def listar_dto(self, offset=0, limit=100, texto=None):
         consulta = self.session.query(Proveedores).options(joinedload(Proveedores.categoria), joinedload(Proveedores.representante))
+        consulta = consulta.filter(Proveedores.nombre != NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
         if texto is not None:
             consulta = consulta.filter(Proveedores.nombre.ilike(f"%{texto}%"))
         proveedores = consulta.order_by(Proveedores.nombre.asc()).offset(offset).limit(limit).all()
         return [proveedor_snapshot(proveedor) for proveedor in proveedores], bool(proveedores)
+
+    def obtener_o_crear_proveedor_compra_directa(self):
+        """Devuelve el proveedor reservado para compras directas, creandolo si no existe."""
+        try:
+            proveedor = (self.session.query(Proveedores)
+                         .filter(Proveedores.nombre == NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
+                         .first())
+            if proveedor is not None:
+                return proveedor, False
+            proveedor = Proveedores(
+                nombre=NOMBRE_PROVEEDOR_COMPRA_DIRECTA,
+                pais="", estado="", ciudad="", codigo_postal="",
+                calles="", avenidas="", colonia="", direccion_adicional="",
+                rfc="", pagina_web="", correo="", telefono="",
+                clave_moneda="", tipo_moneda="",
+                representante_id=None, categoria_id=None,
+            )
+            self.session.add(proveedor)
+            self.session.flush()
+            return proveedor, True
+        except Exception:
+            return None, False
 
     def categorias_dto(self):
         categorias = self.session.query(Categorias_proveedores).all()
@@ -159,6 +190,8 @@ class ProveedoresModel:
             validar_textos_proveedor(Proveedores, locals())
             if not nombre.strip() or categoria_id is None:
                 raise ValueError("nombre/categoria: son obligatorios")
+        if str(nombre or "").strip().upper() == NOMBRE_PROVEEDOR_COMPRA_DIRECTA:
+            return None, False
         try:
             proveedor = self.session.query(Proveedores).filter_by(nombre=nombre).first()
             if proveedor:
@@ -224,6 +257,7 @@ class ProveedoresModel:
             joinedload(Proveedores.representante),  # Carga anticipada del representante
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
         )
+        .filter(Proveedores.nombre != NOMBRE_PROVEEDOR_COMPRA_DIRECTA)
         .order_by(Proveedores.nombre.asc())
         .offset(offset)
         .limit(limit)
@@ -242,7 +276,10 @@ class ProveedoresModel:
             joinedload(Proveedores.producto_proveedor_asociaciones),   # Carga anticipada de los productos
             joinedload(Proveedores.representante),  # Carga anticipada del representante
             joinedload(Proveedores.compras)  # Carga anticipada de las compras
-        ).filter(Proveedores.nombre.ilike(texto_busqueda)).order_by(Proveedores.nombre.asc()).offset(offset).limit(limit).all()
+        ).filter(
+            Proveedores.nombre != NOMBRE_PROVEEDOR_COMPRA_DIRECTA,
+            Proveedores.nombre.ilike(texto_busqueda),
+        ).order_by(Proveedores.nombre.asc()).offset(offset).limit(limit).all()
         if len(proveedores) > 0:
             return proveedores, True
         return [], False
@@ -277,6 +314,8 @@ class ProveedoresModel:
 
             proveedor = self.session.query(Proveedores).get(proveedor_id)
             if not proveedor:
+                return None, False
+            if es_proveedor_compra_directa(proveedor) or str(nombre or "").strip().upper() == NOMBRE_PROVEEDOR_COMPRA_DIRECTA:
                 return None, False
 
             # Actualizar los atributos del proveedor
@@ -353,6 +392,8 @@ class ProveedoresModel:
         try:
             proveedor = self.session.get(Proveedores, id)
             if proveedor:
+                if es_proveedor_compra_directa(proveedor):
+                    return None, False
                 self.session.delete(proveedor)
                 return None, True
             else:

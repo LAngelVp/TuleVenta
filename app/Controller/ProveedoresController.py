@@ -5,8 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget, QTableView
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from app.View.UserInterfacePy.UI_CONTROL_PROVEEDORES import Ui_Control_Proveedores
 from app.Controller.CategoriasController import CategoriasController
-from app.Model.ProveedoresModel import ProveedoresModel
-from app.Model.ProveedoresModel import ProveedoresModel
+from app.Model.ProveedoresModel import ProveedoresModel, es_proveedor_compra_directa
 from app.DataBase.conexionBD import Conexion_base_datos
 from app.Controller.Validaciones import Validaciones
 from app.Model.CategoriasModel import CategoriasModel
@@ -296,6 +295,9 @@ class Control_proveedores(QWidget):
             campos_faltantes = ', '.join(campos_vacios)
             Mensaje().mensaje_alerta(f"Completa los siguientes campos: {campos_faltantes}.")
             return
+        if es_proveedor_compra_directa((datos_proveedor or {}).get("nombre")):
+            Mensaje().mensaje_alerta("Ese nombre esta reservado para el sistema de compras directas.")
+            return
         try:
             self.manejadorModal.mostrar_modal()
             WorkerDB.cleanup_owner_workers(f"{id(self)}_agregar_proveedor_thread")
@@ -508,6 +510,10 @@ class Control_proveedores(QWidget):
 
         if not hasattr(self, 'proveedor_seleccionado') or not self.proveedor_seleccionado:
             Mensaje().mensaje_alerta(cuerpo="No hay un proveedor seleccionado para actualizar.")
+            return
+        if (es_proveedor_compra_directa(self.proveedor_seleccionado)
+                or es_proveedor_compra_directa((datos_proveedor or {}).get("nombre"))):
+            Mensaje().mensaje_alerta("El proveedor interno de compras directas no se puede modificar.")
             return
         respuesta = Mensaje().mensaje_pregunta("¿Quieres actualizar el registro")
         if respuesta == QMessageBox.Yes:
@@ -815,6 +821,9 @@ class Control_proveedores(QWidget):
         datos_proveedor = self.obtener_datos_proveedor()
         if not self.proveedor_seleccionado:
             Mensaje().mensaje_alerta("No haz seleccionado un proveedor de la tabla para eliminarlo.")
+            return
+        if es_proveedor_compra_directa(self.proveedor_seleccionado):
+            Mensaje().mensaje_alerta("El proveedor interno de compras directas no se puede eliminar.")
             return
         respuesta = Mensaje().mensaje_pregunta("Quieres eliminar el registro")
         if respuesta == QMessageBox.Yes:
