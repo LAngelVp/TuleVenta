@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation, QEvent, QSize
@@ -27,6 +28,16 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.GruposyPermisosModel import RolesModel
 from .MensajesAlertasController import Mensaje
 from .UiTheme import COLOR_TOKENS, apply_shell_theme, configure_window_chrome
+
+
+def _cerrar_proceso_para_actualizacion():
+    """Cierra Qt y termina el proceso sin esperar a hilos residuales."""
+    app = QApplication.instance()
+    if app is not None:
+        app.closeAllWindows()
+        app.quit()
+    os._exit(0)
+
 
 class SistemaPrincipal(QWidget):
     LISTAR_PROVEEDORES_VPROVEEDORES = Signal()
@@ -519,7 +530,7 @@ class SistemaPrincipal(QWidget):
             Mensaje().mensaje_informativo('No se pudo iniciar el instalador. La aplicacion sigue abierta.')
             return
         WorkerDBManager.cleanup_all_workers()
-        QApplication.instance().quit()
+        _cerrar_proceso_para_actualizacion()
 
     def closeEvent(self, event):
         from gui.herramientas_view import ActualizacionWorker

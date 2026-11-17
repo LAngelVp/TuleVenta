@@ -27,6 +27,10 @@
   #error "No se encontro psql.exe dentro de installer\third_party\postgresql-portable."
 #endif
 
+#ifnexist PostgreSqlPortableDir + "\bin\pg_isready.exe"
+  #error "No se encontro pg_isready.exe dentro de installer\third_party\postgresql-portable."
+#endif
+
 [Setup]
 DisableDirPage=yes
 AppId={{E6D786A1-8D53-4DDF-BE93-EF6A3C2937A1}
@@ -49,8 +53,8 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\app\Source\Icons\logos\TuleVentaIcon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
-AppMutex=Local\TuleVentaPOS
-CloseApplications=no
+CloseApplications=yes
+CloseApplicationsFilter=*.exe
 RestartApplications=no
 
 [Languages]
@@ -63,7 +67,7 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 Source: "third_party\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "{#AppDistDir}\*"; DestDir: "{app}"; Excludes: "data\*,datos\*.json,_internal\datos\*.json,PostgreSQL*\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#AppDistDir}\_internal\datos\*.json"; DestDir: "{app}\_internal\datos"; Flags: onlyifdoesntexist skipifsourcedoesntexist
-Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Excludes: "data,data\*,logfile,*.log"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: not ExistingInstallation
+Source: "{#PostgreSqlPortableDir}\*"; DestDir: "{app}\PostgreSQL{#PostgreSqlVersionMajor}"; Excludes: "data,data\*,logfile,*.log"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: PostgreSqlCopyNeeded
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
@@ -88,6 +92,8 @@ function SetEnvironmentVariable(lpName, lpValue: String): Boolean;
 var
   InstallationChecked: Boolean;
   InstallationWasExisting: Boolean;
+  InstallDirReady: Boolean;
+  PostgreSqlCopyRequired: Boolean;
   PostgreSqlPage: TWizardPage;
   PgPort: String;
   PgSuperUser: String;
@@ -110,6 +116,14 @@ begin
   Result := '"' + S + '"';
 end;
 
+function InitializeSetup(): Boolean;
+begin
+  // Nunca expandir {app} durante la inicializacion del wizard.
+  InstallDirReady := False;
+  InstallationChecked := False;
+  Result := True;
+end;
+
 function IsPortValid(const Value: String): Boolean;
 var
   PortNumber: Integer;
@@ -118,14 +132,24 @@ begin
   Result := (PortNumber > 0) and (PortNumber <= 65535);
 end;
 
+function GetInstallDir(): String;
+begin
+  // {app} no existe todavia cuando Inno evalua ShouldSkipPage/InitializeWizard.
+  // Mientras no este listo usamos la misma ruta de DefaultDirName.
+  if InstallDirReady then
+    Result := ExpandConstant('{app}')
+  else
+    Result := ExpandConstant('{userappdata}\{#AppName}');
+end;
+
 function GetPostgreSqlInstallDir(): String;
 begin
-  Result := ExpandConstant('{app}\PostgreSQL{#PostgreSqlVersionMajor}');
+  Result := GetInstallDir() + '\PostgreSQL{#PostgreSqlVersionMajor}';
 end;
 
 function GetPostgreSqlDataDir(): String;
 begin
-  Result := ExpandConstant('{app}\data');
+  Result := GetInstallDir() + '\data';
 end;
 
 function GetPsqlPath(): String;
@@ -143,9 +167,27 @@ begin
   Result := GetPostgreSqlInstallDir() + '\bin\pg_ctl.exe';
 end;
 
+function GetPgIsReadyPath(): String;
+begin
+  Result := GetPostgreSqlInstallDir() + '\bin\pg_isready.exe';
+end;
+
+function PostgreSqlBinariesInstalled(): Boolean;
+begin
+  Result := FileExists(GetPgCtlPath()) and
+    FileExists(GetInitDbPath()) and
+    FileExists(GetPsqlPath()) and
+    FileExists(GetPgIsReadyPath());
+end;
+
+function PostgreSqlCopyNeeded(): Boolean;
+begin
+  Result := PostgreSqlCopyRequired;
+end;
+
 function GetPostgreSqlLogFile(): String;
 begin
-  Result := ExpandConstant('{app}\postgresql.log');
+  Result := GetInstallDir() + '\postgresql.log';
 end;
 
 function GetDbConfigPath(): String;
@@ -157,19 +199,23 @@ end;
 function ExistingInstallation(): Boolean;
 var
   DataDir: String;
+  BaseDir: String;
 begin
   if InstallationChecked then
   begin
     Result := InstallationWasExisting;
     Exit;
   end;
+  BaseDir := GetInstallDir();
   DataDir := GetPostgreSqlDataDir();
   Result := FileExists(DataDir + '\PG_VERSION') or
-    FileExists(ExpandConstant('{app}\{#AppExeName}')) or
+    FileExists(BaseDir + '\{#AppExeName}') or
     FileExists(GetDbConfigPath()) or
-    FileExists(ExpandConstant('{app}\datos\configuracion_bd.json')) or
-    FileExists(ExpandConstant('{app}\PostgreSQL{#PostgreSqlVersionMajor}\data\PG_VERSION')) or
+    FileExists(BaseDir + '\datos\configuracion_bd.json') or
+    FileExists(BaseDir + '\PostgreSQL{#PostgreSqlVersionMajor}\data\PG_VERSION') or
     FileExists(ExpandConstant('{commonappdata}\TuleVenta\data\PG_VERSION'));
+  InstallationWasExisting := Result;
+  InstallationChecked := True;
 end;
 
 procedure CargarValoresPostgreSql();
@@ -328,39 +374,6 @@ begin
   Result := PgBootstrapOk;
 end;
 
-procedure FinalizarPostgreSqlPortable();
-var
-  ErrorText: String;
-begin
-  if ExistingInstallation then
-  begin
-    PgBootstrapOk := True;
-    Exit;
-  end;
-  CargarValoresPostgreSql();
-  PgBootstrapOk := False;
-
-  if not InstallPostgreSql(ErrorText) then
-  begin
-    MsgBox(ErrorText, mbCriticalError, MB_OK);
-    Exit;
-  end;
-
-  if not ConfigurePostgreSqlUserMode(ErrorText) then
-  begin
-    MsgBox(ErrorText, mbCriticalError, MB_OK);
-    Exit;
-  end;
-
-  if not WriteDbConfig(ErrorText) then
-  begin
-    MsgBox(ErrorText, mbCriticalError, MB_OK);
-    Exit;
-  end;
-
-  PgBootstrapOk := True;
-end;
-
 procedure InitializeWizard();
 var
   LblIntro: TNewStaticText;
@@ -508,24 +521,358 @@ begin
   Result := (PageID = PostgreSqlPage.ID) and ExistingInstallation;
 end;
 
+function ReadPgMajorFromDataDir(const DataDir: String): String;
+var
+  Contents: AnsiString;
+begin
+  Result := '';
+  if LoadStringFromFile(DataDir + '\PG_VERSION', Contents) then
+    Result := Trim(Contents);
+end;
+
+function GetPgCtlForDataDir(const BaseDir, DataDir: String): String;
+var
+  Major: String;
+begin
+  Result := '';
+  Major := ReadPgMajorFromDataDir(DataDir);
+  if Major <> '' then
+    Result := BaseDir + '\PostgreSQL' + Major + '\bin\pg_ctl.exe';
+  if (Result = '') or (not FileExists(Result)) then
+    Result := BaseDir + '\PostgreSQL{#PostgreSqlVersionMajor}\bin\pg_ctl.exe';
+  if not FileExists(Result) then
+    Result := '';
+end;
+
+function GetConfiguredPgPort(): String;
+var
+  Contents: AnsiString;
+  Text: String;
+  Position: Integer;
+  Index: Integer;
+begin
+  Result := '';
+  if FileExists(GetDbConfigPath()) and LoadStringFromFile(GetDbConfigPath(), Contents) then
+  begin
+    Text := Contents;
+    Position := Pos('"port"', Text);
+    if Position > 0 then
+    begin
+      Index := Position + Length('"port"');
+      while (Index <= Length(Text)) and (Text[Index] <> ':') do
+        Index := Index + 1;
+      if Index <= Length(Text) then
+      begin
+        Index := Index + 1;
+        while (Index <= Length(Text)) and (Pos(Copy(Text, Index, 1), '0123456789') = 0) do
+          Index := Index + 1;
+        while (Index <= Length(Text)) and (Pos(Copy(Text, Index, 1), '0123456789') > 0) do
+        begin
+          Result := Result + Copy(Text, Index, 1);
+          Index := Index + 1;
+        end;
+      end;
+    end;
+  end;
+
+  if Result = '' then
+  begin
+    if PgPort <> '' then
+      Result := PgPort
+    else
+      Result := '5432';
+  end;
+end;
+
+function WaitForPostgreSqlReady(const Port: String; TimeoutSeconds: Integer): Boolean;
+var
+  Attempt: Integer;
+  PgIsReady: String;
+  ResultCode: Integer;
+begin
+  Result := False;
+  PgIsReady := GetPgIsReadyPath();
+  if (Port = '') or (not FileExists(PgIsReady)) then
+    Exit;
+
+  for Attempt := 1 to TimeoutSeconds * 2 do
+  begin
+    if Exec(PgIsReady, '-h 127.0.0.1 -p ' + Port + ' -t 2',
+        GetPostgreSqlInstallDir() + '\bin', SW_HIDE, ewWaitUntilTerminated,
+        ResultCode) and (ResultCode = 0) then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Sleep(500);
+  end;
+end;
+
+function StartPortablePostgreSql(var ErrorText: String): Boolean;
+var
+  DataDir, LogFile, PgCtl, BinDir, Port: String;
+  ResultCode: Integer;
+begin
+  Result := False;
+  DataDir := GetPostgreSqlDataDir();
+  LogFile := GetPostgreSqlLogFile();
+  Port := GetConfiguredPgPort();
+
+  if not FileExists(DataDir + '\PG_VERSION') then
+  begin
+    ErrorText := 'No se encontro una carpeta de datos valida en ' + DataDir;
+    Exit;
+  end;
+
+  PgCtl := GetPgCtlForDataDir(GetInstallDir(), DataDir);
+  if PgCtl = '' then
+  begin
+    ErrorText := 'No se encontro pg_ctl.exe para PostgreSQL en ' + GetInstallDir();
+    Exit;
+  end;
+
+  BinDir := ExtractFileDir(PgCtl);
+  if not Exec(PgCtl, 'status -D ' + Q(DataDir), BinDir, SW_HIDE,
+      ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  begin
+    if not Exec(PgCtl, 'start -D ' + Q(DataDir) + ' -l ' + Q(LogFile) +
+        ' -o ' + Q('-p ' + Port) + ' -w -t 60', BinDir, SW_HIDE,
+        ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+    begin
+      ErrorText := 'No se pudo iniciar PostgreSQL (Codigo: ' + IntToStr(ResultCode) + ').';
+      Exit;
+    end;
+  end;
+
+  if not WaitForPostgreSqlReady(Port, 30) then
+  begin
+    ErrorText := 'PostgreSQL no respondio en 127.0.0.1:' + Port +
+      ' despues de 30 segundos.';
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+procedure FinalizarPostgreSqlPortable();
+var
+  ErrorText: String;
+begin
+  PgBootstrapOk := False;
+
+  if ExistingInstallation then
+  begin
+    if not PostgreSqlBinariesInstalled() then
+    begin
+      MsgBox('No se encontraron los binarios de PostgreSQL en ' +
+        GetPostgreSqlInstallDir() + #13#10#13#10 +
+        'Vuelve a ejecutar el instalador para reparar la instalacion.',
+        mbCriticalError, MB_OK);
+      Exit;
+    end;
+
+    if not StartPortablePostgreSql(ErrorText) then
+    begin
+      MsgBox(ErrorText, mbCriticalError, MB_OK);
+      Exit;
+    end;
+
+    PgBootstrapOk := True;
+    Exit;
+  end;
+
+  CargarValoresPostgreSql();
+
+  if not InstallPostgreSql(ErrorText) then
+  begin
+    MsgBox(ErrorText, mbCriticalError, MB_OK);
+    Exit;
+  end;
+
+  if not ConfigurePostgreSqlUserMode(ErrorText) then
+  begin
+    MsgBox(ErrorText, mbCriticalError, MB_OK);
+    Exit;
+  end;
+
+  if not WaitForPostgreSqlReady(PgPort, 30) then
+  begin
+    MsgBox('PostgreSQL se inicio pero no respondio en 127.0.0.1:' + PgPort +
+      ' despues de 30 segundos.', mbCriticalError, MB_OK);
+    Exit;
+  end;
+
+  if not WriteDbConfig(ErrorText) then
+  begin
+    MsgBox(ErrorText, mbCriticalError, MB_OK);
+    Exit;
+  end;
+
+  PgBootstrapOk := True;
+end;
+
+procedure DetenerPostgreSqlPortable(const BaseDir: String);
+var
+  DataDir, PgCtl: String;
+  ResultCode: Integer;
+begin
+  DataDir := BaseDir + '\data';
+  if not FileExists(DataDir + '\PG_VERSION') then
+    Exit;
+
+  PgCtl := GetPgCtlForDataDir(BaseDir, DataDir);
+  if PgCtl = '' then
+    Exit;
+
+  Exec(PgCtl, 'stop -D ' + Q(DataDir) + ' -m fast -w -t 30', BaseDir,
+    SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+function DetenerProcesosInstalacion(const BaseDir: String): Boolean;
+var
+  ScriptFile, Script, PowerShell: String;
+  ResultCode: Integer;
+begin
+  Result := False;
+  ScriptFile := ExpandConstant('{tmp}\tuleventa_stop_processes.ps1');
+  Script :=
+    'param([string]$Root)' + #13#10 +
+    '$ErrorActionPreference = ''SilentlyContinue''' + #13#10 +
+    '$Root = [System.IO.Path]::GetFullPath($Root)' + #13#10 +
+    'Get-Process -Name TuleVenta,postgres -ErrorAction SilentlyContinue | ' +
+    'Where-Object { $_.Path -and $_.Path.StartsWith($Root, [System.StringComparison]::OrdinalIgnoreCase) } | ' +
+    'Stop-Process -Force -ErrorAction SilentlyContinue' + #13#10 +
+    'Start-Sleep -Milliseconds 500' + #13#10;
+
+  if not SaveStringToFile(ScriptFile, Script, False) then
+    Exit;
+
+  PowerShell := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+  Result := Exec(PowerShell, '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ' +
+    Q(ScriptFile) + ' -Root ' + Q(BaseDir), '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  DeleteFile(ScriptFile);
+
+  // Respaldo para el ejecutable principal si PowerShell no estuviera disponible.
+  if not Result then
+    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM TuleVenta.exe', '',
+      SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+function IsProtectedInstallEntry(const Name: String): Boolean;
+var
+  LowerName: String;
+begin
+  LowerName := Lowercase(Name);
+  Result := (CompareText(Name, 'data') = 0) or
+    (CompareText(Name, 'datos') = 0) or
+    (CompareText(Name, 'configuracion_bd.json') = 0) or
+    (CompareText(Name, 'postgresql.log') = 0) or
+    (Pos('postgresql', LowerName) = 1) or
+    (Pos('unins', LowerName) = 1);
+end;
+
+procedure CleanInstallContents(const Dir: String);
+var
+  FindRec: TFindRec;
+  Name, FullPath: String;
+begin
+  if not FindFirst(Dir + '\*', FindRec) then
+    Exit;
+  try
+    repeat
+      Name := FindRec.Name;
+      if (Name <> '.') and (Name <> '..') and (not IsProtectedInstallEntry(Name)) then
+      begin
+        FullPath := Dir + '\' + Name;
+        if DirExists(FullPath) then
+        begin
+          // _internal se limpia por dentro para conservar _internal\datos.
+          if CompareText(Name, '_internal') = 0 then
+            CleanInstallContents(FullPath)
+          else
+            DelTree(FullPath, True, True, True);
+        end
+        else
+          DeleteFile(FullPath);
+      end;
+    until not FindNext(FindRec);
+  finally
+    FindClose(FindRec);
+  end;
+end;
+
+procedure LimpiarInstalacionAnterior(const BaseDir: String);
+begin
+  // Protege data\, datos\, _internal\datos, PostgreSQL* y el desinstalador.
+  if DirExists(BaseDir) then
+    CleanInstallContents(BaseDir);
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Index: Integer;
-  UpdateOnly: Boolean;
+  UpdateOnly, AutomaticMode: Boolean;
+  BaseDir: String;
 begin
-  InstallationChecked := False;
-  InstallationWasExisting := ExistingInstallation;
-  InstallationChecked := True;
   Result := '';
+  InstallDirReady := True;
+  BaseDir := GetInstallDir();
+
+  // Recalcular con el {app} real; ShouldSkipPage pudo haber usado la ruta por defecto.
+  InstallationChecked := False;
+  InstallationWasExisting := ExistingInstallation();
+  InstallationChecked := True;
+
+  // Se calcula una sola vez antes de [Files]: la condicion Check se evalua
+  // por cada archivo y no debe cambiar mientras se copia PostgreSQL.
+  PostgreSqlCopyRequired := not PostgreSqlBinariesInstalled();
+
   UpdateOnly := False;
   for Index := 1 to ParamCount do
     if CompareText(ParamStr(Index), '/UPDATEONLY') = 0 then
       UpdateOnly := True;
+  AutomaticMode := UpdateOnly or WizardSilent;
+
   if UpdateOnly and (not ExistingInstallation or
-      not FileExists(ExpandConstant('{app}\{#AppExeName}'))) then
+      not FileExists(BaseDir + '\{#AppExeName}')) then
+  begin
     Result := 'No hay una instalacion existente valida; actualizacion cancelada.';
-  if WizardSilent and not ExistingInstallation then
+    Exit;
+  end;
+
+  if WizardSilent and (not UpdateOnly) and (not ExistingInstallation) then
+  begin
     Result := 'La instalacion inicial requiere configurar PostgreSQL en modo interactivo.';
+    Exit;
+  end;
+
+  if ExistingInstallation then
+  begin
+    if not AutomaticMode then
+    begin
+      if MsgBox('Se detecto una instalacion anterior de TuleVenta.' + #13#10#13#10 +
+          'Se cerrara TuleVenta, se detendra PostgreSQL y se limpiaran los binarios anteriores.' + #13#10 +
+          'La base de datos (data) y tus datos (datos) se conservaran.' + #13#10#13#10 +
+          'Deseas continuar con la instalacion?',
+          mbConfirmation, MB_YESNO) <> IDYES then
+      begin
+        Result := 'Instalacion cancelada por el usuario.';
+        Exit;
+      end;
+    end;
+
+    DetenerPostgreSqlPortable(BaseDir);
+    DetenerProcesosInstalacion(BaseDir);
+    Sleep(1000);
+    if not AutomaticMode then
+      LimpiarInstalacionAnterior(BaseDir);
+  end
+  else
+  begin
+    // Limpieza preventiva de restos de una instalacion interrumpida.
+    DetenerProcesosInstalacion(BaseDir);
+    Sleep(1000);
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

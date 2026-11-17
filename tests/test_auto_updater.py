@@ -113,6 +113,35 @@ def test_installer_preserves_customer_data():
     assert 'if ExistingInstallation then' in source
 
 
+@pytest.mark.unit
+def test_installer_repairs_and_waits_for_postgre_sql():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / 'installer/TuleVentaSetup.iss').read_text(encoding='utf-8')
+    code = source.split('[Code]', 1)[1]
+    assert 'Check: PostgreSqlCopyNeeded' in source
+    assert 'PostgreSqlCopyRequired := not PostgreSqlBinariesInstalled();' in source
+    assert 'function PostgreSqlCopyNeeded(): Boolean;' in source
+    assert "ExpandConstant('{app}')" not in code.replace(
+        "if InstallDirReady then\n    Result := ExpandConstant('{app}')", '')
+    assert 'function InitializeSetup(): Boolean;' in code
+    assert 'InstallDirReady := False;' in code
+    assert 'function StartPortablePostgreSql' in code
+    assert 'function WaitForPostgreSqlReady' in code
+    assert "GetPgIsReadyPath() + '\\bin\\pg_isready.exe'" not in code
+    assert "'\\bin\\pg_isready.exe'" in code
+    assert 'pg_isready' in code
+    assert 'PgBootstrapOk := False;' in code
+    assert 'if not StartPortablePostgreSql(ErrorText) then' in code
+
+
+@pytest.mark.unit
+def test_app_starts_postgre_sql_before_first_query():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / 'inicio.py').read_text(encoding='utf-8')
+    assert 'if not sistema.preparar_postgresql_portable():' in source
+    assert source.index('preparar_postgresql_portable') < source.index('sistema.comprobar_usuarios()')
+
+
 @pytest.mark.qt
 def test_update_button(qtbot, monkeypatch):
     from gui.herramientas_view import TarjetaActualizacionWidget
@@ -273,6 +302,41 @@ def test_verified_installer_launches_only_bridge(tmp_path, monkeypatch):
     assert options['close_fds'] is True
 
 
+@pytest.mark.unit
+def test_installer_avoids_app_constant_before_initialization():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / 'installer/TuleVentaSetup.iss').read_text(encoding='utf-8')
+    helpers = source.split('function ExistingInstallation()', 1)[1].split('function PrepareToInstall', 1)[0]
+    assert "ExpandConstant('{app}')" not in helpers
+    for expected in (
+        "Result := GetInstallDir() + '\\PostgreSQL{#PostgreSqlVersionMajor}';",
+        "Result := GetInstallDir() + '\\data';",
+        "Result := GetInstallDir() + '\\postgresql.log';",
+        "FileExists(BaseDir + '\\{#AppExeName}')",
+    ):
+        assert expected in source
+    assert 'InstallDirReady := True' in source
+
+
+@pytest.mark.unit
+def test_update_bridge_forces_application_close():
+    root = Path(__file__).resolve().parents[1]
+    bridge = (root / 'installer/scripts/aplicar_actualizacion.ps1').read_text(encoding='utf-8')
+    assert '/CLOSEAPPLICATIONS' in bridge
+    assert '/FORCECLOSEAPPLICATIONS' in bridge
+    assert "throw 'Hay otra instancia de TuleVenta abierta.'" not in bridge
+    assert 'Stop-Process -Force' in bridge
+
+
+@pytest.mark.qt
+def test_update_terminates_process_hard(monkeypatch):
+    from app.Controller import SistemaPrincipalController as controller
+    calls = []
+    monkeypatch.setattr(controller.os, '_exit', lambda code: calls.append(code))
+    controller._cerrar_proceso_para_actualizacion()
+    assert calls == [0]
+
+
 @pytest.mark.qt
 def test_install_confirmation_emits_verified_payload(qtbot, monkeypatch, tmp_path):
     from types import SimpleNamespace
@@ -300,8 +364,22 @@ def test_build_batch_and_inno_output_contract():
     assert '#define InstallerOutputDir "output"' in setup
     assert 'OutputDir={#InstallerOutputDir}' in setup
     assert 'OutputBaseFilename=TuleVenta-Update-v{#AppVersion}-windows-x64' in setup
+    assert 'CloseApplications=yes' in setup
+    assert 'CloseApplicationsFilter=*.exe' in setup
+    assert 'RestartApplications=no' in setup
+    assert 'AppMutex=' not in setup
+    assert "Result := ExpandConstant('{userappdata}\\{#AppName}');" in setup
+    assert 'DetenerPostgreSqlPortable' in setup
+    assert 'DetenerProcesosInstalacion' in setup
+    assert 'LimpiarInstalacionAnterior' in setup
+    assert 'AutomaticMode := UpdateOnly or WizardSilent' in setup
+    assert 'MB_YESNO' in setup
+    assert 'IDYES' in setup
+    assert 'InitializeSetup' in setup
+    assert 'InstallDirReady := False' in setup
     portable = next(line for line in setup.splitlines() if line.startswith('Source: "{#PostgreSqlPortableDir}'))
     assert 'Excludes: "data,data\\*,logfile,*.log"' in portable
+    assert 'Check: PostgreSqlCopyNeeded' in portable
 
 
 @pytest.mark.unit

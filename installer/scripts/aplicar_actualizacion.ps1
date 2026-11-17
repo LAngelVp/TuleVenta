@@ -11,12 +11,15 @@ try {
     catch [System.ArgumentException] { $Parent = $null }
     if ($Parent -and -not $Parent.WaitForExit(120000)) { throw 'La aplicacion sigue abierta.' }
     $Running = Get-Process -Name 'TuleVenta' -ErrorAction SilentlyContinue
-    if ($Running) { throw 'Hay otra instancia de TuleVenta abierta.' }
+    if ($Running) {
+        $Running | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 1000
+    }
     if ((Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash -ne $ExpectedHash) {
         throw 'SHA-256 incorrecto antes de instalar.'
     }
     $Directory = [System.IO.Path]::GetDirectoryName($Application)
-    $Arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /UPDATEONLY /DIR="' + $Directory + '" /LOG="' + $Log + '"'
+    $Arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /UPDATEONLY /DIR="' + $Directory + '" /LOG="' + $Log + '"'
     $Setup = Start-Process -FilePath $Installer -ArgumentList $Arguments -PassThru -Wait
     if ($Setup.ExitCode -ne 0) { throw "Instalador fallo: $($Setup.ExitCode)" }
     Start-Process -FilePath $Application

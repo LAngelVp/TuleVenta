@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from licencia import leer_licencia, validar_licencia
 from gui.activacion_dialog import VentanaActivacion
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     #     if dialogo.exec() != QDialog.Accepted:
     #         sys.exit(0)
 
-    # if not sistema.preparar_postgresql_portable():
-    #     sys.exit(1)
+    if not sistema.preparar_postgresql_portable():
+        sys.exit(1)
     sistema.comprobar_usuarios()
     sys.exit(sistema.app.exec())
