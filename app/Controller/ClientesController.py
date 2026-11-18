@@ -148,6 +148,8 @@ class Clientes(QWidget):
     def configurar_limites(self):
         for nombre, (modelo, campo) in CAMPOS_CLIENTES.items():
             getattr(self.WindowClient, nombre).setMaxLength(modelo.__mapper__.columns[campo].type.length)
+        for nombre in ("txt_buscarclienteFisico", "txt_buscarclienteMorales"):
+            getattr(self.WindowClient, nombre).setMaxLength(255)
         formatos = {"txt_rfc_fisico": (RFC_FISICO, 13), "txt_rfc_empre_moral": (RFC_MORAL, 12),
                     "txt_curp_fisico": (CURP_CLIENTE, 18), "txt_telefono_fisico": (r"[0-9]{10}", 10),
                     "txt_telefono_empre_moral": (r"[0-9]{10}", 10), "txt_telefono_repre_moral": (r"[0-9]{10}", 10),
@@ -156,9 +158,13 @@ class Clientes(QWidget):
                     "txt_correo_repre_moral": (CORREO_CLIENTE, 100)}
         for nombre, (patron, limite) in formatos.items():
             widget = getattr(self.WindowClient, nombre)
-            widget.setMaxLength(min(widget.maxLength(), limite))
+            # El limite del formato RFC/telefono/CP es el contrato de captura;
+            # no se reduce por un maxLength previo del widget.
+            widget.setMaxLength(limite)
             expression = QRegularExpression(patron, QRegularExpression.CaseInsensitiveOption)
             widget.setValidator(QRegularExpressionValidator(expression, widget))
+        self.WindowClient.txt_rfc_fisico.setMaxLength(13)
+        self.WindowClient.txt_rfc_empre_moral.setMaxLength(12)
         for nombre in ("cajaDecimal_wpc_limite_credito", "cajaDecimal_wpc_limite_credito_moral"):
             getattr(self.WindowClient, nombre).setMinimum(0)
         for nombre in ("cajaOpciones_areasnegocio_fisico", "cajaOpciones_categoriaFisico",

@@ -6,8 +6,10 @@ from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from .MensajesAlertasController import Mensaje
 from .UiTheme import apply_module_theme, configure_child_modal
+from .Validaciones import Validaciones
 from ..View.UserInterfacePy.UI_AGREGAR_UN_DATO import Ui_Formulario
 from ..Model.ProductosModel import ProductosModel
+from ..Model.BaseDatosModel import Unidad_medida_productos
 from ..DataBase.conexionBD import Conexion_base_datos
 
 class UnidadMedidaProductos(QWidget):
@@ -19,6 +21,7 @@ class UnidadMedidaProductos(QWidget):
         configure_child_modal(self, frameless=True)
         apply_module_theme(self)
         self.setWindowTitle("Unidad de Medida")
+        Validaciones().limitar_desde_modelo(self.ui.txt_nombre, Unidad_medida_productos, "nombre")
         self.ui.btn_btn_guardar.clicked.connect(self.agregar)
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)

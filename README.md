@@ -433,6 +433,18 @@ Si el splash no avanza:
 
 El bloqueo de primer arranque corregido el 2026-11-18 se producía porque `pg_ctl start` se ejecutaba capturando `stdout`/`stderr`; `postgres.exe` heredaba esos pipes y Python quedaba esperando indefinidamente aunque el servidor ya estuviera activo.
 
+## Validación de longitud de campos
+
+Los campos de captura se limitan con la misma longitud declarada en `app/Model/BaseDatosModel.py` para evitar errores de PostgreSQL por `varchar(n)` excedido.
+
+- `Validaciones.limitar_desde_modelo(widget, modelo, campo)` aplica `setMaxLength` usando la metadata ORM.
+- `Validaciones.limitar_texto_plano(widget, limite)` trunca `QPlainTextEdit` cuando la columna es `String(n)`, como la descripción de categorías de clientes.
+- Se aplica en clientes, empleados, proveedores, productos, categorías, áreas de negocio, presentaciones, unidades de medida, métodos de pago, promociones, sucursales, departamentos, puestos, ventas, compras y login.
+- El RFC de cliente físico acepta 13 caracteres y el de cliente moral 12; la validación de formato se conserva y el límite no se reduce por una configuración previa del widget.
+- Los modelos de catálogo también rechazan textos fuera de longitud antes de ejecutar SQL, como defensa adicional ante importaciones o llamadas directas.
+
+---
+
 ## Cerrar sesión y cerrar la aplicación
 
 La barra lateral incluye **Cerrar sesión**. Al confirmarlo:

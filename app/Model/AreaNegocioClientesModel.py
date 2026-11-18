@@ -6,6 +6,8 @@ class AreaNegocioClientesModel:
         self.session = session
         
     def agregar_area(self, nombre, descripcion = None):
+        if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
+            raise ValueError("nombre: area de negocio requiere entre 1 y 100 caracteres")
         try:
             area = self.session.query(Areas_negocios).filter_by(nombre = nombre).first()
             if area:

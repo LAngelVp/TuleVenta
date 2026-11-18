@@ -13,6 +13,7 @@ from app.Controller.RegistroInicialController import Registro_personal_inicial
 from app.Controller.RolesController import *
 from app.DataBase.conexionBD import Conexion_base_datos
 from app.Model.EmpleadoModel import EmpleadosModel
+from app.Model.BaseDatosModel import Empleados
 from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
 from .ComprobarValoresTablasController import Comprobacion
@@ -53,7 +54,10 @@ class EmpleadosController(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 # ================ VALIDACIONES ================
-        self.WindowEmployee.txt_idempleado.setValidator(Validaciones().get_int_validator(self.WindowEmployee.txt_idempleado))
+        validaciones = Validaciones()
+        self.WindowEmployee.txt_idempleado.setMaxLength(19)
+        self.WindowEmployee.txt_idempleado.setValidator(validaciones.get_int_validator(self.WindowEmployee.txt_idempleado))
+        validaciones.limitar_desde_modelo(self.WindowEmployee.txt_nombreempleado, Empleados, "nombre")
 
 # ================ SEÑALES DE LOS BOTONES ===================
         self.WindowEmployee.btn_btn_agregar.clicked.connect(self.agregar_empleado)

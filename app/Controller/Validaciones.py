@@ -3,6 +3,7 @@ from PySide6.QtCore import QRegularExpression
 
 class Validaciones:
     def __init__(self):
+        self._conexiones_limite_texto = set()
         self.REGEX_TEXT = QRegularExpression("^[a-zA-ZñÑ ]+$")
         self.REGEX_CURP = QRegularExpression("[A-ZÑ0-9]+")
         self.REGEX_RFC = QRegularExpression("[A-ZÑ0-9]+")
@@ -39,3 +40,35 @@ class Validaciones:
     
     def get_web_validator(self, parent):
         return QRegularExpressionValidator(self.REGEX_WEB, parent)
+
+    def limitar_desde_modelo(self, widget, modelo, campo):
+        """Aplica al widget el maximo de la columna String del modelo ORM."""
+        columna = modelo.__mapper__.columns[campo]
+        limite = getattr(columna.type, "length", None)
+        if limite and hasattr(widget, "setMaxLength"):
+            widget.setMaxLength(limite)
+        return limite
+
+    def limitar_texto_plano(self, widget, limite):
+        """Trunca QPlainTextEdit al limite de una columna String."""
+        if not limite or not hasattr(widget, "textChanged"):
+            return
+        clave = id(widget)
+        if clave in self._conexiones_limite_texto:
+            return
+        self._conexiones_limite_texto.add(clave)
+
+        def truncar():
+            texto = widget.toPlainText()
+            if len(texto) <= limite:
+                return
+            cursor = widget.textCursor()
+            posicion = min(cursor.position(), limite)
+            widget.blockSignals(True)
+            widget.setPlainText(texto[:limite])
+            widget.blockSignals(False)
+            cursor.setPosition(posicion)
+            widget.setTextCursor(cursor)
+
+        widget.textChanged.connect(truncar)
+        truncar()

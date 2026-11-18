@@ -10,6 +10,8 @@ Actualizacion 2026-11-18 (arranque): se corrigio el bloqueo del primer arranque 
 
 Actualizacion 2026-11-18 (sesion y cierre): se agrego `Cerrar sesion` en la barra lateral; el cierre de sesion limpia workers y vuelve al login. Cerrar la ventana principal o el login ejecuta `pg_ctl stop -m fast`, detiene PostgreSQL portable y termina el proceso. El detalle esta en la seccion3 de [arquitectura](01-arquitectura-y-analisis-actual.md#3-arranque-y-operacion) y en el [README](../README.md#cerrar-sesión-y-cerrar-la-aplicación). No hubo cambios de esquema ni de datos.
 
+Actualizacion 2026-11-18 (longitudes): se agrego validacion de longitud en campos de captura tomando la metadata de `BaseDatosModel`, incluido truncado de `QPlainTextEdit` para columnas `String(n)`. Los catalogos de categorias, areas, presentaciones y unidades tambien rechazan textos fuera de limite antes de SQL. Ver [README](../README.md#validación-de-longitud-de-campos). No hubo cambios de esquema ni de datos.
+
 El codigo es la evidencia primaria del comportamiento implementado. Estos documentos son su referencia tecnica trazable: una discrepancia debe resolverse contrastando la fuente, no suponiendo que la especificacion describe un comportamiento ya probado. Los cambios futuros deben actualizar codigo, especificacion y pruebas conjuntamente.
 
 | Documento | Estado en esta fase | Contenido |

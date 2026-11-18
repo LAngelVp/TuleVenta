@@ -7,6 +7,8 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.AreaNegocioClientesModel import  *
 from .MensajesAlertasController import Mensaje
 from ..Model.AreaNegocioClientesModel import  AreaNegocioClientesModel
+from ..Model.BaseDatosModel import Areas_negocios
+from .Validaciones import Validaciones
 from .UiTheme import apply_module_theme, configure_child_modal
 
 
@@ -19,6 +21,7 @@ class AreaNegocioClientesController(QWidget):
         configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
         apply_module_theme(self)
         self.tipo_de_cliente = tipo_cliente
+        Validaciones().limitar_desde_modelo(self.ui.txt_nombre, Areas_negocios, "nombre")
         self.ui.btn_btn_guardar.clicked.connect(self.agregar_area)
 
     def agregar_area(self):

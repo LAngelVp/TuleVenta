@@ -16,6 +16,11 @@ class CategoriasModel:
                 raise ValueError("nombre: categoria de producto requiere entre 1 y 100 caracteres")
             if not isinstance(descripcion, str) or not descripcion.strip():
                 raise ValueError("descripcion: es obligatoria")
+        if tipo_categoria == "clientes":
+            if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
+                raise ValueError("nombre: categoria de cliente requiere entre 1 y 100 caracteres")
+            if not isinstance(descripcion, str) or not descripcion.strip() or len(descripcion) > 255:
+                raise ValueError("descripcion: categoria de cliente requiere entre 1 y 255 caracteres")
         modelo = self.__tipo_categoria(tipo_categoria)
         categoria = self.session.scalar(select(modelo).where(modelo.nombre == nombre))
         if categoria is not None:

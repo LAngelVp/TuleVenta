@@ -13,6 +13,7 @@ from .Hilo_consultas import *
 from ..Source.iconos_rc import *
 from ..Source.logos_rc import *
 from ..Source.ibootstrap_rc import *
+from ..Model.BaseDatosModel import Usuarios
 from .CreadencialesUsuarioController import *
 from .MensajesAlertasController import Mensaje
 from .Validaciones import Validaciones
@@ -59,8 +60,10 @@ class Login(QWidget):
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())
 
-        self.ui.txt_User.setValidator(Validaciones().get_text_validator(self.ui.txt_User))
-        self.ui.txt_Password.setValidator(Validaciones().get_password_validator(self.ui.txt_Password))
+        validaciones = Validaciones()
+        validaciones.limitar_desde_modelo(self.ui.txt_User, Usuarios, "usuario")
+        self.ui.txt_User.setValidator(validaciones.get_text_validator(self.ui.txt_User))
+        self.ui.txt_Password.setValidator(validaciones.get_password_validator(self.ui.txt_Password))
 
         self.ui.txt_User.setFocus()
 
@@ -175,7 +178,7 @@ class Login(QWidget):
 
     def closeEvent(self, event):
         super().closeEvent(event)
-        if not self._acceso_exitoso:
+        if not self._acceso_exitoso and self.isVisible():
             from app.runtime_lifecycle import cerrar_aplicacion
             cerrar_aplicacion()
 

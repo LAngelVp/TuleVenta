@@ -26,10 +26,12 @@ from ..Model.AbstractTableModel import ComprobarModelosTablas
 from ..Model.ConfiguracionSistemaModel import ConfiguracionSistemaModel
 from ..Model.PromocionesModel import PromocionesModel
 from ..Model.VentasModel import VentasModel
+from ..Model.BaseDatosModel import Productos as ProductoDB
 from ..Model.VentaCalculos import calcular_totales_venta, preparar_items_venta
 import math
 from ..View.UserInterfacePy.UI_CONTROL_VENTA import Ui_Venta
 from .MensajesAlertasController import Mensaje
+from .Validaciones import Validaciones
 from .VentaTicketPrinter import TicketVentaPrinter
 from .UiTheme import apply_module_theme, official_window_icon, render_qss
 
@@ -152,6 +154,12 @@ class Venta(QWidget):
         self.ui.tabla_productos.doubleClicked.connect(self._editar_cantidad_item)
 
     def _configurar_controles(self):
+        validaciones = Validaciones()
+        validaciones.limitar_desde_modelo(self.ui.txt_buscarproducto, ProductoDB, "nombre_producto")
+        for nombre in ("txt_iddescuento", "txt_idclientecredito"):
+            campo = getattr(self.ui, nombre)
+            campo.setMaxLength(19)
+            campo.setValidator(validaciones.get_int_validator(campo))
         self.ui.txt_buscarproducto.returnPressed.connect(self.buscar_y_agregar_producto)
         self.ui.btn_btn_cancelarticket.clicked.connect(self.cancelar_ticket)
         self.ui.btn_btn_buscarclientedescuento.clicked.connect(self.buscar_cliente_descuento)

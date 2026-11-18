@@ -1565,6 +1565,9 @@ class Productos(QWidget):
         self.imagen_producto.setText("Sin imagen")
         apply_module_theme(self)
 
+        validaciones = Validaciones()
+        validaciones.limitar_desde_modelo(self.WindowProducts.txt_buscar, ProductoDB, "nombre_producto")
+        validaciones.limitar_desde_modelo(self.WindowProducts.txt_buscar_productoUPC, ProductoDB, "codigo_upc")
         self.WindowProducts.txt_buscar.setValidator(None)
         self.WindowProducts.txt_buscar_productoUPC.setValidator(None)
         self.WindowProducts.btn_btn_adminProductos_agregar.clicked.connect(self.agregar_producto)

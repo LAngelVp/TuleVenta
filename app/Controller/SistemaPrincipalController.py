@@ -589,7 +589,7 @@ class SistemaPrincipal(QWidget):
         _cerrar_proceso_para_actualizacion()
 
     def closeEvent(self, event):
-        if self._cerrando_sesion or self._cerrando_sistema:
+        if self._cerrando_sesion or self._cerrando_sistema or not self.isVisible():
             super().closeEvent(event)
             return
         event.ignore()

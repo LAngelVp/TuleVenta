@@ -204,6 +204,8 @@ class ProductosModel:
             return True
 
     def agregar_presentacion(self, nombre):
+        if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
+            raise ValueError("nombre: presentacion requiere entre 1 y 100 caracteres")
         presentacion = self.session.query(Presentacion_productos).filter(Presentacion_productos.nombre == nombre).first()
         if presentacion is not None:
             return presentacion, False
@@ -232,6 +234,8 @@ class ProductosModel:
             return False
 
     def agregar_unidad_medida(self, nombre):
+        if not isinstance(nombre, str) or not nombre.strip() or len(nombre) > 100:
+            raise ValueError("nombre: unidad de medida requiere entre 1 y 100 caracteres")
         unidad = self.session.query(Unidad_medida_productos).filter(Unidad_medida_productos.nombre == nombre).first()
         if unidad:
             return unidad, False

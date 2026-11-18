@@ -20,9 +20,11 @@ from PySide6.QtWidgets import (
 
 from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.VentasModel import VentasModel
+from ..Model.BaseDatosModel import Ventas as VentaDB
 from ..View.UserInterfacePy.UI_CONTROL_VENTAS import Ui_Control_Ventas
 from .Hilo_consultas import WorkerDB
 from .MensajesAlertasController import Mensaje
+from .Validaciones import Validaciones
 from .UiTheme import apply_module_theme
 from .Ventana_espera import Modal_de_espera, ModalManager
 from app.Model.AbstractTableModel import ComprobarModelosTablas
@@ -81,7 +83,7 @@ class DialogoEditarVenta(QDialog):
         formulario = QFormLayout()
 
         self.txt_folio = QLineEdit(self)
-        self.txt_folio.setMaxLength(100)
+        Validaciones().limitar_desde_modelo(self.txt_folio, VentaDB, "folio")
         self.txt_folio.setText(venta.folio or "")
 
         self.cmb_metodo_pago = QComboBox(self)
@@ -184,6 +186,7 @@ class Ventas(QWidget):
         self.manejadorModal = ModalManager()
         self.manejadorModal.set_modal_class(Modal_de_espera)
 
+        Validaciones().limitar_desde_modelo(self.ui.txt_buscar, VentaDB, "folio")
         self.ui.btn_RefrescarTabla.clicked.connect(self.refrescar_tabla_ventas)
         self.ui.btn_btn_buscar.clicked.connect(self.buscar_venta)
         self.ui.txt_buscar.returnPressed.connect(self.buscar_venta)
@@ -541,14 +544,17 @@ class Ventas(QWidget):
         if respuesta != QMessageBox.Yes:
             return
 
-        motivo, aceptado = QInputDialog.getText(
-            self,
-            "Cancelar venta",
-            "Motivo de cancelación:",
-            text="Cancelación desde administración de ventas",
-        )
-        if not aceptado:
+        dialogo_motivo = QInputDialog(self)
+        dialogo_motivo.setWindowTitle("Cancelar venta")
+        dialogo_motivo.setLabelText("Motivo de cancelación:")
+        dialogo_motivo.setTextValue("Cancelación desde administración de ventas")
+        dialogo_motivo.setInputMode(QInputDialog.TextInput)
+        campo_motivo = dialogo_motivo.findChild(QLineEdit)
+        if campo_motivo is not None:
+            Validaciones().limitar_desde_modelo(campo_motivo, VentaDB, "motivo_cancelacion")
+        if dialogo_motivo.exec() != QDialog.Accepted:
             return
+        motivo = dialogo_motivo.textValue()
 
         usuario_id = None
         if isinstance(self.datos_usuario, dict):

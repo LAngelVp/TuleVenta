@@ -5,6 +5,8 @@ from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.ProductosModel import ProductosModel
 from ..Model.ProveedoresModel import ProveedoresModel
 from ..Model.Proveedores_ProductosModel import Proveedores_productoModel
+from ..Model.BaseDatosModel import Productos as ProductoDB
+from .Validaciones import Validaciones
 from ..View.UserInterfacePy.PRODUCTOS_PROVEEDORES import *
 from ..View.UserInterfacePy.CAMBIO_PRECIO_PRODUCTO_PROVEEDOR import Ui_PreciosProductosProveedor
 from .AjustarCajaOpcionesGlobal import *
@@ -100,6 +102,9 @@ class Productos_de_proveedorController(QWidget):
         self.ui.btn_paginarProductosSistema.clicked.connect(self.paginar_productos_del_sistema)
         self.ui.contenedorModal_tabs.currentChanged.connect(self.cambiar_vista)
 
+        validaciones = Validaciones()
+        validaciones.limitar_desde_modelo(self.ui.txt_nombre_producto, ProductoDB, "nombre_producto")
+        validaciones.limitar_desde_modelo(self.ui.txt_nombre_productodelsistema, ProductoDB, "nombre_producto")
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre)
         AjustarcajaOpciones().ajustar_cajadeopciones(self.ui.cajaOpciones_filtro_nombre_productos_del_sistema)
         self.manejadorModal = ModalManager()

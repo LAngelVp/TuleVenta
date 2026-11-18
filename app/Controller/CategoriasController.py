@@ -8,7 +8,9 @@ from PySide6.QtGui import QValidator
 from ..View.UserInterfacePy.UI_NUEVA_CATEGORIA import *
 from ..DataBase.conexionBD import Conexion_base_datos
 from ..Model.CategoriasModel import CategoriasModel
+from ..Model.BaseDatosModel import Categorias_productos, Categorias_proveedores, Categorias_de_clientes
 from .MensajesAlertasController import Mensaje
+from .Validaciones import Validaciones
 from app.Controller.Hilo_consultas import WorkerDB
 from app.Controller.Ventana_espera import Modal_de_espera, ModalManager
 from .UiTheme import apply_module_theme, configure_child_modal
@@ -25,7 +27,17 @@ class CategoriasController(QWidget):
         configure_child_modal(self, drag_widget=getattr(self.ui, "contenedor", None), frameless=True)
         apply_module_theme(self)
         self.setWindowTitle("Categoría")
-        self.ui.txt_nombre.setMaxLength(100 if tipo_categoria == "productos" else 150)
+        modelo = {
+            "productos": Categorias_productos,
+            "clientes": Categorias_de_clientes,
+        }.get(tipo_categoria, Categorias_proveedores)
+        validaciones = Validaciones()
+        validaciones.limitar_desde_modelo(self.ui.txt_nombre, modelo, "nombre")
+        if tipo_categoria == "clientes":
+            validaciones.limitar_texto_plano(
+                self.ui.txtlargo_descripcion,
+                modelo.__mapper__.columns["descripcion"].type.length,
+            )
         self.ui.btn_btn_guardar.clicked.connect(self.guardar)
 
         self.manejadorModal = ModalManager()
