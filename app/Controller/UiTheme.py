@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QAbstractButton, QAbstractItemView, QAbstractSpin
                                QFrame, QGroupBox, QLabel, QLineEdit, QPlainTextEdit,
                                QSizePolicy, QTableWidget, QWidget)
 from app.runtime_paths import ruta_recurso
+from app.Source import ibootstrap_rc  # noqa: F401  (registra los iconos usados por el QSS)
 from .ImagenEstatica import mostrar_imagen_estatica
 
 
@@ -215,6 +216,30 @@ QDateEdit {
     selection-background-color: ${brand.secondary};
     selection-color: ${surface.panel};
 }
+/* Listado desplegable de los QComboBox (picklists). */
+QComboBox QAbstractItemView {
+    background-color: ${surface.panel};
+    alternate-background-color: ${surface.panel};
+    color: #000000;
+    selection-background-color: ${brand.secondary};
+    selection-color: ${surface.panel};
+    border: 1px solid ${border.control};
+    border-radius: 8px;
+    padding: 4px;
+    outline: none;
+}
+QComboBox QAbstractItemView::item {
+    min-height: 32px;
+    padding: 0 10px;
+}
+QComboBox QAbstractItemView::item:hover {
+    background-color: ${surface.table.alternate};
+    color: #000000;
+}
+QComboBox QAbstractItemView::item:selected {
+    background-color: ${brand.secondary};
+    color: ${surface.panel};
+}
 /* Los spinboxes NO deben recibir border/padding en el widget externo:
    Qt reduce el QLineEdit interno a 1 px y el texto deja de verse. */
 QSpinBox,
@@ -242,13 +267,38 @@ QDateEdit:focus {
 QLineEdit:read-only,
 QPlainTextEdit:read-only {
     background-color: ${surface.main};
-    color: ${text.secondary};
+    color: #000000;
 }
-QComboBox::drop-down,
-QDateEdit::drop-down {
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
     border: none;
     background: transparent;
-    width: 20px;
+    width: 24px;
+}
+QComboBox::down-arrow {
+    image: url(:/Icons/Bootstrap/chevron-down.svg);
+    width: 13px;
+    height: 13px;
+}
+QDateEdit[calendarPopup="true"]::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 28px;
+    border: none;
+    background: transparent;
+}
+QDateEdit[calendarPopup="true"]::down-arrow {
+    image: url(:/Icons/Bootstrap/calendar2-date.svg);
+    width: 16px;
+    height: 16px;
+}
+QDateEdit[calendarPopup="true"]::up-button,
+QDateEdit[calendarPopup="true"]::down-button {
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
 }
 QPushButton,
 QToolButton {
@@ -337,7 +387,11 @@ QToolButton:focus {
 QPushButton:disabled,
 QToolButton:disabled,
 QPushButton[variant]:disabled,
-QToolButton[variant]:disabled,
+QToolButton[variant]:disabled {
+    background-color: ${surface.disabled};
+    border-color: ${border.subtle};
+    color: ${text.disabled};
+}
 QLineEdit:disabled,
 QPlainTextEdit:disabled,
 QComboBox:disabled,
@@ -346,7 +400,7 @@ QSpinBox:disabled,
 QDoubleSpinBox:disabled {
     background-color: ${surface.disabled};
     border-color: ${border.subtle};
-    color: ${text.disabled};
+    color: #000000;
 }
 QTableView,
 QTableWidget,
@@ -510,7 +564,7 @@ ACCESS_STYLESHEET = render_qss("""
     max-height: 30px;
     padding: 0 10px;
     background-color: ${surface.panel};
-    color: ${text.main};
+    color: #000000;
     border: 1px solid ${border.subtle};
     border-radius: 10px;
     selection-background-color: ${brand.secondary};
@@ -694,6 +748,7 @@ def apply_shell_theme(root_widget):
     if root_widget is None:
         return
     root_widget.setProperty("themedShell", True)
+    _aplicar_texto_negro_campos(root_widget)
     root_widget.setStyleSheet(MODULE_STYLESHEET + SHELL_STYLESHEET + TITLE_SCALE_STYLESHEET)
 
 
@@ -730,6 +785,7 @@ def apply_access_theme(root_widget):
         return
 
     _estabilizar_pixmaps(root_widget)
+    _aplicar_texto_negro_campos(root_widget)
     root_widget.setStyleSheet(ACCESS_STYLESHEET + TITLE_SCALE_STYLESHEET)
 
 
@@ -819,6 +875,64 @@ def _estabilizar_pixmaps(root_widget):
 def _decorate_views(root_widget):
     for view in root_widget.findChildren(QAbstractItemView):
         _apply_view_density(view)
+    _configurar_popup_combos(root_widget)
+
+
+class _ComboPopupWidthFilter(QObject):
+    """Mantiene el popup del combo con al menos el ancho del control."""
+
+    def __init__(self, combo):
+        super().__init__(combo)
+        self._combo_ref = combo
+
+    def eventFilter(self, obj, event):
+        if event.type() in (QEvent.Show, QEvent.Resize):
+            _ajustar_ancho_popup(self._combo_ref)
+        return False
+
+
+def _ajustar_ancho_popup(combo):
+    try:
+        vista = combo.view()
+    except RuntimeError:
+        return
+    if vista is None:
+        return
+
+    metrics = combo.fontMetrics()
+    ancho_items = max(
+        (metrics.horizontalAdvance(combo.itemText(indice)) for indice in range(combo.count())),
+        default=0,
+    )
+    ancho = max(
+        combo.width(),
+        combo.minimumSizeHint().width(),
+        ancho_items + 40,
+    )
+    if vista.minimumWidth() != ancho:
+        vista.setMinimumWidth(ancho)
+
+
+def configure_combo_popup(combo):
+    if combo is None:
+        return
+    filtro = getattr(combo, "_vt_popup_filter", None)
+    if filtro is None:
+        filtro = _ComboPopupWidthFilter(combo)
+        combo._vt_popup_filter = filtro
+        combo.installEventFilter(filtro)
+    vista = combo.view()
+    if vista is not None and getattr(vista, "_vt_popup_filter", None) is not filtro:
+        vista._vt_popup_filter = filtro
+        vista.installEventFilter(filtro)
+    if vista is not None:
+        vista.setAlternatingRowColors(False)
+    _ajustar_ancho_popup(combo)
+
+
+def _configurar_popup_combos(root_widget):
+    for combo in root_widget.findChildren(QComboBox):
+        configure_combo_popup(combo)
 
 
 def stabilize_item_view(view, min_height=220):

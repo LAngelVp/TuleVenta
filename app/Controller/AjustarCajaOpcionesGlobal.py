@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QListView, QMenu, QMessageBox
+from PySide6.QtWidgets import QListView, QMenu, QMessageBox, QFrame
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal, QObject
 from ..DataBase.conexionBD import Conexion_base_datos
@@ -8,6 +8,7 @@ from ..Model.ProductosModel import ProductosModel
 from .MensajesAlertasController import Mensaje
 from .CategoriasController import CategoriasController
 from .PresentacionProductosController import PresentacionProductos
+from .UiTheme import configure_combo_popup
 class AjustarcajaOpciones(QObject):
     elemento_eliminado_signal = Signal()
     def __init__(self, tipo_categoria=None):
@@ -17,22 +18,20 @@ class AjustarcajaOpciones(QObject):
     def ajustar_cajadeopciones(self, caja_opciones):
         # Usar un QListView para la vista del combo box
         vista_lista = QListView()
-        vista_lista.setStyleSheet("""
-        QListView { background: #F5F5F5; }
-        """)
+        vista_lista.setFrameShape(QFrame.Shape.NoFrame)
+        vista_lista.setUniformItemSizes(False)
         caja_opciones.setView(vista_lista)
 
-        # Obtener el ancho del combo box
-        ancho_combo = caja_opciones.width()
+        # Ancho minimo igual al control principal y suficiente para el texto mas largo
+        ancho_combo = max(caja_opciones.width(), caja_opciones.minimumSizeHint().width())
+        ancho_items = 0
         if caja_opciones.count() > 0:
-            # Calcular el ancho máximo basado en los elementos
-            max_ancho = max(
+            ancho_items = max(
                 caja_opciones.fontMetrics().horizontalAdvance(caja_opciones.itemText(i))
                 for i in range(caja_opciones.count())
-            )
-
-            # Establecer el ancho del QListView
-            vista_lista.setFixedWidth(max(ancho_combo, max_ancho))
+            ) + 40
+        vista_lista.setMinimumWidth(max(ancho_combo, ancho_items))
+        configure_combo_popup(caja_opciones)
         
         # ✅ CONFIGURAR MENÚ CONTEXTUAL CORRECTAMENTE
         caja_opciones.setContextMenuPolicy(Qt.CustomContextMenu)
