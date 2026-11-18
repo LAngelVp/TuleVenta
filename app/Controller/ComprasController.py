@@ -18,7 +18,8 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from datetime import datetime, timedelta
 from .PurchaseOrderPDF import PurchaseOrderPDF
-from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal, stabilize_item_view
+from .UiTheme import (apply_module_theme, bring_window_to_front, configure_child_modal,
+                      stabilize_item_view, configurar_picklist_estandar)
 from ..View.UserInterfacePy.UI_CONTROL_COMPRAS import *
 from ..View.UserInterfacePy.UI_CREAR_ORDEN_DE_COMPRA import *
 from ..View.UserInterfacePy.UI_SELECCIONAR_PRODUCTOS_DEL_VENDEDOR import Ui_Seleccion_Productos_Proveedor
@@ -927,6 +928,7 @@ class Orden_compra(QDialog):
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         apply_module_theme(self)
+        configurar_picklist_estandar(self.ordenCompraUI.cajaOpciones_metodosPago)
         pantalla = self.frameGeometry()
         pantalla.moveCenter(self.screen().availableGeometry().center())
         self.move(pantalla.topLeft())

@@ -390,7 +390,23 @@ MetodosPagoController.agregar_metodo_pago normaliza upper/strip no vacio; vista 
 
 **Caracterizacion:** metodo duplicado, CREDITO/CRÉDITO frente a Crédito, catalogo parcial, metodo borrado en otra sesion, fecha vencimiento con plazo cero y perdida del mensaje tras commit. No declarar que crear compra a credito genera egreso/corte de caja.
 
-## 14. Trazabilidad de riesgos y validacion
+## 14. Compra directa sin proveedor (2026-11-18)
+
+**Decision de negocio:** permitir abastecimiento propio sin proveedor real, conservando el flujo PENDIENTE -> recepcion -> inventario. Se descarto `proveedor_id` nullable para no requerir migracion; en su lugar se usa un proveedor interno reservado.
+
+**Proveedor interno:** constante `NOMBRE_PROVEEDOR_COMPRA_DIRECTA = "COMPRA DIRECTA (SIN PROVEEDOR)"` en `BaseDatosModel.py`. `ProveedoresModel.obtener_o_crear_proveedor_compra_directa` busca por nombre exacto y crea la fila con campos obligatorios vacios si falta; el controlador confirma la sesion. La operacion es idempotente y no altera el esquema. El proveedor se excluye de `listar_dto`, `obtener_proveedores` y `obtener_nombre_proveedor`; modelo y `ProveedoresController` bloquean alta manual, edicion y eliminacion.
+
+**Alta desde `Orden_compra`:** checkbox "Compra directa sin proveedor". Al activarlo se limpia el detalle, se asigna el proveedor interno, se bloquea el campo de proveedor y el selector de productos por proveedor. La busqueda de producto usa `ProductosModel.consultar_producto_por_codigoUPC` por UPC exacto; el precio unitario es `Productos.costo_final` y se construye una `AsociacionProveedorDTO(producto.id, proveedor_interno.id, costo_final, producto_snapshot(producto))` en memoria. La tabla, subtotal y total reutilizan el flujo existente; no se escribe una asociacion `ProductoProveedor`.
+
+**Persistencia y recepcion:** la orden se crea con el proveedor interno y estado `PENDIENTE`. No hay recepcion automatica: el ingreso a inventario se hace con `recibirOrdenCompra`, que suma existencia y crea `Movimientos_Inventario` con el usuario actual. El PDF muestra el nombre `COMPRA DIRECTA (SIN PROVEEDOR)` y deja vacios direccion/telefono/correo.
+
+**Edicion:** `WindowEditarOrdenCompra` detecta el proveedor interno, bloquea el checkbox y conserva el detalle. `update_purchase_order` valida lineas nuevas contra el catalogo y el costo actual del producto cuando la orden es directa, en lugar de exigir una asociacion `ProductoProveedor`. No se permite convertir una orden normal en compra directa ni viceversa.
+
+**Limites:** el proveedor interno puede aparecer en filtros de compras por nombre y en reportes historicos; no tiene productos asociados ni direccion fiscal. La creacion directa no cambia reglas contables, no genera egreso de caja ni abonos y no modifica el esquema `Compras.proveedor_id`, que sigue siendo NOT NULL.
+
+**Pruebas:** `tests/test_purchase_direct_supplier.py` cubre deteccion del nombre reservado, creacion idempotente, bloqueo de alta/baja y uso de catalogo/costo final con orden PENDIENTE. Regresion de compras/proveedores ejecutada con `-p pytestqt.plugin`.
+
+## 15. Trazabilidad de riesgos y validacion
 
 ### Lote 2 Cierre Local Modulo 3 2026-11-12
 

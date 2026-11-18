@@ -85,7 +85,7 @@ Tamano en px logicos de resize generado; los controladores pueden modificarlo. T
 | [MensajesAlertasController.py](../app/Controller/MensajesAlertasController.py#L20) | QMessageBox con parent resuelto, icono chat-text.svg no oficial, Dialog/StaysOnTop explicitos; conservar cola y orden de notificaciones |
 | QFileDialog/QInputDialog/QMessageBox estaticos | En Productos, Clientes, Proveedores, Registro, Venta, Ventas y herramientas. Dialogos nativos del SO no garantizan icono QSS propio; probar herencia donde Qt lo permita, no reemplazar selector nativo solo por identidad |
 
-Resto de controladores auditados, sin vista top-level propia detectada: AjustarCajaOpcionesGlobal (estilo QListView #F5F5F5), CodificarPasswordController, ComprobarValoresTablasController, CreadencialesUsuarioController, favicon, FuncionesAuxiliares, Hilo_consultas, ImagenEstatica, OperacionMasivaCsvController, PurchaseOrderPDF, Validaciones, VentaTicketPrinter y __init__. RolesController esta comentado. No son candidatos a incorporar flags por barrido; helpers/workers/reportes no deben recibir logica de ventanas.
+Resto de controladores auditados, sin vista top-level propia detectada: AjustarCajaOpcionesGlobal (desde 2026-11-18 calcula ancho minimo y delega el estilo del popup al tema; ya no fija QListView #F5F5F5 ni ancho fijo), CodificarPasswordController, ComprobarValoresTablasController, CreadencialesUsuarioController, favicon, FuncionesAuxiliares, Hilo_consultas, ImagenEstatica, OperacionMasivaCsvController, PurchaseOrderPDF, Validaciones, VentaTicketPrinter y __init__. RolesController esta comentado. No son candidatos a incorporar flags por barrido; helpers/workers/reportes no deben recibir logica de ventanas.
 
 ### 2.4 Contraste y cascada actuales
 
@@ -352,3 +352,17 @@ Mensajes de entrada/salida: estilo minimo acotado a QMessageBox, con fondo claro
 El boton Efectivo recibe estilo secundario explicito: petroleo y blanco, incluyendo estados interactivos y deshabilitado. Menu claro con texto oscuro; seleccion petroleo/blanco. La captura de entrada/retiro usa una instancia tematizada antes de mostrarse, con importe/etiqueta oscuros, Registrar primario y Cancelar neutral. Se conserva importe, rango, precision y aceptacion; no cambia reglas financieras.
 
 [Evidencia y limites](specs/spec-02-ventas-caja-y-promociones.md#contraste-de-efectivo-y-captura-2026-11-12): **227 unit/Qt aprobadas**, dos nuevas de dialogo real. Paleta y render offscreen comprobados; Windows/DPI y PostgreSQL no reensayados en este ajuste visual. Rollback limitado al estilo/captura, no a datos confirmados.
+
+## 16. Incremento De Estilos De Captura Y Picklists (2026-11-18)
+
+Cambios en `UiTheme.py` y `AjustarCajaOpcionesGlobal.py`; no se modifican formularios generados ni reglas de negocio.
+
+- **Texto negro estricto:** `_aplicar_texto_negro_campos` se invoca desde los temas de modulo, shell y acceso. Cubre `QLineEdit`, `QPlainTextEdit`, `QComboBox`, `QDateEdit`, `QTimeEdit`, `QDateTimeEdit`, `QSpinBox` y `QDoubleSpinBox`, incluidos `read-only` y `disabled`.
+- **Campos numericos visibles:** los spinboxes no reciben `border`, `padding` ni `border-radius` externos; esa combinacion reducia el editor interno a 1 px. La regla segura usa `background-color: surface.panel` y `color: #000000`.
+- **Horarios y fechas:** `QTimeEdit` y `QDateTimeEdit` se incorporaron a la regla de fondo blanco. `QDateEdit` con `calendarPopup=true` muestra icono de calendario; sin esa opcion conserva los botones nativos de incremento.
+- **Popups de picklist:** `QComboBox QAbstractItemView` define fondo blanco, borde, radio 8 px, padding, hover y seleccion; no usa filas alternas. `configure_combo_popup` mantiene el ancho del popup igual o mayor al control y expande si el texto lo requiere.
+- **Ancho estandar:** `ANCHO_PICKLIST_ESTANDAR = 220` con `configurar_picklist_estandar`. Se aplica al metodo de pago de nueva orden y a Categoria/Presentacion/Unidad de Medida del alta de producto.
+- **Alta de producto:** `Admin_productosController._reorganizar_picklists_producto` mueve Categoria a una fila y Presentacion/Unidad a otra; evita scroll horizontal y conserva los botones de alta rapida.
+- **Ajuste de popup:** `AjustarcajaOpcionesGlobal` ya no fija `#F5F5F5` ni `setFixedWidth`; usa `setMinimumWidth` calculado por contenido y `configure_combo_popup`.
+
+Gate focalizado: `tests/test_theme_fields_and_popups.py` **7 passed**; regresion de productos/compras/estabilizacion **212 passed** con `-p pytestqt.plugin`. No se reejecuto PostgreSQL, Windows/DPI real ni build PyInstaller. Rollback limitado a los archivos de tema/ajuste visual.

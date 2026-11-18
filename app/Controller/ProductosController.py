@@ -24,7 +24,8 @@ from .PresentacionProductosController import PresentacionProductos
 from .UnidadMedidaProductosController import UnidadMedidaProductos
 from .OperacionMasivaCsvController import OperacionMasivaCsvController
 from .Validaciones import Validaciones
-from .UiTheme import apply_module_theme, bring_window_to_front, configure_child_modal, stabilize_item_view
+from .UiTheme import (apply_module_theme, bring_window_to_front, configure_child_modal,
+                      stabilize_item_view, configurar_picklist_estandar)
 from .Hilo_consultas import *
 from .Ventana_espera import *
 from ..Model.BaseDatosModel import Productos as ProductoDB, Presentacion_productos, Unidad_medida_productos, Categorias_productos
@@ -176,6 +177,7 @@ class Admin_productosController(QWidget):
         self.WindowsAddProduct_Dialog.setupUi(self)
         configure_child_modal(self, drag_widget=self.WindowsAddProduct_Dialog.contenedor_encabezado, frameless=True)
         apply_module_theme(self)
+        self._reorganizar_picklists_producto()
         icon = QIcon(':Icons/IconosSVG/productos.png')
         self.setWindowIcon(icon)
         self.setWindowTitle("Administración de productos")
@@ -277,6 +279,46 @@ class Admin_productosController(QWidget):
 
 
     # ========================= FUNCIONES-VENTANAS EMERGENTES ======================
+    def _reorganizar_picklists_producto(self):
+        """Coloca Categoria en una fila y Presentacion/Unidad en otra para darles ancho."""
+        ui = self.WindowsAddProduct_Dialog
+        layout_viejo = ui.horizontalLayout_7
+        ui.gridLayout_2.removeItem(layout_viejo)
+        Admin_productosController._vaciar_layout(layout_viejo)
+        layout_viejo.deleteLater()
+
+        fila = QGridLayout()
+        fila.setObjectName("gridLayout_picklists_producto")
+        fila.setHorizontalSpacing(8)
+        fila.setVerticalSpacing(8)
+        fila.addWidget(ui.etiqueta_categoriaProducto, 0, 0)
+        fila.addWidget(ui.cajaOpciones_categoriaProducto, 0, 1)
+        fila.addWidget(ui.btn_btn_addProduct_agregar_categoria, 0, 2)
+        fila.addWidget(ui.etiqueta_presentacionProducto, 1, 0)
+        fila.addWidget(ui.cajaOpciones_presentacionProducto, 1, 1)
+        fila.addWidget(ui.btn_btn_addProduct_agregarPresentacionProducto, 1, 2)
+        fila.addWidget(ui.etiqueta_unidadMedida, 1, 3)
+        fila.addWidget(ui.cajaOpciones_unidadMedidaProducto, 1, 4)
+        fila.addWidget(ui.btn_btn_addProduct_agregar_unidadMedidaProducto, 1, 5)
+        fila.setColumnStretch(6, 1)
+        ui.gridLayout_2.addLayout(fila, 1, 0, 1, 3)
+
+        for combo in (
+            ui.cajaOpciones_categoriaProducto,
+            ui.cajaOpciones_presentacionProducto,
+            ui.cajaOpciones_unidadMedidaProducto,
+        ):
+            configurar_picklist_estandar(combo)
+
+    @staticmethod
+    def _vaciar_layout(layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            hijo = item.layout()
+            if hijo is not None:
+                Admin_productosController._vaciar_layout(hijo)
+                hijo.deleteLater()
+
     def agregar_presentacion(self):
         self.ui_presentacion = PresentacionProductos(parent=self)
         self.ui_presentacion.presentacion_producto_agregada_signal.connect(self.listar_presentaciones_productos)

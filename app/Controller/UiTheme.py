@@ -243,15 +243,19 @@ QComboBox QAbstractItemView::item:selected {
 /* Los spinboxes NO deben recibir border/padding en el widget externo:
    Qt reduce el QLineEdit interno a 1 px y el texto deja de verse. */
 QSpinBox,
-QDoubleSpinBox {
+QDoubleSpinBox,
+QTimeEdit,
+QDateTimeEdit {
     min-height: 38px;
-    background-color: transparent;
+    background-color: ${surface.panel};
     color: #000000;
     selection-background-color: ${brand.secondary};
     selection-color: ${surface.panel};
 }
 QSpinBox QLineEdit,
-QDoubleSpinBox QLineEdit {
+QDoubleSpinBox QLineEdit,
+QTimeEdit QLineEdit,
+QDateTimeEdit QLineEdit {
     padding: 0 8px;
     color: #000000;
 }
@@ -397,7 +401,9 @@ QPlainTextEdit:disabled,
 QComboBox:disabled,
 QDateEdit:disabled,
 QSpinBox:disabled,
-QDoubleSpinBox:disabled {
+QDoubleSpinBox:disabled,
+QTimeEdit:disabled,
+QDateTimeEdit:disabled {
     background-color: ${surface.disabled};
     border-color: ${border.subtle};
     color: #000000;
@@ -928,6 +934,17 @@ def configure_combo_popup(combo):
     if vista is not None:
         vista.setAlternatingRowColors(False)
     _ajustar_ancho_popup(combo)
+
+
+ANCHO_PICKLIST_ESTANDAR = 220
+
+
+def configurar_picklist_estandar(combo, ancho=ANCHO_PICKLIST_ESTANDAR):
+    """Aplica un ancho uniforme y legible a los picklists principales."""
+    if combo is None:
+        return
+    combo.setMinimumWidth(ancho)
+    configure_combo_popup(combo)
 
 
 def _configurar_popup_combos(root_widget):

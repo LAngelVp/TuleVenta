@@ -185,3 +185,14 @@ Las cuatro specs estan enlazadas. El cierre B valida la matriz por archivo y exi
 Los escenarios de regresion propuestos en las specs requieren pruebas aisladas y datos de prueba. Esta entrega no agrega tests ejecutables ni modifica funcionalidad o esquema.
 
 Resultado del inventario de cierre: 42 controladores y 23 modelos (65 total), asignados a 51 casos/contratos en las cuatro specs. Se cotejan por AST las columnas validas/requeridas de productos principal/modal, proveedores y clientes fisicos/morales; los simbolos de los nuevos casos, ausencia de capacidades solicitadas, enlaces/anclas y bloques Mermaid. El render visual y las pruebas de caracterizacion quedan pendientes; Fase 4 requiere autorizacion posterior.
+
+## 7. Deltas de implementacion posteriores (2026-11-18)
+
+Los siguientes cambios estan implementados y probados; actualizan el contrato descrito en las specs sin reescribir su evidencia historica:
+
+- **Tema global:** `UiTheme` fuerza texto negro en campos editables, da fondo blanco a spinboxes/tiempos/fechas y estiliza los popups de picklists. Ver [guia UI/UX seccion16](05-guia-ui-ux-y-paleta.md#16-incremento-de-estilos-de-captura-y-picklists-2026-11-18).
+- **Alta de producto:** picklists de Categoria/Presentacion/Unidad con ancho estandar220 y fila reorganizada. Ver [delta spec01](specs/spec-01-productos-e-importacion.md#delta-de-interfaz-del-alta-de-producto-2026-11-18).
+- **Compras:** compra directa sin proveedor mediante proveedor interno reservado, busqueda por catalogo y costo final; orden PENDIENTE y recepcion existente. Ver [delta spec03](specs/spec-03-compras-proveedores-e-inventario.md#14-compra-directa-sin-proveedor-2026-11-18).
+- **Datos:** proveedor reservado creado bajo demanda, oculto y protegido; sin migracion ni cambio de nulabilidad. Ver [modelo de datos 6.2](02-modelo-de-datos.md#62-proveedor-reservado-de-compras-directas-2026-11-18).
+
+Pruebas de referencia: `tests/test_theme_fields_and_popups.py`, `tests/test_purchase_direct_supplier.py`, mas regresion Qt/unit de productos, compras, proveedores y estabilizacion ejecutada con `-p pytestqt.plugin`. No se reejecutaron gates PostgreSQL ni build instalable.

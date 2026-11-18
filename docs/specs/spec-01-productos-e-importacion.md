@@ -24,6 +24,18 @@ Gate SQL focalizado posterior a los lotes historicos: [test_modules_postgres.py]
 
 Ejecucion conjunta: **36 db passed, 712 deselected**, cluster efimero detenido/eliminado. [Comando, aislamiento, matriz y recuperacion](../04-plan-de-refactorizacion.md#evidencia-sql-real-de-cuatro-modulos-2026-11-12). No se modificaron reglas ni esquema instalado; metadata creada solo en esquema de test. No certifica todos los importadores/canales, consultas, workers, migraciones ni concurrencia P-10. Las menciones SQL pendiente posteriores son evidencia historica y se sustituyen solo para estos escenarios.
 
+## Delta de interfaz del alta de producto (2026-11-18)
+
+Cambios visuales sin efecto en reglas de negocio, persistencia ni importadores:
+
+- Todos los campos numericos del modal (`costo_inicial`, `costo_final`, `margen`, `precio`, `existencia`, minimos/maximos, peso y dimensiones) muestran texto negro sobre fondo blanco. La correccion es global en `UiTheme`; no se modifico la captura ni la validacion de `ProductosController`.
+- Categoria, Presentacion y Unidad de Medida usan `ANCHO_PICKLIST_ESTANDAR = 220` mediante `configurar_picklist_estandar`.
+- `Admin_productosController._reorganizar_picklists_producto` reordena la fila del formulario: Categoria en una linea y Presentacion/Unidad en otra. Se conservan objectName, botones de alta rapida, senales y orden de tabulacion.
+- Los popups de esos picklists usan el estilo global `QComboBox QAbstractItemView`, sin filas alternas y con ancho minimo igual al control.
+- `AjustarcajaOpcionesGlobal` dejo de fijar ancho/fondo locales; calcula el minimo por contenido y delega el estilo al tema.
+
+Evidencia: `tests/test_theme_fields_and_popups.py` y pruebas Qt de productos. No se reejecuto PostgreSQL ni se modifico el esquema.
+
 ## 1. Alcance y fuentes
 
 Fecha: 2026-11-10. Estado: As-Is documentado por lectura estatica, no ejecutado. [Maestro SDD](../03-especificaciones-funcionales-sdd.md), [modelo de datos](../02-modelo-de-datos.md). No se refactoriza ni corrige codigo en esta entrega.

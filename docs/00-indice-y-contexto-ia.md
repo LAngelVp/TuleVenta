@@ -4,6 +4,8 @@
 
 Fecha del levantamiento: 2026-11-10. Fases 1 a 4 documentales entregadas; ejecucion del plan: infraestructura REF-01 y cambios REF-05 a REF-16 aplicados. Cierre de implementacion de Fase 1 con37 pruebas unitarias y77 Qt aprobadas; gates PostgreSQL/Alembic no ejecutados. REF-17 y Fase 2 no iniciadas. El levantamiento original no modificaba codigo; los deltas posteriores estan registrados en cada ficha/spec. No se conecto a PostgreSQL ni se modificaron datos de una instalacion.
 
+Actualizacion 2026-11-18: se aplicaron ajustes globales de estilos (texto negro, fondos blancos en campos numericos, popups de picklists, anchos estandarizados) y la funcionalidad de compra directa sin proveedor mediante un proveedor interno reservado. El detalle esta en la seccion7 de este indice, en la seccion8 de la guia UI/UX, en el delta de la spec01 y en la seccion14 de la spec03. No hubo cambios de esquema.
+
 El codigo es la evidencia primaria del comportamiento implementado. Estos documentos son su referencia tecnica trazable: una discrepancia debe resolverse contrastando la fuente, no suponiendo que la especificacion describe un comportamiento ya probado. Los cambios futuros deben actualizar codigo, especificacion y pruebas conjuntamente.
 
 | Documento | Estado en esta fase | Contenido |
@@ -11,12 +13,12 @@ El codigo es la evidencia primaria del comportamiento implementado. Estos docume
 | [01-arquitectura-y-analisis-actual.md](01-arquitectura-y-analisis-actual.md) | Entregado | Componentes, arranque, transacciones, riesgos y evidencia |
 | [02-modelo-de-datos.md](02-modelo-de-datos.md) | Entregado | Diccionario de 37 tablas y 294 columnas, ER, relaciones ORM, indices y semillas |
 | [03-especificaciones-funcionales-sdd.md](03-especificaciones-funcionales-sdd.md) | Completado | Convenciones, trazabilidad de 65 fuentes a 51 casos y catalogo de workers |
-| [specs/spec-01-productos-e-importacion.md](specs/spec-01-productos-e-importacion.md) | Entregado | Productos, catalogos, dos importadores, lector y ajuste de stock |
+| [specs/spec-01-productos-e-importacion.md](specs/spec-01-productos-e-importacion.md) | Entregado + delta UI 2026-11-18 | Productos, catalogos, dos importadores, lector y ajuste de stock |
 | [specs/spec-02-ventas-caja-y-promociones.md](specs/spec-02-ventas-caja-y-promociones.md) | Entregado | POS, promociones, credito, caja, historial e impresion |
-| [specs/spec-03-compras-proveedores-e-inventario.md](specs/spec-03-compras-proveedores-e-inventario.md) | Completado | 12 casos de compras, recepcion, proveedores, inventario y reportes |
+| [specs/spec-03-compras-proveedores-e-inventario.md](specs/spec-03-compras-proveedores-e-inventario.md) | Completado + compra directa 2026-11-18 | 12 casos de compras, recepcion, proveedores, inventario y reportes |
 | [specs/spec-04-clientes-personal-sucursales-y-seguridad.md](specs/spec-04-clientes-personal-sucursales-y-seguridad.md) | Completado | 17 casos de clientes, personal, organizacion, acceso, licencia y configuracion |
 | [04-plan-de-refactorizacion.md](04-plan-de-refactorizacion.md) | Completado | 44 tareas REF, Fases de ejecucion 0 a 4, dependencias, gates y workflow Copilot |
-| [05-guia-ui-ux-y-paleta.md](05-guia-ui-ux-y-paleta.md) | Incrementos1A/1B y correccion flotante aplicados | Paleta/icono conservados; chrome respeta diseno original, 422 Qt aprobadas, Windows interactivo pendiente |
+| [05-guia-ui-ux-y-paleta.md](05-guia-ui-ux-y-paleta.md) | Incrementos1A/1B, correccion flotante e incremento de captura 2026-11-18 | Paleta/icono conservados; chrome, texto negro, fondos y picklists |
 
 La estructura documental acordada esta entregada. Las capacidades ausentes se delimitan sin inventar implementaciones. Los parches locales de Fase 1 y pruebas de infraestructura estan aplicados con evidencia de unit/Qt; no equivale a certificar todos los escenarios SQL de los51 casos. REF-01 conserva gate DB pendiente, REF-02 no se da por completada globalmente y REF-03/REF-04 (Alembic) no ejecutadas. Las tareas siguientes requieren autorizacion por incremento.
 
@@ -151,3 +153,35 @@ La Fase 1 inventaria el arbol y profundiza en arquitectura; la Fase 2 documenta 
 No se ejecutaron GUI, licencia, instalador, migraciones, impresora ni operaciones reales de caja. La validacion documental debe comprobar tablas mediante AST, enlaces locales, bloques Mermaid y ausencia de cambios funcionales. El render visual de Mermaid requiere un visor compatible.
 
 Al actualizar: indicar fecha y alcance, contrastar las fuentes cambiadas, corregir diagramas y trasladar decisiones aprobadas a las especificaciones. No incluir contrasenas, claves privadas, URLs con credenciales, licencias reales ni datos personales de clientes o empleados.
+
+## 7. Registro de ajustes de implementacion (2026-11-18)
+
+Esta seccion resume los cambios aplicados despues del levantamiento documental original. El codigo y las pruebas son la evidencia primaria; las fichas conservan el As-Is historico y los deltas se agregan sin reescribir los contratos previos.
+
+### 7.1 Estilos globales de captura
+
+- `UiTheme._aplicar_texto_negro_campos` se ejecuta en `apply_module_theme`, `apply_shell_theme` y `apply_access_theme`; `QLineEdit`, `QPlainTextEdit`, `QComboBox`, `QDateEdit`, `QTimeEdit`, `QDateTimeEdit`, `QSpinBox` y `QDoubleSpinBox` usan texto `#000000`.
+- Los estados `read-only` y `disabled` de los campos tambien fuerzan texto negro.
+- Los spinboxes conservan editor interno visible; no se aplican `border`, `padding` ni `border-radius` al widget externo porque Qt reduce el `QLineEdit` interno a 1 px.
+- Los campos numericos usan fondo `surface.panel` (`#FFFFFF`) y `QTimeEdit`/`QDateTimeEdit` se incorporaron a la misma regla segura.
+- `QComboBox QAbstractItemView` tiene fondo, borde, radio, padding y colores de seleccion; el popup no usa filas alternas y su ancho minimo se sincroniza con el control.
+- `ANCHO_PICKLIST_ESTANDAR = 220` y `configurar_picklist_estandar` fijan el ancho de los picklists principales de compras y alta de producto.
+- `AjustarCajaOpcionesGlobal` dejo de fijar un fondo `#F5F5F5` y un ancho fijo; ahora usa ancho minimo y `configure_combo_popup`.
+- El modal de alta de producto reorganiza Categoria en una fila y Presentacion/Unidad de Medida en otra para permitir picklists de 220 px sin scroll horizontal.
+
+### 7.2 Compra directa sin proveedor
+
+- `BaseDatosModel.NOMBRE_PROVEEDOR_COMPRA_DIRECTA = "COMPRA DIRECTA (SIN PROVEEDOR)"`.
+- `ProveedoresModel.obtener_o_crear_proveedor_compra_directa` crea el proveedor reservado de forma idempotente y sin migracion de esquema.
+- El proveedor interno se excluye de `listar_dto`, `obtener_proveedores` y `obtener_nombre_proveedor`; se bloquea su alta manual, edicion y borrado en modelo y controlador.
+- `Orden_compra` incorpora el checkbox "Compra directa sin proveedor"; al activarlo asigna el proveedor interno, bloquea el campo de proveedor y busca productos del catalogo por UPC.
+- El precio unitario de una compra directa se toma de `Productos.costo_final` y se arma una `AsociacionProveedorDTO` en memoria para reutilizar tabla, subtotales y total.
+- La orden directa se crea en estado `PENDIENTE`; el ingreso a inventario usa el flujo existente de recepcion. No se agrega recepcion automatica ni cambio de esquema.
+- `WindowEditarOrdenCompra` reconoce el modo directo y `update_purchase_order` valida productos nuevos contra catalogo/costo actual cuando el proveedor es el interno.
+- El PDF muestra el nombre reservado como proveedor y omite direccion/telefono/correo vacios.
+
+### 7.3 Pruebas de referencia
+
+- `tests/test_purchase_direct_supplier.py`: proveedor reservado, busqueda por catalogo, costo final y estado PENDIENTE.
+- `tests/test_theme_fields_and_popups.py`: texto negro, fondo blanco de numericos, popup de combos, ancho del control, picklist de metodos de pago y reorganizacion del alta de producto.
+- Pruebas Qt/unitarias relacionadas de productos, compras, proveedores y estabilizacion ejecutadas con `-p pytestqt.plugin`.

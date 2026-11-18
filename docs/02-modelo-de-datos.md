@@ -898,6 +898,12 @@ Inicio_principal.__init__ llama crear_datos_principales. Es la bienvenida selecc
 
 Los catalogos de los puntos 3 a 9 consultan limit(1) y solo insertan si la tabla esta vacia. No completan catalogos parciales, no actualizan descripciones y no fijan IDs. El orden de la lista no debe convertirse en una FK numerica hardcodeada. Los metodos no hacen commit individual en este camino; la transaccion exterior es la responsable. Se captura Exception dentro del bloque y se imprime; algunos metodos tambien absorben errores. No es un contrato de inicializacion con rollback/resultado uniforme: un error SQL puede dejar la transaccion fallida, y una excepcion no SQL absorbida podria permitir confirmar trabajo previo al salir normalmente del contexto.
 
+### 6.2 Proveedor reservado de compras directas (2026-11-18)
+
+`BaseDatosModel` expone `NOMBRE_PROVEEDOR_COMPRA_DIRECTA = "COMPRA DIRECTA (SIN PROVEEDOR)"`; no es una tabla ni una columna nueva. `ProveedoresModel.obtener_o_crear_proveedor_compra_directa` crea una fila de `Proveedores` con nombre exacto y cadenas vacias en los campos obligatorios cuando el flujo de nueva orden lo requiere. La busqueda previa por nombre la hace idempotente. No forma parte de `crear_datos_principales` y no se ejecuta en el arranque general: se invoca al cargar proveedores para la orden de compra y la sesion del worker confirma el alta.
+
+La fila queda oculta de busquedas administrativas (`listar_dto`, `obtener_proveedores`, `obtener_nombre_proveedor`) y protegida contra alta manual, actualizacion y borrado. No modifica la declaracion ORM de `Proveedores` ni `Compras.proveedor_id`; este ultimo sigue siendo NOT NULL y la compra directa guarda el id del proveedor reservado. Para el flujo funcional ver [spec03 seccion14](specs/spec-03-compras-proveedores-e-inventario.md#14-compra-directa-sin-proveedor-2026-11-18).
+
 RegistroInicialController importa RolesModel/PermisosModel, obtiene roles y maneja variable_primer_registro, pero no contiene las listas semilla de permisos/roles ni las llamadas generales anteriores. abrir_registro en la bienvenida construye Registro_personal_inicial y luego activa variable_primer_registro=True. No confundir primer usuario capturado con un usuario/password precargado: no hay credencial fija semilla en este flujo.
 
 RolesPermisosController._asegurar_catalogo_roles tambien invoca permisos y rol principal dentro de session.begin. RolesModel.crear_Rol y actualizar_rol aseguran permisos antes de resolver los solicitados. Esto no implica que todos los catalogos se reparen al entrar a roles.
