@@ -352,6 +352,8 @@ Antes de distribuir una nueva versión se recomienda comprobar:
 ## Aplicación
 
 * [ ] La aplicación inicia.
+* [ ] La aplicación inicia con PostgreSQL detenido y muestra el splash de preparación.
+* [ ] La aplicación abre a la primera sin necesidad de finalizar el proceso.
 * [ ] La aplicación cierra correctamente.
 * [ ] Las ventanas funcionan.
 * [ ] La configuración funciona.
@@ -411,6 +413,23 @@ Revisar también:
 * DLL;
 * configuración de PyInstaller;
 * archivos de configuración.
+
+## El primer arranque se queda sin ventana
+
+La aplicación inicia PostgreSQL portable antes de abrir la pantalla de acceso. Desde la versión con el ajuste de arranque del 2026-11-18 se muestra un splash de progreso mientras se prepara la base de datos.
+
+Si el splash no avanza:
+
+1. Revisar `%APPDATA%\TuleVenta\postgresql.log`.
+2. Comprobar que `%APPDATA%\TuleVenta\PostgreSQL18\bin\pg_ctl.exe` y `pg_isready.exe` existan.
+3. Ejecutar:
+   ```bat
+   "%APPDATA%\TuleVenta\PostgreSQL18\bin\pg_isready.exe" -h 127.0.0.1 -p 5432
+   ```
+   El puerto debe coincidir con `%PROGRAMDATA%\TuleVenta\configuracion_bd.json`.
+4. No es necesario finalizar `TuleVenta.exe` ni abrir la aplicación por segunda vez. El arranque espera hasta 120 segundos a que PostgreSQL termine una recuperación de WAL.
+
+El bloqueo de primer arranque corregido el 2026-11-18 se producía porque `pg_ctl start` se ejecutaba capturando `stdout`/`stderr`; `postgres.exe` heredaba esos pipes y Python quedaba esperando indefinidamente aunque el servidor ya estuviera activo.
 
 ---
 

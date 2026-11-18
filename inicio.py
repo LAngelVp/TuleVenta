@@ -1,5 +1,6 @@
 import sys
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox, QSplashScreen
 from licencia import leer_licencia, validar_licencia
 from gui.activacion_dialog import VentanaActivacion
 
@@ -25,12 +26,23 @@ class Inicio_sistema(QObject):
         self.app.setPalette(application_palette())
 
     def preparar_postgresql_portable(self):
+        splash = QSplashScreen(official_window_icon().pixmap(320, 320))
+        splash.showMessage(
+            'Iniciando TuleVenta...\nPreparando la base de datos local',
+            Qt.AlignBottom | Qt.AlignHCenter,
+            Qt.white,
+        )
+        splash.show()
+        self.app.processEvents()
         try:
             asegurar_servicio_postgres()
             return True
         except PostgresStartupError as exc:
+            splash.close()
             Mensaje().mensaje_alerta(str(exc))
             return False
+        finally:
+            splash.close()
 
     def comprobar_usuarios(self):
         try:

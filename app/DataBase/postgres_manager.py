@@ -46,11 +46,16 @@ class PostgresStartupError(RuntimeError):
     """Error lanzado cuando PostgreSQL portable no puede iniciarse."""
 
 
+class PostgresStartupTimeout(PostgresStartupError):
+    """pg_ctl excedio su espera, pero postgres pudo seguir arrancando."""
+
+
 class PostgresServiceManager:
     """Centraliza la verificacion y arranque de PostgreSQL portable."""
 
     SOCKET_TIMEOUT_SECONDS = 1.0
-    WAIT_TIMEOUT_SECONDS = 10.0
+    STARTUP_TIMEOUT_SECONDS = 120.0
+    WAIT_TIMEOUT_SECONDS = 60.0
     RETRY_INTERVAL_SECONDS = 0.5
     LOG_TAIL_LINES = 25
 
@@ -78,7 +83,12 @@ class PostgresServiceManager:
             raise PostgresStartupError(mensaje)
 
         rutas = self.resolver_rutas_instalacion(settings)
-        self._iniciar_postgres(rutas.pg_ctl_path, rutas.data_dir, rutas.log_path, settings.port)
+        try:
+            self._iniciar_postgres(rutas.pg_ctl_path, rutas.data_dir, rutas.log_path, settings.port)
+        except PostgresStartupTimeout:
+            # pg_ctl pudo terminar por timeout mientras postgres seguia
+            # recuperando WAL. Se da una oportunidad adicional al socket.
+            self.logger.warning("pg_ctl excedio su espera; comprobando socket de PostgreSQL.")
 
         if self._esperar_socket(settings.host, settings.port, self.WAIT_TIMEOUT_SECONDS):
             self.logger.info(
@@ -288,6 +298,8 @@ class PostgresServiceManager:
             "-o",
             f"-p {port}",
             "-w",
+            "-t",
+            str(int(self.STARTUP_TIMEOUT_SECONDS)),
         ]
 
         startupinfo = None
@@ -310,9 +322,10 @@ class PostgresServiceManager:
             resultado = subprocess.run(
                 comando,
                 check=False,
-                capture_output=True,
-                text=True,
-                timeout=self.WAIT_TIMEOUT_SECONDS + 5,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=self.STARTUP_TIMEOUT_SECONDS + 15,
                 startupinfo=startupinfo,
                 creationflags=creationflags,
             )
@@ -325,16 +338,13 @@ class PostgresServiceManager:
             )
             if detalle_log:
                 mensaje = f"{mensaje}\n\nUltimas lineas del log:\n{detalle_log}"
-            raise PostgresStartupError(mensaje) from exc
+            raise PostgresStartupTimeout(mensaje) from exc
 
         if resultado.returncode != 0:
-            detalle = (resultado.stderr or resultado.stdout or "").strip()
             detalle_log = self._leer_ultimas_lineas_log(log_path)
             mensaje = (
                 f"pg_ctl.exe devolvio codigo {resultado.returncode} al iniciar PostgreSQL portable."
             )
-            if detalle:
-                mensaje = f"{mensaje}\n\nSalida del comando:\n{detalle}"
             if detalle_log:
                 mensaje = f"{mensaje}\n\nUltimas lineas del log:\n{detalle_log}"
             raise PostgresStartupError(mensaje)

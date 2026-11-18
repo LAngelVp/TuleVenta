@@ -99,6 +99,14 @@ Detalles significativos:
 - La conexion ante SQLAlchemyError muestra QMessageBox y contempla Abort/Retry; Retry vuelve a llamar conectar recursivamente. No hay un contrato de excepcion independiente de la UI para el llamador.
 - runtime_paths usa PROGRAMDATA cuando esta disponible para configuracion mutable y contempla recursos en ejecucion congelada. No debe suponerse que datos/ del repositorio sea siempre el destino efectivo.
 
+Delta de arranque 2026-11-18:
+
+- `inicio.py` muestra un `QSplashScreen` antes de asegurar PostgreSQL y lo cierra antes de abrir Login, Registro o cualquier mensaje de error. El usuario ve actividad desde el primer segundo; la app ya no queda como un proceso sin ventana durante la preparacion.
+- `PostgresServiceManager._iniciar_postgres` ejecuta `pg_ctl start -w -t 120` con `stdin`, `stdout` y `stderr` redirigidos a `DEVNULL`. Antes se usaba `capture_output=True`; `postgres.exe` heredaba los pipes y `subprocess.run` esperaba indefinidamente el EOF, aunque `pg_ctl.exe` ya hubiera terminado. Ese bloqueo era la causa del primer arranque que exigia finalizar `TuleVenta.exe` y abrir de nuevo.
+- Si `pg_ctl` agota su espera, se lanza `PostgresStartupTimeout` y `asegurar_servicio_postgres` concede una espera adicional de socket (`WAIT_TIMEOUT_SECONDS = 60`) antes de declarar fallo. Esto cubre recuperaciones de WAL lentas posteriores a un apagado no limpio.
+- Los errores de `pg_ctl` ya no dependen de `stderr` capturado; se informa el codigo de salida y las ultimas lineas de `%APPDATA%\TuleVenta\postgresql.log`.
+- Evidencia de reproduccion: con PostgreSQL detenido, el proceso quedaba bloqueado en `Thread.join -> Popen._communicate -> subprocess.run -> _iniciar_postgres`; tras el cambio debe aparecer la ventana o el splash sin intervencion del usuario.
+
 ## 4. Persistencia y transacciones
 
 ### 4.1 Ciclo de vida de conexion

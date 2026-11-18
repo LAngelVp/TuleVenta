@@ -140,6 +140,9 @@ def test_app_starts_postgre_sql_before_first_query():
     source = (root / 'inicio.py').read_text(encoding='utf-8')
     assert 'if not sistema.preparar_postgresql_portable():' in source
     assert source.index('preparar_postgresql_portable') < source.index('sistema.comprobar_usuarios()')
+    assert 'QSplashScreen' in source
+    assert source.index('splash.show()') < source.index('asegurar_servicio_postgres()')
+    assert 'splash.close()' in source
 
 
 @pytest.mark.qt
@@ -280,6 +283,47 @@ def test_postgres_rejects_mismatched_binary(tmp_path, monkeypatch):
     with pytest.raises(postgres_manager.PostgresStartupError, match='incompatible'):
         postgres_manager.PostgresServiceManager()._iniciar_postgres(tmp_path / 'pg_ctl.exe', data, tmp_path / 'log', 5432)
     assert all(command[-1] == '--version' for command in commands)
+
+
+@pytest.mark.unit
+def test_postgres_start_does_not_share_pipes_with_postgres(tmp_path, monkeypatch):
+    import subprocess
+    from types import SimpleNamespace
+    from app.DataBase import postgres_manager
+    data = tmp_path / 'data'
+    data.mkdir()
+    (data / 'PG_VERSION').write_text('18', encoding='ascii')
+    calls = []
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        return SimpleNamespace(returncode=0, stdout='pg_ctl (PostgreSQL) 18.4', stderr='')
+    monkeypatch.setattr(postgres_manager.subprocess, 'run', run)
+    manager = postgres_manager.PostgresServiceManager()
+    manager._iniciar_postgres(tmp_path / 'pg_ctl.exe', data, tmp_path / 'log', 5432)
+    command, kwargs = calls[-1]
+    assert command[1] == 'start'
+    assert kwargs['stdout'] == subprocess.DEVNULL
+    assert kwargs['stderr'] == subprocess.DEVNULL
+    assert kwargs['stdin'] == subprocess.DEVNULL
+    assert 'capture_output' not in kwargs
+    assert kwargs['timeout'] > 60
+    assert command[command.index('-t') + 1] == str(int(manager.STARTUP_TIMEOUT_SECONDS))
+
+
+@pytest.mark.unit
+def test_startup_timeout_gets_a_socket_retry(monkeypatch):
+    from types import SimpleNamespace
+    from app.DataBase import postgres_manager
+    manager = postgres_manager.PostgresServiceManager()
+    settings = SimpleNamespace(host='127.0.0.1', port=5532, config_path='config.json')
+    monkeypatch.setattr(manager, 'cargar_configuracion', lambda: settings)
+    monkeypatch.setattr(manager, '_socket_responde', lambda *args: False)
+    monkeypatch.setattr(manager, 'resolver_rutas_instalacion', lambda settings: SimpleNamespace(
+        pg_ctl_path='pg_ctl.exe', data_dir='data', log_path='postgresql.log'))
+    monkeypatch.setattr(manager, '_iniciar_postgres',
+                        lambda *args: (_ for _ in ()).throw(postgres_manager.PostgresStartupTimeout('timeout')))
+    monkeypatch.setattr(manager, '_esperar_socket', lambda *args: True)
+    assert manager.asegurar_servicio_postgres() is True
 
 
 @pytest.mark.unit

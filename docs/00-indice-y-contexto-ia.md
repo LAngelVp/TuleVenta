@@ -6,6 +6,8 @@ Fecha del levantamiento: 2026-11-10. Fases 1 a 4 documentales entregadas; ejecuc
 
 Actualizacion 2026-11-18: se aplicaron ajustes globales de estilos (texto negro, fondos blancos en campos numericos, popups de picklists, anchos estandarizados) y la funcionalidad de compra directa sin proveedor mediante un proveedor interno reservado. El detalle esta en la seccion7 de este indice, en la seccion8 de la guia UI/UX, en el delta de la spec01 y en la seccion14 de la spec03. No hubo cambios de esquema.
 
+Actualizacion 2026-11-18 (arranque): se corrigio el bloqueo del primer arranque cuando PostgreSQL portable no estaba corriendo. `pg_ctl start` ya no captura `stdout`/`stderr` mediante pipes que `postgres.exe` heredaba, se agrego `-w -t 120`, una espera de socket posterior y un `QSplashScreen` visible durante la preparacion. El diagnostico y el delta estan en la seccion3 de [arquitectura](01-arquitectura-y-analisis-actual.md#3-arranque-y-operacion) y en la solucion de problemas del [README](../README.md#el-primer-arranque-se-queda-sin-ventana). No hubo cambios de esquema ni de datos.
+
 El codigo es la evidencia primaria del comportamiento implementado. Estos documentos son su referencia tecnica trazable: una discrepancia debe resolverse contrastando la fuente, no suponiendo que la especificacion describe un comportamiento ya probado. Los cambios futuros deben actualizar codigo, especificacion y pruebas conjuntamente.
 
 | Documento | Estado en esta fase | Contenido |
