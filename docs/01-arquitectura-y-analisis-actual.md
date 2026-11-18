@@ -106,6 +106,9 @@ Delta de arranque 2026-11-18:
 - Si `pg_ctl` agota su espera, se lanza `PostgresStartupTimeout` y `asegurar_servicio_postgres` concede una espera adicional de socket (`WAIT_TIMEOUT_SECONDS = 60`) antes de declarar fallo. Esto cubre recuperaciones de WAL lentas posteriores a un apagado no limpio.
 - Los errores de `pg_ctl` ya no dependen de `stderr` capturado; se informa el codigo de salida y las ultimas lineas de `%APPDATA%\TuleVenta\postgresql.log`.
 - Evidencia de reproduccion: con PostgreSQL detenido, el proceso quedaba bloqueado en `Thread.join -> Popen._communicate -> subprocess.run -> _iniciar_postgres`; tras el cambio debe aparecer la ventana o el splash sin intervencion del usuario.
+- La barra lateral incorpora `btn_laterales_cerrar_sesion`. `SistemaPrincipal.cerrar_sesion` valida workers y ticket en curso, limpia `WorkerDBManager` y `ProcesadorArchivoManager`, muestra un nuevo `Login` y cierra/elimina la ventana principal. PostgreSQL no se detiene en el cambio de sesion.
+- `SistemaPrincipal.closeEvent` y `Login.closeEvent` convergen en `app/runtime_lifecycle.py`. `cerrar_aplicacion()` ejecuta `pg_ctl stop -m fast -w -t 20` mediante `PostgresServiceManager.detener_servicio_postgres()`, cierra Qt y termina el proceso. Cerrar el login sin autenticarse tambien sigue este camino.
+- El cierre duro usa `os._exit(0)` despues de detener PostgreSQL para no dejar hilos Qt/workers manteniendo vivo el ejecutable. Las pruebas inyectan `cerrar_aplicacion` para no terminar el proceso de pytest.
 
 ## 4. Persistencia y transacciones
 

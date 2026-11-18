@@ -79,6 +79,9 @@ def test_access_windows_preserve_design_and_close(qtbot, monkeypatch, kind, clos
         window.eliminar_foto()
         assert "Cargar Imagen" in photo.text()
         assert photo.size() == QSize(180, 180)
+    if kind == "login":
+        import app.runtime_lifecycle as lifecycle
+        monkeypatch.setattr(lifecycle, "cerrar_aplicacion", lambda: None)
     if close_button is not None and close_method == "button":
         if kind != "login":
             assert close_button.property("variant") == "neutral"
@@ -177,6 +180,7 @@ def test_access_shell_native_layout_expands(qtbot, monkeypatch):
     assert window.isVisible()
     messages.mensaje_informativo.assert_called_once()
     monkeypatch.setattr(tools.ActualizacionWorker, "activos", set())
+    window._cerrando_sesion = True
     assert window.close()
 
 

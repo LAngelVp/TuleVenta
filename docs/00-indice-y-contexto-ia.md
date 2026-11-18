@@ -8,6 +8,8 @@ Actualizacion 2026-11-18: se aplicaron ajustes globales de estilos (texto negro,
 
 Actualizacion 2026-11-18 (arranque): se corrigio el bloqueo del primer arranque cuando PostgreSQL portable no estaba corriendo. `pg_ctl start` ya no captura `stdout`/`stderr` mediante pipes que `postgres.exe` heredaba, se agrego `-w -t 120`, una espera de socket posterior y un `QSplashScreen` visible durante la preparacion. El diagnostico y el delta estan en la seccion3 de [arquitectura](01-arquitectura-y-analisis-actual.md#3-arranque-y-operacion) y en la solucion de problemas del [README](../README.md#el-primer-arranque-se-queda-sin-ventana). No hubo cambios de esquema ni de datos.
 
+Actualizacion 2026-11-18 (sesion y cierre): se agrego `Cerrar sesion` en la barra lateral; el cierre de sesion limpia workers y vuelve al login. Cerrar la ventana principal o el login ejecuta `pg_ctl stop -m fast`, detiene PostgreSQL portable y termina el proceso. El detalle esta en la seccion3 de [arquitectura](01-arquitectura-y-analisis-actual.md#3-arranque-y-operacion) y en el [README](../README.md#cerrar-sesión-y-cerrar-la-aplicación). No hubo cambios de esquema ni de datos.
+
 El codigo es la evidencia primaria del comportamiento implementado. Estos documentos son su referencia tecnica trazable: una discrepancia debe resolverse contrastando la fuente, no suponiendo que la especificacion describe un comportamiento ya probado. Los cambios futuros deben actualizar codigo, especificacion y pruebas conjuntamente.
 
 | Documento | Estado en esta fase | Contenido |

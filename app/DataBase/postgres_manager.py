@@ -56,6 +56,7 @@ class PostgresServiceManager:
     SOCKET_TIMEOUT_SECONDS = 1.0
     STARTUP_TIMEOUT_SECONDS = 120.0
     WAIT_TIMEOUT_SECONDS = 60.0
+    SHUTDOWN_TIMEOUT_SECONDS = 20.0
     RETRY_INTERVAL_SECONDS = 0.5
     LOG_TAIL_LINES = 25
 
@@ -105,6 +106,54 @@ class PostgresServiceManager:
         if detalle_log:
             mensaje = f"{mensaje}\n\nUltimas lineas de {rutas.log_path}:\n{detalle_log}"
         raise PostgresStartupError(mensaje)
+
+    def detener_servicio_postgres(self):
+        """Detiene PostgreSQL portable con un apagado fast y espera acotada."""
+
+        try:
+            settings = self.cargar_configuracion()
+            if not self._es_host_local(settings.host):
+                self.logger.info("PostgreSQL remoto detectado; no se detiene desde la app.")
+                return False
+
+            rutas = self.resolver_rutas_instalacion(settings)
+            if not rutas.data_dir.exists():
+                return True
+
+            startupinfo, creationflags = self._startup_config()
+            comando = [
+                str(rutas.pg_ctl_path),
+                "stop",
+                "-D",
+                str(rutas.data_dir),
+                "-m",
+                "fast",
+                "-w",
+                "-t",
+                str(int(self.SHUTDOWN_TIMEOUT_SECONDS)),
+            ]
+            self.logger.info("Deteniendo PostgreSQL portable con %s", rutas.pg_ctl_path)
+            resultado = subprocess.run(
+                comando,
+                check=False,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=self.SHUTDOWN_TIMEOUT_SECONDS + 10,
+                startupinfo=startupinfo,
+                creationflags=creationflags,
+            )
+            if resultado.returncode != 0:
+                self.logger.warning(
+                    "pg_ctl stop devolvio codigo %s; revisa si PostgreSQL seguia activo.",
+                    resultado.returncode,
+                )
+                return False
+            self.logger.info("PostgreSQL portable detenido correctamente.")
+            return True
+        except (OSError, subprocess.SubprocessError, PostgresStartupError) as exc:
+            self.logger.warning("No se pudo detener PostgreSQL portable: %s", exc)
+            return False
 
     def cargar_configuracion(self):
         """Lee y normaliza la configuracion JSON de conexion."""
@@ -302,14 +351,7 @@ class PostgresServiceManager:
             str(int(self.STARTUP_TIMEOUT_SECONDS)),
         ]
 
-        startupinfo = None
-        creationflags = 0
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = 0
-            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-
+        startupinfo, creationflags = self._startup_config()
         self.logger.info("Intentando iniciar PostgreSQL con %s", pg_ctl_path)
         try:
             major = (data_dir / PG_VERSION_NAME).read_text(encoding='ascii').strip()
@@ -348,6 +390,14 @@ class PostgresServiceManager:
             if detalle_log:
                 mensaje = f"{mensaje}\n\nUltimas lineas del log:\n{detalle_log}"
             raise PostgresStartupError(mensaje)
+
+    def _startup_config(self):
+        if os.name != "nt":
+            return None, 0
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = 0
+        return startupinfo, getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
     def _socket_responde(self, host, port):
         host_socket = self._normalizar_host_socket(host)
@@ -419,3 +469,9 @@ def asegurar_servicio_postgres(logger=None):
     """Punto de entrada listo para `main.py` o `inicio.py`."""
 
     return PostgresServiceManager(logger=logger).asegurar_servicio_postgres()
+
+
+def detener_servicio_postgres(logger=None):
+    """Detiene la instancia portable local; seguro si no esta corriendo."""
+
+    return PostgresServiceManager(logger=logger).detener_servicio_postgres()

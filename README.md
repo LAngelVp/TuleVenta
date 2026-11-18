@@ -354,7 +354,9 @@ Antes de distribuir una nueva versión se recomienda comprobar:
 * [ ] La aplicación inicia.
 * [ ] La aplicación inicia con PostgreSQL detenido y muestra el splash de preparación.
 * [ ] La aplicación abre a la primera sin necesidad de finalizar el proceso.
-* [ ] La aplicación cierra correctamente.
+* [ ] La aplicación cierra correctamente y detiene PostgreSQL.
+* [ ] Cerrar sesión vuelve a mostrar el login.
+* [ ] Cerrar el login termina la aplicación y PostgreSQL.
 * [ ] Las ventanas funcionan.
 * [ ] La configuración funciona.
 
@@ -430,6 +432,24 @@ Si el splash no avanza:
 4. No es necesario finalizar `TuleVenta.exe` ni abrir la aplicación por segunda vez. El arranque espera hasta 120 segundos a que PostgreSQL termine una recuperación de WAL.
 
 El bloqueo de primer arranque corregido el 2026-11-18 se producía porque `pg_ctl start` se ejecutaba capturando `stdout`/`stderr`; `postgres.exe` heredaba esos pipes y Python quedaba esperando indefinidamente aunque el servidor ya estuviera activo.
+
+## Cerrar sesión y cerrar la aplicación
+
+La barra lateral incluye **Cerrar sesión**. Al confirmarlo:
+
+1. Se cancelan y limpian los workers de base de datos e importación.
+2. Se cierra la ventana principal.
+3. Se abre de nuevo la pantalla de inicio de sesión.
+
+La sesión no detiene PostgreSQL, porque el siguiente usuario puede iniciar sesión inmediatamente.
+
+Al cerrar la aplicación desde la ventana principal o al cerrar la pantalla de inicio de sesión:
+
+1. Se limpian los workers activos.
+2. Se ejecuta `pg_ctl stop -m fast -w` sobre `%APPDATA%\TuleVenta\data`.
+3. Se espera a que PostgreSQL termine y se cierran los procesos de la aplicación.
+
+Si hay un ticket en curso, la aplicación pide confirmación antes de descartarlo. Si hay una actualización o importación activa, el cierre se bloquea hasta terminar o cancelar la operación.
 
 ---
 

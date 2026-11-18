@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import datetime
 from PySide6.QtCore import Qt, Signal, QTimer, QParallelAnimationGroup, QAbstractAnimation, QEvent, QSize
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QSpinBox, QStyle, QToolButton, QVBoxLayout, QWidget
@@ -39,6 +38,9 @@ def _cerrar_proceso_para_actualizacion():
     os._exit(0)
 
 
+_login_activo = None
+
+
 class SistemaPrincipal(QWidget):
     LISTAR_PROVEEDORES_VPROVEEDORES = Signal()
     LISTAR_CATEGORIAS_VPROVEEDORES = Signal()
@@ -51,6 +53,8 @@ class SistemaPrincipal(QWidget):
     def __init__(self, parent = None, datos_usuario = None):
         super().__init__(parent)
         self.ventana_saludo = None
+        self._cerrando_sesion = False
+        self._cerrando_sistema = False
         self.ui = Ui_Principal_sistema()
         self.ui.setupUi(self)
         configure_window_chrome(self, minimum_size=(1000, 650), maximizable=True, frameless=True)
@@ -82,8 +86,16 @@ class SistemaPrincipal(QWidget):
         self.btn_perfil.setAccessibleName("Perfil")
         self.btn_perfil.setIcon(QIcon(":/Icons/Bootstrap/person-circle.svg"))
         self.btn_perfil.clicked.connect(lambda: self.mostrar_perfil(None))
+        self.btn_cerrar_sesion = QPushButton("Cerrar sesion", self.ui.w_cuerpo_menu)
+        self.btn_cerrar_sesion.setObjectName("btn_laterales_cerrar_sesion")
+        self.btn_cerrar_sesion.setText("Cerrar sesion")
+        self.btn_cerrar_sesion.setToolTip("Cerrar sesion")
+        self.btn_cerrar_sesion.setAccessibleName("Cerrar sesion")
+        self.btn_cerrar_sesion.setIcon(QIcon(":/Icons/Bootstrap/box-arrow-right.svg"))
+        self.btn_cerrar_sesion.clicked.connect(self.cerrar_sesion)
         self.ui.label_fotousuario.hide()
         self.ui.gridLayout_6.addWidget(self.btn_perfil, 0, 0)
+        self.ui.gridLayout_6.addWidget(self.btn_cerrar_sesion, 12, 0, 1, 1)
         for name in (
             "btn_laterales_btn_dashboard", "btn_laterales_proceso_venta", "btn_laterales_ventas",
             "btn_laterales_compras", "btn_laterales_empleados", "btn_laterales_proveedores",
@@ -112,6 +124,7 @@ class SistemaPrincipal(QWidget):
             self.ui.btn_laterales_productos,
             self.ui.btn_laterales_btn_sucursales,
             self.ui.btn_laterales_btn_opciones,
+            self.btn_cerrar_sesion,
         ]
         self.textos_botones_laterales = {
             boton.objectName(): boton.text().strip()
@@ -496,18 +509,61 @@ class SistemaPrincipal(QWidget):
                 QTimer.singleShot(0, lambda widget=watched: widget.setEnabled(False))
         return super().eventFilter(watched, event)
 
+    def _operaciones_pendientes(self):
+        from app.Controller.Hilo_consultas import ProcesadorArchivoManager
+        from gui.herramientas_view import ActualizacionWorker
+
+        if any(getattr(worker, 'isRunning', lambda: True)() for worker in ActualizacionWorker.activos):
+            return True
+        workers = [WorkerDBManager.get_worker(identifier) for identifier in WorkerDBManager.list_active_workers()]
+        workers += list(ProcesadorArchivoManager._workers.values())
+        return any(worker and worker.thread.isRunning() for worker in workers)
+
     def cerrar_sistema(self):
-        try:
-            from gui.herramientas_view import ActualizacionWorker
-            if any(worker.isRunning() for worker in ActualizacionWorker.activos):
-                Mensaje().mensaje_informativo('Espera o cancela la actualizacion antes de cerrar.')
-                return
-            respuesta = Mensaje().mensaje_pregunta("¿Quieres cerrar el sistema?")
-            if respuesta == QMessageBox.Yes:
-                WorkerDBManager.cleanup_all_workers()
-                sys.exit()
-        except Exception as e:
+        from app.runtime_lifecycle import cerrar_aplicacion
+        from app.Controller.Hilo_consultas import ProcesadorArchivoManager
+
+        if self._cerrando_sistema:
             return
+        self._cerrando_sistema = True
+        try:
+            if self._operaciones_pendientes():
+                Mensaje().mensaje_informativo('Termina o cancela las operaciones pendientes antes de cerrar.')
+                return
+            if self.venta.ticket_items:
+                if Mensaje().mensaje_pregunta(
+                        'Hay un ticket en curso. ¿Cerrar el sistema y descartarlo?') != QMessageBox.Yes:
+                    return
+            if Mensaje().mensaje_pregunta('¿Quieres cerrar el sistema?') != QMessageBox.Yes:
+                return
+            WorkerDBManager.cleanup_all_workers()
+            ProcesadorArchivoManager.cleanup_all_workers()
+            cerrar_aplicacion()
+        finally:
+            self._cerrando_sistema = False
+
+    def cerrar_sesion(self):
+        global _login_activo
+        from app.Controller.Hilo_consultas import ProcesadorArchivoManager
+
+        if self._operaciones_pendientes():
+            Mensaje().mensaje_informativo('Termina o cancela las operaciones pendientes antes de cerrar sesión.')
+            return
+        if self.venta.ticket_items:
+            if Mensaje().mensaje_pregunta(
+                    'Hay un ticket en curso. ¿Cerrar sesión y descartarlo?') != QMessageBox.Yes:
+                return
+        if Mensaje().mensaje_pregunta('¿Quieres cerrar la sesión?') != QMessageBox.Yes:
+            return
+
+        self._cerrando_sesion = True
+        WorkerDBManager.cleanup_all_workers()
+        ProcesadorArchivoManager.cleanup_all_workers()
+        from .InicioDeSesionController import Login
+        _login_activo = Login()
+        _login_activo.show()
+        self.close()
+        self.deleteLater()
 
     def aplicar_actualizacion(self, path, checksum):
         from app.Controller.Hilo_consultas import ProcesadorArchivoManager
@@ -533,12 +589,11 @@ class SistemaPrincipal(QWidget):
         _cerrar_proceso_para_actualizacion()
 
     def closeEvent(self, event):
-        from gui.herramientas_view import ActualizacionWorker
-        if ActualizacionWorker.activos:
-            Mensaje().mensaje_informativo('Espera o cancela la actualizacion antes de cerrar.')
-            event.ignore()
+        if self._cerrando_sesion or self._cerrando_sistema:
+            super().closeEvent(event)
             return
-        super().closeEvent(event)
+        event.ignore()
+        self.cerrar_sistema()
 
     def mostrar_menu(self):
         if self.animacion_menu and self.animacion_menu.state() == QAbstractAnimation.Running:

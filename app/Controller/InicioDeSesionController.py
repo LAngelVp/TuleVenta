@@ -25,6 +25,7 @@ class Login(QWidget):
         self.ventana = None
         self.datos_usuario = None
         self.ventana_saludo = None
+        self._acceso_exitoso = False
         self.ui = Ui_Inicio_Sesion()
         self.ui.setupUi(self)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -152,6 +153,7 @@ class Login(QWidget):
             logging.getLogger(__name__).warning("No se pudo completar acceso (%s).", type(error).__name__)
             contexto_valido = False
         if contexto_valido:
+            self._acceso_exitoso = True
             self.close()
             self.mostrar_saludos()
         else:
@@ -173,6 +175,9 @@ class Login(QWidget):
 
     def closeEvent(self, event):
         super().closeEvent(event)
+        if not self._acceso_exitoso:
+            from app.runtime_lifecycle import cerrar_aplicacion
+            cerrar_aplicacion()
 
     def minimizar(self):
         self.showMinimized()
